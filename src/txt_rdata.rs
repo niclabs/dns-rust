@@ -19,7 +19,7 @@ impl ToBytes for TxtRdata {
         let mut text = self.get_text();
         let mut bytes: Vec<u8> = Vec::new();
 
-        for character_index in 0..text.len() {
+        for _character_index in 0..text.len() {
             let character_to_byte = text.remove(0) as u8;
             bytes.push(character_to_byte);
         }
@@ -44,6 +44,15 @@ impl FromBytes<TxtRdata> for TxtRdata {
 }
 
 impl TxtRdata {
+    /// Creates a new TxtRdata.
+    ///
+    /// # Examples
+    /// ```
+    /// let txt_rdata = TxtRdata::new(String::from("test"));
+    ///
+    /// assert_eq!(txt_rdata.text, String::from("test"));
+    /// ```
+    ///
     pub fn new(text: String) -> TxtRdata {
         let txt_rdata = TxtRdata { text: text };
 

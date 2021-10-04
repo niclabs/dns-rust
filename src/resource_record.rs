@@ -398,7 +398,7 @@ mod test {
     #[test]
     fn constructor_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let resource_record = resource_record::ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name, String::from(""));
         assert_eq!(resource_record.type_code, 0);

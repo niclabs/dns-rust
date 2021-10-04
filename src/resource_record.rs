@@ -282,6 +282,8 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
 
         let rdata_bytes = self.rdata_to_bytes();
 
+        println!("{:#?}", rdata_bytes);
+
         for byte in rdata_bytes.as_slice() {
             rr_bytes.push(*byte);
         }
@@ -475,14 +477,14 @@ mod test {
         let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
 
         resource_record.set_name(String::from("dcc.cl"));
-        resource_record.set_type_code(2);
+        resource_record.set_type_code(16);
         resource_record.set_class(1);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(3);
 
         let bytes_msg = [
-            3, 100, 99, 99, 2, 99, 108, 0, 0, 2, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 3, 100, 99,
-            99,
+            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 3, 100,
+            99, 99,
         ];
 
         let rr_to_bytes = resource_record.to_bytes();

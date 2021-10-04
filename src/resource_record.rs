@@ -1,6 +1,5 @@
 use crate::rdata::Rdata;
 use crate::txt_rdata;
-use std::option::Option;
 use std::string::String;
 use std::vec::Vec;
 
@@ -41,10 +40,12 @@ pub struct ResourceRecord<T: ToBytes> {
     rdata: T,
 }
 
+/// Trait to convert struct in bytes
 pub trait ToBytes {
     fn to_bytes(&self) -> Vec<u8>;
 }
 
+/// Trait to create an struct from bytes
 pub trait FromBytes<T> {
     fn from_bytes(bytes: &[u8]) -> T;
 }
@@ -80,6 +81,27 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         resource_record
     }
 
+    /// Given an array of bytes, creates a new ResourceRecord
+    /// # Examples
+    /// ```
+    /// let bytes_msg: [u8; 23] = [
+    ///     3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104,
+    ///     101, 108, 108, 111,
+    /// ];
+    ///
+    /// let resource_record_test = resource_record::ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
+    ///
+    /// assert_eq!(resource_record_test.get_name(), String::from("dcc.cl"));
+    /// assert_eq!(resource_record_test.get_type_code(), 16);
+    /// assert_eq!(resource_record_test.get_class(), 1);
+    /// assert_eq!(resource_record_test.get_ttl(), 5642);
+    /// assert_eq!(resource_record_test.get_rdlength(), 5);
+    /// assert_eq!(
+    ///     resource_record_test.get_rdata().unwrap().get_text(),
+    ///     String::from("hello")
+    /// );
+    /// ```
+    ///
     fn from_bytes(bytes: &[u8]) -> ResourceRecord<Rdata> {
         let (name, bytes_without_name) = bytes_to_name(bytes);
 
@@ -104,6 +126,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         resource_record
     }
 
+    /// Returns a vec of bytes that represents the domain name in a dns message
     fn name_to_bytes(&self) -> Vec<u8> {
         let name = self.get_name();
         let mut bytes: Vec<u8> = Vec::new();
@@ -122,6 +145,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         bytes
     }
 
+    /// Returns a byte that represents the first byte from type code in the dns message.
     fn get_first_type_code_byte(&self) -> u8 {
         let type_code = self.get_type_code();
         let first_byte = (type_code >> 8) as u8;
@@ -129,6 +153,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         first_byte
     }
 
+    /// Returns a byte that represents the second byte from type code in the dns message.
     fn get_second_type_code_byte(&self) -> u8 {
         let type_code = self.get_type_code();
         let second_byte = type_code as u8;
@@ -136,6 +161,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         second_byte
     }
 
+    /// Returns a byte that represents the first byte from class in the dns message.
     fn get_first_class_byte(&self) -> u8 {
         let class = self.get_class();
         let first_byte = (class >> 8) as u8;
@@ -143,6 +169,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         first_byte
     }
 
+    /// Returns a byte that represents the second byte from class in the dns message.
     fn get_second_class_byte(&self) -> u8 {
         let class = self.get_class();
         let second_byte = class as u8;
@@ -150,6 +177,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         second_byte
     }
 
+    /// Returns a byte that represents the first byte from ttl in the dns message.
     fn get_first_ttl_byte(&self) -> u8 {
         let ttl = self.get_ttl();
         let first_byte = (ttl >> 24) as u8;
@@ -157,6 +185,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         first_byte
     }
 
+    /// Returns a byte that represents the second byte from ttl in the dns message.
     fn get_second_ttl_byte(&self) -> u8 {
         let ttl = self.get_ttl();
         let second_byte = (ttl >> 16) as u8;
@@ -164,6 +193,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         second_byte
     }
 
+    /// Returns a byte that represents the third byte from ttl in the dns message.
     fn get_third_ttl_byte(&self) -> u8 {
         let ttl = self.get_ttl();
         let third_byte = (ttl >> 8) as u8;
@@ -171,6 +201,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         third_byte
     }
 
+    /// Returns a byte that represents the fourth byte from ttl in the dns message.
     fn get_fourth_ttl_byte(&self) -> u8 {
         let ttl = self.get_ttl();
         let fourth_byte = ttl as u8;
@@ -178,6 +209,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         fourth_byte
     }
 
+    /// Returns a byte that represents the first byte from rdlength in the dns message.
     fn get_first_rdlength_byte(&self) -> u8 {
         let rdlength = self.get_rdlength();
         let first_byte = (rdlength >> 8) as u8;
@@ -185,6 +217,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         first_byte
     }
 
+    /// Returns a byte that represents the second byte from rdlength in the dns message.
     fn get_second_rdlength_byte(&self) -> u8 {
         let rdlength = self.get_rdlength();
         let second_byte = rdlength as u8;
@@ -192,12 +225,41 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
         second_byte
     }
 
+    /// Returns a vec of bytes that represents the rdata in the dns message.
     fn rdata_to_bytes(&self) -> Vec<u8> {
         let rdata = self.get_rdata();
 
         rdata.to_bytes()
     }
 
+    /// Returns a vec fo bytes that represents the resource record
+    ///
+    /// # Example
+    /// ```
+    /// let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+    /// let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+    ///
+    /// resource_record.set_name(String::from("dcc.cl"));
+    /// resource_record.set_type_code(2);
+    /// resource_record.set_class(1);
+    /// resource_record.set_ttl(5642);
+    /// resource_record.set_rdlength(3);
+    ///
+    /// let bytes_msg = [
+    ///     3, 100, 99, 99, 2, 99, 108, 0, 0, 2, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 3, 100, 99,
+    ///     99,
+    /// ];
+    ///
+    /// let rr_to_bytes = resource_record.to_bytes();
+    ///
+    /// let mut i = 0;
+    ///
+    /// for value in rr_to_bytes.as_slice() {
+    ///     assert_eq!(*value, bytes_msg[i]);
+    ///     i += 1;
+    /// }
+    /// ```
+    ///
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut rr_bytes: Vec<u8> = Vec::new();
 
@@ -294,6 +356,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     }
 }
 
+/// Given an array of bytes, returns an String with the domain name
 fn bytes_to_name(bytes: &[u8]) -> (String, &[u8]) {
     let mut name = String::from("");
     let mut index = 0;
@@ -314,8 +377,7 @@ fn bytes_to_name(bytes: &[u8]) -> (String, &[u8]) {
     (name, &bytes[index + 1..])
 }
 
-// En el futuro esta funcion debe ser cambiada por la ejecucion de la funcion bytes_to_ de las distintas estructuras
-
+/// Given an array of bytes and a type code, returns a new Rdata
 pub fn from_bytes_to_rdata(bytes: &[u8], type_code: u16) -> Rdata {
     let rdata = match type_code {
         16 => Rdata::SomeTxtRdata(txt_rdata::TxtRdata::from_bytes(bytes)),

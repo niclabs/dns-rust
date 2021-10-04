@@ -1,5 +1,7 @@
 pub mod header;
+pub mod rdata;
 pub mod resource_record;
+pub mod txt_rdata;
 pub mod udp_client;
 pub mod udp_server;
 

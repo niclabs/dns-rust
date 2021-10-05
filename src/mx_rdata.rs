@@ -1,5 +1,5 @@
+use crate::domain_name::DomainName;
 use crate::resource_record::{FromBytes, ToBytes};
-use std::string::String;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for mx type
@@ -16,7 +16,7 @@ pub struct MxRdata {
     //////////////////////////////////////////////////
     // This must be replace for a DomainName struct
     //////////////////////////////////////////////////
-    exchange: String,
+    exchange: DomainName,
 }
 
 impl ToBytes for MxRdata {
@@ -27,8 +27,7 @@ impl ToBytes for MxRdata {
         let first_byte_preference = self.get_first_preference_byte();
         let second_byte_preference = self.get_second_preference_byte();
 
-        // This must be replace for a DomainName struct
-        let exchange_bytes = self.exchange_to_bytes();
+        let exchange_bytes = self.get_exchange().to_bytes();
 
         bytes.push(first_byte_preference);
         bytes.push(second_byte_preference);
@@ -47,7 +46,7 @@ impl FromBytes<MxRdata> for MxRdata {
         let preference = (bytes[0] as u16) << 8 | bytes[1] as u16;
 
         // This must be replace for a DomainName struct
-        let exchange = MxRdata::bytes_to_exchange(&bytes[2..]);
+        let (exchange, _) = DomainName::from_bytes(&bytes[2..]);
 
         let mut mx_rdata = MxRdata::new();
 
@@ -71,7 +70,7 @@ impl MxRdata {
     pub fn new() -> Self {
         let mx_rdata: MxRdata = MxRdata {
             preference: 0 as u16,
-            exchange: String::from(""),
+            exchange: DomainName::new(),
         };
         mx_rdata
     }
@@ -95,7 +94,7 @@ impl MxRdata {
     }
 
     // Gets the exchange attribute from MxRdata
-    pub fn get_exchange(&self) -> String {
+    pub fn get_exchange(&self) -> DomainName {
         self.exchange.clone()
     }
 }
@@ -108,55 +107,13 @@ impl MxRdata {
     }
 
     // Sets the exchange attibute with a value
-    pub fn set_exchange(&mut self, exchange: String) {
+    pub fn set_exchange(&mut self, exchange: DomainName) {
         self.exchange = exchange;
     }
 }
 
-impl MxRdata {
-    //////////////////////////////////////////////////
-    // This must be replace for a DomainName struct
-    //////////////////////////////////////////////////
-    /// Returns a vec of bytes that represents the domain name in a dns message
-    fn exchange_to_bytes(&self) -> Vec<u8> {
-        let name = self.get_exchange();
-        let mut bytes: Vec<u8> = Vec::new();
-
-        for word in name.split(".") {
-            let word_length = word.len();
-            bytes.push(word_length as u8);
-
-            for character in word.chars() {
-                bytes.push(character as u8);
-            }
-        }
-
-        bytes.push(0 as u8);
-
-        bytes
-    }
-
-    /// Given an array of bytes, returns an String with the domain name
-    fn bytes_to_exchange(bytes: &[u8]) -> String {
-        let mut exchange = String::from("");
-
-        for byte in bytes {
-            if *byte <= 9 && *byte >= 1 {
-                exchange.push('.');
-            } else if *byte == 0 {
-                break;
-            } else {
-                exchange.push(*byte as char);
-            }
-        }
-
-        exchange.remove(0);
-
-        exchange
-    }
-}
-
 mod test {
+    use super::DomainName;
     use super::MxRdata;
     use crate::resource_record::{FromBytes, ToBytes};
 
@@ -165,7 +122,7 @@ mod test {
         let mx_rdata = MxRdata::new();
 
         assert_eq!(mx_rdata.preference, 0);
-        assert_eq!(mx_rdata.exchange, String::from(""));
+        assert_eq!(mx_rdata.exchange.get_name(), String::from(""));
     }
 
     #[test]
@@ -183,18 +140,24 @@ mod test {
     fn set_and_get_exchange_test() {
         let mut mx_rdata = MxRdata::new();
 
-        assert_eq!(mx_rdata.get_exchange(), String::from(""));
+        assert_eq!(mx_rdata.get_exchange().get_name(), String::from(""));
 
-        mx_rdata.set_exchange(String::from("test"));
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test"));
 
-        assert_eq!(mx_rdata.get_exchange(), String::from("test"));
+        mx_rdata.set_exchange(domain_name);
+
+        assert_eq!(mx_rdata.get_exchange().get_name(), String::from("test"));
     }
 
     #[test]
     fn to_bytes_test() {
         let mut mx_rdata = MxRdata::new();
 
-        mx_rdata.set_exchange(String::from("test.com"));
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        mx_rdata.set_exchange(domain_name);
         mx_rdata.set_preference(128);
 
         let bytes_to_test: [u8; 12] = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0];
@@ -212,6 +175,6 @@ mod test {
         let mx_rdata = MxRdata::from_bytes(&bytes);
 
         assert_eq!(mx_rdata.get_preference(), 128);
-        assert_eq!(mx_rdata.get_exchange(), String::from("test.com"));
+        assert_eq!(mx_rdata.get_exchange().get_name(), String::from("test.com"));
     }
 }

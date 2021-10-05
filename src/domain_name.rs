@@ -1,6 +1,6 @@
 use std::string::String;
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 
 // DNS domain name represented as a sequence of labels, where each label consists of
 // a length octet followed by that number of octets.

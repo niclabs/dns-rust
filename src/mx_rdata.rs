@@ -1,5 +1,4 @@
-use crate::resource_record::FromBytes;
-use crate::resource_record::ToBytes;
+use crate::resource_record::{FromBytes, ToBytes};
 use std::string::String;
 
 #[derive(Clone)]
@@ -44,7 +43,7 @@ impl ToBytes for MxRdata {
 
 impl FromBytes<MxRdata> for MxRdata {
     /// Creates a new MxRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> MxRdata {
+    fn from_bytes(bytes: &[u8]) -> Self {
         let preference = (bytes[0] as u16) << 8 | bytes[1] as u16;
 
         // This must be replace for a DomainName struct
@@ -69,7 +68,7 @@ impl MxRdata {
     /// assert_eq!(mx_rdata.exchange, String::from(""));
     /// ```
     ///
-    pub fn new() -> MxRdata {
+    pub fn new() -> Self {
         let mx_rdata: MxRdata = MxRdata {
             preference: 0 as u16,
             exchange: String::from(""),
@@ -158,7 +157,7 @@ impl MxRdata {
 }
 
 mod test {
-    use crate::mx_rdata::MxRdata;
+    use super::MxRdata;
     use crate::resource_record::{FromBytes, ToBytes};
 
     #[test]

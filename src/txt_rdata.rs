@@ -30,7 +30,7 @@ impl ToBytes for TxtRdata {
 
 impl FromBytes<TxtRdata> for TxtRdata {
     /// Creates a new TxtRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> TxtRdata {
+    fn from_bytes(bytes: &[u8]) -> Self {
         let mut string = String::from("");
 
         for byte in bytes {
@@ -53,7 +53,7 @@ impl TxtRdata {
     /// assert_eq!(txt_rdata.text, String::from("test"));
     /// ```
     ///
-    pub fn new(text: String) -> TxtRdata {
+    pub fn new(text: String) -> Self {
         let txt_rdata = TxtRdata { text: text };
 
         txt_rdata
@@ -77,9 +77,9 @@ impl TxtRdata {
 }
 
 mod test {
+    use super::TxtRdata;
     use crate::resource_record::FromBytes;
     use crate::resource_record::ToBytes;
-    use crate::txt_rdata::TxtRdata;
 
     #[test]
     fn constructor_test() {

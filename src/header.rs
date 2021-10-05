@@ -34,6 +34,7 @@ pub struct Header {
     ra: bool,
 
     // Reserved
+    #[allow(dead_code)]
     z: u8,
 
     // Response Code
@@ -59,6 +60,69 @@ impl Header {
     ///
     pub fn new() -> Self {
         let header: Header = Default::default();
+        header
+    }
+
+    /// Returns a Header object from a byte array representation of a dns message header.
+    ///
+    /// # Examples
+    /// ```
+    /// let mut bytes: [u8; 12] = [0; 12];
+    ///
+    /// bytes[0] = 0b00100100;
+    /// bytes[1] = 0b10010101;
+    /// bytes[2] = 0b10010010;
+    /// bytes[3] = 0b00001000;
+    /// bytes[6] = 0b00001010;
+    /// bytes[7] = 0b10100101;
+    ///
+    /// let mut header = Header::new();
+    ///
+    /// header.set_id(0b0010010010010101);
+    /// header.set_qr(true);
+    /// header.set_op_code(2);
+    /// header.set_tc(true);
+    /// header.set_rcode(8);
+    /// header.set_ancount(0b0000101010100101);
+    ///
+    /// let header_from_bytes = Header::from_bytes(&bytes);
+    ///
+    /// assert_eq!(header_from_bytes.get_id(), header.get_id());
+    /// assert_eq!(header_from_bytes.get_qr(), header.get_qr());
+    /// assert_eq!(header_from_bytes.get_op_code(), header.get_op_code());
+    /// assert_eq!(header_from_bytes.get_tc(), header.get_tc());
+    /// assert_eq!(header_from_bytes.get_rcode(), header.get_rcode());
+    /// assert_eq!(header_from_bytes.get_ancount(), header.get_ancount());
+    /// ```
+    ///
+    pub fn from_bytes(bytes: &[u8]) -> Header {
+        let id = ((bytes[0] as u16) << 8) | bytes[1] as u16;
+        let qr = bytes[2] >> 7;
+        let op_code = (bytes[2] & 0b01111000) >> 3;
+        let aa = (bytes[2] & 0b00000100) >> 2;
+        let tc = (bytes[2] & 0b00000010) >> 1;
+        let rd = bytes[2] & 0b00000001;
+        let ra = bytes[3] >> 7;
+        let rcode = bytes[3] & 0b00001111;
+        let qdcount = ((bytes[4] as u16) << 8) | bytes[5] as u16;
+        let ancount = ((bytes[6] as u16) << 8) | bytes[7] as u16;
+        let nscount = ((bytes[8] as u16) << 8) | bytes[9] as u16;
+        let arcount = ((bytes[10] as u16) << 8) | bytes[11] as u16;
+
+        let mut header = Header::new();
+        header.set_id(id);
+        header.set_qr(qr != 0);
+        header.set_op_code(op_code);
+        header.set_aa(aa != 0);
+        header.set_tc(tc != 0);
+        header.set_rd(rd != 0);
+        header.set_ra(ra != 0);
+        header.set_rcode(rcode);
+        header.set_qdcount(qdcount);
+        header.set_ancount(ancount);
+        header.set_nscount(nscount);
+        header.set_arcount(arcount);
+
         header
     }
 
@@ -417,72 +481,8 @@ impl Header {
     }
 }
 
-/// Returns a Header object from a byte array representation of a dns message header.
-///
-/// # Examples
-/// ```
-/// let mut bytes: [u8; 12] = [0; 12];
-///
-/// bytes[0] = 0b00100100;
-/// bytes[1] = 0b10010101;
-/// bytes[2] = 0b10010010;
-/// bytes[3] = 0b00001000;
-/// bytes[6] = 0b00001010;
-/// bytes[7] = 0b10100101;
-///
-/// let mut header = Header::new();
-///
-/// header.set_id(0b0010010010010101);
-/// header.set_qr(true);
-/// header.set_op_code(2);
-/// header.set_tc(true);
-/// header.set_rcode(8);
-/// header.set_ancount(0b0000101010100101);
-///
-/// let header_from_bytes = header::bytes_to_header(&bytes);
-///
-/// assert_eq!(header_from_bytes.get_id(), header.get_id());
-/// assert_eq!(header_from_bytes.get_qr(), header.get_qr());
-/// assert_eq!(header_from_bytes.get_op_code(), header.get_op_code());
-/// assert_eq!(header_from_bytes.get_tc(), header.get_tc());
-/// assert_eq!(header_from_bytes.get_rcode(), header.get_rcode());
-/// assert_eq!(header_from_bytes.get_ancount(), header.get_ancount());
-/// ```
-///
-pub fn bytes_to_header(bytes: &[u8]) -> Header {
-    let id = ((bytes[0] as u16) << 8) | bytes[1] as u16;
-    let qr = bytes[2] >> 7;
-    let op_code = (bytes[2] & 0b01111000) >> 3;
-    let aa = (bytes[2] & 0b00000100) >> 2;
-    let tc = (bytes[2] & 0b00000010) >> 1;
-    let rd = bytes[2] & 0b00000001;
-    let ra = bytes[3] >> 7;
-    let rcode = bytes[3] & 0b00001111;
-    let qdcount = ((bytes[4] as u16) << 8) | bytes[5] as u16;
-    let ancount = ((bytes[6] as u16) << 8) | bytes[7] as u16;
-    let nscount = ((bytes[8] as u16) << 8) | bytes[9] as u16;
-    let arcount = ((bytes[10] as u16) << 8) | bytes[11] as u16;
-
-    let mut header = Header::new();
-    header.set_id(id);
-    header.set_qr(qr != 0);
-    header.set_op_code(op_code);
-    header.set_aa(aa != 0);
-    header.set_tc(tc != 0);
-    header.set_rd(rd != 0);
-    header.set_ra(ra != 0);
-    header.set_rcode(rcode);
-    header.set_qdcount(qdcount);
-    header.set_ancount(ancount);
-    header.set_nscount(nscount);
-    header.set_arcount(arcount);
-
-    header
-}
-
 mod test {
-    use crate::header;
-    use crate::header::Header;
+    use super::Header;
 
     #[test]
     fn constructor_test() {
@@ -647,7 +647,7 @@ mod test {
     }
 
     #[test]
-    fn bytes_to_header_test() {
+    fn from_bytes_test() {
         let mut bytes: [u8; 12] = [0; 12];
 
         bytes[0] = 0b00100100;
@@ -666,7 +666,7 @@ mod test {
         header.set_rcode(8);
         header.set_ancount(0b0000101010100101);
 
-        let header_from_bytes = header::bytes_to_header(&bytes);
+        let header_from_bytes = Header::from_bytes(&bytes);
 
         assert_eq!(header_from_bytes.get_id(), header.get_id());
         assert_eq!(header_from_bytes.get_qr(), header.get_qr());

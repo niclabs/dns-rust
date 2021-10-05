@@ -56,7 +56,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     /// # Examples
     /// ```
     /// let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-    /// let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+    /// let mut resource_record = ResourceRecord::new(txt_rdata);
     ///
     /// assert_eq!(resource_record.name, String::from(""));
     /// assert_eq!(resource_record.type_code, 0);
@@ -89,7 +89,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     ///     101, 108, 108, 111,
     /// ];
     ///
-    /// let resource_record_test = resource_record::ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
+    /// let resource_record_test = ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
     ///
     /// assert_eq!(resource_record_test.get_name(), String::from("dcc.cl"));
     /// assert_eq!(resource_record_test.get_type_code(), 16);
@@ -237,7 +237,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     /// # Example
     /// ```
     /// let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-    /// let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+    /// let mut resource_record = ResourceRecord::new(txt_rdata);
     ///
     /// resource_record.set_name(String::from("dcc.cl"));
     /// resource_record.set_type_code(2);
@@ -390,15 +390,14 @@ pub fn from_bytes_to_rdata(bytes: &[u8], type_code: u16) -> Rdata {
 
 // Tests
 mod test {
-    use crate::rdata::Rdata;
-    use crate::rdata::Unwrap;
-    use crate::resource_record;
+    use super::ResourceRecord;
+    use crate::rdata::{Rdata, Unwrap};
     use crate::txt_rdata::TxtRdata;
 
     #[test]
     fn constructor_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let resource_record = ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name, String::from(""));
         assert_eq!(resource_record.type_code, 0);
@@ -414,7 +413,7 @@ mod test {
     #[test]
     fn set_and_get_name_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_name(), String::from(""));
 
         resource_record.set_name(String::from("Test"));
@@ -426,7 +425,7 @@ mod test {
     #[test]
     fn set_and_get_type_code_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_type_code(), 0);
 
         resource_record.set_type_code(1 as u16);
@@ -438,7 +437,7 @@ mod test {
     #[test]
     fn set_and_get_class_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_class(), 0);
 
         resource_record.set_class(1 as u16);
@@ -450,7 +449,7 @@ mod test {
     #[test]
     fn set_and_get_ttl_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_ttl(), 0);
 
         resource_record.set_ttl(12844 as u32);
@@ -462,7 +461,7 @@ mod test {
     #[test]
     fn set_and_get_rdlength_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_rdlength(), 0);
 
         resource_record.set_rdlength(59 as u16);
@@ -474,7 +473,7 @@ mod test {
     #[test]
     fn to_bytes_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
-        let mut resource_record = resource_record::ResourceRecord::new(txt_rdata);
+        let mut resource_record = ResourceRecord::new(txt_rdata);
 
         resource_record.set_name(String::from("dcc.cl"));
         resource_record.set_type_code(16);
@@ -504,7 +503,7 @@ mod test {
             101, 108, 108, 111,
         ];
 
-        let resource_record_test = resource_record::ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
+        let resource_record_test = ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
 
         assert_eq!(resource_record_test.get_name(), String::from("dcc.cl"));
         assert_eq!(resource_record_test.get_type_code(), 16);

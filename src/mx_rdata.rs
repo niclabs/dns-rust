@@ -13,9 +13,6 @@ use crate::resource_record::{FromBytes, ToBytes};
 pub struct MxRdata {
     preference: u16,
     // A domain name
-    //////////////////////////////////////////////////
-    // This must be replace for a DomainName struct
-    //////////////////////////////////////////////////
     exchange: DomainName,
 }
 

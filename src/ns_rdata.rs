@@ -15,7 +15,7 @@ pub struct NsRdata {
 }
 
 impl ToBytes for NsRdata {
-    /// Return a vec of bytes that represents the mx rdata
+    /// Return a vec of bytes that represents the ns rdata
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let nsdname = self.get_nsdname();

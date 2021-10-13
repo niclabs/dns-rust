@@ -1,3 +1,4 @@
+pub mod a_rdata;
 pub mod domain_name;
 pub mod header;
 pub mod mx_rdata;

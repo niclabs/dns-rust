@@ -1,6 +1,7 @@
 use super::domain_name::DomainName;
 use crate::rdata::Rdata;
 use crate::txt_rdata;
+use std::ops::Add;
 use std::vec::Vec;
 
 /// An struct that represents the resource record secction from a dns message
@@ -25,7 +26,7 @@ use std::vec::Vec;
 /// /                                               /
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 ///
-pub struct ResourceRecord<T: ToBytes> {
+pub struct ResourceRecord {
     // Domain Name
     name: DomainName,
     // Specifies the meaning of the data in the RDATA
@@ -37,7 +38,7 @@ pub struct ResourceRecord<T: ToBytes> {
     // Specifies the length in octets of the RDATA field
     rdlength: u16,
     // The format of this information varies according to the TYPE and CLASS of the resource record
-    rdata: T,
+    rdata: Rdata,
 }
 
 /// Trait to convert struct in bytes
@@ -51,7 +52,7 @@ pub trait FromBytes<T> {
 }
 
 // Methods
-impl<T: Clone + ToBytes> ResourceRecord<T> {
+impl ResourceRecord {
     /// Given a rdata, creates a new ResourceRecord with default values and the rdata.
     /// # Examples
     /// ```
@@ -69,7 +70,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     /// );
     /// ```
     ///
-    pub fn new(rdata: T) -> ResourceRecord<T> {
+    pub fn new(rdata: Rdata) -> ResourceRecord {
         let resource_record = ResourceRecord {
             name: DomainName::new(),
             type_code: 0 as u16,
@@ -102,7 +103,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     /// );
     /// ```
     ///
-    fn from_bytes(bytes: &[u8]) -> ResourceRecord<Rdata> {
+    fn from_bytes(bytes: &[u8]) -> ResourceRecord {
         let (name, bytes_without_name) = DomainName::from_bytes(bytes);
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
@@ -112,7 +113,12 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
             | ((bytes_without_name[6] as u32) << 8)
             | bytes_without_name[7] as u32;
         let rdlength = ((bytes_without_name[8] as u16) << 8) | bytes_without_name[9] as u16;
-        let rdata = from_bytes_to_rdata(&bytes_without_name[10..], type_code);
+
+        let mut rdata_bytes_vec = bytes_without_name[10..].to_vec();
+        rdata_bytes_vec.push(bytes_without_name[0]);
+        rdata_bytes_vec.push(bytes_without_name[1]);
+
+        let rdata = Rdata::from_bytes(rdata_bytes_vec.as_slice());
 
         let resource_record = ResourceRecord {
             name: name,
@@ -276,7 +282,7 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
 }
 
 // Setters
-impl<T: Clone + ToBytes> ResourceRecord<T> {
+impl ResourceRecord {
     /// Sets the ame attribute with a value
     pub fn set_name(&mut self, name: DomainName) {
         self.name = name;
@@ -303,13 +309,13 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     }
 
     /// Sets the rdata attribute with a value
-    pub fn set_rdata(&mut self, rdata: T) {
+    pub fn set_rdata(&mut self, rdata: Rdata) {
         self.rdata = rdata;
     }
 }
 
 // Getters
-impl<T: Clone + ToBytes> ResourceRecord<T> {
+impl ResourceRecord {
     /// Gets the name attribute value
     pub fn get_name(&self) -> DomainName {
         self.name.clone()
@@ -336,25 +342,16 @@ impl<T: Clone + ToBytes> ResourceRecord<T> {
     }
 
     /// Gets the rdata attribute value
-    pub fn get_rdata(&self) -> T {
+    pub fn get_rdata(&self) -> Rdata {
         self.rdata.clone()
     }
-}
-
-/// Given an array of bytes and a type code, returns a new Rdata
-pub fn from_bytes_to_rdata(bytes: &[u8], type_code: u16) -> Rdata {
-    let rdata = match type_code {
-        16 => Rdata::SomeTxtRdata(txt_rdata::TxtRdata::from_bytes(bytes)),
-        _ => unreachable!(),
-    };
-    rdata
 }
 
 // Tests
 mod test {
     use super::ResourceRecord;
     use crate::domain_name::DomainName;
-    use crate::rdata::{Rdata, Unwrap};
+    use crate::rdata::Rdata;
     use crate::txt_rdata::TxtRdata;
 
     #[test]
@@ -368,7 +365,10 @@ mod test {
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
-            resource_record.rdata.unwrap().get_text(),
+            match resource_record.get_rdata() {
+                Rdata::SomeTxtRdata(val) => val.get_text(),
+                _ => unreachable!(),
+            },
             String::from("dcc")
         );
     }
@@ -471,7 +471,7 @@ mod test {
             101, 108, 108, 111,
         ];
 
-        let resource_record_test = ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
+        let resource_record_test = ResourceRecord::from_bytes(&bytes_msg);
 
         assert_eq!(
             resource_record_test.get_name().get_name(),
@@ -482,7 +482,10 @@ mod test {
         assert_eq!(resource_record_test.get_ttl(), 5642);
         assert_eq!(resource_record_test.get_rdlength(), 5);
         assert_eq!(
-            resource_record_test.get_rdata().unwrap().get_text(),
+            match resource_record_test.get_rdata() {
+                Rdata::SomeTxtRdata(val) => val.get_text(),
+                _ => unreachable!(),
+            },
             String::from("hello")
         );
     }

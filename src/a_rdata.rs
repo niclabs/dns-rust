@@ -1,5 +1,6 @@
 use crate::resource_record::{FromBytes, ToBytes};
 
+#[derive(Clone)]
 /// An struct that represents the rdata for a type
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 /// |                    ADDRESS                    |

@@ -77,9 +77,9 @@ impl PtrRdata {
 }
 
 mod test {
-    use super::DomainName;
-    use super::PtrRdata;
-    use super::{FromBytes, ToBytes};
+    use crate::domain_name::DomainName;
+    use crate::rdata::ptr_rdata::PtrRdata;
+    use crate::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

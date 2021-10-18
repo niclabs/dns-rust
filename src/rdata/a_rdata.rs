@@ -71,8 +71,8 @@ impl ARdata {
 }
 
 mod test {
-    use super::ARdata;
-    use super::{FromBytes, ToBytes};
+    use crate::rdata::a_rdata::ARdata;
+    use crate::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

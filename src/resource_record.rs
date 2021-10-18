@@ -1,7 +1,5 @@
-use super::domain_name::DomainName;
+use crate::domain_name::DomainName;
 use crate::rdata::Rdata;
-use crate::txt_rdata;
-use std::ops::Add;
 use std::vec::Vec;
 
 /// An struct that represents the resource record secction from a dns message
@@ -349,10 +347,10 @@ impl ResourceRecord {
 
 // Tests
 mod test {
-    use super::ResourceRecord;
     use crate::domain_name::DomainName;
+    use crate::rdata::txt_rdata::TxtRdata;
     use crate::rdata::Rdata;
-    use crate::txt_rdata::TxtRdata;
+    use crate::resource_record::ResourceRecord;
 
     #[test]
     fn constructor_test() {

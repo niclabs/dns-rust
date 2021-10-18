@@ -110,8 +110,8 @@ impl MxRdata {
 }
 
 mod test {
-    use super::DomainName;
-    use super::MxRdata;
+    use crate::domain_name::DomainName;
+    use crate::rdata::mx_rdata::MxRdata;
     use crate::resource_record::{FromBytes, ToBytes};
 
     #[test]

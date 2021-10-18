@@ -459,9 +459,9 @@ impl SoaRdata {
 }
 
 mod test {
-    use super::DomainName;
-    use super::SoaRdata;
-    use super::{FromBytes, ToBytes};
+    use crate::domain_name::DomainName;
+    use crate::rdata::soa_rdata::SoaRdata;
+    use crate::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

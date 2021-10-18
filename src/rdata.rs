@@ -1,10 +1,17 @@
-use crate::a_rdata::ARdata;
-use crate::mx_rdata::MxRdata;
-use crate::ns_rdata::NsRdata;
-use crate::ptr_rdata::PtrRdata;
-use crate::resource_record::{FromBytes, ToBytes};
-use crate::soa_rdata::SoaRdata;
-use crate::txt_rdata::TxtRdata;
+pub mod a_rdata;
+pub mod mx_rdata;
+pub mod ns_rdata;
+pub mod ptr_rdata;
+pub mod soa_rdata;
+pub mod txt_rdata;
+
+use super::resource_record::{FromBytes, ToBytes};
+use a_rdata::ARdata;
+use mx_rdata::MxRdata;
+use ns_rdata::NsRdata;
+use ptr_rdata::PtrRdata;
+use soa_rdata::SoaRdata;
+use txt_rdata::TxtRdata;
 
 #[derive(Clone)]
 /// This enum, enumerates the differents types of rdata struct

@@ -1,3 +1,4 @@
+pub mod dns_cache;
 pub mod domain_name;
 pub mod header;
 pub mod rdata;

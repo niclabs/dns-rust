@@ -1,21 +1,27 @@
+use crate::dns_cache::DnsCache;
 use crate::resource_record::ResourceRecord;
-use std::collections::HashMap;
 use std::vec::Vec;
 
 #[derive(Clone)]
+/// Struct that represents a dns resolver
 pub struct Resolver {
+    /// Ip address where the resolver will sent the messages
     ip_address: String,
+    // Port where the resolver will be connected
     port: String,
+    // Struct that contains a default server list to ask
     sbelt: Vec<ResourceRecord>,
+    // Cache for the resolver
     cache: DnsCache,
 }
 
 impl Resolver {
+    /// Creates a new Resolver with default values
     pub fn new() -> Self {
-        let resolver = Resolver{
+        let resolver = Resolver {
             ip_address: String::from(""),
             port: String::from(""),
-            sbelt: Vec<ResourceRecord>::new(),
+            sbelt: Vec::<ResourceRecord>::new(),
             cache: DnsCache::new(),
         };
         resolver
@@ -24,38 +30,125 @@ impl Resolver {
 
 // Getters
 impl Resolver {
+    // Gets the ip address
     pub fn get_ip_address(&self) -> String {
         self.ip_address.clone()
     }
 
+    // Gets the port of the resolver
     pub fn get_port(&self) -> String {
         self.port.clone()
     }
 
+    // Gets the list of default servers to ask
     pub fn get_sbelt(&self) -> Vec<ResourceRecord> {
-        self.sbelt
+        self.sbelt.clone()
     }
 
+    // Gets the cache
     pub fn get_cache(&self) -> DnsCache {
-        self.cache
+        self.cache.clone()
     }
 }
 
 //Setters
 impl Resolver {
+    // Sets the ip address attribute with a value
     pub fn set_ip_address(&mut self, ip_address: String) {
         self.ip_address = ip_address;
     }
 
+    // Sets the port attribute with a value
     pub fn set_port(&mut self, port: String) {
         self.port = port;
     }
 
+    // Sets the sbelt attribute with a value
     pub fn set_sbelt(&mut self, sbelt: Vec<ResourceRecord>) {
         self.sbelt = sbelt;
     }
 
+    // Sets the cache attribute with a value
     pub fn set_cache(&mut self, cache: DnsCache) {
         self.cache = cache;
+    }
+}
+
+mod test {
+    use crate::dns_cache::DnsCache;
+    use crate::rdata::a_rdata::ARdata;
+    use crate::rdata::Rdata;
+    use crate::resolver::Resolver;
+    use crate::resource_record::ResourceRecord;
+    use std::vec::Vec;
+
+    #[test]
+    fn constructor_test() {
+        let mut resolver = Resolver::new();
+
+        assert_eq!(resolver.ip_address, "".to_string());
+        assert_eq!(resolver.port, "".to_string());
+        assert_eq!(resolver.sbelt.len(), 0);
+        assert_eq!(resolver.cache.len(), 0);
+    }
+
+    #[test]
+    fn set_and_get_ip_address() {
+        let mut resolver = Resolver::new();
+
+        assert_eq!(resolver.get_ip_address(), "".to_string());
+
+        resolver.set_ip_address("127.0.0.1".to_string());
+
+        assert_eq!(resolver.get_ip_address(), "127.0.0.1".to_string());
+    }
+
+    #[test]
+    fn set_and_get_port() {
+        let mut resolver = Resolver::new();
+
+        assert_eq!(resolver.get_port(), "".to_string());
+
+        resolver.set_port("25".to_string());
+
+        assert_eq!(resolver.get_port(), "25".to_string());
+    }
+
+    #[test]
+    fn set_and_get_sbelt() {
+        let mut resolver = Resolver::new();
+        let mut sbelt_test: Vec<ResourceRecord> = Vec::new();
+        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let mut a_rdata = ARdata::new();
+
+        a_rdata.set_address(ip_address);
+
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+
+        sbelt_test.push(resource_record);
+
+        resolver.set_sbelt(sbelt_test);
+
+        assert_eq!(resolver.get_sbelt().len(), 1);
+    }
+
+    #[test]
+    fn set_and_get_cache() {
+        let mut resolver = Resolver::new();
+        let mut cache_test = DnsCache::new();
+        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let mut a_rdata = ARdata::new();
+
+        a_rdata.set_address(ip_address);
+
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+
+        cache_test.add("127.0.0.0".to_string(), resource_record);
+
+        resolver.set_cache(cache_test);
+
+        assert_eq!(resolver.get_cache().len(), 1);
     }
 }

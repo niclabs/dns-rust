@@ -1,4 +1,4 @@
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 
 #[derive(Clone)]
 /// An struct that represents the rdata for a type
@@ -71,8 +71,8 @@ impl ARdata {
 }
 
 mod test {
-    use crate::rdata::a_rdata::ARdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

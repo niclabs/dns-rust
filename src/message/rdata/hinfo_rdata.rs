@@ -1,4 +1,4 @@
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 use std::string::String;
 
 #[derive(Clone)]
@@ -40,7 +40,6 @@ impl ToBytes for HinfoRdata {
 
         bytes
     }
-
 }
 
 impl FromBytes<HinfoRdata> for HinfoRdata {
@@ -50,31 +49,28 @@ impl FromBytes<HinfoRdata> for HinfoRdata {
         let mut os = String::from("");
 
         let mut string_num = 0;
-        
+
         for byte in bytes {
-            if *byte == 0{
-                if string_num == 0{
-                    string_num +=1;
+            if *byte == 0 {
+                if string_num == 0 {
+                    string_num += 1;
+                } else {
+                    break;
                 }
-                else{
-                    break; 
-                }
-            } 
-            else if string_num == 0{
-                cpu.push(*byte as char); 
-            }
-            else if string_num > 0{
+            } else if string_num == 0 {
+                cpu.push(*byte as char);
+            } else if string_num > 0 {
                 os.push(*byte as char);
             }
         }
 
         let mut hinfo_rdata = HinfoRdata::new();
         hinfo_rdata.set_cpu(cpu);
-        hinfo_rdata.set_os(os); 
+        hinfo_rdata.set_os(os);
 
         hinfo_rdata
     }
-}            
+}
 
 impl HinfoRdata {
     /// Creates a new HinfoRdata with default values.
@@ -89,7 +85,7 @@ impl HinfoRdata {
     ///
 
     pub fn new() -> Self {
-        let hinfo_rdata = HinfoRdata { 
+        let hinfo_rdata = HinfoRdata {
             cpu: String::new(),
             os: String::new(),
         };
@@ -122,8 +118,8 @@ impl HinfoRdata {
 }
 
 mod test {
-    use crate::rdata::hinfo_rdata::HinfoRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::hinfo_rdata::HinfoRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

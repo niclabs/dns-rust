@@ -1,5 +1,5 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 
 #[derive(Clone)]
 /// An struct that represents the rdata for mx type
@@ -111,8 +111,8 @@ impl MxRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::mx_rdata::MxRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::mx_rdata::MxRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

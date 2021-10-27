@@ -1,5 +1,5 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 
 #[derive(Clone)]
 /// An struct that represents the rdata for ptr type
@@ -78,8 +78,8 @@ impl PtrRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::ptr_rdata::PtrRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::ptr_rdata::PtrRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

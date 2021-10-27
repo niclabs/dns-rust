@@ -1,5 +1,5 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 
 #[derive(Clone)]
 /// An struct that represents the rdata for soa type
@@ -460,8 +460,8 @@ impl SoaRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::soa_rdata::SoaRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::soa_rdata::SoaRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

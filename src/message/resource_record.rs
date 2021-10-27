@@ -1,5 +1,5 @@
 use crate::domain_name::DomainName;
-use crate::rdata::Rdata;
+use crate::message::rdata::Rdata;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -349,9 +349,9 @@ impl ResourceRecord {
 // Tests
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::txt_rdata::TxtRdata;
-    use crate::rdata::Rdata;
-    use crate::resource_record::ResourceRecord;
+    use crate::message::rdata::txt_rdata::TxtRdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
 
     #[test]
     fn constructor_test() {

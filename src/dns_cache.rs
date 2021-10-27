@@ -1,4 +1,4 @@
-use crate::resource_record::ResourceRecord;
+use crate::message::resource_record::ResourceRecord;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -72,9 +72,9 @@ impl DnsCache {
 
 mod test {
     use crate::dns_cache::DnsCache;
-    use crate::rdata::a_rdata::ARdata;
-    use crate::rdata::Rdata;
-    use crate::resource_record::ResourceRecord;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
     use std::collections::HashMap;
 
     #[test]

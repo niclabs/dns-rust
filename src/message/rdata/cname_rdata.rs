@@ -1,5 +1,5 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 
 #[derive(Clone)]
 /// An struct that represents the rdata for cname type
@@ -34,11 +34,11 @@ impl FromBytes<CnameRdata> for CnameRdata {
 
         let (cname, _) = DomainName::from_bytes(bytes);
 
-        cname_rdata.set_cname(cname); 
+        cname_rdata.set_cname(cname);
 
         cname_rdata
     }
-}            
+}
 
 impl CnameRdata {
     /// Creates a new CnameRdata with default values.
@@ -51,7 +51,7 @@ impl CnameRdata {
     ///
 
     pub fn new() -> Self {
-        let cname_rdata = CnameRdata { 
+        let cname_rdata = CnameRdata {
             cname: DomainName::new(),
         };
         cname_rdata
@@ -76,8 +76,8 @@ impl CnameRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::cname_rdata::CnameRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::cname_rdata::CnameRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

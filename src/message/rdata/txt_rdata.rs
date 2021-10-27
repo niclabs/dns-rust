@@ -1,4 +1,4 @@
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 use std::string::String;
 
 #[derive(Clone)]
@@ -76,8 +76,8 @@ impl TxtRdata {
 }
 
 mod test {
-    use crate::rdata::txt_rdata::TxtRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::txt_rdata::TxtRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {

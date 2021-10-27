@@ -1,22 +1,21 @@
 pub mod a_rdata;
+pub mod cname_rdata;
+pub mod hinfo_rdata;
 pub mod mx_rdata;
 pub mod ns_rdata;
 pub mod ptr_rdata;
 pub mod soa_rdata;
 pub mod txt_rdata;
-pub mod cname_rdata;
-pub mod hinfo_rdata;
 
-
-use super::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 use a_rdata::ARdata;
+use cname_rdata::CnameRdata;
+use hinfo_rdata::HinfoRdata;
 use mx_rdata::MxRdata;
 use ns_rdata::NsRdata;
 use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
-use cname_rdata::CnameRdata;
-use hinfo_rdata::HinfoRdata; 
 
 #[derive(Clone)]
 /// This enum, enumerates the differents types of rdata struct
@@ -28,7 +27,7 @@ pub enum Rdata {
     SomeSoaRdata(SoaRdata),
     SomeTxtRdata(TxtRdata),
     SomeCnameRdata(CnameRdata),
-    SomeHinfoRdata(HinfoRdata), 
+    SomeHinfoRdata(HinfoRdata),
     //////// Define here more rdata types ////////
 }
 

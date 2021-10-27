@@ -50,8 +50,8 @@ pub fn main() {
 }
 
 mod test {
-    use crate::udp_client;
-    use crate::udp_server;
+    use crate::client::udp_client;
+    use crate::server::udp_server;
     use std::net::UdpSocket;
     use std::thread;
 

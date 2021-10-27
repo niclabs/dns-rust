@@ -75,10 +75,10 @@ impl Resolver {
 }
 
 mod test {
+    use crate::client::resolver::Resolver;
     use crate::dns_cache::DnsCache;
     use crate::rdata::a_rdata::ARdata;
     use crate::rdata::Rdata;
-    use crate::resolver::Resolver;
     use crate::resource_record::ResourceRecord;
     use std::vec::Vec;
 

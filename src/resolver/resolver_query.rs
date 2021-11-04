@@ -131,7 +131,7 @@ impl ResolverQuery {
 }
 
 mod test {
-    use crate::client::resolver::resolver_query::ResolverQuery;
+    use crate::resolver::resolver_query::ResolverQuery;
     use crate::dns_cache::DnsCache;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;

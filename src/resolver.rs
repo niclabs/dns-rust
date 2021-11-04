@@ -77,7 +77,7 @@ impl Resolver {
 }
 
 mod test {
-    use crate::client::resolver::Resolver;
+    use crate::resolver::Resolver;
     use crate::dns_cache::DnsCache;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;

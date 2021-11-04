@@ -30,6 +30,36 @@ impl Resolver {
     }
 }
 
+
+// Algorithm
+
+// init answer
+// if (IPv4/name is in authoritative form):
+//      answer = search IPv4/name in slist in authoritative form
+// if (config.check_cache):
+//      answer = search IPv4/name in cache
+// if (not answer):  
+//      answer = search IPv4/name in slist
+// if (answer): return to client
+// else:
+//  init empty response
+//  while not response
+//      find [best] server in slist
+//      send query of IPv4/name to server
+//      if (response contains a name error) or (response ok): 
+//          return send response to client
+//      if (better delegation to other servers): 
+            //cache delegation info. 
+            // continue
+//      if (CNAME in response and CNAME is not answer): 
+//          add CNAME to cache
+//          update SNAME to CNAME RR
+//          call Algorithm
+//      else: 
+//          delete server from slist
+//          continue
+
+
 // Getters
 impl Resolver {
     // Gets the ip address

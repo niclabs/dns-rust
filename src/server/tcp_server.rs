@@ -50,8 +50,8 @@ pub fn main(){
 
 mod tests {
     use std::net::{TcpListener};
-    use crate::tcp_client;
-    use crate::tcp_server; 
+    use crate::client::tcp_client;
+    use crate::server::tcp_server; 
     use std::thread;
 
     #[test]

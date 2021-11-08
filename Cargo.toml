@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 bytes = "1.1.0"
+rand = "0.8.4"

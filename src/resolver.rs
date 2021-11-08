@@ -28,8 +28,11 @@ impl Resolver {
         };
         resolver
     }
-}
 
+    ////////////////////////////////////////
+    // Al crear una nueva query, dejar sbelt como default de slist
+    ////////////////////////////////////////
+}
 
 // Algorithm
 
@@ -38,7 +41,7 @@ impl Resolver {
 //      answer = search IPv4/name in slist in authoritative form
 // if (config.check_cache):
 //      answer = search IPv4/name in cache
-// if (not answer):  
+// if (not answer):
 //      answer = search IPv4/name in slist
 // if (answer): return to client
 // else:
@@ -46,19 +49,18 @@ impl Resolver {
 //  while not response
 //      find [best] server in slist
 //      send query of IPv4/name to server
-//      if (response contains a name error) or (response ok): 
+//      if (response contains a name error) or (response ok):
 //          return send response to client
-//      if (better delegation to other servers): 
-            //cache delegation info. 
-            // continue
-//      if (CNAME in response and CNAME is not answer): 
+//      if (better delegation to other servers):
+//cache delegation info.
+// continue
+//      if (CNAME in response and CNAME is not answer):
 //          add CNAME to cache
 //          update SNAME to CNAME RR
 //          call Algorithm
-//      else: 
+//      else:
 //          delete server from slist
 //          continue
-
 
 // Getters
 impl Resolver {
@@ -107,11 +109,11 @@ impl Resolver {
 }
 
 mod test {
-    use crate::resolver::Resolver;
     use crate::dns_cache::DnsCache;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::resolver::Resolver;
     use std::vec::Vec;
 
     #[test]

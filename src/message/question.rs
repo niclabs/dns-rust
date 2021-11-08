@@ -1,6 +1,6 @@
 use crate::domain_name::DomainName;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 /// An struct that represents the question section from a dns message
 ///
 ///                                1  1  1  1  1  1
@@ -15,12 +15,12 @@ use crate::domain_name::DomainName;
 ///
 
 // DNS question format of a query.
-pub struct Question{
-	qname: DomainName,
+pub struct Question {
+    qname: DomainName,
     // type of query
-	qtype: u16,
+    qtype: u16,
     // class of query
-	qclass: u16,
+    qclass: u16,
 }
 
 // Methods
@@ -44,7 +44,7 @@ impl Question {
         };
         question
     }
-    
+
     /// Given an array of bytes, creates a new Question.
     fn from_bytes(bytes: &[u8]) -> Question {
         let (qname, bytes_without_name) = DomainName::from_bytes(bytes);
@@ -64,7 +64,7 @@ impl Question {
     fn get_first_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
         let first_byte = (qtype >> 8) as u8;
-    
+
         first_byte
     }
 
@@ -110,11 +110,10 @@ impl Question {
     }
 }
 
-
 // Setters
 impl Question {
     pub fn set_qname(&mut self, qname: DomainName) {
-        self.qname = qname; 
+        self.qname = qname;
     }
 
     pub fn set_qtype(&mut self, qtype: u16) {
@@ -143,8 +142,8 @@ impl Question {
 
 // Tests
 mod test {
+    use super::Question;
     use crate::domain_name::DomainName;
-    use super::Question; 
 
     #[test]
     fn constructor_test() {
@@ -189,7 +188,7 @@ mod test {
 
         question.set_qclass(1 as u16);
         let qclass = question.get_qclass();
-        
+
         assert_eq!(qclass, 1 as u16);
     }
 
@@ -223,5 +222,3 @@ mod test {
         assert_eq!(question.get_qclass(), 2);
     }
 }
-
-

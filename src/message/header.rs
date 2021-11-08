@@ -1,4 +1,4 @@
-#[derive(Default)]
+#[derive(Default, Clone)]
 /// An struct that represents a header secction from a dns message
 ///
 ///                                1  1  1  1  1  1

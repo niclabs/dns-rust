@@ -1,6 +1,8 @@
 use crate::dns_cache::DnsCache;
 use crate::message::resource_record::ResourceRecord;
+use crate::message::DnsMessage;
 
+#[derive(Clone)]
 /// This struct represents a resolver query
 pub struct ResolverQuery {
     sname: String,
@@ -40,18 +42,29 @@ impl ResolverQuery {
         query
     }
 
-    /*
     // Creates a new query dns message
     pub fn create_query_message(&self) -> DnsMessage {
         let sname = self.get_sname();
         let stype = self.get_stype();
         let sclass = self.get_sclass();
+        let op_code = self.get_op_code();
+        let rd = self.get_rd();
 
-        let mut query_message = DnsMessage::new_query_message(sname, stype, sclass, op_code, rd);
+        let query_message = DnsMessage::new_query_message(sname, stype, sclass, op_code, rd);
 
         query_message
     }
-    */
+
+    pub fn initialize_slist(&mut self) {
+        // Buscar NS de los ancentros del sname en el caché y agregarlos al slist
+        // Agregar las ips conocidas de estos ns a la slist
+        // Si no se tienen ips, se deben encontrar usando una query. A menos que no exista ninguna ip, en cuyo caso se debe reiniciar la slist, pero ahora con el ancestro siguiente
+        // Finalmente agregar a la slist, información adicional para poder ordenar lo que esta en la slist, como por ej tiempo de respuesta, y porcentaje que ha respondido.
+        // Si no hay info, entre 5 y 10 seg es un tiempo de peor caso
+        // Preguntar a javi y kelly:
+        // - Talvez se deba modificar el cache, y tambien agregar un hash dentro para asi diferenciar entre los tipos que existen
+        // - Cuantos registros guardaremos en el cache? Tambien se deberia agregar un campo de cual fue la ultima vez que se usó para asi saber cuales eliminar del cache
+    }
 }
 
 // Getters
@@ -131,11 +144,11 @@ impl ResolverQuery {
 }
 
 mod test {
-    use crate::resolver::resolver_query::ResolverQuery;
     use crate::dns_cache::DnsCache;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::resolver::resolver_query::ResolverQuery;
 
     #[test]
     fn constructor_test() {
@@ -243,5 +256,25 @@ mod test {
         resolver_query.set_cache(cache);
 
         assert_eq!(resolver_query.get_cache().len(), 1);
+    }
+
+    #[test]
+    fn create_query_message_test() {
+        let mut resolver_query = ResolverQuery::new();
+
+        resolver_query.set_sname("test.com".to_string());
+        resolver_query.set_rd(true);
+        resolver_query.set_stype(1);
+        resolver_query.set_sclass(1);
+
+        let dns_message = resolver_query.create_query_message();
+
+        assert_eq!(dns_message.get_header().get_rd(), true);
+        assert_eq!(dns_message.get_question().get_qtype(), 1);
+        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(
+            dns_message.get_question().get_qname().get_name(),
+            "test.com".to_string()
+        );
     }
 }

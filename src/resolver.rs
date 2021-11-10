@@ -52,8 +52,8 @@ impl Resolver {
 //      if (response contains a name error) or (response ok):
 //          return send response to client
 //      if (better delegation to other servers):
-//cache delegation info.
-// continue
+//          cache delegation info.
+//          continue
 //      if (CNAME in response and CNAME is not answer):
 //          add CNAME to cache
 //          update SNAME to CNAME RR
@@ -177,7 +177,8 @@ mod test {
         a_rdata.set_address(ip_address);
 
         let rdata = Rdata::SomeARdata(a_rdata);
-        let resource_record = ResourceRecord::new(rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(1);
 
         cache_test.add("127.0.0.0".to_string(), resource_record);
 

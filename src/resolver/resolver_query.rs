@@ -10,6 +10,12 @@ pub struct ResolverQuery {
     sclass: u16,
     op_code: u8,
     rd: bool,
+    // Al parecer debemos agregarle a slist un zone name equivalent: is a match count of the number of
+    // labels from the root down which SNAME has in common with
+    // the zone being queried; this is used as a measure of how
+    // "close" the resolver is to SNAME.
+    // Al parecer no es necesario guardar el RR completo, sino que el nombre del dominio y las ips (y que este ordenado)
+    // Tal vez sea bueno tambien guardar el tiempo de respuesta
     slist: Vec<ResourceRecord>,
     cache: DnsCache,
 }
@@ -58,7 +64,7 @@ impl ResolverQuery {
     pub fn initialize_slist(&mut self) {
         // Buscar NS de los ancentros del sname en el caché y agregarlos al slist
         // Agregar las ips conocidas de estos ns a la slist
-        // Si no se tienen ips, se deben encontrar usando una query. A menos que no exista ninguna ip, en cuyo caso se debe reiniciar la slist, pero ahora con el ancestro siguiente
+        // Si no se tienen ips, se deben encontrar usando una query (mientras que con las ips disponibles voy preguntando por la respuesta para el usuario). A menos que no exista ninguna ip, en cuyo caso se debe reiniciar la slist, pero ahora con el ancestro siguiente
         // Finalmente agregar a la slist, información adicional para poder ordenar lo que esta en la slist, como por ej tiempo de respuesta, y porcentaje que ha respondido.
         // Si no hay info, entre 5 y 10 seg es un tiempo de peor caso
         // Preguntar a javi y kelly:
@@ -250,7 +256,8 @@ mod test {
         a_rdata.set_address(ip_address);
 
         let rdata = Rdata::SomeARdata(a_rdata);
-        let resource_record = ResourceRecord::new(rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(1);
 
         cache.add("127.0.0.0".to_string(), resource_record);
         resolver_query.set_cache(cache);

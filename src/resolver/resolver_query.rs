@@ -1,6 +1,6 @@
 use crate::dns_cache::DnsCache;
-use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
+use crate::resolver::slist::Slist;
 
 #[derive(Clone)]
 /// This struct represents a resolver query
@@ -10,13 +10,7 @@ pub struct ResolverQuery {
     sclass: u16,
     op_code: u8,
     rd: bool,
-    // Al parecer debemos agregarle a slist un zone name equivalent: is a match count of the number of
-    // labels from the root down which SNAME has in common with
-    // the zone being queried; this is used as a measure of how
-    // "close" the resolver is to SNAME.
-    // Al parecer no es necesario guardar el RR completo, sino que el nombre del dominio y las ips (y que este ordenado)
-    // Tal vez sea bueno tambien guardar el tiempo de respuesta
-    slist: Vec<ResourceRecord>,
+    slist: Slist,
     cache: DnsCache,
 }
 
@@ -41,7 +35,7 @@ impl ResolverQuery {
             sclass: 0 as u16,
             op_code: 0 as u8,
             rd: false,
-            slist: Vec::<ResourceRecord>::new(),
+            slist: Slist::new(),
             cache: DnsCache::new(),
         };
 
@@ -101,7 +95,7 @@ impl ResolverQuery {
     }
 
     /// Gets the slist
-    pub fn get_slist(&self) -> Vec<ResourceRecord> {
+    pub fn get_slist(&self) -> Slist {
         self.slist.clone()
     }
 
@@ -139,7 +133,7 @@ impl ResolverQuery {
     }
 
     /// Sets the slist attribute with a new value
-    pub fn set_slist(&mut self, slist: Vec<ResourceRecord>) {
+    pub fn set_slist(&mut self, slist: Slist) {
         self.slist = slist;
     }
 
@@ -155,6 +149,7 @@ mod test {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::resolver::resolver_query::ResolverQuery;
+    use crate::resolver::slist::Slist;
 
     #[test]
     fn constructor_test() {
@@ -163,7 +158,7 @@ mod test {
         assert_eq!(resolver_query.sname, "".to_string());
         assert_eq!(resolver_query.stype, 0);
         assert_eq!(resolver_query.sclass, 0);
-        assert_eq!(resolver_query.slist.len(), 0);
+        assert_eq!(resolver_query.slist.get_ns_list().len(), 0);
         assert_eq!(resolver_query.cache.clone().len(), 0);
     }
 
@@ -225,22 +220,14 @@ mod test {
     #[test]
     fn set_and_get_slist() {
         let mut resolver_query = ResolverQuery::new();
-        let mut slist: Vec<ResourceRecord> = Vec::new();
+        let mut slist = Slist::new();
 
-        assert_eq!(resolver_query.slist.len(), 0);
+        assert_eq!(resolver_query.slist.get_ns_list().len(), 0);
 
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
-        let mut a_rdata = ARdata::new();
-
-        a_rdata.set_address(ip_address);
-
-        let rdata = Rdata::SomeARdata(a_rdata);
-        let resource_record = ResourceRecord::new(rdata);
-
-        slist.push(resource_record);
+        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5.0);
         resolver_query.set_slist(slist);
 
-        assert_eq!(resolver_query.get_slist().len(), 1);
+        assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
     }
 
     #[test]

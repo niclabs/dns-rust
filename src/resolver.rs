@@ -1,8 +1,8 @@
 use crate::dns_cache::DnsCache;
-use crate::message::resource_record::ResourceRecord;
-use std::vec::Vec;
+use crate::resolver::slist::Slist;
 
 pub mod resolver_query;
+pub mod slist;
 
 #[derive(Clone)]
 /// Struct that represents a dns resolver
@@ -12,7 +12,7 @@ pub struct Resolver {
     // Port where the resolver will be connected
     port: String,
     // Struct that contains a default server list to ask
-    sbelt: Vec<ResourceRecord>,
+    sbelt: Slist,
     // Cache for the resolver
     cache: DnsCache,
 }
@@ -23,7 +23,7 @@ impl Resolver {
         let resolver = Resolver {
             ip_address: String::from(""),
             port: String::from(""),
-            sbelt: Vec::<ResourceRecord>::new(),
+            sbelt: Slist::new(),
             cache: DnsCache::new(),
         };
         resolver
@@ -75,7 +75,7 @@ impl Resolver {
     }
 
     // Gets the list of default servers to ask
-    pub fn get_sbelt(&self) -> Vec<ResourceRecord> {
+    pub fn get_sbelt(&self) -> Slist {
         self.sbelt.clone()
     }
 
@@ -98,7 +98,7 @@ impl Resolver {
     }
 
     // Sets the sbelt attribute with a value
-    pub fn set_sbelt(&mut self, sbelt: Vec<ResourceRecord>) {
+    pub fn set_sbelt(&mut self, sbelt: Slist) {
         self.sbelt = sbelt;
     }
 
@@ -113,8 +113,8 @@ mod test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::resolver::slist::Slist;
     use crate::resolver::Resolver;
-    use std::vec::Vec;
 
     #[test]
     fn constructor_test() {
@@ -122,7 +122,7 @@ mod test {
 
         assert_eq!(resolver.ip_address, "".to_string());
         assert_eq!(resolver.port, "".to_string());
-        assert_eq!(resolver.sbelt.len(), 0);
+        assert_eq!(resolver.sbelt.get_ns_list().len(), 0);
         assert_eq!(resolver.cache.len(), 0);
     }
 
@@ -151,20 +151,13 @@ mod test {
     #[test]
     fn set_and_get_sbelt() {
         let mut resolver = Resolver::new();
-        let mut sbelt_test: Vec<ResourceRecord> = Vec::new();
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
-        let mut a_rdata = ARdata::new();
+        let mut sbelt_test = Slist::new();
 
-        a_rdata.set_address(ip_address);
-
-        let rdata = Rdata::SomeARdata(a_rdata);
-        let resource_record = ResourceRecord::new(rdata);
-
-        sbelt_test.push(resource_record);
+        sbelt_test.insert("test.com".to_string(), "127.0.0.1".to_string(), 5.0);
 
         resolver.set_sbelt(sbelt_test);
 
-        assert_eq!(resolver.get_sbelt().len(), 1);
+        assert_eq!(resolver.get_sbelt().get_ns_list().len(), 1);
     }
 
     #[test]

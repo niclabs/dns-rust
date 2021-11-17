@@ -46,15 +46,17 @@ impl DnsCache {
             _ => unreachable!(),
         };
 
+        // Obtengo el DomainCache
         if let Some(x) = cache.get_mut(&domain_name) {
             let mut new_type_in_cache = x.clone();
 
-            new_type_in_cache
-                .get_resource_records()
-                .insert(rr_type, resource_record);
-            new_type_in_cache.set_last_use(Utc::now());
+            let mut resource_records = new_type_in_cache.get_resource_records();
 
-            *x = new_type_in_cache;
+            resource_records.insert(rr_type, resource_record);
+            new_type_in_cache.set_last_use(Utc::now());
+            new_type_in_cache.set_resource_records(resource_records);
+
+            cache.insert(domain_name, new_type_in_cache);
         } else {
             if cache.len() >= self.max_size as usize {
                 let oldest_cache_used = self.get_oldest_domain_name_used();
@@ -85,12 +87,19 @@ impl DnsCache {
     }
 
     /// Given a domain_name, gets an element from cache
-    pub fn get(&mut self, domain_name: String, rr_type: String) -> ResourceRecord {
+    pub fn get(&mut self, domain_name: String, rr_type: String) -> Vec<ResourceRecord> {
         let mut cache = self.get_cache();
+
+        let domain_name_in_cache_empty = &mut DomainCache::new();
+
         let domain_name_in_cache = match cache.get_mut(&domain_name) {
             Some(val) => val,
-            None => panic!("DomainName not in cache"),
+            None => domain_name_in_cache_empty,
         };
+
+        if domain_name_in_cache.get_resource_records().len() == 0 {
+            return vec![];
+        }
 
         let mut domain_cache = domain_name_in_cache.clone();
 
@@ -100,8 +109,8 @@ impl DnsCache {
         let resource_records = domain_name_in_cache.get_resource_records();
 
         match resource_records.get(&rr_type) {
-            Some(val) => val.clone(),
-            None => panic!("RR type not found in cache"),
+            Some(val) => vec![val.clone()],
+            None => vec![],
         }
     }
 
@@ -152,7 +161,9 @@ impl DnsCache {
 mod test {
     use crate::dns_cache::DnsCache;
     use crate::domain_cache::DomainCache;
+    use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use std::collections::HashMap;
@@ -195,6 +206,26 @@ mod test {
     #[test]
     fn add_get_and_remove_test() {
         let mut cache = DnsCache::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name("test2.com".to_string());
+
+        let mut ns_rdata = NsRdata::new();
+        ns_rdata.set_nsdname(domain_name);
+
+        let r_data = Rdata::SomeNsRdata(ns_rdata);
+        let mut ns_resource_record = ResourceRecord::new(r_data);
+        ns_resource_record.set_type_code(2);
+
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address([127, 0, 0, 1]);
+
+        let r_data = Rdata::SomeARdata(a_rdata);
+
+        let mut a_resource_record = ResourceRecord::new(r_data);
+        a_resource_record.set_type_code(1);
+
+        /*
         let ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut a_rdata = ARdata::new();
 
@@ -203,16 +234,22 @@ mod test {
 
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(1);
+        */
 
-        cache.add("127.0.0.0".to_string(), resource_record);
+        cache.add("127.0.0.0".to_string(), ns_resource_record);
 
         assert_eq!(cache.len(), 1);
 
+        cache.add("127.0.0.0".to_string(), a_resource_record);
+
         assert_eq!(
-            cache
-                .get("127.0.0.0".to_string(), "A".to_string())
-                .get_type_code(),
+            cache.get("127.0.0.0".to_string(), "A".to_string())[0].get_type_code(),
             1
+        );
+
+        assert_eq!(
+            cache.get("127.0.0.0".to_string(), "NS".to_string())[0].get_type_code(),
+            2
         );
 
         cache.remove("127.0.0.0".to_string());
@@ -244,9 +281,7 @@ mod test {
         assert_eq!(cache.len(), 1);
 
         assert_eq!(
-            cache
-                .get("127.0.0.1".to_string(), "A".to_string())
-                .get_type_code(),
+            cache.get("127.0.0.1".to_string(), "A".to_string())[0].get_type_code(),
             1
         )
     }

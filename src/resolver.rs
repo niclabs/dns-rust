@@ -1,5 +1,8 @@
 use crate::dns_cache::DnsCache;
+use crate::message::resource_record::ResourceRecord;
 use crate::resolver::slist::Slist;
+use std::collections::HashMap;
+use std::vec::Vec;
 
 pub mod resolver_query;
 pub mod slist;
@@ -7,7 +10,7 @@ pub mod slist;
 #[derive(Clone)]
 /// Struct that represents a dns resolver
 pub struct Resolver {
-    /// Ip address where the resolver will sent the messages
+    /// Ip address where the resolver will send the messages
     ip_address: String,
     // Port where the resolver will be connected
     port: String,
@@ -15,6 +18,8 @@ pub struct Resolver {
     sbelt: Slist,
     // Cache for the resolver
     cache: DnsCache,
+    // Name server data
+    ns_data: HashMap<String, HashMap<String, Vec<ResourceRecord>>>,
 }
 
 impl Resolver {
@@ -25,6 +30,7 @@ impl Resolver {
             port: String::from(""),
             sbelt: Slist::new(),
             cache: DnsCache::new(),
+            ns_data: HashMap::<String, HashMap<String, Vec<ResourceRecord>>>::new(),
         };
         resolver
     }
@@ -41,8 +47,6 @@ impl Resolver {
 //      answer = search IPv4/name in slist in authoritative form
 // if (config.check_cache):
 //      answer = search IPv4/name in cache
-// if (not answer):
-//      answer = search IPv4/name in slist
 // if (answer): return to client
 // else:
 //  init empty response
@@ -83,6 +87,11 @@ impl Resolver {
     pub fn get_cache(&self) -> DnsCache {
         self.cache.clone()
     }
+
+    // Gets the ns_data
+    pub fn get_ns_data(&self) -> HashMap<String, HashMap<String, Vec<ResourceRecord>>> {
+        self.ns_data.clone()
+    }
 }
 
 //Setters
@@ -106,15 +115,25 @@ impl Resolver {
     pub fn set_cache(&mut self, cache: DnsCache) {
         self.cache = cache;
     }
+
+    // Sets the ns_data attribute with a new value
+    pub fn set_ns_data(&mut self, ns_data: HashMap<String, HashMap<String, Vec<ResourceRecord>>>) {
+        self.ns_data = ns_data;
+    }
 }
 
 mod test {
     use crate::dns_cache::DnsCache;
+    use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use crate::resolver::Resolver;
+    use std::collections::HashMap;
+    use std::vec::Vec;
 
     #[test]
     fn constructor_test() {
@@ -178,5 +197,38 @@ mod test {
         resolver.set_cache(cache_test);
 
         assert_eq!(resolver.get_cache().len(), 1);
+    }
+
+    #[test]
+    fn set_and_get_ns_data_test() {
+        let mut domain_name = DomainName::new();
+        domain_name.set_name("test2.com".to_string());
+
+        let mut ns_rdata = NsRdata::new();
+        ns_rdata.set_nsdname(domain_name);
+
+        let r_data = Rdata::SomeNsRdata(ns_rdata);
+        let mut ns_resource_record = ResourceRecord::new(r_data);
+        ns_resource_record.set_type_code(2);
+
+        let mut resource_record_vec = Vec::<ResourceRecord>::new();
+
+        resource_record_vec.push(ns_resource_record);
+
+        let mut host_names_hash = HashMap::<String, Vec<ResourceRecord>>::new();
+
+        host_names_hash.insert("test.com".to_string(), resource_record_vec);
+
+        let mut rr_type_hash = HashMap::<String, HashMap<String, Vec<ResourceRecord>>>::new();
+
+        rr_type_hash.insert("NS".to_string(), host_names_hash);
+
+        let mut resolver_query_test = ResolverQuery::new();
+
+        assert_eq!(resolver_query_test.get_ns_data().len(), 0);
+
+        resolver_query_test.set_ns_data(rr_type_hash);
+
+        assert_eq!(resolver_query_test.get_ns_data().len(), 1);
     }
 }

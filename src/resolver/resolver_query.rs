@@ -109,12 +109,15 @@ impl ResolverQuery {
 
                 let ns_parent_host_name_string = rr_rdata.get_nsdname().get_name();
 
+                new_slist.set_zone_name_equivalent(labels.len() as i32 - 1);
+
                 // Gets list of ip addresses
                 let ns_ip_address = cache.get(ns_parent_host_name_string.clone(), "A".to_string());
 
                 println!("Ip Len: {}", ns_ip_address.clone().len());
 
                 if ns_ip_address.len() == 0 {
+                    new_slist.insert(ns_parent_host_name_string, "".to_string(), 5.0);
                     continue;
                 }
 
@@ -133,12 +136,12 @@ impl ResolverQuery {
 
                 ip_address.pop();
 
-                new_slist.set_zone_name_equivalent(labels.len() as i32 - 1);
                 new_slist.insert(ns_parent_host_name_string, ip_address.to_string(), 5.0);
                 ip_found = ip_found + 1;
             }
 
             if ip_found == 0 {
+                new_slist = Slist::new();
                 continue;
             }
 
@@ -198,6 +201,10 @@ impl ResolverQuery {
         } else {
             self.initialize_slist(self.get_sbelt());
             let slist = self.get_slist();
+
+            slist.sort();
+
+            let 
 
             loop {}
         }

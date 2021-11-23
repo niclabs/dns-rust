@@ -1,13 +1,15 @@
-use crate::domain_cache::DomainCache;
 use crate::message::resource_record::ResourceRecord;
+use crate::rr_cache::RRCache;
 use chrono::prelude::*;
 use std::collections::HashMap;
 
 #[derive(Clone)]
 /// Struct that represents a cache for dns
 pub struct DnsCache {
-    cache: HashMap<String, DomainCache>,
+    // first hash by type, then by hostname
+    cache: HashMap<String, HashMap<String, Vec<RRCache>>>,
     max_size: u32,
+    size: u32,
 }
 
 impl DnsCache {
@@ -22,8 +24,9 @@ impl DnsCache {
     ///
     pub fn new() -> Self {
         let cache = DnsCache {
-            cache: HashMap::<String, DomainCache>::new(),
+            cache: HashMap::<String, HashMap<String, Vec<RRCache>>>::new(),
             max_size: 0,
+            size: 0,
         };
 
         cache
@@ -46,94 +49,112 @@ impl DnsCache {
             _ => unreachable!(),
         };
 
-        // Obtengo el DomainCache
-        if let Some(x) = cache.get_mut(&domain_name) {
-            let mut new_type_in_cache = x.clone();
+        // Vemos primero el tamaño del cache
+        if self.get_size() >= self.max_size {
+            self.remove_oldest_used();
+        }
 
-            let mut resource_records = new_type_in_cache.get_resource_records();
+        let mut rr_cache = RRCache::new(resource_record);
+        rr_cache.set_response_time(5);
 
-            resource_records.insert(rr_type, resource_record);
-            new_type_in_cache.set_last_use(Utc::now());
-            new_type_in_cache.set_resource_records(resource_records);
+        if let Some(x) = cache.get_mut(&rr_type) {
+            let mut type_hash = x.clone();
 
-            cache.insert(domain_name, new_type_in_cache);
-        } else {
-            if cache.len() >= self.max_size as usize {
-                let oldest_cache_used = self.get_oldest_domain_name_used();
-                cache.remove(&oldest_cache_used);
+            if let Some(y) = type_hash.get(&domain_name) {
+                let mut host_rrs_vec = y.clone();
 
-                self.set_cache(cache);
+                host_rrs_vec.push(rr_cache);
+                hosts_hash.insert(domain_name, host_rr_vec);
+            } else {
+                let mut rr_vec = Vec::<ResourceRecord>::new();
+                rr_vec.push(rr_cache);
+
+                type_hash.insert(domain_name, rr_vec);
             }
 
-            let mut new_domain_cache = DomainCache::new();
-            let mut resource_records = new_domain_cache.get_resource_records();
+            cache.insert(rr_type, type_hash);
+        } else {
+            let mut new_hosts_hash = HashMap::<String, Vec<RRCache>>::new();
+            let mut rr_vec = Vec::<ResourceRecord>::new();
+            rr_vec.push(rr_cache);
 
-            resource_records.insert(rr_type, resource_record);
-            new_domain_cache.set_resource_records(resource_records);
-            new_domain_cache.set_last_use(Utc::now());
+            new_hosts_hash.insert(domain_name, rr_vec);
 
-            cache = self.get_cache();
-            cache.insert(domain_name, new_domain_cache);
+            cache.insert(rr_type, new_hosts_hash);
         }
 
         self.set_cache(cache);
+        self.set_size(self.get_size() + 1);
     }
 
     /// Removes an element from cache
-    pub fn remove(&mut self, domain_name: String) {
+    pub fn remove(&mut self, domain_name: String, rr_type: String) {
         let mut cache = self.get_cache();
-        cache.remove(&domain_name);
-        self.set_cache(cache);
+
+        if let Some(x) = cache.get(&rr_type) { 
+            if let Some(y) = x.remove(&domain_name) {
+                cache.insert(rr_type, x);
+                self.set_cache(cache);
+                self.set_size(self.get_size() - 1);
+            }
+        }
     }
 
     /// Given a domain_name, gets an element from cache
-    pub fn get(&mut self, domain_name: String, rr_type: String) -> Vec<ResourceRecord> {
+    pub fn get(&mut self, domain_name: String, rr_type: String) -> Vec<RRCache> {
         let mut cache = self.get_cache();
 
-        let domain_name_in_cache_empty = &mut DomainCache::new();
+        if let Some(x) = cache.get(&rr_type) {
+            if let Some(y) == x.get(&domain_name) {
+                let mut rr_cache_vec = Vec::<RRCache>::new();
+                
+                for rr_cache in y {
+                    rr_cache.set_last_use(Utc::now());
+                    rr_cache_vec.push(rr_cache);
+                }
 
-        let domain_name_in_cache = match cache.get_mut(&domain_name) {
-            Some(val) => val,
-            None => domain_name_in_cache_empty,
-        };
-
-        if domain_name_in_cache.get_resource_records().len() == 0 {
-            return vec![];
-        }
-
-        let mut domain_cache = domain_name_in_cache.clone();
-
-        domain_cache.set_last_use(Utc::now());
-
-        *domain_name_in_cache = domain_cache;
-        let resource_records = domain_name_in_cache.get_resource_records();
-
-        match resource_records.get(&rr_type) {
-            Some(val) => vec![val.clone()],
-            None => vec![],
-        }
-    }
-
-    /// Gets the cache length
-    pub fn len(&mut self) -> usize {
-        self.cache.len()
-    }
-
-    /// Gets the name of the domain that was the oldest used
-    pub fn get_oldest_domain_name_used(&self) -> String {
-        let cache = self.get_cache();
-
-        let mut oldest_used = "".to_string();
-        let mut used_in = Utc::now();
-
-        for (key, value) in cache {
-            if value.get_last_use() < used_in {
-                oldest_used = key;
-                used_in = value.get_last_use();
+                x.insert(&domain_name, rr_cache_vec.clone());
+                
+                return rr_cache_vec
             }
         }
 
-        oldest_used
+        return Vec::<RRCache>::new();
+    }
+
+    /// Removes the resource records from a domain name and type which were the oldest used
+    pub fn remove_oldest_used(&self) {
+        let cache = self.get_cache();
+        let mut used_in = Utc::now();
+
+        let mut oldest_used_domain_name = "".to_string();
+        let mut oldest_used_type = "".to_string();
+
+        for (key, value) in cache {
+            for (host_key, host_value) in value {
+                let rr_last_use = host_value[0].get_last_use();
+
+                if rr_last_use <= used_in {
+                    used_in = rr_last_use;
+                    oldest_used_domain_name = host_key;
+                    oldest_used_type = key;
+                }
+            }
+        }
+
+        self.remove(oldest_used_domain_name, oldest_used_type);
+    }
+
+    /// Gets the response time from a domain name and type resource record
+    pub fn get_response_time(&self, domain_name: String, rr_type: String) -> u32 {
+        let rr_cache_vec = self.get(domain_name, rr_type);
+
+        if rr_cache_vec.len() > 0 {
+            return rr_cache_vec[0].get_response_time();
+        }
+
+        // Default response time in RFC 1034/1035
+        return 5
     }
 }
 
@@ -142,6 +163,11 @@ impl DnsCache {
     /// Gets the cache from the struct
     pub fn get_cache(&self) -> HashMap<String, DomainCache> {
         self.cache.clone()
+    }
+
+    /// Gets the size of the cache
+    pub fn get_size(&self) -> u32 {
+        self.size
     }
 }
 
@@ -155,6 +181,11 @@ impl DnsCache {
     /// Sets the max size of the cache
     pub fn set_max_size(&mut self, max_size: u32) {
         self.max_size = max_size
+    }
+
+    /// Sets the size of the cache
+    pub fn set_size(&mut self, size: u32) {
+        self.size = size
     }
 }
 
@@ -173,34 +204,6 @@ mod test {
         let cache = DnsCache::new();
 
         assert_eq!(cache.cache.len(), 0);
-    }
-
-    #[test]
-    fn set_and_get_cache_test() {
-        let mut cache = DnsCache::new();
-
-        assert_eq!(cache.get_cache().len(), 0);
-
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address(ip_address);
-
-        let rdata = Rdata::SomeARdata(a_rdata);
-
-        let resource_record = ResourceRecord::new(rdata);
-
-        let mut test_cache = HashMap::new();
-        let mut domain_name_in_cache = DomainCache::new();
-
-        let mut resource_records = domain_name_in_cache.get_resource_records();
-        resource_records.insert("A".to_string(), resource_record);
-        domain_name_in_cache.set_resource_records(resource_records);
-
-        test_cache.insert("test".to_string(), domain_name_in_cache);
-
-        cache.set_cache(test_cache);
-
-        assert_eq!(cache.get_cache().len(), 1);
     }
 
     #[test]
@@ -225,34 +228,27 @@ mod test {
         let mut a_resource_record = ResourceRecord::new(r_data);
         a_resource_record.set_type_code(1);
 
-        /*
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
-        let mut a_rdata = ARdata::new();
+        cache.add("test.com".to_string(), ns_resource_record);
 
-        a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        assert_eq!(cache.get_size(), 1);
 
-        let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
-        */
-
-        cache.add("127.0.0.0".to_string(), ns_resource_record);
-
-        assert_eq!(cache.len(), 1);
-
-        cache.add("127.0.0.0".to_string(), a_resource_record);
+        cache.add("test.com".to_string(), a_resource_record);
 
         assert_eq!(
-            cache.get("127.0.0.0".to_string(), "A".to_string())[0].get_type_code(),
+            cache.get("test.com".to_string(), "A".to_string())[0].get_type_code(),
             1
         );
 
         assert_eq!(
-            cache.get("127.0.0.0".to_string(), "NS".to_string())[0].get_type_code(),
+            cache.get("test.com".to_string(), "NS".to_string())[0].get_type_code(),
             2
         );
 
-        cache.remove("127.0.0.0".to_string());
+        cache.remove("test.com".to_string(), "NS".to_string());
+
+        assert_eq!(cache.len(), 1);
+
+        cache.remove("test.com".to_string(), "A".to_string());
 
         assert_eq!(cache.len(), 0);
     }
@@ -272,16 +268,16 @@ mod test {
 
         let second_resource_record = resource_record.clone();
 
-        cache.add("127.0.0.0".to_string(), resource_record);
+        cache.add("test.com".to_string(), resource_record);
 
         assert_eq!(cache.len(), 1);
 
-        cache.add("127.0.0.1".to_string(), second_resource_record);
+        cache.add("test.com".to_string(), second_resource_record);
 
         assert_eq!(cache.len(), 1);
 
         assert_eq!(
-            cache.get("127.0.0.1".to_string(), "A".to_string())[0].get_type_code(),
+            cache.get("test.com".to_string(), "A".to_string())[0].get_type_code(),
             1
         )
     }

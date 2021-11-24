@@ -75,6 +75,78 @@ impl DnsMessage {
 
         dns_message
     }
+
+    // Creates a DnsMessage from an array of bytes
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        let header = Header::from_bytes(&bytes[0..12]);
+        let (question, mut no_question_bytes) = Question::from_bytes(&bytes[12..]);
+
+        let mut answer = Vec::<ResourceRecord>::new();
+        let mut authority = Vec::<ResourceRecord>::new();
+        let mut additional = Vec::<ResourceRecord>::new();
+
+        let answer_rr_size = header.get_ancount();
+        let authority_rr_size = header.get_nscount();
+        let additional_rr_size = header.get_arcount();
+
+        for _i in 0..answer_rr_size {
+            let (resource_record, other_rr_bytes) = ResourceRecord::from_bytes(no_question_bytes);
+            answer.push(resource_record);
+            no_question_bytes = other_rr_bytes;
+        }
+
+        for _i in 0..authority_rr_size {
+            let (resource_record, other_rr_bytes) = ResourceRecord::from_bytes(no_question_bytes);
+            authority.push(resource_record);
+            no_question_bytes = other_rr_bytes;
+        }
+
+        for _i in 0..additional_rr_size {
+            let (resource_record, other_rr_bytes) = ResourceRecord::from_bytes(no_question_bytes);
+            additional.push(resource_record);
+            no_question_bytes = other_rr_bytes;
+        }
+
+        let dns_message = DnsMessage {
+            header: header,
+            question: question,
+            answer: answer,
+            authority: authority,
+            additional: additional,
+        };
+
+        dns_message
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut header_bytes = self.get_header().to_bytes().to_vec();
+        let mut question_bytes = self.get_question().to_bytes();
+        let mut answer_bytes: Vec<u8> = Vec::new();
+        let mut authority_bytes: Vec<u8> = Vec::new();
+        let mut additional_bytes: Vec<u8> = Vec::new();
+
+        for answer in self.get_answer() {
+            answer_bytes.append(&mut answer.to_bytes());
+        }
+
+        for authority in self.get_authority() {
+            authority_bytes.append(&mut authority.to_bytes());
+        }
+
+        for additional in self.get_additional() {
+            additional_bytes.append(&mut additional.to_bytes());
+        }
+
+        let mut dns_msg_bytes = Vec::<u8>::new();
+
+        dns_msg_bytes.append(&mut header_bytes);
+        dns_msg_bytes.append(&mut question_bytes);
+        dns_msg_bytes.append(&mut answer_bytes);
+        dns_msg_bytes.append(&mut authority_bytes);
+        dns_msg_bytes.append(&mut additional_bytes);
+
+        dns_msg_bytes
+    }
 }
 
 // Getters
@@ -134,9 +206,11 @@ impl DnsMessage {
 }
 
 mod test {
+    use crate::domain_name::DomainName;
     use crate::message::header::Header;
     use crate::message::question::Question;
     use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
@@ -234,5 +308,115 @@ mod test {
         dns_query_message.set_additional(additional);
 
         assert_eq!(dns_query_message.get_additional().len(), 1);
+    }
+
+    #[test]
+    fn from_bytes_test() {
+        let bytes: [u8; 49] = [
+            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
+            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
+            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
+        ];
+
+        let dns_message = DnsMessage::from_bytes(&bytes);
+
+        let header = dns_message.get_header();
+        let question = dns_message.get_question();
+        let answer = dns_message.get_answer();
+        let authority = dns_message.get_authority();
+        let additional = dns_message.get_additional();
+
+        // Header
+        assert_eq!(header.get_id(), 0b0010010010010101);
+        assert_eq!(header.get_qr(), true);
+        assert_eq!(header.get_op_code(), 2);
+        assert_eq!(header.get_tc(), true);
+        assert_eq!(header.get_rcode(), 8);
+        assert_eq!(header.get_ancount(), 1);
+
+        // Question
+        assert_eq!(question.get_qname().get_name(), String::from("test.com"));
+        assert_eq!(question.get_qtype(), 5);
+        assert_eq!(question.get_qclass(), 2);
+
+        // Answer
+        assert_eq!(answer.len(), 1);
+
+        assert_eq!(answer[0].get_name().get_name(), String::from("dcc.cl"));
+        assert_eq!(answer[0].get_type_code(), 16);
+        assert_eq!(answer[0].get_class(), 1);
+        assert_eq!(answer[0].get_ttl(), 5642);
+        assert_eq!(answer[0].get_rdlength(), 5);
+        assert_eq!(
+            match answer[0].get_rdata() {
+                Rdata::SomeTxtRdata(val) => val.get_text(),
+                _ => unreachable!(),
+            },
+            String::from("hello")
+        );
+
+        // Authority
+        assert_eq!(authority.len(), 0);
+
+        // Additional
+        assert_eq!(additional.len(), 0);
+    }
+
+    #[test]
+    fn to_bytes_test() {
+        let mut header = Header::new();
+
+        header.set_id(0b0010010010010101);
+        header.set_qr(true);
+        header.set_op_code(2);
+        header.set_tc(true);
+        header.set_rcode(8);
+        header.set_ancount(0b0000000000000001);
+
+        let mut question = Question::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        question.set_qname(domain_name);
+        question.set_qtype(5);
+        question.set_qclass(2);
+
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("hello")));
+        let mut resource_record = ResourceRecord::new(txt_rdata);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("dcc.cl"));
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(16);
+        resource_record.set_class(1);
+        resource_record.set_ttl(5642);
+        resource_record.set_rdlength(5);
+
+        let answer = vec![resource_record];
+
+        let dns_msg = DnsMessage {
+            header: header,
+            question: question,
+            answer: answer,
+            authority: Vec::new(),
+            additional: Vec::new(),
+        };
+
+        let msg_bytes = &dns_msg.to_bytes();
+
+        let real_bytes: [u8; 49] = [
+            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
+            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
+            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
+        ];
+
+        let mut i = 0;
+
+        for value in msg_bytes {
+            assert_eq!(*value, real_bytes[i]);
+            i += 1;
+        }
     }
 }

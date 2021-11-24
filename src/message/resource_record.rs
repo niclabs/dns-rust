@@ -102,7 +102,7 @@ impl ResourceRecord {
     /// );
     /// ```
     ///
-    fn from_bytes(bytes: &[u8]) -> ResourceRecord {
+    pub fn from_bytes(bytes: &[u8]) -> (ResourceRecord, &[u8]) {
         let (name, bytes_without_name) = DomainName::from_bytes(bytes);
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
@@ -128,7 +128,9 @@ impl ResourceRecord {
             rdata: rdata,
         };
 
-        resource_record
+        let end_rr_byte = 10 + rdlength as usize;
+
+        (resource_record, &bytes_without_name[end_rr_byte..])
     }
 
     /// Returns a byte that represents the first byte from type code in the dns message.
@@ -470,7 +472,7 @@ mod test {
             101, 108, 108, 111,
         ];
 
-        let resource_record_test = ResourceRecord::from_bytes(&bytes_msg);
+        let (resource_record_test, _other_rr_bytes) = ResourceRecord::from_bytes(&bytes_msg);
 
         assert_eq!(
             resource_record_test.get_name().get_name(),

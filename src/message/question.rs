@@ -46,7 +46,7 @@ impl Question {
     }
 
     /// Given an array of bytes, creates a new Question.
-    fn from_bytes(bytes: &[u8]) -> Question {
+    pub fn from_bytes(bytes: &[u8]) -> (Question, &[u8]) {
         let (qname, bytes_without_name) = DomainName::from_bytes(bytes);
 
         let qtype = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
@@ -57,7 +57,7 @@ impl Question {
         question.set_qtype(qtype);
         question.set_qclass(qclass);
 
-        question
+        (question, &bytes_without_name[4..])
     }
 
     /// Returns a byte that represents the first byte from qtype.
@@ -215,7 +215,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2];
 
-        let question = Question::from_bytes(&bytes);
+        let (question, _others_msg_bytes) = Question::from_bytes(&bytes);
 
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
         assert_eq!(question.get_qtype(), 5);

@@ -86,12 +86,8 @@ impl ResolverQuery {
 
             parent_host_name.pop();
 
-            println!("Parent Host Name: {}", parent_host_name);
-
             // Gets a vector of NS RR for host_name
             let ns_parent_host_name = cache.get(parent_host_name.to_string(), ns_type.clone());
-
-            println!("Ns Len: {}", ns_parent_host_name.clone().len());
 
             if ns_parent_host_name.len() == 0 {
                 labels.remove(0);
@@ -112,8 +108,6 @@ impl ResolverQuery {
 
                 // Gets list of ip addresses
                 let ns_ip_address = cache.get(ns_parent_host_name_string.clone(), "A".to_string());
-
-                println!("Ip Len: {}", ns_ip_address.clone().len());
 
                 if ns_ip_address.len() == 0 {
                     new_slist.insert(ns_parent_host_name_string, "".to_string(), 5.0);
@@ -164,8 +158,17 @@ impl ResolverQuery {
         }
     }
 
+    // Add a new element to cache
+    pub fn add_to_cache(&mut self, domain_name: String, resource_record: ResourceRecord) {
+        let mut cache = self.get_cache();
+
+        cache.add(domain_name, resource_record);
+
+        self.set_cache(cache);
+    }
+
     // Algorithm
-    
+    /*
     pub fn get_dns_answer(&mut self) -> ResourceRecord {
         'outer loop{
             let ns_data = self.get_ns_data();
@@ -208,57 +211,72 @@ impl ResolverQuery {
 
             if cache_answer.len() > 0 {
                 return cache_answer[0].clone();
-            } else {
+            }
+
+            else {
                 self.initialize_slist(self.get_sbelt());
                 let slist = self.get_slist();
 
                 slist.sort();
 
-                let 
+                let
 
                 'inner loop {
 
-                        //      find [best] server in slist
-    //      send query of IPv4/name to server
-    //      if (response contains a name error) or (response ok):
-    //          return send response to client
-    //      if (better delegation to other servers):
-    //          cache delegation info.
-    //          continue
-    //      if (CNAME in response and CNAME is not answer):
-    //          add CNAME to cache
-    //          update SNAME to CNAME RR
-    //          call Algorithm
-    //      else:
-    //          delete server from slist
-    //          continue
-                    let best_server = ; //[best] server in slist
-                    // make searchingfunct
-                     //create_query_message();
-                    // send query
+                    let best_server = slist.get_first(); //hashamp of server that responds faster
+                    let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
+                    let best_server_ip = best_server.get(&"ip_address".to_string()).unwrap();
+
+                    let query_msg = self.create_query_message();
+
+                    //make function send_query
+                    let response = self.send_query(query_msg, best_server_ip); //message
+
+                    // pasar de bytes a string (tener funcion que hace esto y vicecersa)
 
 
-                    if {
-                        return 
-                    }
-                    if {
+                    let rcode = response.get_header().get_rcode();
+                    let answer = response.get_answer();
+                    let additional = response.get_additional();
 
-                        continue 'inner; 
+                    if (answer.len() > 0) && (rcode == 3 || rcode == 0){
+                        return response;
                     }
 
-                    if {
 
-                        break 'inner; 
+                    ///////////////77 how to know it has better delegation?
+                    if (answer.len() > 0) && response has better delegation {
+                        // String hostname, RR como struct
+                        self.add_to_cache(response_hostname, response_rr);
+
+                        // Note that whenever a delegation is followed, the resolver algorithm reinitializes SLIST.
+                        self.initialize_slist(self.get_sbelt());
+                        let slist = self.get_slist();
+                        slist.sort();
+
+                        continue 'inner;
+                    }
+
+                    ///////////////////////////777
+
+                    for rr in additional {
+                        if rr.get_type_code() == 5 { //cname
+                            let resource_record = rr.get_rdata();
+                            let cname = resource_record.get_cname();
+                            self.add_to_cache(cname.get_name(), resource_record);
+                            self.set_sname(cname.get_name());
+                            break 'inner;
+                        }
                     }
 
                     else{
-                        slist.delete(best_server); // debe  ser string
+                        slist.delete(best_server_hostname);
                     }
                 }
             }
         }
     }
-    
+    */
 
     // Algorithm
 

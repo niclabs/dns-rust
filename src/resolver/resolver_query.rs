@@ -158,55 +158,95 @@ impl ResolverQuery {
     // Algorithm
 
     pub fn get_dns_answer(&mut self) -> ResourceRecord {
-        let ns_data = self.get_ns_data();
-        let s_type = match self.get_stype() {
-            1 => "A".to_string(),
-            2 => "NS".to_string(),
-            5 => "CNAME".to_string(),
-            6 => "SOA".to_string(),
-            11 => "WKS".to_string(),
-            12 => "PTR".to_string(),
-            13 => "HINFO".to_string(),
-            14 => "MINFO".to_string(),
-            15 => "MX".to_string(),
-            16 => "TXT".to_string(),
-            _ => unreachable!(),
-        };
-
-        let s_name = self.get_sname();
-
-        if ns_data.len() > 0 {
-            let rr_type_hash = match ns_data.get(&s_type) {
-                Some(val) => val.clone(),
-                None => HashMap::new(),
+        'outer loop{
+            let ns_data = self.get_ns_data();
+            let s_type = match self.get_stype() {
+                1 => "A".to_string(),
+                2 => "NS".to_string(),
+                5 => "CNAME".to_string(),
+                6 => "SOA".to_string(),
+                11 => "WKS".to_string(),
+                12 => "PTR".to_string(),
+                13 => "HINFO".to_string(),
+                14 => "MINFO".to_string(),
+                15 => "MX".to_string(),
+                16 => "TXT".to_string(),
+                _ => unreachable!(),
             };
 
-            if rr_type_hash.len() > 0 {
-                let host_names_vec = match rr_type_hash.get(&s_name) {
+            let s_name = self.get_sname();
+
+            if ns_data.len() > 0 {
+                let rr_type_hash = match ns_data.get(&s_type) {
                     Some(val) => val.clone(),
-                    None => Vec::new(),
+                    None => HashMap::new(),
                 };
 
-                // Por mientras
-                return host_names_vec[0].clone();
+                if rr_type_hash.len() > 0 {
+                    let host_names_vec = match rr_type_hash.get(&s_name) {
+                        Some(val) => val.clone(),
+                        None => Vec::new(),
+                    };
+
+                    // Por mientras
+                    return host_names_vec[0].clone();
+                }
             }
-        }
 
-        let mut cache = self.get_cache();
+            let mut cache = self.get_cache();
 
-        let cache_answer = cache.get(s_name, s_type);
+            let cache_answer = cache.get(s_name, s_type);
 
-        if cache_answer.len() > 0 {
-            return cache_answer[0].clone();
-        } else {
-            self.initialize_slist(self.get_sbelt());
-            let slist = self.get_slist();
+            if cache_answer.len() > 0 {
+                return cache_answer[0].clone();
+            } else {
+                self.initialize_slist(self.get_sbelt());
+                let slist = self.get_slist();
 
-            slist.sort();
+                slist.sort();
 
-            let 
+                let 
 
-            loop {}
+                'inner loop {
+
+                        //      find [best] server in slist
+    //      send query of IPv4/name to server
+    //      if (response contains a name error) or (response ok):
+    //          return send response to client
+    //      if (better delegation to other servers):
+    //          cache delegation info.
+    //          continue
+    //      if (CNAME in response and CNAME is not answer):
+    //          add CNAME to cache
+    //          update SNAME to CNAME RR
+    //          call Algorithm
+    //      else:
+    //          delete server from slist
+    //          continue
+                    let best_server = ; //[best] server in slist
+                    // make searchingfunct
+                     //create_query_message();
+                    // send query
+
+
+                    if {
+                        return 
+                    }
+                    if {
+
+                        continue 'inner; 
+                    }
+
+                    if {
+
+                        break 'inner; 
+                    }
+
+                    else{
+                        slist.delete(best_server); // debe  ser string
+                    }
+                }
+            }
         }
     }
 

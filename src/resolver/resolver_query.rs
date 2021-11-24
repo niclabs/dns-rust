@@ -168,7 +168,7 @@ impl ResolverQuery {
     }
 
     // Algorithm
-    /*
+    
     pub fn get_dns_answer(&mut self) -> ResourceRecord {
         'outer loop{
             let ns_data = self.get_ns_data();
@@ -219,8 +219,6 @@ impl ResolverQuery {
 
                 slist.sort();
 
-                let
-
                 'inner loop {
 
                     let best_server = slist.get_first(); //hashamp of server that responds faster
@@ -230,10 +228,7 @@ impl ResolverQuery {
                     let query_msg = self.create_query_message();
 
                     //make function send_query
-                    let response = self.send_query(query_msg, best_server_ip); //message
-
-                    // pasar de bytes a string (tener funcion que hace esto y vicecersa)
-
+                    let response_bytes = self.send_query(query_msg, best_server_ip); //message
 
                     let rcode = response.get_header().get_rcode();
                     let answer = response.get_answer();
@@ -276,7 +271,7 @@ impl ResolverQuery {
             }
         }
     }
-    */
+    
 
     // Algorithm
 

@@ -76,10 +76,8 @@ impl ResolverQuery {
         let mut labels: Vec<&str> = host_name_copy.split('.').collect();
         let mut new_slist = Slist::new();
 
-        while labels.len() > 1 {
+        while labels.len() > 0 {
             let mut parent_host_name = "".to_string();
-
-            labels.remove(0);
 
             for label in labels.iter() {
                 parent_host_name.push_str(label);
@@ -96,20 +94,21 @@ impl ResolverQuery {
             println!("Ns Len: {}", ns_parent_host_name.clone().len());
 
             if ns_parent_host_name.len() == 0 {
+                labels.remove(0);
                 continue;
             }
 
             let mut ip_found = 0;
 
             for ns in ns_parent_host_name.clone() {
-                let rr_rdata = match ns.get_rdata() {
+                let rr_rdata = match ns.get_resource_record().get_rdata() {
                     Rdata::SomeNsRdata(val) => val.clone(),
                     _ => unreachable!(),
                 };
 
                 let ns_parent_host_name_string = rr_rdata.get_nsdname().get_name();
 
-                new_slist.set_zone_name_equivalent(labels.len() as i32 - 1);
+                new_slist.set_zone_name_equivalent(labels.len() as i32);
 
                 // Gets list of ip addresses
                 let ns_ip_address = cache.get(ns_parent_host_name_string.clone(), "A".to_string());
@@ -121,27 +120,37 @@ impl ResolverQuery {
                     continue;
                 }
 
-                let ns_ip_address_rdata = match ns_ip_address[0].get_rdata() {
-                    Rdata::SomeARdata(val) => val.clone(),
-                    _ => unreachable!(),
-                };
+                for ip in ns_ip_address.clone() {
+                    let ns_ip_address_rdata = match ip.get_resource_record().get_rdata() {
+                        Rdata::SomeARdata(val) => val.clone(),
+                        _ => unreachable!(),
+                    };
 
-                let int_ip_address = ns_ip_address_rdata.get_address();
-                let mut ip_address = "".to_string();
+                    let int_ip_address = ns_ip_address_rdata.get_address();
+                    let mut ip_address = "".to_string();
 
-                for num in int_ip_address.iter() {
-                    ip_address.push_str(num.to_string().as_str());
-                    ip_address.push_str(".");
+                    for num in int_ip_address.iter() {
+                        ip_address.push_str(num.to_string().as_str());
+                        ip_address.push_str(".");
+                    }
+
+                    ip_address.pop();
+
+                    let response_time = cache
+                        .get_response_time(ns_parent_host_name_string.clone(), "A".to_string());
+
+                    new_slist.insert(
+                        ns_parent_host_name_string.clone(),
+                        ip_address.to_string(),
+                        response_time as f32,
+                    );
+                    ip_found = ip_found + 1;
                 }
-
-                ip_address.pop();
-
-                new_slist.insert(ns_parent_host_name_string, ip_address.to_string(), 5.0);
-                ip_found = ip_found + 1;
             }
 
             if ip_found == 0 {
                 new_slist = Slist::new();
+                labels.remove(0);
                 continue;
             }
 
@@ -156,7 +165,7 @@ impl ResolverQuery {
     }
 
     // Algorithm
-
+    
     pub fn get_dns_answer(&mut self) -> ResourceRecord {
         'outer loop{
             let ns_data = self.get_ns_data();
@@ -249,6 +258,7 @@ impl ResolverQuery {
             }
         }
     }
+    
 
     // Algorithm
 
@@ -393,7 +403,7 @@ mod test {
         assert_eq!(resolver_query.stype, 0);
         assert_eq!(resolver_query.sclass, 0);
         assert_eq!(resolver_query.slist.get_ns_list().len(), 0);
-        assert_eq!(resolver_query.cache.clone().len(), 0);
+        assert_eq!(resolver_query.cache.clone().get_size(), 0);
     }
 
     #[test]
@@ -481,8 +491,9 @@ mod test {
     fn set_and_get_cache() {
         let mut resolver_query = ResolverQuery::new();
         let mut cache = DnsCache::new();
+        cache.set_max_size(1);
 
-        assert_eq!(resolver_query.cache.len(), 0);
+        assert_eq!(resolver_query.cache.get_size(), 0);
 
         let ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut a_rdata = ARdata::new();
@@ -496,7 +507,7 @@ mod test {
         cache.add("127.0.0.0".to_string(), resource_record);
         resolver_query.set_cache(cache);
 
-        assert_eq!(resolver_query.get_cache().len(), 1);
+        assert_eq!(resolver_query.get_cache().get_size(), 1);
     }
 
     #[test]
@@ -528,7 +539,7 @@ mod test {
         resolver_query.set_sclass(1);
 
         let mut cache = DnsCache::new();
-        cache.set_max_size(2);
+        cache.set_max_size(4);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name("test2.com".to_string());

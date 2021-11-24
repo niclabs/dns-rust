@@ -137,12 +137,12 @@ mod test {
 
     #[test]
     fn constructor_test() {
-        let mut resolver = Resolver::new();
+        let resolver = Resolver::new();
 
         assert_eq!(resolver.ip_address, "".to_string());
         assert_eq!(resolver.port, "".to_string());
         assert_eq!(resolver.sbelt.get_ns_list().len(), 0);
-        assert_eq!(resolver.cache.len(), 0);
+        assert_eq!(resolver.cache.get_size(), 0);
     }
 
     #[test]
@@ -186,6 +186,8 @@ mod test {
         let ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut a_rdata = ARdata::new();
 
+        cache_test.set_max_size(1);
+
         a_rdata.set_address(ip_address);
 
         let rdata = Rdata::SomeARdata(a_rdata);
@@ -196,7 +198,7 @@ mod test {
 
         resolver.set_cache(cache_test);
 
-        assert_eq!(resolver.get_cache().len(), 1);
+        assert_eq!(resolver.get_cache().get_size(), 1);
     }
 
     #[test]

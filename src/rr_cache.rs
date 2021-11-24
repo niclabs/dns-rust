@@ -1,6 +1,5 @@
 use crate::message::resource_record::ResourceRecord;
 use chrono::prelude::*;
-use std::collections::HashMap;
 
 #[derive(Clone)]
 /// An structs that represents one element in the dns cache.
@@ -8,7 +7,7 @@ pub struct RRCache {
     // Resource Records of the domain name
     resource_record: ResourceRecord,
     // Mean of response time of the ip address
-    response_time: u32,
+    response_time: f32,
     // Last use of the rr
     last_use: DateTime<Utc>,
 }
@@ -27,7 +26,7 @@ impl RRCache {
     pub fn new(resource_record: ResourceRecord) -> Self {
         let rr_cache = RRCache {
             resource_record: resource_record,
-            response_time: 5,
+            response_time: 5.0,
             last_use: Utc::now(),
         };
 
@@ -43,7 +42,7 @@ impl RRCache {
     }
 
     // Gets the mean response time of the ip address of the domain name
-    pub fn get_response_time(&self) -> u32 {
+    pub fn get_response_time(&self) -> f32 {
         self.response_time
     }
 
@@ -61,7 +60,7 @@ impl RRCache {
     }
 
     // Sets the response time attribute with new value
-    pub fn set_response_time(&mut self, response_time: u32) {
+    pub fn set_response_time(&mut self, response_time: f32) {
         self.response_time = response_time;
     }
 
@@ -72,12 +71,11 @@ impl RRCache {
 }
 
 mod test {
-    use crate::domain_cache::RRCache;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::rr_cache::RRCache;
     use chrono::prelude::*;
-    use std::collections::HashMap;
 
     #[test]
     fn constructor_test() {
@@ -90,10 +88,10 @@ mod test {
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(1);
 
-        let mut rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(rr_cache.resource_records.get_type_code(), 1);
-        assert_eq!(rr_cache.response_time, 5);
+        assert_eq!(rr_cache.resource_record.get_type_code(), 1);
+        assert_eq!(rr_cache.response_time, 5.0);
     }
 
     #[test]
@@ -104,12 +102,12 @@ mod test {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
 
-        let mut resource_record = ResourceRecord::new(rdata);
+        let mut resource_record = ResourceRecord::new(rdata.clone());
         resource_record.set_type_code(1);
 
         let mut rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(rr_cache.get_resource_record().get_type_code(), 1)
+        assert_eq!(rr_cache.get_resource_record().get_type_code(), 1);
 
         let second_ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut second_a_rdata = ARdata::new();
@@ -117,12 +115,12 @@ mod test {
         second_a_rdata.set_address(second_ip_address);
         let second_rdata = Rdata::SomeARdata(second_a_rdata);
 
-        let mut second_resource_record = ResourceRecord::new(rdata);
+        let mut second_resource_record = ResourceRecord::new(second_rdata);
         second_resource_record.set_type_code(2);
 
         rr_cache.set_resource_record(second_resource_record);
 
-        assert_eq!(rr_cache.get_resource_record().get_type_code, 2);
+        assert_eq!(rr_cache.get_resource_record().get_type_code(), 2);
     }
 
     #[test]
@@ -138,11 +136,11 @@ mod test {
 
         let mut rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(rr_cache.get_response_time(), 5);
+        assert_eq!(rr_cache.get_response_time(), 5.0);
 
-        rr_cache.set_response_time(2);
+        rr_cache.set_response_time(2.0);
 
-        assert_eq!(rr_cache.get_response_time(), 2);
+        assert_eq!(rr_cache.get_response_time(), 2.0);
     }
 
     #[test]
@@ -160,10 +158,10 @@ mod test {
 
         let now = Utc::now();
 
-        assert_ne!(rr-cache.get_last_use(), now);
+        assert_ne!(rr_cache.get_last_use(), now);
 
-        rr-cache.set_last_use(now);
+        rr_cache.set_last_use(now);
 
-        assert_eq!(rr-cache.get_last_use(), now);
+        assert_eq!(rr_cache.get_last_use(), now);
     }
 }

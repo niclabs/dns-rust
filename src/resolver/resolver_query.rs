@@ -233,6 +233,8 @@ impl ResolverQuery {
 
                     let query_msg = self.create_query_message();
 
+                    let query_id = query_msg.get_header().get_id();
+
                     //make function send_query
                     let response_bytes = self.send_query(query_msg, best_server_ip); //message
                     let response = DnsMessage::from_bytes(&response_bytes);
@@ -242,10 +244,15 @@ impl ResolverQuery {
                     let answer = response.get_answer();
                     let additional = response.get_additional();
 
-                    if ((answer.len() > 0) && rcode == 0)|| rcode == 3 {
+                    if (query_id != response.get_header().get_id()){
+                        // No se que devolver en caso de que las Ids no calcen, tal vez eliminar el sv de la slist y continuar con otro
+                    }
+
+
+                    if ((answer.len() > 0) && rcode == 0 && answer[0].get_type_code() == self.get_stype())|| rcode == 3 {
                         if(rcode == 0){
                             for an in answer.iter() {
-                                if(an.get_ttl()>0){
+                                if(an.get_ttl()>0 && an.get_type_code() == self.get_stype()){
                                     self.add_to_cache(an.get_name().get_name(), an);
                                 } 
                             }
@@ -261,30 +268,41 @@ impl ResolverQuery {
                     */
 
                     if (authority.len() > 0) && (authority[0].get_type_code() == 2){
+                        let mut initialize_slist = false;
+
+                        // Adds NS and A RRs to cache if these can help
                         for ns in authority.iter() {
                             if(self.compare_match_count(ns.get_name().get_name())){
                                 self.add_to_cache(ns.get_name().get_name(), ns);
+
+                                for ip in additional.iter() {
+                                    if ns.get_name().get_name() == ip.get_name().get_name() {
+                                        self.add_to_cache(ip.get_name().get_name(), ip);
+                                        initialize_slist = true;
+                                    }
+                                }
                             }
                         }
-                        for ip in additional.iter() {
-                            self.add_to_cache(ip.get_name().get_name(), ip);
+                        
+                        // If RRs are added, reinitialize the slist
+                        if initialize_slist {
+                            self.initialize_slist(self.get_sbelt());
+                            let slist = self.get_slist();
+                            slist.sort();
                         }
-                        self.initialize_slist(self.get_sbelt());
-                        let slist = self.get_slist();
-                        slist.sort();
+                        else {
+                            // Si no entrega una buena delegacion, se deberia eliminar el server de la slist? Para asi evitar preguntarle al mismo.
+                            slist.delete(best_server_hostname);
+                        }
                         continue 'inner;
                     }
-
-                    for rr in additional {
-                        for rr in additional.iter() {
-                            if (rr.get_type_code() == 5) { 
-                                let resource_record = rr.get_rdata();
-                                let cname = resource_record.get_cname();
-                                self.add_to_cache(cname.get_name(), resource_record);
-                                self.set_sname(cname.get_name());
-                                break 'inner;
-                            }
-                        }
+                    
+                    if (answer.len() > 0 && answer[0].get_type_code() == 5 && answer[0].get_type_code() != self.get_stype()){
+                        let resource_record = answer[0].get_rdata();
+                        let cname = resource_record.get_cname();
+                        self.add_to_cache(cname.get_name(), resource_record);
+                        self.set_sname(cname.get_name());
+                        break 'inner;
                     }
 
                     else {

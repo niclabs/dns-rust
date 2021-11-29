@@ -5,6 +5,7 @@ use crate::message::DnsMessage;
 use crate::resolver::slist::Slist;
 use std::collections::HashMap;
 use std::vec::Vec;
+use std::cmp;
 
 #[derive(Clone)]
 /// This struct represents a resolver query
@@ -214,12 +215,17 @@ impl ResolverQuery {
             }
 
             else {
+                /*Step 4 involves analyzing responses. The resolver should be highly
+                paranoid in its parsing of responses. It should also check that the
+                response matches the query it sent using the ID field in the response.
+                */
                 self.initialize_slist(self.get_sbelt());
                 let slist = self.get_slist();
 
                 slist.sort();
 
                 'inner loop {
+
 
                     let best_server = slist.get_first(); //hashamp of server that responds faster
                     let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
@@ -229,42 +235,59 @@ impl ResolverQuery {
 
                     //make function send_query
                     let response_bytes = self.send_query(query_msg, best_server_ip); //message
+                    let response = DnsMessage::from_bytes(&response_bytes);
 
                     let rcode = response.get_header().get_rcode();
+                    let authority = response.get_authority(); 
                     let answer = response.get_answer();
                     let additional = response.get_additional();
 
-                    if (answer.len() > 0) && (rcode == 3 || rcode == 0){
+                    if ((answer.len() > 0) && rcode == 0)|| rcode == 3 {
+                        if(rcode == 0){
+                            for an in answer.iter() {
+                                if(an.get_ttl()>0){
+                                    self.add_to_cache(an.get_name().get_name(), an);
+                                } 
+                            }
+                        }
                         return response;
                     }
 
+                    /*If the response shows a delegation, the resolver should check to see
+                    that the delegation is "closer" to the answer than the servers in SLIST
+                    are. This can be done by comparing the match count in SLIST with that
+                    computed from SNAME and the NS RRs in the delegation. If not, the reply
+                    is bogus and should be ignored.
+                    */
 
-                    ///////////////77 how to know it has better delegation?
-                    if (answer.len() > 0) && response has better delegation {
-                        // String hostname, RR como struct
-                        self.add_to_cache(response_hostname, response_rr);
-
-                        // Note that whenever a delegation is followed, the resolver algorithm reinitializes SLIST.
+                    if (authority.len() > 0) && (authority[0].get_type_code() == 2){
+                        for ns in authority.iter() {
+                            if(self.compare_match_count(ns.get_name().get_name())){
+                                self.add_to_cache(ns.get_name().get_name(), ns);
+                            }
+                        }
+                        for ip in additional.iter() {
+                            self.add_to_cache(ip.get_name().get_name(), ip);
+                        }
                         self.initialize_slist(self.get_sbelt());
                         let slist = self.get_slist();
                         slist.sort();
-
                         continue 'inner;
                     }
 
-                    ///////////////////////////777
-
                     for rr in additional {
-                        if rr.get_type_code() == 5 { //cname
-                            let resource_record = rr.get_rdata();
-                            let cname = resource_record.get_cname();
-                            self.add_to_cache(cname.get_name(), resource_record);
-                            self.set_sname(cname.get_name());
-                            break 'inner;
+                        for rr in additional.iter() {
+                            if (rr.get_type_code() == 5) { 
+                                let resource_record = rr.get_rdata();
+                                let cname = resource_record.get_cname();
+                                self.add_to_cache(cname.get_name(), resource_record);
+                                self.set_sname(cname.get_name());
+                                break 'inner;
+                            }
                         }
                     }
 
-                    else{
+                    else {
                         slist.delete(best_server_hostname);
                     }
                 }
@@ -345,6 +368,36 @@ impl ResolverQuery {
     /// Gets the ns_data
     pub fn get_ns_data(&self) -> HashMap<String, HashMap<String, Vec<ResourceRecord>>> {
         self.ns_data.clone()
+    }
+
+
+    //utility
+    pub fn compare_match_count(&self, String name) -> bool {
+        let slist_match_count = self.get_slist().get_zone_name_equivalent();
+        let s_name_labels =  self.get_sname().split('.').collect();
+        let name_labels = name.split('.').collect();
+        let min_len = cmp::min(s_name_labels.len(), name_labels.len());
+
+        let name_match_count = 0;
+
+        for i in 0..min_len {
+            let s_name_last_element = s_name_labels[s_name_labels.len() - 1];
+            let name_last_element = name_labels[name_labels.len() - 1];
+            if (s_name_last_element == name_last_element) {
+                name_match_count++;
+                s_name_labels.pop();
+                name_labels.pop();
+            }
+            else {
+                break;
+            }
+        }
+
+        if (name_match_count > slist_match_count) {
+            return true;
+        }
+        
+        return false;
     }
 }
 

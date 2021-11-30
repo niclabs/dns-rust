@@ -43,9 +43,9 @@ impl DnsMessage {
         qclass: u16,
         op_code: u8,
         rd: bool,
+        id: u16,
     ) -> Self {
         let mut rng = rand::thread_rng();
-        let id: u16 = rng.gen();
         let qr = true;
         let qdcount = 1;
         let mut header = Header::new();
@@ -174,6 +174,10 @@ impl DnsMessage {
     /// Gets the additional field
     pub fn get_additional(&self) -> Vec<ResourceRecord> {
         self.additional.clone()
+    }
+
+    pub fn get_query_id(&self) -> u16 {
+        self.get_header().get_id()
     }
 }
 

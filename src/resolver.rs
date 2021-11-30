@@ -38,6 +38,74 @@ impl Resolver {
     ////////////////////////////////////////
     // Al crear una nueva query, dejar sbelt como default de slist
     ////////////////////////////////////////
+
+    pub fn run_resolver() {
+        // Vector to save the queries in process
+        let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+
+        // Create ip and port str
+        let host_address_and_port = self.get_ip_address();
+        host_address_and_port.push_str(&self.get_port());
+
+        // Creates an UDP socket
+        let socket = UdpSocket::bind(&host_address_and_port).expect("Failed to bind host socket");
+
+        // Receives messages
+        loop {
+            // We receive the msg
+            let mut received_msg = [0; 512];
+            let (_number_of_bytes, src_address) = socket
+                .recv_from(&mut received_msg)
+                .expect("No data received");
+
+            // We get the msg type, it can be query or answer
+            let msg_type = get_msg_type(&received_msg);
+
+            if (msg_type == "query") {
+                let sname = get_sname_from_bytes(&received_msg);
+                let stype = get_stype_from_bytes(&received_msg);
+                let sclass = get_sclass_from_bytes(&received_msg);
+                let op_code = get_op_code_from_bytes(&received_msg);
+                let rd = get_rd_from_bytes(&received_msg);
+
+                let mut resolver_query = ResolverQuery::new();
+
+                resolver_query.set_sname(sname);
+                resolver_query.set_stype(stype);
+                resolver_query.set_sclass(sclass);
+                resolver_query.set_op_code(op_code);
+                resolver_query.set_rd(rd);
+                resolver_query.set_sbelt(self.get_sbelt());
+                resolver_query.set_cache(self.get_cache());
+                resolver_query.set_ns_data(self.get_ns_data());
+
+                queries_hash_by_id.insert(resolver_query.get_main_query_id(), resolver_query);
+
+                thread::spawn(move || {
+                    let answer = resolver_query.look_for_local_info();
+
+                    if answer.len() > 0 {
+                        queries_hash_by_id.delete(resolver_query.get_main_query_id());
+                        self.send_answer(answer, src_address);
+                    }
+
+                    resolver_query.send_query();
+                });
+            }
+
+            if (msg_type == "answer") {
+                let msg_from_response = DnsMessage::from_bytes(&received_msg);
+                let answer_id = msg_from_response.get_query_id();
+
+                if queries_hash_by_id.contains_key(answer_id) {
+                    thread::spawn(move || {
+                        let resolver_query = queries_hash_by_id.get(answer_id).unwrap();
+                        resolver_query.process_answer(msg_from_response, src_address);
+                    });
+                }
+            }
+        }
+    }
 }
 
 // Algorithm

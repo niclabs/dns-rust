@@ -6,6 +6,7 @@ use crate::resolver::slist::Slist;
 use std::collections::HashMap;
 use std::vec::Vec;
 use std::cmp;
+use rand::Rng;
 
 #[derive(Clone)]
 /// This struct represents a resolver query
@@ -19,6 +20,7 @@ pub struct ResolverQuery {
     sbelt: Slist,
     cache: DnsCache,
     ns_data: HashMap<String, HashMap<String, Vec<ResourceRecord>>>,
+    main_query_id: u16,
 }
 
 impl ResolverQuery {
@@ -46,20 +48,22 @@ impl ResolverQuery {
             sbelt: Slist::new(),
             cache: DnsCache::new(),
             ns_data: HashMap::<String, HashMap<String, Vec<ResourceRecord>>>::new(),
+            main_query_id: rng.gen(),
         };
 
         query
     }
 
     // Creates a new query dns message
-    pub fn create_query_message(&self) -> DnsMessage {
+    pub fn create_query_message(&mut self) -> DnsMessage {
         let sname = self.get_sname();
         let stype = self.get_stype();
         let sclass = self.get_sclass();
         let op_code = self.get_op_code();
         let rd = self.get_rd();
+        let id = self.get_main_query_id();
 
-        let query_message = DnsMessage::new_query_message(sname, stype, sclass, op_code, rd);
+        let query_message = DnsMessage::new_query_message(sname, stype, sclass, op_code, rd, id);
 
         query_message
     }
@@ -339,6 +343,16 @@ impl ResolverQuery {
     //      else:
     //          delete server from slist
     //          continue
+
+
+    pub fn send_query() {
+
+    }
+
+    pub fn process_answer() {
+
+    }
+
 }
 
 // Getters
@@ -386,6 +400,11 @@ impl ResolverQuery {
     /// Gets the ns_data
     pub fn get_ns_data(&self) -> HashMap<String, HashMap<String, Vec<ResourceRecord>>> {
         self.ns_data.clone()
+    }
+
+    /// Gets the main_query_id
+    pub fn get_main_query_id(&self) -> u16 {
+        self.main_query_id
     }
 
 
@@ -464,6 +483,11 @@ impl ResolverQuery {
     /// Sets the ns_data attribute with a new value
     pub fn set_ns_data(&mut self, ns_data: HashMap<String, HashMap<String, Vec<ResourceRecord>>>) {
         self.ns_data = ns_data;
+    }
+
+    /// Sets the main query id attribute with a new id
+    pub fn set_main_query_id(&mut self, query_id: u16) {
+        self.main_query_id = query_id;
     }
 }
 

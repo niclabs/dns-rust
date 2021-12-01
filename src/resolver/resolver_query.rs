@@ -3,10 +3,11 @@ use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::resolver::slist::Slist;
-use std::collections::HashMap;
-use std::vec::Vec;
+use rand::{thread_rng, Rng};
 use std::cmp;
-use rand::Rng;
+use std::collections::HashMap;
+use std::net::UdpSocket;
+use std::vec::Vec;
 
 #[derive(Clone)]
 /// This struct represents a resolver query
@@ -38,6 +39,8 @@ impl ResolverQuery {
     /// '''
     ///
     pub fn new() -> Self {
+        let mut rng = thread_rng();
+
         let query = ResolverQuery {
             sname: "".to_string(),
             stype: 0 as u16,
@@ -173,50 +176,10 @@ impl ResolverQuery {
     }
 
     // Algorithm
-    
+    /*
     pub fn get_dns_answer(&mut self) -> ResourceRecord {
-        'outer loop{
-            let ns_data = self.get_ns_data();
-            let s_type = match self.get_stype() {
-                1 => "A".to_string(),
-                2 => "NS".to_string(),
-                5 => "CNAME".to_string(),
-                6 => "SOA".to_string(),
-                11 => "WKS".to_string(),
-                12 => "PTR".to_string(),
-                13 => "HINFO".to_string(),
-                14 => "MINFO".to_string(),
-                15 => "MX".to_string(),
-                16 => "TXT".to_string(),
-                _ => unreachable!(),
-            };
+        'outer: loop{
 
-            let s_name = self.get_sname();
-
-            if ns_data.len() > 0 {
-                let rr_type_hash = match ns_data.get(&s_type) {
-                    Some(val) => val.clone(),
-                    None => HashMap::new(),
-                };
-
-                if rr_type_hash.len() > 0 {
-                    let host_names_vec = match rr_type_hash.get(&s_name) {
-                        Some(val) => val.clone(),
-                        None => Vec::new(),
-                    };
-
-                    // Por mientras
-                    return host_names_vec[0].clone();
-                }
-            }
-
-            let mut cache = self.get_cache();
-
-            let cache_answer = cache.get(s_name, s_type);
-
-            if cache_answer.len() > 0 {
-                return cache_answer[0].clone();
-            }
 
             else {
                 /*Step 4 involves analyzing responses. The resolver should be highly
@@ -228,7 +191,7 @@ impl ResolverQuery {
 
                 slist.sort();
 
-                'inner loop {
+                'inner: loop {
 
 
                     let best_server = slist.get_first(); //hashamp of server that responds faster
@@ -244,13 +207,9 @@ impl ResolverQuery {
                     let response = DnsMessage::from_bytes(&response_bytes);
 
                     let rcode = response.get_header().get_rcode();
-                    let authority = response.get_authority(); 
+                    let authority = response.get_authority();
                     let answer = response.get_answer();
                     let additional = response.get_additional();
-
-                    if (query_id != response.get_header().get_id()){
-                        // No se que devolver en caso de que las Ids no calcen, tal vez eliminar el sv de la slist y continuar con otro
-                    }
 
 
                     if ((answer.len() > 0) && rcode == 0 && answer[0].get_type_code() == self.get_stype())|| rcode == 3 {
@@ -258,7 +217,7 @@ impl ResolverQuery {
                             for an in answer.iter() {
                                 if(an.get_ttl()>0 && an.get_type_code() == self.get_stype()){
                                     self.add_to_cache(an.get_name().get_name(), an);
-                                } 
+                                }
                             }
                         }
                         return response;
@@ -287,7 +246,7 @@ impl ResolverQuery {
                                 }
                             }
                         }
-                        
+
                         // If RRs are added, reinitialize the slist
                         if initialize_slist {
                             self.initialize_slist(self.get_sbelt());
@@ -300,7 +259,7 @@ impl ResolverQuery {
                         }
                         continue 'inner;
                     }
-                    
+
                     if (answer.len() > 0 && answer[0].get_type_code() == 5 && answer[0].get_type_code() != self.get_stype()){
                         let resource_record = answer[0].get_rdata();
                         let cname = resource_record.get_cname();
@@ -316,7 +275,7 @@ impl ResolverQuery {
             }
         }
     }
-    
+    */
 
     // Algorithm
 
@@ -344,15 +303,167 @@ impl ResolverQuery {
     //          delete server from slist
     //          continue
 
+    pub fn look_for_local_info(&self) -> Vec<ResourceRecord> {
+        let ns_data = self.get_ns_data();
+        let s_type = match self.get_stype() {
+            1 => "A".to_string(),
+            2 => "NS".to_string(),
+            5 => "CNAME".to_string(),
+            6 => "SOA".to_string(),
+            11 => "WKS".to_string(),
+            12 => "PTR".to_string(),
+            13 => "HINFO".to_string(),
+            14 => "MINFO".to_string(),
+            15 => "MX".to_string(),
+            16 => "TXT".to_string(),
+            _ => unreachable!(),
+        };
 
-    pub fn send_query() {
+        let s_name = self.get_sname();
 
+        if ns_data.len() > 0 {
+            let rr_type_hash = match ns_data.get(&s_type) {
+                Some(val) => val.clone(),
+                None => HashMap::new(),
+            };
+
+            if rr_type_hash.len() > 0 {
+                let host_names_vec = match rr_type_hash.get(&s_name) {
+                    Some(val) => val.clone(),
+                    None => Vec::new(),
+                };
+
+                // Por mientras
+                return host_names_vec.clone();
+            }
+        }
+
+        let mut cache = self.get_cache();
+
+        let cache_answer = cache.get(s_name, s_type);
+
+        let mut rr_vec = Vec::<ResourceRecord>::new();
+
+        if cache_answer.len() > 0 {
+            for answer in cache_answer.iter() {
+                rr_vec.push(answer.get_resource_record());
+            }
+        }
+
+        return rr_vec;
     }
 
-    pub fn process_answer() {
+    pub fn send_query(&mut self, socket: &UdpSocket) {
+        let mut slist = self.get_slist();
+        slist.sort();
 
+        let best_server = slist.get_first(); //hashamp of server that responds faster
+        let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
+        let mut best_server_ip = best_server.get(&"ip_address".to_string()).unwrap().clone();
+
+        // Falta implementar que se deben consultar las ips de los ns que no tienen ips (Además destacar que al menos 1 ns tendrá ip)
+
+        let query_msg = self.create_query_message();
+        let msg_to_bytes = query_msg.to_bytes();
+
+        best_server_ip.push_str(":53");
+
+        // Sending the query to the best name server
+        socket
+            .send_to(&msg_to_bytes, best_server_ip)
+            .expect("failed to send message");
     }
 
+    pub fn process_answer(
+        &mut self,
+        msg_from_response: DnsMessage,
+        socket: UdpSocket,
+    ) -> Option<Vec<ResourceRecord>> {
+        let mut slist = self.get_slist();
+        let best_server = slist.get_first();
+        let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
+
+        let rcode = msg_from_response.get_header().get_rcode();
+        let authority = msg_from_response.get_authority();
+        let answer = msg_from_response.get_answer();
+        let additional = msg_from_response.get_additional();
+
+        if ((answer.len() > 0) && rcode == 0 && answer[0].get_type_code() == self.get_stype())
+            || rcode == 3
+        {
+            if rcode == 0 {
+                for an in answer.iter() {
+                    if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                        self.add_to_cache(an.get_name().get_name(), an.clone());
+                    }
+                }
+            }
+            // return Some(msg_from_response);
+            let rr_ans = msg_from_response.get_answer();
+            return Some(rr_ans);
+        }
+
+        if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
+            let mut initialize_slist = false;
+
+            // Adds NS and A RRs to cache if these can help
+            for ns in authority.iter() {
+                if self.compare_match_count(ns.get_name().get_name()) {
+                    self.add_to_cache(ns.get_name().get_name(), ns.clone());
+
+                    for ip in additional.iter() {
+                        if ns.get_name().get_name() == ip.get_name().get_name() {
+                            self.add_to_cache(ip.get_name().get_name(), ip.clone());
+                            initialize_slist = true;
+                        }
+                    }
+                }
+            }
+
+            // If RRs are added, reinitialize the slist
+            if initialize_slist {
+                self.initialize_slist(self.get_sbelt());
+                let mut slist = self.get_slist();
+                slist.sort();
+                self.set_slist(slist.clone());
+            } else {
+                // Si no entrega una buena delegacion, se deberia eliminar el server de la slist? Para asi evitar preguntarle al mismo.
+                slist.delete(best_server_hostname.clone());
+                self.set_slist(slist.clone());
+            }
+            // cargarle los datos adecuados
+            self.send_query(&socket);
+        }
+
+        if answer.len() > 0
+            && answer[0].get_type_code() == 5
+            && answer[0].get_type_code() != self.get_stype()
+        {
+            let resource_record = answer[0].clone();
+            let rdata = resource_record.get_rdata();
+
+            let rr_data = match rdata {
+                Rdata::SomeCnameRdata(val) => val.clone(),
+                _ => unreachable!(),
+            };
+
+            let cname = rr_data.get_cname();
+            self.add_to_cache(cname.get_name(), resource_record);
+            self.set_sname(cname.get_name());
+            let rr_info = self.look_for_local_info();
+            if rr_info.len() > 0 {
+                return Some(rr_info); // ver que tipo devolver aqui
+            } else {
+                self.send_query(&socket);
+                return None;
+            }
+        } else {
+            slist.delete(best_server_hostname.clone());
+            self.set_slist(slist);
+            self.send_query(&socket);
+            return None;
+        }
+    }
 }
 
 // Getters
@@ -407,33 +518,32 @@ impl ResolverQuery {
         self.main_query_id
     }
 
-
     //utility
-    pub fn compare_match_count(&self, String name) -> bool {
+    pub fn compare_match_count(&self, name: String) -> bool {
         let slist_match_count = self.get_slist().get_zone_name_equivalent();
-        let s_name_labels =  self.get_sname().split('.').collect();
-        let name_labels = name.split('.').collect();
+        let mut s_name_labels: String = self.get_sname();
+        let mut s_name_labels_vec: Vec<&str> = s_name_labels.split('.').collect();
+        let mut name_labels: Vec<&str> = name.split('.').collect();
         let min_len = cmp::min(s_name_labels.len(), name_labels.len());
 
-        let name_match_count = 0;
+        let mut name_match_count = 0;
 
         for i in 0..min_len {
-            let s_name_last_element = s_name_labels[s_name_labels.len() - 1];
+            let s_name_last_element = s_name_labels_vec[s_name_labels_vec.len() - 1];
             let name_last_element = name_labels[name_labels.len() - 1];
-            if (s_name_last_element == name_last_element) {
-                name_match_count++;
-                s_name_labels.pop();
+            if s_name_last_element == name_last_element {
+                name_match_count = name_match_count + 1;
+                s_name_labels_vec.pop();
                 name_labels.pop();
-            }
-            else {
+            } else {
                 break;
             }
         }
 
-        if (name_match_count > slist_match_count) {
+        if name_match_count > slist_match_count {
             return true;
         }
-        
+
         return false;
     }
 }

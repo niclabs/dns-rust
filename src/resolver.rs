@@ -1,7 +1,11 @@
 use crate::dns_cache::DnsCache;
 use crate::message::resource_record::ResourceRecord;
+use crate::message::DnsMessage;
+use crate::resolver::resolver_query::ResolverQuery;
 use crate::resolver::slist::Slist;
 use std::collections::HashMap;
+use std::net::UdpSocket;
+use std::thread;
 use std::vec::Vec;
 
 pub mod resolver_query;
@@ -39,12 +43,12 @@ impl Resolver {
     // Al crear una nueva query, dejar sbelt como default de slist
     ////////////////////////////////////////
 
-    pub fn run_resolver() {
+    pub fn run_resolver(&self) {
         // Vector to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
 
         // Create ip and port str
-        let host_address_and_port = self.get_ip_address();
+        let mut host_address_and_port = self.get_ip_address();
         host_address_and_port.push_str(&self.get_port());
 
         // Creates an UDP socket
@@ -58,15 +62,15 @@ impl Resolver {
                 .recv_from(&mut received_msg)
                 .expect("No data received");
 
-            // We get the msg type, it can be query or answer
-            let msg_type = get_msg_type(&received_msg);
+            /*// We get the msg type, it can be query or answer
+            // let msg_type = get_msg_type(&received_msg);
 
-            if (msg_type == "query") {
-                let sname = get_sname_from_bytes(&received_msg);
-                let stype = get_stype_from_bytes(&received_msg);
-                let sclass = get_sclass_from_bytes(&received_msg);
-                let op_code = get_op_code_from_bytes(&received_msg);
-                let rd = get_rd_from_bytes(&received_msg);
+            if msg_type == "query" {
+                //let sname = get_sname_from_bytes(&received_msg);
+                //let stype = get_stype_from_bytes(&received_msg);
+                //let sclass = get_sclass_from_bytes(&received_msg);
+                //let op_code = get_op_code_from_bytes(&received_msg);
+                //let rd = get_rd_from_bytes(&received_msg);
 
                 let mut resolver_query = ResolverQuery::new();
 
@@ -85,25 +89,27 @@ impl Resolver {
                     let answer = resolver_query.look_for_local_info();
 
                     if answer.len() > 0 {
-                        queries_hash_by_id.delete(resolver_query.get_main_query_id());
-                        self.send_answer(answer, src_address);
+                        queries_hash_by_id.remove(&resolver_query.get_main_query_id());
+                        // self.send_answer(answer, src_address);
+                    } else {
+                        let sbelt = resolver_query.get_sbelt();
+                        resolver_query.initialize_slist(sbelt);
+                        resolver_query.send_query(socket);
                     }
-
-                    resolver_query.send_query();
                 });
             }
 
-            if (msg_type == "answer") {
+            if msg_type == "answer" {
                 let msg_from_response = DnsMessage::from_bytes(&received_msg);
                 let answer_id = msg_from_response.get_query_id();
 
-                if queries_hash_by_id.contains_key(answer_id) {
+                if queries_hash_by_id.contains_key(&answer_id) {
                     thread::spawn(move || {
-                        let resolver_query = queries_hash_by_id.get(answer_id).unwrap();
-                        resolver_query.process_answer(msg_from_response, src_address);
+                        let resolver_query = queries_hash_by_id.get(&answer_id).unwrap();
+                        resolver_query.process_answer(msg_from_response, socket);
                     });
                 }
-            }
+            }*/
         }
     }
 }

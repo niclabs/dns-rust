@@ -222,7 +222,7 @@ mod test {
     #[test]
     fn constructor_test() {
         let dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
+            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
         assert_eq!(dns_query_message.question.get_qtype(), 1);
@@ -239,7 +239,7 @@ mod test {
         header.set_rd(true);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
+            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
 
         assert_eq!(dns_query_message.get_header().get_rd(), false);
 
@@ -254,7 +254,7 @@ mod test {
         question.set_qclass(2);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
+            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
 
         assert_eq!(dns_query_message.get_question().get_qclass(), 1);
 
@@ -271,7 +271,7 @@ mod test {
         answer.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
+            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
 
         assert_eq!(dns_query_message.get_answer().len(), 0);
 
@@ -288,7 +288,7 @@ mod test {
         authority.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
+            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
 
         assert_eq!(dns_query_message.get_authority().len(), 0);
 
@@ -305,7 +305,7 @@ mod test {
         additional.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
+            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
 
         assert_eq!(dns_query_message.get_additional().len(), 0);
 

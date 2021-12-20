@@ -7,7 +7,6 @@ use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
 use crate::message::resource_record::ResourceRecord;
-use rand::Rng;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -45,7 +44,44 @@ impl DnsMessage {
         rd: bool,
         id: u16,
     ) -> Self {
-        let mut rng = rand::thread_rng();
+        let qr = false;
+        let qdcount = 1;
+        let mut header = Header::new();
+
+        header.set_id(id);
+        header.set_qr(qr);
+        header.set_op_code(op_code);
+        header.set_rd(rd);
+        header.set_qdcount(qdcount);
+
+        let mut question = Question::new();
+        let mut domain_name = DomainName::new();
+
+        domain_name.set_name(qname);
+
+        question.set_qname(domain_name);
+        question.set_qtype(qtype);
+        question.set_qclass(qclass);
+
+        let dns_message = DnsMessage {
+            header: header,
+            question: question,
+            answer: Vec::new(),
+            authority: Vec::new(),
+            additional: Vec::new(),
+        };
+
+        dns_message
+    }
+
+    pub fn new_response_message(
+        qname: String,
+        qtype: u16,
+        qclass: u16,
+        op_code: u8,
+        rd: bool,
+        id: u16,
+    ) -> Self {
         let qr = true;
         let qdcount = 1;
         let mut header = Header::new();

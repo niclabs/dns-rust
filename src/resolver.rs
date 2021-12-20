@@ -43,34 +43,46 @@ impl Resolver {
     // Al crear una nueva query, dejar sbelt como default de slist
     ////////////////////////////////////////
 
-    pub fn run_resolver(&self) {
+    pub fn run_resolver_udp(&self) {
         // Vector to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
 
         // Create ip and port str
         let mut host_address_and_port = self.get_ip_address();
+        host_address_and_port.push_str(":");
         host_address_and_port.push_str(&self.get_port());
 
         // Creates an UDP socket
         let socket = UdpSocket::bind(&host_address_and_port).expect("Failed to bind host socket");
+        println!("{}", "Socket Created");
 
         // Receives messages
         loop {
+            let resolver = self.clone();
+
+            println!("{}", "Waiting msg");
+
             // We receive the msg
             let mut received_msg = [0; 512];
             let (_number_of_bytes, src_address) = socket
                 .recv_from(&mut received_msg)
                 .expect("No data received");
 
-            /*// We get the msg type, it can be query or answer
-            // let msg_type = get_msg_type(&received_msg);
+            println!("{}", "Message recv");
 
-            if msg_type == "query" {
-                //let sname = get_sname_from_bytes(&received_msg);
-                //let stype = get_stype_from_bytes(&received_msg);
-                //let sclass = get_sclass_from_bytes(&received_msg);
-                //let op_code = get_op_code_from_bytes(&received_msg);
-                //let rd = get_rd_from_bytes(&received_msg);
+            let dns_message = DnsMessage::from_bytes(&received_msg);
+
+            println!("{}", "Paso parseo");
+
+            // We get the msg type, it can be query or answer
+            let msg_type = dns_message.get_header().get_qr();
+
+            if msg_type == false {
+                let sname = dns_message.get_question().get_qname().get_name();
+                let stype = dns_message.get_question().get_qtype();
+                let sclass = dns_message.get_question().get_qclass();
+                let op_code = dns_message.get_header().get_op_code();
+                let rd = dns_message.get_header().get_rd();
 
                 let mut resolver_query = ResolverQuery::new();
 
@@ -79,66 +91,205 @@ impl Resolver {
                 resolver_query.set_sclass(sclass);
                 resolver_query.set_op_code(op_code);
                 resolver_query.set_rd(rd);
-                resolver_query.set_sbelt(self.get_sbelt());
-                resolver_query.set_cache(self.get_cache());
-                resolver_query.set_ns_data(self.get_ns_data());
+                resolver_query.set_sbelt(resolver.get_sbelt());
+                resolver_query.set_cache(resolver.get_cache());
+                resolver_query.set_ns_data(resolver.get_ns_data());
 
-                queries_hash_by_id.insert(resolver_query.get_main_query_id(), resolver_query);
+                queries_hash_by_id
+                    .insert(resolver_query.get_main_query_id(), resolver_query.clone());
+
+                let socket_copy = socket.try_clone().unwrap();
+
+                let resolver_copy = resolver.clone();
+
+                let dns_msg_copy = dns_message.clone();
 
                 thread::spawn(move || {
                     let answer = resolver_query.look_for_local_info();
 
                     if answer.len() > 0 {
-                        queries_hash_by_id.remove(&resolver_query.get_main_query_id());
-                        // self.send_answer(answer, src_address);
+                        let mut new_dns_msg = dns_msg_copy.clone();
+                        new_dns_msg.set_answer(answer.clone());
+                        new_dns_msg.set_authority(Vec::new());
+                        new_dns_msg.set_additional(Vec::new());
+
+                        let mut header = new_dns_msg.get_header();
+                        header.set_ancount(answer.len() as u16);
+
+                        resolver_copy.send_answer_by_udp(
+                            new_dns_msg,
+                            src_address.to_string(),
+                            &socket_copy,
+                        );
                     } else {
                         let sbelt = resolver_query.get_sbelt();
                         resolver_query.initialize_slist(sbelt);
-                        resolver_query.send_query(socket);
+                        resolver_query.send_query("udp".to_string());
                     }
+                    println!("{}", "Thread Finished")
                 });
             }
 
-            if msg_type == "answer" {
-                let msg_from_response = DnsMessage::from_bytes(&received_msg);
-                let answer_id = msg_from_response.get_query_id();
+            if msg_type == true {
+                let socket_copy = socket.try_clone().unwrap();
+                let answer_id = dns_message.get_query_id();
+                let queries_hash_by_id_copy = queries_hash_by_id.clone();
 
-                if queries_hash_by_id.contains_key(&answer_id) {
+                let resolver_copy = resolver.clone();
+
+                if queries_hash_by_id_copy.contains_key(&answer_id) {
                     thread::spawn(move || {
-                        let resolver_query = queries_hash_by_id.get(&answer_id).unwrap();
-                        resolver_query.process_answer(msg_from_response, socket);
+                        let resolver_query = queries_hash_by_id_copy.get(&answer_id).unwrap();
+                        let response = match resolver_query
+                            .clone()
+                            .process_answer(dns_message, "udp".to_string())
+                        {
+                            Some(val) => vec![val],
+                            None => Vec::new(),
+                        };
+
+                        if response.len() > 0 {
+                            resolver_copy.send_answer_by_udp(
+                                response[0].clone(),
+                                src_address.to_string(),
+                                &socket_copy,
+                            );
+                        }
                     });
                 }
-            }*/
+            }
         }
     }
+
+    pub fn run_resolver_tcp(&self) {
+        // Vector to save the queries in process
+        let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+
+        // Create ip and port str
+        let mut host_address_and_port = self.get_ip_address();
+        host_address_and_port.push_str(":");
+        host_address_and_port.push_str(&self.get_port());
+
+        // Creates an TCP Listener
+        let listener = TcpListener::bind(&host_address_and_port).expect("Could not bind");
+        println!("{}", "TcpListener Created");
+
+        // Aquí quedé -------------------------------------------------------------------------------------------/
+
+        // Receives messages
+        loop {
+            let resolver = self.clone();
+
+            println!("{}", "Waiting msg");
+
+            // We receive the msg
+            let mut received_msg = [0; 512];
+            let (_number_of_bytes, src_address) = socket
+                .recv_from(&mut received_msg)
+                .expect("No data received");
+
+            println!("{}", "Message recv");
+
+            let dns_message = DnsMessage::from_bytes(&received_msg);
+
+            println!("{}", "Paso parseo");
+
+            // We get the msg type, it can be query or answer
+            let msg_type = dns_message.get_header().get_qr();
+
+            if msg_type == false {
+                let sname = dns_message.get_question().get_qname().get_name();
+                let stype = dns_message.get_question().get_qtype();
+                let sclass = dns_message.get_question().get_qclass();
+                let op_code = dns_message.get_header().get_op_code();
+                let rd = dns_message.get_header().get_rd();
+
+                let mut resolver_query = ResolverQuery::new();
+
+                resolver_query.set_sname(sname);
+                resolver_query.set_stype(stype);
+                resolver_query.set_sclass(sclass);
+                resolver_query.set_op_code(op_code);
+                resolver_query.set_rd(rd);
+                resolver_query.set_sbelt(resolver.get_sbelt());
+                resolver_query.set_cache(resolver.get_cache());
+                resolver_query.set_ns_data(resolver.get_ns_data());
+
+                queries_hash_by_id
+                    .insert(resolver_query.get_main_query_id(), resolver_query.clone());
+
+                let socket_copy = socket.try_clone().unwrap();
+
+                let resolver_copy = resolver.clone();
+
+                let dns_msg_copy = dns_message.clone();
+
+                thread::spawn(move || {
+                    let answer = resolver_query.look_for_local_info();
+
+                    if answer.len() > 0 {
+                        let mut new_dns_msg = dns_msg_copy.clone();
+                        new_dns_msg.set_answer(answer.clone());
+                        new_dns_msg.set_authority(Vec::new());
+                        new_dns_msg.set_additional(Vec::new());
+
+                        let mut header = new_dns_msg.get_header();
+                        header.set_ancount(answer.len() as u16);
+
+                        resolver_copy.send_answer_by_udp(
+                            new_dns_msg,
+                            src_address.to_string(),
+                            &socket_copy,
+                        );
+                    } else {
+                        let sbelt = resolver_query.get_sbelt();
+                        resolver_query.initialize_slist(sbelt);
+                        resolver_query.send_query("udp".to_string());
+                    }
+                    println!("{}", "Thread Finished")
+                });
+            }
+
+            if msg_type == true {
+                let socket_copy = socket.try_clone().unwrap();
+                let answer_id = dns_message.get_query_id();
+                let queries_hash_by_id_copy = queries_hash_by_id.clone();
+
+                let resolver_copy = resolver.clone();
+
+                if queries_hash_by_id_copy.contains_key(&answer_id) {
+                    thread::spawn(move || {
+                        let resolver_query = queries_hash_by_id_copy.get(&answer_id).unwrap();
+                        let response = match resolver_query
+                            .clone()
+                            .process_answer(dns_message, "udp".to_string())
+                        {
+                            Some(val) => vec![val],
+                            None => Vec::new(),
+                        };
+
+                        if response.len() > 0 {
+                            resolver_copy.send_answer_by_udp(
+                                response[0].clone(),
+                                src_address.to_string(),
+                                &socket_copy,
+                            );
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    // Sends the response to the address
+    fn send_answer_by_udp(&self, response: DnsMessage, src_address: String, socket: &UdpSocket) {
+        let bytes = response.to_bytes();
+
+        socket
+            .send_to(&bytes, src_address)
+            .expect("failed to send message");
+    }
 }
-
-// Algorithm
-
-// init answer
-// if (IPv4/name is in authoritative form):
-//      answer = search IPv4/name in slist in authoritative form
-// if (config.check_cache):
-//      answer = search IPv4/name in cache
-// if (answer): return to client
-// else:
-//  init empty response
-//  while not response
-//      find [best] server in slist
-//      send query of IPv4/name to server
-//      if (response contains a name error) or (response ok):
-//          return send response to client
-//      if (better delegation to other servers):
-//          cache delegation info.
-//          continue
-//      if (CNAME in response and CNAME is not answer):
-//          add CNAME to cache
-//          update SNAME to CNAME RR
-//          call Algorithm
-//      else:
-//          delete server from slist
-//          continue
 
 // Getters
 impl Resolver {

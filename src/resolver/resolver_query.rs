@@ -6,6 +6,9 @@ use crate::resolver::slist::Slist;
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;
+use std::io::Read;
+use std::io::Write;
+use std::net::TcpStream;
 use std::net::UdpSocket;
 use std::vec::Vec;
 
@@ -353,12 +356,11 @@ impl ResolverQuery {
         return rr_vec;
     }
 
-    pub fn send_query(&mut self, socket: &UdpSocket) {
+    pub fn send_query(&mut self, socket_type: String) {
         let mut slist = self.get_slist();
         slist.sort();
 
         let best_server = slist.get_first(); //hashamp of server that responds faster
-        let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
         let mut best_server_ip = best_server.get(&"ip_address".to_string()).unwrap().clone();
 
         // Falta implementar que se deben consultar las ips de los ns que no tienen ips (Además destacar que al menos 1 ns tendrá ip)
@@ -368,17 +370,40 @@ impl ResolverQuery {
 
         best_server_ip.push_str(":53");
 
-        // Sending the query to the best name server
+        println!("Server to ask {}", best_server_ip);
+
+        if socket_type == "udp".to_string() {
+            self.send_udp_msg(&msg_to_bytes, best_server_ip);
+        } else if socket_type == "tcp".to_string() {
+            self.send_tcp_msg(&msg_to_bytes, best_server_ip);
+        }
+    }
+
+    fn send_udp_msg(&self, msg: &[u8], ip_address: String) {
+        let socket = UdpSocket::bind("127.0.0.1:1234").expect("Failed to bind host socket");
+
         socket
-            .send_to(&msg_to_bytes, best_server_ip)
+            .send_to(msg, ip_address)
             .expect("failed to send message");
+    }
+
+    fn send_tcp_msg(&self, msg: &[u8], ip_address: String) {
+        let mut stream = TcpStream::connect("8.8.8.8:53").unwrap();
+        stream.write(msg);
+
+        let mut received_msg = [0; 512];
+        stream.read(&mut received_msg);
+
+        let local_ip = stream.local_addr().unwrap().ip().to_string();
+
+        self.send_udp_msg(&received_msg, local_ip);
     }
 
     pub fn process_answer(
         &mut self,
         msg_from_response: DnsMessage,
-        socket: UdpSocket,
-    ) -> Option<Vec<ResourceRecord>> {
+        socket_type: String,
+    ) -> Option<DnsMessage> {
         let mut slist = self.get_slist();
         let best_server = slist.get_first();
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
@@ -398,9 +423,8 @@ impl ResolverQuery {
                     }
                 }
             }
-            // return Some(msg_from_response);
-            let rr_ans = msg_from_response.get_answer();
-            return Some(rr_ans);
+
+            return Some(msg_from_response);
         }
 
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
@@ -432,7 +456,7 @@ impl ResolverQuery {
                 self.set_slist(slist.clone());
             }
             // cargarle los datos adecuados
-            self.send_query(&socket);
+            self.send_query(socket_type.clone());
         }
 
         if answer.len() > 0
@@ -451,16 +475,25 @@ impl ResolverQuery {
             self.add_to_cache(cname.get_name(), resource_record);
             self.set_sname(cname.get_name());
             let rr_info = self.look_for_local_info();
+
             if rr_info.len() > 0 {
-                return Some(rr_info); // ver que tipo devolver aqui
+                let mut new_dns_msg = msg_from_response.clone();
+                new_dns_msg.set_answer(rr_info.clone());
+                new_dns_msg.set_authority(Vec::new());
+                new_dns_msg.set_additional(Vec::new());
+
+                let mut header = new_dns_msg.get_header();
+                header.set_ancount(rr_info.len() as u16);
+
+                return Some(new_dns_msg);
             } else {
-                self.send_query(&socket);
+                self.send_query(socket_type);
                 return None;
             }
         } else {
             slist.delete(best_server_hostname.clone());
             self.set_slist(slist);
-            self.send_query(&socket);
+            self.send_query(socket_type);
             return None;
         }
     }
@@ -521,14 +554,14 @@ impl ResolverQuery {
     //utility
     pub fn compare_match_count(&self, name: String) -> bool {
         let slist_match_count = self.get_slist().get_zone_name_equivalent();
-        let mut s_name_labels: String = self.get_sname();
+        let s_name_labels: String = self.get_sname();
         let mut s_name_labels_vec: Vec<&str> = s_name_labels.split('.').collect();
         let mut name_labels: Vec<&str> = name.split('.').collect();
         let min_len = cmp::min(s_name_labels.len(), name_labels.len());
 
         let mut name_match_count = 0;
 
-        for i in 0..min_len {
+        for _i in 0..min_len {
             let s_name_last_element = s_name_labels_vec[s_name_labels_vec.len() - 1];
             let name_last_element = name_labels[name_labels.len() - 1];
             if s_name_last_element == name_last_element {

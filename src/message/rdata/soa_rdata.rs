@@ -589,7 +589,7 @@ mod test {
             0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1,
         ];
 
-        let soa_rdata = SoaRdata::from_bytes(&bytes);
+        let soa_rdata = SoaRdata::from_bytes(&bytes, &bytes);
 
         assert_eq!(soa_rdata.get_mname().get_name(), String::from("test.com"));
         assert_eq!(soa_rdata.get_rname().get_name(), String::from("test.com"));

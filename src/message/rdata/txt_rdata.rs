@@ -108,7 +108,8 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 4] = [116, 101, 115, 116];
 
-        let txt_rdata = TxtRdata::from_bytes(&bytes);
+        // bytes is not the full msg, but in this case it will not use inside
+        let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes);
 
         assert_eq!(txt_rdata.get_text(), String::from("test"));
     }

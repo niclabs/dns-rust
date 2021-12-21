@@ -125,7 +125,7 @@ mod test {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
-        let ns_rdata = NsRdata::from_bytes(&bytes_test);
+        let ns_rdata = NsRdata::from_bytes(&bytes_test, &bytes_test);
 
         assert_eq!(
             ns_rdata.get_nsdname().get_name(),

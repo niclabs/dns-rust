@@ -119,7 +119,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 7] = [5, 99, 110, 97, 109, 101, 0];
 
-        let cname_rdata = CnameRdata::from_bytes(&bytes);
+        let cname_rdata = CnameRdata::from_bytes(&bytes, &bytes);
 
         assert_eq!(cname_rdata.get_cname().get_name(), String::from("cname"));
     }

@@ -117,7 +117,7 @@ mod test {
     #[test]
     fn from_bytes_test() {
         let bytes: [u8; 4] = [128, 0, 0, 1];
-        let a_rdata = ARdata::from_bytes(&bytes);
+        let a_rdata = ARdata::from_bytes(&bytes, &bytes);
 
         assert_eq!(a_rdata.get_address()[0], 128);
         assert_eq!(a_rdata.get_address()[1], 0);

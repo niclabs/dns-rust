@@ -128,7 +128,7 @@ mod test {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
-        let ptr_rdata = PtrRdata::from_bytes(&bytes_test);
+        let ptr_rdata = PtrRdata::from_bytes(&bytes_test, &bytes_test);
 
         assert_eq!(
             ptr_rdata.get_ptrdname().get_name(),

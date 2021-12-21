@@ -215,7 +215,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2];
 
-        let (question, _others_msg_bytes) = Question::from_bytes(&bytes);
+        let (question, _others_msg_bytes) = Question::from_bytes(&bytes, &bytes);
 
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
         assert_eq!(question.get_qtype(), 5);

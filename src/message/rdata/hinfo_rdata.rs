@@ -170,7 +170,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 7] = [99, 112, 117, 0, 111, 115, 0];
 
-        let hinfo_rdata = HinfoRdata::from_bytes(&bytes);
+        let hinfo_rdata = HinfoRdata::from_bytes(&bytes, &bytes);
 
         assert_eq!(hinfo_rdata.get_cpu(), String::from("cpu"));
         assert_eq!(hinfo_rdata.get_os(), String::from("os"));

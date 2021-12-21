@@ -67,13 +67,6 @@ impl Resolver {
 
         // Receives messages
         loop {
-            let received = match rx.try_recv() {
-                Ok(val) => val,
-                Err(_) => self.get_cache(),
-            };
-
-            self.set_cache(received);
-
             let mut resolver = self.clone();
 
             println!("{}", "Waiting msg");
@@ -85,6 +78,24 @@ impl Resolver {
                 .expect("No data received");
 
             println!("{}", "Message recv");
+
+            // Updating Cache
+
+            let mut received = rx.try_iter();
+
+            let mut next_value = received.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (name, rr) = next_value.unwrap();
+                cache.add(name, rr);
+                next_value = received.next();
+            }
+
+            self.set_cache(cache);
+
+            //
 
             let dns_message = DnsMessage::from_bytes(&received_msg);
 
@@ -121,6 +132,9 @@ impl Resolver {
                 resolver_query.set_ns_data(resolver.get_ns_data());
                 resolver_query.set_src_address(src_address.clone().to_string());
 
+                let sbelt = resolver_query.get_sbelt();
+                resolver_query.initialize_slist(sbelt);
+
                 queries_hash_by_id
                     .insert(resolver_query.get_main_query_id(), resolver_query.clone());
 
@@ -152,8 +166,6 @@ impl Resolver {
                             &socket_copy,
                         );
                     } else {
-                        let sbelt = resolver_query.get_sbelt();
-                        resolver_query.initialize_slist(sbelt);
                         resolver_query.send_query_udp(socket_copy);
                     }
                     println!("{}", "Thread Finished")
@@ -172,26 +184,17 @@ impl Resolver {
                     println!("Entro por la ID");
                     thread::spawn(move || {
                         let resolver_query = queries_hash_by_id_copy.get(&answer_id).unwrap();
-                        let response = match resolver_query
-                            .clone()
-                            .process_answer_udp(dns_message, socket_copy.try_clone().unwrap())
-                        {
+                        let response = match resolver_query.clone().process_answer_udp(
+                            dns_message,
+                            socket_copy.try_clone().unwrap(),
+                            tx_clone,
+                        ) {
                             Some(val) => vec![val],
                             None => Vec::new(),
                         };
 
                         if response.len() > 0 {
                             let answers = response[0].clone().get_answer();
-                            let mut actual_cache = resolver.get_cache();
-                            for answer in answers {
-                                if answer.get_ttl() > 0
-                                    && answer.get_type_code() == resolver_query.get_stype()
-                                {
-                                    actual_cache.add(answer.get_name().get_name(), answer.clone());
-                                }
-                            }
-
-                            tx_clone.send(actual_cache).unwrap();
 
                             Resolver::send_answer_by_udp(
                                 response[0].clone(),
@@ -205,9 +208,12 @@ impl Resolver {
         }
     }
 
-    pub fn run_resolver_tcp(&self) {
+    pub fn run_resolver_tcp(&mut self) {
         // Vector to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+
+        // Create sender
+        let (tx, rx) = mpsc::channel();
 
         // Create ip and port str
         let mut host_address_and_port = self.get_ip_address();
@@ -226,7 +232,26 @@ impl Resolver {
 
             match listener.accept() {
                 Ok((mut stream, src_address)) => {
+                    // Updating Cache
+
+                    let mut received = rx.try_iter();
+
+                    let mut next_value = received.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (name, rr) = next_value.unwrap();
+                        cache.add(name, rr);
+                        next_value = received.next();
+                    }
+
+                    self.set_cache(cache);
+
+                    //
+
                     println!("New connection: {}", stream.peer_addr().unwrap());
+
                     // We receive the msg
                     let mut received_msg = [0; 512];
                     let _number_of_bytes =
@@ -237,6 +262,8 @@ impl Resolver {
                     //let socket_copy = socket.try_clone().unwrap();
 
                     let resolver_copy = resolver.clone();
+
+                    let tx_clone = tx.clone();
 
                     thread::spawn(move || {
                         let dns_message = DnsMessage::from_bytes(&received_msg);
@@ -283,7 +310,7 @@ impl Resolver {
                             } else {
                                 let sbelt = resolver_query.get_sbelt();
                                 resolver_query.initialize_slist(sbelt);
-                                resolver_query.send_query_tcp();
+                                resolver_query.send_query_tcp(tx_clone);
                             }
                             println!("{}", "Thread Finished")
                         }

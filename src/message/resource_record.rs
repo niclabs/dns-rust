@@ -470,7 +470,15 @@ mod test {
             101, 108, 108, 111,
         ];
 
-        let (resource_record_test, _other_rr_bytes) = ResourceRecord::from_bytes(&bytes_msg);
+        let full_msg: [u8; 54] = [
+            0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6,
+            0b01110101, 0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011,
+            0b01101100, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0,
+            0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
+        ];
+
+        let (resource_record_test, _other_rr_bytes) =
+            ResourceRecord::from_bytes(&bytes_msg, &full_msg);
 
         assert_eq!(
             resource_record_test.get_name().get_name(),

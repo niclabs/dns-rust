@@ -144,7 +144,7 @@ mod test {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
-        let (domain_name, _) = DomainName::from_bytes(&bytes_test);
+        let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test);
 
         assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
     }

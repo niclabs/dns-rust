@@ -169,7 +169,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 12] = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0];
 
-        let mx_rdata = MxRdata::from_bytes(&bytes);
+        let mx_rdata = MxRdata::from_bytes(&bytes, &bytes);
 
         assert_eq!(mx_rdata.get_preference(), 128);
         assert_eq!(mx_rdata.get_exchange().get_name(), String::from("test.com"));

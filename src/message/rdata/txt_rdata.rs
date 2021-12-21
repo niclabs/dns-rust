@@ -29,7 +29,7 @@ impl ToBytes for TxtRdata {
 
 impl FromBytes<TxtRdata> for TxtRdata {
     /// Creates a new TxtRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let mut string = String::from("");
 
         for byte in bytes {

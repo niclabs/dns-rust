@@ -44,7 +44,7 @@ impl ToBytes for HinfoRdata {
 
 impl FromBytes<HinfoRdata> for HinfoRdata {
     /// Creates a new HinfoRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let mut cpu = String::from("");
         let mut os = String::from("");
 

@@ -31,10 +31,10 @@ impl ToBytes for NsRdata {
 
 impl FromBytes<NsRdata> for NsRdata {
     /// Creates a new NsRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let mut ns_rdata = NsRdata::new();
 
-        let (domain_name, _) = DomainName::from_bytes(bytes);
+        let (domain_name, _) = DomainName::from_bytes(bytes, full_msg);
         ns_rdata.set_nsdname(domain_name);
 
         ns_rdata

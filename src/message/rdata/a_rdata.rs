@@ -22,7 +22,7 @@ impl ToBytes for ARdata {
 
 impl FromBytes<ARdata> for ARdata {
     /// Creates a new ARdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let mut a_rdata = ARdata::new();
 
         let array_bytes = [bytes[0], bytes[1], bytes[2], bytes[3]];

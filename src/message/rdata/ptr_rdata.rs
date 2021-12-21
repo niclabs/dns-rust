@@ -31,10 +31,10 @@ impl ToBytes for PtrRdata {
 
 impl FromBytes<PtrRdata> for PtrRdata {
     /// Creates a new PtrRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let mut ptr_rdata = PtrRdata::new();
 
-        let (domain_name, _) = DomainName::from_bytes(bytes);
+        let (domain_name, _) = DomainName::from_bytes(bytes, full_msg);
         ptr_rdata.set_ptrdname(domain_name);
 
         ptr_rdata

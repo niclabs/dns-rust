@@ -28,7 +28,7 @@ impl DomainName {
     }
 
     /// Given an array of bytes, creates a new DomainName and returns the unused bytes
-    pub fn from_bytes(bytes: &[u8]) -> (Self, &[u8]) {
+    pub fn from_bytes_no_offset(bytes: &[u8]) -> (Self, &[u8]) {
         let mut name = String::from("");
         let mut index = 0;
 
@@ -49,6 +49,22 @@ impl DomainName {
         domain_name.set_name(name);
 
         (domain_name, &bytes[index + 1..])
+    }
+
+    pub fn from_bytes<'a>(bytes: &'a [u8], full_msg: &'a [u8]) -> (Self, &'a [u8]) {
+        let msg_compresion = bytes[0].clone() >> 6;
+
+        if msg_compresion == 3 {
+            let offset: usize = (((bytes[0].clone() as u16) << 8 | bytes[1].clone() as u16)
+                & 0b0011111111111111) as usize;
+            let (question, mut no_question_bytes) =
+                DomainName::from_bytes_no_offset(&full_msg[offset..]);
+            no_question_bytes = &bytes[2..];
+
+            return (question, no_question_bytes);
+        } else {
+            return DomainName::from_bytes_no_offset(&bytes[0..]);
+        }
     }
 
     /// Returns an array of bytes that represents the domain name

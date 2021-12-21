@@ -46,8 +46,8 @@ impl Question {
     }
 
     /// Given an array of bytes, creates a new Question.
-    pub fn from_bytes(bytes: &[u8]) -> (Question, &[u8]) {
-        let (qname, bytes_without_name) = DomainName::from_bytes(bytes);
+    pub fn from_bytes<'a>(bytes: &'a [u8], full_msg: &'a [u8]) -> (Question, &'a [u8]) {
+        let (qname, bytes_without_name) = DomainName::from_bytes(bytes, full_msg);
 
         let qtype = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let qclass = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;

@@ -49,17 +49,19 @@ impl ToBytes for Rdata {
 
 impl FromBytes<Rdata> for Rdata {
     /// Given an array of bytes and a type code, returns a new Rdata
-    fn from_bytes(bytes: &[u8]) -> Rdata {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Rdata {
         let type_code = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
         let rdata = match type_code {
-            1 => Rdata::SomeARdata(ARdata::from_bytes(&bytes[..bytes.len() - 2])),
-            2 => Rdata::SomeNsRdata(NsRdata::from_bytes(&bytes[..bytes.len() - 2])),
-            5 => Rdata::SomeCnameRdata(CnameRdata::from_bytes(&bytes[..bytes.len() - 2])),
-            6 => Rdata::SomeSoaRdata(SoaRdata::from_bytes(&bytes[..bytes.len() - 2])),
-            12 => Rdata::SomePtrRdata(PtrRdata::from_bytes(&bytes[..bytes.len() - 2])),
-            13 => Rdata::SomeHinfoRdata(HinfoRdata::from_bytes(&bytes[..bytes.len() - 2])),
-            15 => Rdata::SomeMxRdata(MxRdata::from_bytes(&bytes[..bytes.len() - 2])),
-            16 => Rdata::SomeTxtRdata(TxtRdata::from_bytes(&bytes[..bytes.len() - 2])),
+            1 => Rdata::SomeARdata(ARdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            2 => Rdata::SomeNsRdata(NsRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            5 => Rdata::SomeCnameRdata(CnameRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            6 => Rdata::SomeSoaRdata(SoaRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            12 => Rdata::SomePtrRdata(PtrRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            13 => {
+                Rdata::SomeHinfoRdata(HinfoRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg))
+            }
+            15 => Rdata::SomeMxRdata(MxRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            16 => Rdata::SomeTxtRdata(TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
             _ => unreachable!(),
         };
         rdata

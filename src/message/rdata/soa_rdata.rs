@@ -145,11 +145,11 @@ impl ToBytes for SoaRdata {
 
 impl FromBytes<SoaRdata> for SoaRdata {
     /// Creates a new SoaRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let mut soa_rdata = SoaRdata::new();
 
-        let (mname, bytes_without_mname) = DomainName::from_bytes(bytes);
-        let (rname, bytes_without_rname) = DomainName::from_bytes(bytes_without_mname);
+        let (mname, bytes_without_mname) = DomainName::from_bytes(bytes, full_msg);
+        let (rname, bytes_without_rname) = DomainName::from_bytes(bytes_without_mname, full_msg);
 
         soa_rdata.set_mname(mname);
         soa_rdata.set_rname(rname);

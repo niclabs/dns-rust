@@ -115,7 +115,7 @@ impl DnsMessage {
     // Creates a DnsMessage from an array of bytes
     pub fn from_bytes(bytes: &[u8]) -> Self {
         let header = Header::from_bytes(&bytes[0..12]);
-        let (question, mut no_question_bytes) = Question::from_bytes(&bytes[12..]);
+        let (question, mut no_question_bytes) = Question::from_bytes(&bytes[12..], bytes);
 
         let mut answer = Vec::<ResourceRecord>::new();
         let mut authority = Vec::<ResourceRecord>::new();
@@ -126,19 +126,22 @@ impl DnsMessage {
         let additional_rr_size = header.get_arcount();
 
         for _i in 0..answer_rr_size {
-            let (resource_record, other_rr_bytes) = ResourceRecord::from_bytes(no_question_bytes);
+            let (resource_record, other_rr_bytes) =
+                ResourceRecord::from_bytes(no_question_bytes, bytes);
             answer.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
         for _i in 0..authority_rr_size {
-            let (resource_record, other_rr_bytes) = ResourceRecord::from_bytes(no_question_bytes);
+            let (resource_record, other_rr_bytes) =
+                ResourceRecord::from_bytes(no_question_bytes, bytes);
             authority.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
         for _i in 0..additional_rr_size {
-            let (resource_record, other_rr_bytes) = ResourceRecord::from_bytes(no_question_bytes);
+            let (resource_record, other_rr_bytes) =
+                ResourceRecord::from_bytes(no_question_bytes, bytes);
             additional.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }

@@ -29,10 +29,10 @@ impl ToBytes for CnameRdata {
 
 impl FromBytes<CnameRdata> for CnameRdata {
     /// Creates a new Cname from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let mut cname_rdata = CnameRdata::new();
 
-        let (cname, _) = DomainName::from_bytes(bytes);
+        let (cname, _) = DomainName::from_bytes(bytes, full_msg);
 
         cname_rdata.set_cname(cname);
 

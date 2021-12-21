@@ -47,7 +47,7 @@ pub trait ToBytes {
 
 /// Trait to create an struct from bytes
 pub trait FromBytes<T> {
-    fn from_bytes(bytes: &[u8]) -> T;
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> T;
 }
 
 // Methods
@@ -102,8 +102,8 @@ impl ResourceRecord {
     /// );
     /// ```
     ///
-    pub fn from_bytes(bytes: &[u8]) -> (ResourceRecord, &[u8]) {
-        let (name, bytes_without_name) = DomainName::from_bytes(bytes);
+    pub fn from_bytes<'a>(bytes: &'a [u8], full_msg: &'a [u8]) -> (ResourceRecord, &'a [u8]) {
+        let (name, bytes_without_name) = DomainName::from_bytes(bytes, full_msg.clone());
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
@@ -117,7 +117,7 @@ impl ResourceRecord {
         rdata_bytes_vec.push(bytes_without_name[0]);
         rdata_bytes_vec.push(bytes_without_name[1]);
 
-        let rdata = Rdata::from_bytes(rdata_bytes_vec.as_slice());
+        let rdata = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
 
         let resource_record = ResourceRecord {
             name: name,
@@ -271,8 +271,6 @@ impl ResourceRecord {
         rr_bytes.push(self.get_second_rdlength_byte());
 
         let rdata_bytes = self.rdata_to_bytes();
-
-        println!("{:#?}", rdata_bytes);
 
         for byte in rdata_bytes.as_slice() {
             rr_bytes.push(*byte);

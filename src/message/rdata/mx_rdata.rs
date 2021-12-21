@@ -39,11 +39,11 @@ impl ToBytes for MxRdata {
 
 impl FromBytes<MxRdata> for MxRdata {
     /// Creates a new MxRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
         let preference = (bytes[0] as u16) << 8 | bytes[1] as u16;
 
         // This must be replace for a DomainName struct
-        let (exchange, _) = DomainName::from_bytes(&bytes[2..]);
+        let (exchange, _) = DomainName::from_bytes(&bytes[2..], full_msg);
 
         let mut mx_rdata = MxRdata::new();
 

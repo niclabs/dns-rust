@@ -5,6 +5,7 @@ pub mod message;
 pub mod resolver;
 pub mod rr_cache;
 pub mod server;
+pub mod name_server;
 
 use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;
@@ -14,12 +15,17 @@ use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
 use std::net::UdpSocket;
+use crate::name_server::master_file::MasterFile;
+use std::fs::File;
+use std::io::BufReader;
+use std::io::BufRead;
 
 pub fn main() {
     /*
     test_udp();
     */
 
+    /*
     let mut resolver = Resolver::new();
 
     resolver.set_ip_address("192.168.1.89".to_string());
@@ -31,6 +37,10 @@ pub fn main() {
     resolver.set_sbelt(sbelt);
 
     resolver.run_resolver_udp();
+    */
+
+    MasterFile::from_file("test.txt".to_string());
+
 }
 
 fn test_tcp() {

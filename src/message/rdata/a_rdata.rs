@@ -1,4 +1,6 @@
-use crate::message::resource_record::{FromBytes, ToBytes};
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for a type
@@ -51,6 +53,45 @@ impl ARdata {
         };
 
         a_rdata
+    }
+
+    pub fn rr_from_master_file(
+        values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let mut a_rdata = ARdata::new();
+        let mut address: [u8; 4] = [0; 4];
+        let str_ip = values.next().unwrap();
+        let bytes_str: Vec<&str> = str_ip.split(".").collect();
+        let mut index = 0;
+
+        for byte in bytes_str {
+            let numb_byte = byte.parse::<u8>().unwrap();
+            address[index] = numb_byte;
+            index = index + 1;
+        }
+
+        a_rdata.set_address(address);
+
+        let rdata = Rdata::SomeARdata(a_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(1);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(4);
+
+        resource_record
     }
 }
 

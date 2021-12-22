@@ -105,10 +105,12 @@ impl ResolverQuery {
             // Gets a vector of NS RR for host_name
             let ns_parent_host_name = cache.get(parent_host_name.to_string(), ns_type.clone());
 
+            /*
             if ns_parent_host_name.len() == 0 {
                 labels.remove(0);
                 continue;
             }
+            */
 
             let mut ip_found = 0;
 
@@ -240,36 +242,17 @@ impl ResolverQuery {
         let best_server = slist.get_first(); //hashamp of server that responds faster
         let mut best_server_ip = best_server.get(&"ip_address".to_string()).unwrap().clone();
 
-        // Implementación: se deben consultar las ips de los ns que no tienen ips
+        /* Implementar: se deben consultar las ips de los ns que no tienen ips
 
         let mut ns_list_without_first = slist.get_ns_list();
         ns_list_without_first.remove(0);
 
         for ns in ns_list_without_first {
-            let socket_copy = socket.try_clone().unwrap();
-            thread::spawn(move || {
-                let ip = ns.get(&"ip_address".to_string()).unwrap();
-
-                if ip.to_string() == "".to_string() {
-                    let local_addr = socket_copy.local_addr().unwrap().to_string();
-
-                    let mut rng = thread_rng();
-
-                    let id: u16 = rng.gen();
-
-                    let name = ns.get(&"name".to_string()).unwrap();
-
-                    let dns_query =
-                        DnsMessage::new_query_message(name.to_string(), 1, 1, 0, false, id);
-
-                    socket_copy
-                        .send_to(&dns_query.to_bytes(), local_addr)
-                        .expect("failed to send message");
-                }
-            });
         }
 
         ///////////////////////////////////////////////
+        ///
+        */
 
         let query_msg = self.create_query_message();
         let msg_to_bytes = query_msg.to_bytes();
@@ -431,9 +414,6 @@ impl ResolverQuery {
                 return None;
             }
         } else {
-            let sbelt = self.get_sbelt();
-            self.initialize_slist(sbelt);
-            let mut slist = self.get_slist();
             slist.delete(best_server_hostname.clone());
             self.set_slist(slist);
             self.send_query_udp(socket);

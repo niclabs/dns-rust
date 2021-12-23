@@ -7,6 +7,7 @@ pub struct NSZone {
     name: String,
     value: Vec<ResourceRecord>,
     childs: Vec<NSZone>,
+    subzone: Vec<ResourceRecord>,
 }
 
 impl NSZone {
@@ -15,6 +16,7 @@ impl NSZone {
             name: "".to_string(),
             value: Vec::<ResourceRecord>::new(),
             childs: Vec::<NSZone>::new(),
+            subzone: Vec::<ResourceRecord>::new(),
         };
 
         ns_zone
@@ -155,6 +157,11 @@ impl NSZone {
     pub fn set_name(&mut self, name: String) {
         self.name = name;
     }
+
+    // Sets the subzone with a new value
+    pub fn set_subzone(&mut self, subzone: Vec<ResourceRecord>) {
+        self.subzone = subzone;
+    }
 }
 
 // Getters
@@ -172,5 +179,10 @@ impl NSZone {
     // Gets the host name from the node
     pub fn get_name(&self) -> String {
         self.name.clone()
+    }
+
+    // Gets the subzone glue records from the node
+    pub fn get_subzone(&self) -> Vec<ResourceRecord> {
+        self.subzone.clone()
     }
 }

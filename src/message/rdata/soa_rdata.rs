@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
-use crate::message::resource_record::{FromBytes, ToBytes};
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for soa type
@@ -189,6 +191,55 @@ impl SoaRdata {
         };
 
         soa_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        mut ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> (ResourceRecord, u32) {
+        let mut soa_rdata = SoaRdata::new();
+        let mut m_name = DomainName::new();
+        let mut r_name = DomainName::new();
+
+        let m_name_str = values.next().unwrap();
+        let r_name_str = values.next().unwrap();
+        let serial = values.next().unwrap().parse::<u32>().unwrap();
+        let refresh = values.next().unwrap().parse::<u32>().unwrap();
+        let retry = values.next().unwrap().parse::<u32>().unwrap();
+        let expire = values.next().unwrap().parse::<u32>().unwrap();
+        let minimum = values.next().unwrap().parse::<u32>().unwrap();
+
+        m_name.set_name(m_name_str.to_string());
+        r_name.set_name(r_name_str.to_string());
+
+        soa_rdata.set_mname(m_name);
+        soa_rdata.set_rname(r_name);
+        soa_rdata.set_serial(serial);
+        soa_rdata.set_refresh(refresh);
+        soa_rdata.set_retry(retry);
+        soa_rdata.set_expire(expire);
+        soa_rdata.set_minimum(minimum);
+
+        let rdata = Rdata::SomeSoaRdata(soa_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(6);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(20 + m_name_str.len() as u16 + r_name_str.len() as u16 + 4);
+
+        (resource_record, minimum)
     }
 
     /// Gets the first byte from the serial value

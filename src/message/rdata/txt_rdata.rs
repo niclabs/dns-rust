@@ -1,4 +1,6 @@
-use crate::message::resource_record::{FromBytes, ToBytes};
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone)]
@@ -56,6 +58,36 @@ impl TxtRdata {
         let txt_rdata = TxtRdata { text: text };
 
         txt_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let text = values.next().unwrap();
+
+        let mut txt_rdata = TxtRdata::new(text.to_string());
+
+        let rdata = Rdata::SomeTxtRdata(txt_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(16);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(text.len() as u16);
+
+        resource_record
     }
 }
 

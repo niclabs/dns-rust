@@ -2,23 +2,24 @@ pub mod client;
 pub mod dns_cache;
 pub mod domain_name;
 pub mod message;
+pub mod name_server;
 pub mod resolver;
 pub mod rr_cache;
 pub mod server;
-pub mod name_server;
 
 use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;
+use crate::name_server::master_file::MasterFile;
+use crate::name_server::zone::NSZone;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
 use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
 use std::net::UdpSocket;
-use crate::name_server::master_file::MasterFile;
-use std::fs::File;
-use std::io::BufReader;
-use std::io::BufRead;
 
 pub fn main() {
     /*
@@ -39,8 +40,9 @@ pub fn main() {
     resolver.run_resolver_udp();
     */
 
-    MasterFile::from_file("test.txt".to_string());
+    let ns_zone = NSZone::from_file("test.txt".to_string());
 
+    ns_zone.print_zone();
 }
 
 fn test_tcp() {

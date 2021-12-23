@@ -1,4 +1,11 @@
 use crate::message::rdata::a_rdata::ARdata;
+use crate::message::rdata::cname_rdata::CnameRdata;
+use crate::message::rdata::hinfo_rdata::HinfoRdata;
+use crate::message::rdata::mx_rdata::MxRdata;
+use crate::message::rdata::ns_rdata::NsRdata;
+use crate::message::rdata::ptr_rdata::PtrRdata;
+use crate::message::rdata::soa_rdata::SoaRdata;
+use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::resource_record::ResourceRecord;
 use core::num;
 use std::collections::HashMap;
@@ -12,9 +19,10 @@ use std::str::SplitWhitespace;
 /// Structs that represents data from a master file
 pub struct MasterFile {
     origin: String,
-    // ELIMINAR HOSTS Y USAR RRS
-    hosts: Vec<String>,
+    last_host: String,
     rrs: HashMap<String, Vec<ResourceRecord>>,
+    class_default: String,
+    ttl_default: u32,
 }
 
 impl MasterFile {
@@ -22,8 +30,10 @@ impl MasterFile {
     pub fn new(origin: String) -> Self {
         let master_file = MasterFile {
             origin: origin,
-            hosts: Vec::new(),
+            last_host: "".to_string(),
             rrs: HashMap::<String, Vec<ResourceRecord>>::new(),
+            class_default: "IN".to_string(),
+            ttl_default: 0,
         };
 
         master_file
@@ -81,6 +91,7 @@ impl MasterFile {
         master_file
     }
 
+    /// Process a line from a master file
     fn process_line(&mut self, line: String) {
         // Empty case
         if line == "".to_string() {
@@ -91,12 +102,24 @@ impl MasterFile {
         if line.contains("$ORIGIN") {
             let mut words = line.split_whitespace();
             words.next();
-            self.set_origin(words.next().unwrap().to_string());
+            let name = words.next().unwrap().to_string();
+            self.set_last_host(name.clone());
+            self.set_origin(name);
 
             return;
         }
 
-        //Falta Include case
+        //Include case
+        if line.contains("$INCLUDE") {
+            let mut words = line.split_whitespace();
+            words.next();
+
+            let file_name = words.next().unwrap();
+            let domain_name = words.next().unwrap_or("");
+            self.process_include(file_name.to_string(), domain_name.to_string());
+
+            return;
+        }
 
         // Replace @ for the origin domain
         let new_line = line.replace("@", &self.get_origin());
@@ -105,10 +128,25 @@ impl MasterFile {
         let line = new_line.replace("\\", "");
 
         self.process_line_rr(line);
-
-        //println!("{:#?}", line);
     }
 
+    /// Process an INCLUDE line in a master file
+    fn process_include(&mut self, file_name: String, domain_name: String) {
+        if domain_name != "" {
+            self.set_last_host(domain_name)
+        }
+
+        let file = File::open(file_name).expect("file not found!");
+        let reader = BufReader::new(file);
+
+        for line in reader.lines() {
+            let line = line.unwrap();
+
+            self.process_line_rr(line);
+        }
+    }
+
+    /// Removes the comments from a line in a master file
     fn remove_comments(mut line: String) -> String {
         let index = line.find(";");
 
@@ -124,16 +162,8 @@ impl MasterFile {
         return line;
     }
 
-    fn get_last_host(&self) -> String {
-        let hosts = self.get_hosts();
-
-        match hosts.last() {
-            Some(x) => x.to_string(),
-            None => self.get_origin(),
-        }
-    }
-
-    fn get_line_host_name(&self, line: String) -> (String, String) {
+    /// Gets the hostname of a line in a master file. If there is no hostname, takes the last hostnames used.
+    fn get_line_host_name(&mut self, line: String) -> (String, String) {
         let first_char = line.get(0..1).unwrap();
         let mut host_name = "".to_string();
         let mut line_left_to_process = "".to_string();
@@ -144,40 +174,50 @@ impl MasterFile {
         } else {
             let mut iter = line.split_whitespace();
             host_name = iter.next().unwrap().to_string();
+            self.set_last_host(host_name.clone());
             line_left_to_process = line.get(line.find(" ").unwrap()..).unwrap().to_string();
         }
 
         return (host_name, line_left_to_process);
     }
 
-    fn add_host(&mut self, host: String) {
-        let mut hosts = self.get_hosts();
-        hosts.push(host);
-
-        self.set_hosts(hosts);
-    }
-
+    // Process a line with rr data from a master file
     fn process_line_rr(&mut self, line: String) {
         // Gets host name
         let (host_name, line_left_to_process) = self.get_line_host_name(line.clone());
 
         // Process next values
-        let mut next_line_items = line.split_whitespace();
+        let mut next_line_items = line_left_to_process.split_whitespace();
 
         // Default values for rr
-        let mut ttl = 0;
-        let mut class = "";
+        let mut ttl = self.get_ttl_default();
+        let mut class = self.get_class_default();
         let mut rr_type = "";
 
-        for value in next_line_items {
+        let mut value = match next_line_items.next() {
+            Some(val) => val,
+            None => "",
+        };
+
+        while value != "" {
             let value_type = self.get_value_type(value.to_string());
 
             if value_type == 0 {
                 // TTL
                 ttl = value.parse::<u32>().unwrap();
+
+                value = match next_line_items.next() {
+                    Some(val) => val,
+                    None => "",
+                };
             } else if value_type == 1 {
                 // Class
-                class = value;
+                class = value.to_string();
+
+                value = match next_line_items.next() {
+                    Some(val) => val,
+                    None => "",
+                };
             } else {
                 // RRType
                 rr_type = value;
@@ -185,15 +225,10 @@ impl MasterFile {
             }
         }
 
-        self.process_especific_rr(
-            next_line_items,
-            ttl,
-            class.to_string(),
-            rr_type.to_string(),
-            host_name,
-        );
+        self.process_especific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name);
     }
 
+    /// Returns whether the type is class, rr_type or ttl
     fn get_value_type(&self, value: String) -> u8 {
         match value.as_str() {
             "IN" => 1,
@@ -212,6 +247,7 @@ impl MasterFile {
         }
     }
 
+    /// Process an especific type of RR
     fn process_especific_rr(
         &mut self,
         items: SplitWhitespace,
@@ -222,32 +258,43 @@ impl MasterFile {
     ) {
         let resource_record = match rr_type.as_str() {
             "A" => ARdata::rr_from_master_file(items, ttl, class, host_name.clone()),
-            "NS" => 2,
-            "CNAME" => 2,
-            "SOA" => 2,
-            "PTR" => 2,
-            "HINFO" => 2,
-            "MX" => 2,
-            "TXT" => 2,
+            "NS" => NsRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            "CNAME" => CnameRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            "SOA" => {
+                self.set_class_default(class.clone());
+                let (rr, minimum) =
+                    SoaRdata::rr_from_master_file(items, ttl, class, host_name.clone());
+                self.set_ttl_default(minimum);
+                rr
+            }
+            "PTR" => PtrRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            "HINFO" => HinfoRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            "MX" => MxRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            "TXT" => TxtRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            _ => unreachable!(),
         };
 
         self.add_rr(host_name, resource_record);
     }
 
+    /// Adds a new rr to the master file parsings
     fn add_rr(&mut self, host_name: String, resource_record: ResourceRecord) {
-        let rrs = self.get_rrs();
+        let mut rrs = self.get_rrs();
 
         let mut rrs_vec = match rrs.get(&host_name) {
-            Some(val) => val,
-            None => &Vec::<ResourceRecord>::new(),
+            Some(val) => val.clone(),
+            None => Vec::<ResourceRecord>::new(),
         };
 
         rrs_vec.push(resource_record);
 
         rrs.insert(host_name, rrs_vec.to_vec());
+
+        self.set_rrs(rrs);
     }
 
     /*
+    For future implementations
     fn process_backslashs(&mut self, line: String) {
         // is there backslash?
         let index = match line.find("\\") {
@@ -287,14 +334,24 @@ impl MasterFile {
         self.origin.clone()
     }
 
-    // Gets the hosts
-    pub fn get_hosts(&self) -> Vec<String> {
-        self.hosts.clone()
-    }
-
     // Gets the resource records
     pub fn get_rrs(&self) -> HashMap<String, Vec<ResourceRecord>> {
         self.rrs.clone()
+    }
+
+    // Gets the last host used
+    pub fn get_last_host(&self) -> String {
+        self.last_host.clone()
+    }
+
+    // Gets the default class for RR's
+    pub fn get_class_default(&self) -> String {
+        self.class_default.clone()
+    }
+
+    // Gets the default Ttl for RR's
+    pub fn get_ttl_default(&self) -> u32 {
+        self.ttl_default
     }
 }
 
@@ -305,13 +362,23 @@ impl MasterFile {
         self.origin = origin;
     }
 
-    // Sets the hosts with a new value
-    pub fn set_hosts(&mut self, hosts: Vec<String>) {
-        self.hosts = hosts;
-    }
-
     // Sets the rrs with a new value
     pub fn set_rrs(&mut self, rrs: HashMap<String, Vec<ResourceRecord>>) {
         self.rrs = rrs;
+    }
+
+    // Sets the last host used
+    pub fn set_last_host(&mut self, last_host: String) {
+        self.last_host = last_host;
+    }
+
+    // Sets the default class for RR's
+    pub fn set_class_default(&mut self, class: String) {
+        self.class_default = class;
+    }
+
+    // Sets the default Ttl for RR's
+    pub fn set_ttl_default(&mut self, ttl: u32) {
+        self.ttl_default = ttl;
     }
 }

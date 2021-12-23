@@ -56,7 +56,7 @@ impl ARdata {
     }
 
     pub fn rr_from_master_file(
-        values: SplitWhitespace,
+        mut values: SplitWhitespace,
         ttl: u32,
         class: String,
         host_name: String,
@@ -85,6 +85,7 @@ impl ARdata {
             "CS" => 2,
             "CH" => 3,
             "HS" => 4,
+            _ => unreachable!(),
         };
 
         resource_record.set_class(class_int);

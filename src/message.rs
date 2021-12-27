@@ -232,7 +232,7 @@ impl DnsMessage {
             15 => "MX".to_string(),
             16 => "TXT".to_string(),
             _ => unreachable!(),
-        }
+        };
 
         qtype
     }

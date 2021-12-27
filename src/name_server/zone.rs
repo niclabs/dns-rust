@@ -8,6 +8,7 @@ pub struct NSZone {
     value: Vec<ResourceRecord>,
     childs: Vec<NSZone>,
     subzone: bool,
+    glue_rrs: Vec<ResourceRecord>,
 }
 
 impl NSZone {
@@ -17,6 +18,7 @@ impl NSZone {
             value: Vec::<ResourceRecord>::new(),
             childs: Vec::<NSZone>::new(),
             subzone: false,
+            glue_rrs: Vec::<ResourceRecord>::new(),
         };
 
         ns_zone
@@ -40,7 +42,7 @@ impl NSZone {
         ns_zone
     }
 
-    fn exist_child(&self, name: String) -> bool {
+    pub fn exist_child(&self, name: String) -> bool {
         let childs = self.get_childs();
 
         for child in childs {
@@ -52,7 +54,7 @@ impl NSZone {
         return false;
     }
 
-    fn get_child(&self, name: String) -> (NSZone, i32) {
+    pub fn get_child(&self, name: String) -> (NSZone, i32) {
         let childs = self.get_childs();
 
         let mut child_ns = NSZone::new();
@@ -86,25 +88,29 @@ impl NSZone {
         if exist_child == true {
             let (mut child, index) = self.get_child(label.to_string());
 
-            if labels.len() == 0 {
-                child.set_value(rrs.clone());
-
-                if self.check_rrs_only_ns(rrs) == true {
-                    child.set_subzone(true);
-                }
+            if child.get_subzone() == true {
+                child.set_glue_rrs(rrs.clone());
             } else {
-                let mut new_name = "".to_string();
+                if labels.len() == 0 {
+                    child.set_value(rrs.clone());
 
-                labels.reverse();
+                    if self.check_rrs_only_ns(rrs) == true {
+                        child.set_subzone(true);
+                    }
+                } else {
+                    let mut new_name = "".to_string();
 
-                for label in labels {
-                    new_name.push_str(label);
-                    new_name.push_str(".");
+                    labels.reverse();
+
+                    for label in labels {
+                        new_name.push_str(label);
+                        new_name.push_str(".");
+                    }
+
+                    new_name.pop();
+
+                    child.add_node(new_name, rrs);
                 }
-
-                new_name.pop();
-
-                child.add_node(new_name, rrs);
             }
 
             childs.remove(index as usize);
@@ -204,6 +210,11 @@ impl NSZone {
     pub fn set_subzone(&mut self, subzone: bool) {
         self.subzone = subzone;
     }
+
+    // Sets the glue_rrs with a new value
+    pub fn set_glue_rrs(&mut self, glue_rrs: Vec<ResourceRecord>) {
+        self.glue_rrs = glue_rrs;
+    }
 }
 
 // Getters
@@ -223,8 +234,13 @@ impl NSZone {
         self.name.clone()
     }
 
-    // Gets the subzone glue records from the node
+    // Gets the subzone from the node
     pub fn get_subzone(&self) -> bool {
         self.subzone.clone()
+    }
+
+    // Gets the glue rrs from the node
+    pub fn get_glue_rrs(&self) -> Vec<ResourceRecord> {
+        self.glue_rrs.clone()
     }
 }

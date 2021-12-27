@@ -12,12 +12,12 @@ $ORIGIN ISI.EDU
         MX      10      VENERA
         MX      20      VAXA
 
-HOLA.A       A       26.3.0.103
+A       NS       HOLA.A
+
+HOLA.A  A       127.0.0.1
 
 VENERA  A       10.1.0.52
         A       128.9.0.32
 
 VAXA    A       10.2.0.27
         A       128.9.0.33
-
-$INCLUDE test2.txt

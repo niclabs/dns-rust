@@ -7,7 +7,7 @@ pub struct NSZone {
     name: String,
     value: Vec<ResourceRecord>,
     childs: Vec<NSZone>,
-    subzone: Vec<ResourceRecord>,
+    subzone: bool,
 }
 
 impl NSZone {
@@ -16,7 +16,7 @@ impl NSZone {
             name: "".to_string(),
             value: Vec::<ResourceRecord>::new(),
             childs: Vec::<NSZone>::new(),
-            subzone: Vec::<ResourceRecord>::new(),
+            subzone: false,
         };
 
         ns_zone
@@ -52,18 +52,23 @@ impl NSZone {
         return false;
     }
 
-    fn get_child(&self, name: String) -> NSZone {
+    fn get_child(&self, name: String) -> (NSZone, i32) {
         let childs = self.get_childs();
 
         let mut child_ns = NSZone::new();
 
+        let mut index = 0;
+
         for child in childs {
             if child.get_name() == name {
-                child_ns = child;
+                return (child.clone(), index);
             }
+            index = index + 1;
         }
 
-        child_ns
+        index = -1;
+
+        (child_ns, index)
     }
 
     fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) {
@@ -73,17 +78,20 @@ impl NSZone {
         labels.reverse();
 
         let mut index = 0;
-        let labels_len = labels.len();
 
         let label = labels.remove(0);
 
         let exist_child = self.exist_child(label.to_string());
 
         if exist_child == true {
-            let mut child = self.get_child(label.to_string());
+            let (mut child, index) = self.get_child(label.to_string());
 
             if labels.len() == 0 {
-                child.set_value(rrs);
+                child.set_value(rrs.clone());
+
+                if self.check_rrs_only_ns(rrs) == true {
+                    child.set_subzone(true);
+                }
             } else {
                 let mut new_name = "".to_string();
 
@@ -98,12 +106,20 @@ impl NSZone {
 
                 child.add_node(new_name, rrs);
             }
+
+            childs.remove(index as usize);
+            childs.push(child);
+            self.set_childs(childs);
         } else {
             let mut new_ns_zone = NSZone::new();
             new_ns_zone.set_name(label.to_string());
 
             if labels.len() == 0 {
-                new_ns_zone.set_value(rrs);
+                new_ns_zone.set_value(rrs.clone());
+
+                if self.check_rrs_only_ns(rrs) == true {
+                    new_ns_zone.set_subzone(true);
+                }
             } else {
                 let mut new_name = "".to_string();
 
@@ -124,12 +140,25 @@ impl NSZone {
         }
     }
 
+    fn check_rrs_only_ns(&self, rrs: Vec<ResourceRecord>) -> bool {
+        for rr in rrs {
+            let rr_type = rr.get_type_code();
+
+            if rr_type != 2 {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     pub fn print_zone(&self) {
         let name = self.get_name();
         let values = self.get_value();
         let childs = self.get_childs();
 
         println!("Name: {}", name);
+        println!("Subzone: {}", self.get_subzone());
 
         for val in values {
             println!("  Type: {}", val.get_type_code());
@@ -138,6 +167,19 @@ impl NSZone {
         for child in childs {
             child.print_zone();
         }
+    }
+
+    pub fn get_rrs_by_type(&self, rr_type: u16) -> Vec<ResourceRecord> {
+        let rrs = self.get_value();
+        let mut rr_by_type = Vec::<ResourceRecord>::new();
+
+        for rr in rrs {
+            if rr.get_type_code() == rr_type {
+                rr_by_type.push(rr);
+            }
+        }
+
+        return rr_by_type;
     }
 }
 
@@ -159,7 +201,7 @@ impl NSZone {
     }
 
     // Sets the subzone with a new value
-    pub fn set_subzone(&mut self, subzone: Vec<ResourceRecord>) {
+    pub fn set_subzone(&mut self, subzone: bool) {
         self.subzone = subzone;
     }
 }
@@ -182,7 +224,7 @@ impl NSZone {
     }
 
     // Gets the subzone glue records from the node
-    pub fn get_subzone(&self) -> Vec<ResourceRecord> {
+    pub fn get_subzone(&self) -> bool {
         self.subzone.clone()
     }
 }

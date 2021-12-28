@@ -184,7 +184,7 @@ impl MasterFile {
     // Process a line with rr data from a master file
     fn process_line_rr(&mut self, line: String) {
         // Gets host name
-        let (host_name, line_left_to_process) = self.get_line_host_name(line.clone());
+        let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
 
         // Process next values
         let mut next_line_items = line_left_to_process.split_whitespace();
@@ -256,21 +256,29 @@ impl MasterFile {
         rr_type: String,
         host_name: String,
     ) {
+        let origin = self.get_origin();
+        let mut full_host_name = host_name.clone();
+
+        if origin != host_name {
+            full_host_name.push_str(".");
+            full_host_name.push_str(&origin);
+        }
+
         let resource_record = match rr_type.as_str() {
-            "A" => ARdata::rr_from_master_file(items, ttl, class, host_name.clone()),
-            "NS" => NsRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
-            "CNAME" => CnameRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            "A" => ARdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "NS" => NsRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "CNAME" => CnameRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
             "SOA" => {
                 self.set_class_default(class.clone());
                 let (rr, minimum) =
-                    SoaRdata::rr_from_master_file(items, ttl, class, host_name.clone());
+                    SoaRdata::rr_from_master_file(items, ttl, class, full_host_name.clone());
                 self.set_ttl_default(minimum);
                 rr
             }
-            "PTR" => PtrRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
-            "HINFO" => HinfoRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
-            "MX" => MxRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
-            "TXT" => TxtRdata::rr_from_master_file(items, ttl, class, host_name.clone()),
+            "PTR" => PtrRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "HINFO" => HinfoRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "MX" => MxRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "TXT" => TxtRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
             _ => unreachable!(),
         };
 

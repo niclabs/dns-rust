@@ -36,6 +36,7 @@ impl NSZone {
         ns_zone.set_value(origin_rrs);
 
         for (key, value) in rrs.iter() {
+            println!("{}", key);
             ns_zone.add_node(key.clone(), value.clone());
         }
 
@@ -46,6 +47,7 @@ impl NSZone {
         let childs = self.get_childs();
 
         for child in childs {
+            println!("Child name: {}", child.get_name());
             if child.get_name() == name {
                 return true;
             }

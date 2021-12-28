@@ -11,8 +11,10 @@ use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;
 use crate::name_server::master_file::MasterFile;
 use crate::name_server::zone::NSZone;
+use crate::name_server::NameServer;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
+
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -20,11 +22,10 @@ use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
 use std::net::UdpSocket;
+use std::thread;
 
 pub fn main() {
-    /*
-    test_udp();
-    */
+    test_tcp();
 
     /*
     let mut resolver = Resolver::new();
@@ -40,9 +41,31 @@ pub fn main() {
     resolver.run_resolver_udp();
     */
 
-    let ns_zone = NSZone::from_file("test.txt".to_string());
+    /*
 
-    ns_zone.print_zone();
+    // Name Server initialization
+    let mut name_server = NameServer::new();
+    name_server.add_zone_from_master_file("test.txt".to_string());
+
+    // Resolver Initialization
+    let mut local_resolver = Resolver::new();
+    local_resolver.set_ip_address("192.168.1.89:58396".to_string());
+    local_resolver.set_ns_data(name_server.get_zones());
+
+    let mut sbelt = Slist::new();
+    sbelt.insert(".".to_string(), "198.41.0.4".to_string(), 5.0);
+
+    local_resolver.set_sbelt(sbelt);
+
+    let local_resolver_ip = local_resolver.get_ip_address();
+
+    thread::spawn(move || {
+        name_server.run_name_server_udp("192.168.1.89".to_string(), local_resolver_ip);
+    });
+
+    local_resolver.run_resolver_udp();
+
+    */
 }
 
 fn test_tcp() {

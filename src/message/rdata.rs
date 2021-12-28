@@ -51,6 +51,9 @@ impl FromBytes<Rdata> for Rdata {
     /// Given an array of bytes and a type code, returns a new Rdata
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Rdata {
         let type_code = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
+
+        println!("Type code rdta {}", type_code);
+
         let rdata = match type_code {
             1 => Rdata::SomeARdata(ARdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
             2 => Rdata::SomeNsRdata(NsRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),

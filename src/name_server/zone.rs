@@ -244,3 +244,176 @@ impl NSZone {
         self.glue_rrs.clone()
     }
 }
+
+
+mod test {
+    use crate::name_server::master_file::MasterFile;
+
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::ns_rdata::NsRdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
+    use super::NSZone;
+
+    #[test]
+    fn constructor_test() {
+        let nszone = NSZone::new();
+
+        assert_eq!(nszone.name, String::from(""));
+        assert_eq!(nszone.value.len(), 0);
+        assert_eq!(nszone.childs.len(), 0);
+        assert_eq!(nszone.subzone, false);
+        assert_eq!(nszone.glue_rrs.len(), 0);
+    }
+
+    // Getters and Setters 
+    #[test]
+    fn set_and_get_name_test(){
+        let mut nszone = NSZone::new();
+
+        assert_eq!(nszone.get_name(), String::from(""));
+        nszone.set_name(String::from("test.com"));
+        assert_eq!(nszone.get_name(), String::from("test.com"));
+    }
+
+    #[test]
+    fn set_and_get_value_test(){
+        let mut nszone = NSZone::new();
+
+        let mut value: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        value.push(resource_record);
+
+        assert_eq!(nszone.get_value().len(), 0);
+        nszone.set_value(value);
+        assert_eq!(nszone.get_value().len(), 1);
+    }
+
+    #[test]
+    fn set_and_get_glue_rr_test(){
+        let mut nszone = NSZone::new();
+
+        let mut glue: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        glue.push(resource_record);
+
+        assert_eq!(nszone.get_glue_rrs().len(), 0);
+        nszone.set_glue_rrs(glue);
+        assert_eq!(nszone.get_glue_rrs().len(), 1);
+    }
+
+    #[test]
+    fn set_and_get_subzone_test(){
+        let mut nszone = NSZone::new();
+
+        assert_eq!(nszone.get_subzone(), false);
+        nszone.set_subzone(true);
+        assert_eq!(nszone.get_subzone(), true);
+    }
+
+    #[test]
+    fn set_and_get_childs_test(){
+        let mut nszone = NSZone::new();
+
+        let mut childs: Vec<NSZone> = Vec::new();
+        let some_nszone = NSZone::new(); 
+        childs.push(some_nszone);
+
+        assert_eq!(nszone.get_childs().len(), 0);
+        nszone.set_childs(childs);
+        assert_eq!(nszone.get_childs().len(), 1);
+    }
+
+    // Other methods
+
+    //pub fn from_file(file_name: String) -> Self
+   /* 
+
+    #[test]
+    fn from_file_test(){
+    }*/
+
+    #[test]
+    fn exist_child_test(){
+        let mut nszone = NSZone::new();
+        let mut some_nszone = NSZone::new();
+        some_nszone.set_name(String::from("test.com"));
+
+        let mut childs: Vec<NSZone> = Vec::new();
+        childs.push(some_nszone);
+        nszone.set_childs(childs);
+        assert_eq!(nszone.exist_child(String::from("test2.com")), false);
+        assert_eq!(nszone.exist_child(String::from("test.com")), true)
+    }
+
+
+    #[test]
+    fn get_child_test() {
+        let mut nszone = NSZone::new();
+        let mut some_nszone = NSZone::new();
+        let mut some_other_nszone = NSZone::new();
+        some_nszone.set_name(String::from("test.com"));
+        some_other_nszone.set_name(String::from("other.test.com"));
+
+        let mut childs: Vec<NSZone> = Vec::new();
+        childs.push(some_nszone);
+        childs.push(some_other_nszone);
+        nszone.set_childs(childs);
+        assert_eq!(nszone.get_child(String::from("other.test.com")).0.get_name(), String::from("other.test.com"));
+        assert_eq!(nszone.get_child(String::from("other.test.com")).1, 1);
+
+        assert_eq!(nszone.get_child(String::from("some.test.com")).0.get_name(), String::from(""));
+        assert_eq!(nszone.get_child(String::from("some.test.com")).1, -1);
+    }
+
+    /*#[test]
+    fn add_node_test(){
+    }*/
+
+    #[test]
+    fn check_rrs_only_ns_test(){
+
+        let mut nszone = NSZone::new();
+        let mut rr: Vec<ResourceRecord> = Vec::new();
+
+        let ns_rdata = Rdata::SomeNsRdata(NsRdata::new());
+        let mut resource_record_1 = ResourceRecord::new(ns_rdata);
+        resource_record_1.set_type_code(2);
+
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record_2 = ResourceRecord::new(a_rdata);
+        resource_record_2.set_type_code(1);
+
+        rr.push(resource_record_1);
+
+        assert_eq!(nszone.check_rrs_only_ns(rr.clone()), true);
+        rr.push(resource_record_2);
+        assert_eq!(nszone.check_rrs_only_ns(rr.clone()), false);
+    }
+/*
+    #[test]
+    fn print_zone_test(){
+    
+    }
+
+    */
+    #[test]
+    fn get_rrs_by_type_test(){
+        let mut nszone = NSZone::new();
+
+        let mut value: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record = ResourceRecord::new(a_rdata);
+        resource_record.set_type_code(1);
+        value.push(resource_record);
+
+        assert_eq!(nszone.get_rrs_by_type(1).len(), 0);
+        nszone.set_value(value);
+        assert_eq!(nszone.get_rrs_by_type(1).len(), 1);
+
+    }
+
+}
+

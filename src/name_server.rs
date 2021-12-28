@@ -156,21 +156,27 @@ impl NameServer {
 // utils functions
 impl NameServer {
     // Step 2 from RFC 1034
-    fn search_nearest_ancestor_zone(
+    pub fn search_nearest_ancestor_zone(
         zones: HashMap<String, NSZone>,
         mut qname: String,
     ) -> (NSZone, bool) {
+        println!("{}", qname);
+
         let (mut zone, mut available) = match zones.get(&qname) {
             Some(val) => (val.clone(), true),
             None => (NSZone::new(), false),
         };
 
-        let dot_position = qname.find(".").unwrap_or(0);
-        if dot_position > 0 {
-            qname.replace_range(..dot_position + 1, "");
-            return NameServer::search_nearest_ancestor_zone(zones, qname);
-        } else {
+        if zone.get_name() != "" {
             return (zone, available);
+        } else {
+            let dot_position = qname.find(".").unwrap_or(0);
+            if dot_position > 0 {
+                qname.replace_range(..dot_position + 1, "");
+                return NameServer::search_nearest_ancestor_zone(zones, qname);
+            } else {
+                return (zone, available);
+            }
         }
     }
 

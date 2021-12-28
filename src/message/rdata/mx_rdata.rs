@@ -94,6 +94,10 @@ impl MxRdata {
         let rdata = Rdata::SomeMxRdata(mx_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
         resource_record.set_type_code(15);
 
         let class_int = match class.as_str() {

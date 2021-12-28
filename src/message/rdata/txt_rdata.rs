@@ -1,5 +1,7 @@
+use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+
 use std::str::SplitWhitespace;
 use std::string::String;
 
@@ -73,6 +75,10 @@ impl TxtRdata {
         let rdata = Rdata::SomeTxtRdata(txt_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
         resource_record.set_type_code(16);
 
         let class_int = match class.as_str() {

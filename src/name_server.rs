@@ -7,6 +7,7 @@ use crate::name_server::zone::NSZone;
 use crate::resolver::Resolver;
 
 use rand::{thread_rng, Rng};
+use std::cmp;
 use std::collections::HashMap;
 use std::io::Read;
 use std::io::Write;
@@ -321,6 +322,27 @@ impl NameServer {
         let mut rrs_by_type = zone.get_rrs_by_type(qtype);
 
         if rrs_by_type.len() > 0 {
+            // Set the ttl from SOA RR
+            let (main_zone, _available) = NameServer::search_nearest_ancestor_zone(
+                zones.clone(),
+                msg.get_question().get_qname().get_name(),
+            );
+
+            let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+            let soa_rdata = match soa_rr.get_rdata() {
+                Rdata::SomeSoaRdata(val) => val,
+                _ => unreachable!(),
+            };
+
+            let soa_minimun_ttl = soa_rdata.get_minimum();
+
+            for rr in rrs_by_type.iter_mut() {
+                let rr_ttl = rr.get_ttl();
+
+                rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+            }
+            //
+
             msg.set_answer(rrs_by_type);
 
             let mut header = msg.get_header();

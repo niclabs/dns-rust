@@ -7,6 +7,7 @@ use crate::name_server::NameServer;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
+use chrono::{DateTime, Utc};
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;
@@ -21,6 +22,7 @@ use std::vec::Vec;
 #[derive(Clone)]
 /// This struct represents a resolver query
 pub struct ResolverQuery {
+    timestamp: u32,
     sname: String,
     stype: u16,
     sclass: u16,
@@ -51,8 +53,13 @@ impl ResolverQuery {
     ///
     pub fn new() -> Self {
         let mut rng = thread_rng();
+        let now = Utc::now();
+        let timestamp = now.timestamp() as u32;
+
+        println!("{}", timestamp);
 
         let query = ResolverQuery {
+            timestamp: timestamp,
             sname: "".to_string(),
             stype: 0 as u16,
             sclass: 0 as u16,
@@ -679,6 +686,11 @@ impl ResolverQuery {
 
 // Getters
 impl ResolverQuery {
+    /// Gets the timestamp
+    pub fn get_timestamp(&self) -> u32 {
+        self.timestamp.clone()
+    }
+
     /// Gets the sname
     pub fn get_sname(&self) -> String {
         self.sname.clone()
@@ -771,6 +783,11 @@ impl ResolverQuery {
 
 // Setters
 impl ResolverQuery {
+    /// Sets the timestamp attribute with a new value
+    pub fn set_timestamp(&mut self, timestamp: u32) {
+        self.timestamp = timestamp;
+    }
+
     /// Sets the sname attribute with a new value
     pub fn set_sname(&mut self, sname: String) {
         self.sname = sname;

@@ -5,7 +5,9 @@ use crate::name_server::zone::NSZone;
 use crate::resolver::resolver_query::ResolverQuery;
 use crate::resolver::slist::Slist;
 
+use core::num;
 use std::collections::HashMap;
+use std::fs::hard_link;
 use std::io::Read;
 use std::io::Write;
 use std::net::UdpSocket;
@@ -49,8 +51,13 @@ impl Resolver {
 
     // Runs a udp resolver
     pub fn run_resolver_udp(&mut self) {
-        // Vector to save the queries in process
+        // Hashmap to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+
+        // Hashmap to save incomplete messages
+        let mut messages = HashMap::<u16, DnsMessage>::new();
+
+        // Channel to send data between threads
         let (tx, rx) = mpsc::channel();
 
         // Create ip and port str
@@ -67,12 +74,22 @@ impl Resolver {
             println!("{}", "Waiting msg");
 
             // We receive the msg
-            let mut received_msg = [0; 512];
-            let (_number_of_bytes, src_address) = socket
-                .recv_from(&mut received_msg)
-                .expect("No data received");
+            let mut dns_message_option =
+                Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
+
+            let (mut dns_message, mut src_address) = (DnsMessage::new(), "".to_string());
 
             println!("{}", "Message recv");
+
+            match dns_message_option {
+                Some(val) => {
+                    dns_message = val.0;
+                    src_address = val.1;
+                }
+                None => {
+                    continue;
+                }
+            }
 
             // Updating Cache
 
@@ -91,9 +108,6 @@ impl Resolver {
             self.set_cache(cache);
 
             ////////////////////////////////////////////////////////////////////
-
-            // Dns message parsed
-            let dns_message = DnsMessage::from_bytes(&received_msg);
 
             println!("{}", "Message parsed");
 
@@ -227,7 +241,7 @@ impl Resolver {
         // Gets ip and port str
         let mut host_address_and_port = self.get_ip_address();
 
-        // Creates an TCP Listener
+        // Creates a TCP Listener
         let listener = TcpListener::bind(&host_address_and_port).expect("Could not bind");
         println!("{}", "TcpListener Created");
 
@@ -258,14 +272,11 @@ impl Resolver {
                     println!("New connection: {}", stream.peer_addr().unwrap());
 
                     // We receive the msg
-                    let mut received_msg = [0; 512];
-                    let _number_of_bytes =
-                        stream.read(&mut received_msg).expect("No data received");
+                    let received_msg = Resolver::receive_tcp_msg(stream.try_clone().unwrap());
 
                     println!("{}", "Message recv");
 
                     let resolver_copy = resolver.clone();
-
                     let tx_clone = tx.clone();
 
                     thread::spawn(move || {
@@ -300,11 +311,14 @@ impl Resolver {
                                 id,
                             );
 
-                            let answer_msg = resolver_query.step_1_tcp(dns_message, tx_clone);
+                            let mut answer_msg = resolver_query.step_1_tcp(dns_message, tx_clone);
+
+                            answer_msg.set_query_id(resolver_query.get_old_id());
 
                             Resolver::send_answer_by_tcp(
                                 answer_msg,
                                 stream.peer_addr().unwrap().to_string(),
+                                stream,
                             );
 
                             println!("{}", "Thread Finished")
@@ -321,21 +335,151 @@ impl Resolver {
 
 // Utils
 impl Resolver {
+    fn receive_udp_msg(
+        mut socket: UdpSocket,
+        mut messages: HashMap<u16, DnsMessage>,
+    ) -> Option<(DnsMessage, String)> {
+        let mut msg = [0; 512];
+        let (_number_of_bytes_msg, address) = socket.recv_from(&mut msg).expect("No data received");
+
+        let dns_msg_parsed = DnsMessage::from_bytes(&msg);
+        let query_id = dns_msg_parsed.get_query_id();
+        let trunc = dns_msg_parsed.get_header().get_tc();
+
+        match messages.get(&query_id) {
+            Some(mut val) => {
+                let mut msg = val.clone();
+                msg.add_answers(dns_msg_parsed.get_answer());
+                msg.add_authorities(dns_msg_parsed.get_authority());
+                msg.add_additionals(dns_msg_parsed.get_additional());
+
+                if trunc == true {
+                    messages.insert(query_id, msg.clone());
+
+                    return None;
+                } else {
+                    msg.update_header_counters();
+                    let mut header = msg.get_header();
+                    header.set_tc(false);
+
+                    msg.set_header(header);
+                    messages.remove(&query_id);
+
+                    return Some((msg.clone(), address.to_string()));
+                }
+            }
+            None => {
+                if trunc == true {
+                    messages.insert(query_id, dns_msg_parsed);
+                    return None;
+                } else {
+                    return Some((dns_msg_parsed, address.to_string()));
+                }
+            }
+        }
+    }
+
+    fn receive_tcp_msg(mut stream: TcpStream) -> Vec<u8> {
+        let mut received_msg = [0; 2];
+        let _number_of_bytes = stream.read(&mut received_msg).expect("No data received");
+
+        let mut tcp_msg_len = (received_msg[0] as u16) << 8 | received_msg[1] as u16;
+        let mut vec_msg: Vec<u8> = Vec::new();
+
+        while tcp_msg_len > 0 {
+            let mut msg = [0; 512];
+            let number_of_bytes_msg = stream.read(&mut msg).expect("No data received");
+            tcp_msg_len = tcp_msg_len - number_of_bytes_msg as u16;
+            vec_msg.append(&mut msg.to_vec());
+        }
+
+        return vec_msg;
+    }
+
     // Sends the response to the address by udp
     fn send_answer_by_udp(response: DnsMessage, src_address: String, socket: &UdpSocket) {
         let bytes = response.to_bytes();
 
-        socket
-            .send_to(&bytes, src_address)
-            .expect("failed to send message");
+        if bytes.len() <= 512 {
+            socket
+                .send_to(&bytes, src_address)
+                .expect("failed to send message");
+        } else {
+            let ancount = response.get_header().get_ancount();
+            let nscount = response.get_header().get_nscount();
+            let arcount = response.get_header().get_arcount();
+            let total_rrs = ancount + nscount + arcount;
+            let half_rrs: f32 = (total_rrs / 2).into();
+            let ceil_half_rrs = half_rrs.ceil() as u32;
+
+            let mut answer = response.get_answer();
+            let mut authority = response.get_authority();
+            let mut additional = response.get_additional();
+
+            let mut first_tc_msg = DnsMessage::new();
+            let mut new_header = response.get_header();
+            new_header.set_tc(true);
+            first_tc_msg.set_header(new_header);
+
+            for i in 1..ceil_half_rrs + 1 {
+                if answer.len() > 0 {
+                    let rr = answer.remove(0);
+                    first_tc_msg.add_answers(vec![rr]);
+                } else if authority.len() > 0 {
+                    let rr = authority.remove(0);
+                    first_tc_msg.add_authorities(vec![rr]);
+                } else if additional.len() > 0 {
+                    let rr = additional.remove(0);
+                    first_tc_msg.add_additionals(vec![rr]);
+                } else {
+                    continue;
+                }
+            }
+
+            first_tc_msg.update_header_counters();
+
+            Resolver::send_answer_by_udp(
+                first_tc_msg,
+                src_address.clone(),
+                &socket.try_clone().unwrap(),
+            );
+
+            let mut second_tc_msg = DnsMessage::new();
+            let mut new_header = response.get_header();
+            second_tc_msg.set_header(new_header);
+
+            for i in 1..ceil_half_rrs + 1 {
+                if answer.len() > 0 {
+                    let rr = answer.remove(0);
+                    second_tc_msg.add_answers(vec![rr]);
+                } else if authority.len() > 0 {
+                    let rr = authority.remove(0);
+                    second_tc_msg.add_authorities(vec![rr]);
+                } else if additional.len() > 0 {
+                    let rr = additional.remove(0);
+                    second_tc_msg.add_additionals(vec![rr]);
+                } else {
+                    continue;
+                }
+            }
+
+            second_tc_msg.update_header_counters();
+
+            Resolver::send_answer_by_udp(second_tc_msg, src_address, socket);
+        }
     }
 
     // Sends the response to the address by tcp
-    fn send_answer_by_tcp(response: DnsMessage, src_address: String) {
+    fn send_answer_by_tcp(response: DnsMessage, src_address: String, mut stream: TcpStream) {
         let bytes = response.to_bytes();
 
-        let mut stream = TcpStream::connect(src_address).unwrap();
-        stream.write(&bytes);
+        let msg_length: u16 = bytes.len() as u16;
+
+        let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
+
+        let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
+
+        stream.write(&full_msg);
     }
 }
 

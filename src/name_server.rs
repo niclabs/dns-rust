@@ -38,15 +38,6 @@ impl NameServer {
         name_server
     }
 
-    pub fn add_zone_from_master_file(&mut self, file_name: String) {
-        let new_zone = NSZone::from_file(file_name);
-        let mut zones = self.get_zones();
-
-        zones.insert(new_zone.get_name(), new_zone);
-
-        self.set_zones(zones);
-    }
-
     pub fn run_name_server_udp(
         &mut self,
         mut name_server_ip_address: String,
@@ -111,7 +102,7 @@ impl NameServer {
                     let rd = new_msg.get_header().get_rd();
 
                     if rd == true {
-                        NameServer::step_5(resolver_ip_clone, new_msg, socket_copy, tx_clone);
+                        NameServer::step_5_udp(resolver_ip_clone, new_msg, socket_copy, tx_clone);
                     } else {
                         let response_dns_msg = NameServer::step_2(new_msg, zones, cache);
                         NameServer::send_response_udp(
@@ -143,17 +134,86 @@ impl NameServer {
         }
     }
 
-    fn set_ra(mut msg: DnsMessage, ra: bool) -> DnsMessage {
-        let mut header = msg.get_header();
-        header.set_ra(ra);
+    pub fn run_name_server_tcp(
+        &mut self,
+        mut name_server_ip_address: String,
+        local_resolver_ip_and_port: String,
+    ) {
+        name_server_ip_address.push_str(":53");
 
-        msg.set_header(header);
+        // Creates a TCP Listener
+        let listener = TcpListener::bind(&name_server_ip_address).expect("Could not bind");
+        println!("{}", "TcpListener Created");
 
-        msg
+        loop {
+            println!("{}", "Waiting msg");
+
+            match listener.accept() {
+                Ok((mut stream, src_address)) => {
+                    println!("New connection: {}", stream.peer_addr().unwrap());
+
+                    // We receive the msg
+                    let mut received_msg = Vec::new();
+                    let _number_of_bytes =
+                        stream.read(&mut received_msg).expect("No data received");
+
+                    println!("{}", "Message recv");
+
+                    // Msg parsed
+                    let mut dns_message = DnsMessage::from_bytes(&received_msg);
+
+                    println!("{}", "Message parsed");
+
+                    if dns_message.get_header().get_qr() == false {
+                        let zones = self.get_zones();
+                        let cache = self.get_cache();
+                        let resolver_ip_clone = local_resolver_ip_and_port.clone();
+
+                        thread::spawn(move || {
+                            let query_id = dns_message.get_query_id();
+
+                            // Set RA bit to 1
+                            let new_msg = NameServer::set_ra(dns_message, true);
+
+                            let rd = new_msg.get_header().get_rd();
+
+                            if rd == true {
+                                let mut response_dns_msg = NameServer::step_5_tcp(
+                                    resolver_ip_clone,
+                                    new_msg,
+                                    cache.clone(),
+                                    zones.clone(),
+                                );
+
+                                response_dns_msg.set_query_id(query_id.clone());
+
+                                NameServer::send_response_tcp(
+                                    response_dns_msg,
+                                    src_address.to_string(),
+                                );
+                            } else {
+                                let mut response_dns_msg =
+                                    NameServer::step_2(new_msg, zones, cache);
+
+                                response_dns_msg.set_query_id(query_id);
+
+                                NameServer::send_response_tcp(
+                                    response_dns_msg,
+                                    src_address.to_string(),
+                                );
+                            }
+                        });
+                    }
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                }
+            }
+        }
     }
 }
 
-// utils functions
+// Utils for TCP and UDP
 impl NameServer {
     // Step 2 from RFC 1034
     pub fn search_nearest_ancestor_zone(
@@ -411,27 +471,6 @@ impl NameServer {
         return NameServer::step_6(msg, cache, zones);
     }
 
-    fn step_5(
-        resolver_ip_and_port: String,
-        mut msg: DnsMessage,
-        socket: UdpSocket,
-        tx: Sender<(u16, u16)>,
-    ) {
-        let old_id = msg.get_query_id();
-        let mut rng = thread_rng();
-        let new_id: u16 = rng.gen();
-
-        let mut header = msg.get_header();
-        header.set_id(new_id);
-
-        msg.set_header(header);
-
-        tx.send((old_id, new_id));
-
-        // Send request to resolver
-        socket.send_to(&msg.to_bytes(), resolver_ip_and_port);
-    }
-
     /// Adds addittional information to response
     fn step_6(
         mut msg: DnsMessage,
@@ -499,7 +538,91 @@ impl NameServer {
 
         return msg;
     }
+}
 
+// Utils for UDP
+impl NameServer {
+    fn step_5_udp(
+        resolver_ip_and_port: String,
+        mut msg: DnsMessage,
+        socket: UdpSocket,
+        tx: Sender<(u16, u16)>,
+    ) {
+        let old_id = msg.get_query_id();
+        let mut rng = thread_rng();
+        let new_id: u16 = rng.gen();
+
+        let mut header = msg.get_header();
+        header.set_id(new_id);
+
+        msg.set_header(header);
+
+        tx.send((old_id, new_id));
+
+        // Send request to resolver
+        socket.send_to(&msg.to_bytes(), resolver_ip_and_port);
+    }
+
+    fn send_response_udp(socket: UdpSocket, mut msg: DnsMessage, address: String) {
+        msg.update_header_counters();
+
+        let msg_to_bytes = msg.to_bytes();
+
+        socket.send_to(&msg_to_bytes, address);
+    }
+}
+
+//Utils for TCP
+impl NameServer {
+    fn step_5_tcp(
+        resolver_ip_and_port: String,
+        mut msg: DnsMessage,
+        cache: DnsCache,
+        zones: HashMap<String, NSZone>,
+    ) -> DnsMessage {
+        let old_id = msg.get_query_id();
+        let mut rng = thread_rng();
+        let new_id: u16 = rng.gen();
+
+        let mut header = msg.get_header();
+        header.set_id(new_id);
+
+        msg.set_header(header);
+
+        let bytes = msg.to_bytes();
+
+        // Adds the two bytes needs for tcp
+        let msg_length: u16 = bytes.len() as u16;
+        let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
+        let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
+
+        // Send query to local resolver
+        let mut stream = TcpStream::connect(resolver_ip_and_port).unwrap();
+        stream.write(&full_msg);
+
+        let mut received_msg = Vec::new();
+        stream.read(&mut received_msg);
+
+        let dns_response = DnsMessage::from_bytes(&received_msg);
+
+        return NameServer::step_6(dns_response, cache, zones);
+    }
+
+    fn send_response_tcp(mut msg: DnsMessage, address: String) {
+        msg.update_header_counters();
+
+        let msg_to_bytes = msg.to_bytes();
+        let msg_length: u16 = msg_to_bytes.len() as u16;
+        let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
+        let full_msg = [&tcp_bytes_length, msg_to_bytes.as_slice()].concat();
+
+        let mut stream = TcpStream::connect(address).unwrap();
+        stream.write(&full_msg);
+    }
+}
+
+// Utils
+impl NameServer {
     fn look_for_type_records(
         name_ns: String,
         rrs: Vec<ResourceRecord>,
@@ -519,10 +642,22 @@ impl NameServer {
         return a_rrs;
     }
 
-    fn send_response_udp(socket: UdpSocket, msg: DnsMessage, address: String) {
-        let msg_to_bytes = msg.to_bytes();
+    fn set_ra(mut msg: DnsMessage, ra: bool) -> DnsMessage {
+        let mut header = msg.get_header();
+        header.set_ra(ra);
 
-        socket.send_to(&msg_to_bytes, address);
+        msg.set_header(header);
+
+        msg
+    }
+
+    pub fn add_zone_from_master_file(&mut self, file_name: String) {
+        let new_zone = NSZone::from_file(file_name);
+        let mut zones = self.get_zones();
+
+        zones.insert(new_zone.get_name(), new_zone);
+
+        self.set_zones(zones);
     }
 }
 

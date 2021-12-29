@@ -93,6 +93,7 @@ impl ResolverQuery {
         self.set_cache(cache);
         self.set_ns_data(ns_data);
         self.set_src_address(src_address);
+        self.set_old_id(old_id);
     }
 
     pub fn initialize_slist(&mut self, sbelt: Slist) {
@@ -269,134 +270,6 @@ impl ResolverQuery {
 
         return rr_vec;
     }
-
-    /*
-    pub fn send_query_tcp(&mut self, tx: Sender<(String, ResourceRecord)>) {
-        let mut slist = self.get_slist();
-        slist.sort();
-
-        let best_server = slist.get_first(); //hashamp of server that responds faster
-        let mut best_server_ip = best_server.get(&"ip_address".to_string()).unwrap().clone();
-
-        // Implementar: se deben consultar las ips de los ns que no tienen ips
-
-        ///////////////////////////////////////////////
-
-        let query_msg = self.create_query_message();
-        let msg_to_bytes = query_msg.to_bytes();
-
-        best_server_ip.push_str(":53");
-
-        println!("Server to ask {}", best_server_ip);
-
-        self.send_tcp_query(&msg_to_bytes, best_server_ip, tx);
-    }
-    */
-
-    /*
-    pub fn process_answer_tcp(
-        &mut self,
-        msg_from_response: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
-    ) -> Option<DnsMessage> {
-        let rcode = msg_from_response.get_header().get_rcode();
-        let authority = msg_from_response.get_authority();
-        let answer = msg_from_response.get_answer();
-        let additional = msg_from_response.get_additional();
-
-        if ((answer.len() > 0) && rcode == 0 && answer[0].get_type_code() == self.get_stype())
-            || rcode == 3
-        {
-            if rcode == 0 {
-                for an in answer.iter() {
-                    if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
-                        self.add_to_cache(an.get_name().get_name(), an.clone());
-                        tx.send((an.get_name().get_name(), an.clone())).unwrap();
-                    }
-                }
-            }
-
-            return Some(msg_from_response);
-        }
-
-        let mut slist = self.get_slist();
-        let best_server = slist.get_first();
-        let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
-
-        if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
-            let mut initialize_slist = false;
-
-            // Adds NS and A RRs to cache if these can help
-            for ns in authority.iter() {
-                if self.compare_match_count(ns.get_name().get_name()) {
-                    self.add_to_cache(ns.get_name().get_name(), ns.clone());
-                    tx.send((ns.get_name().get_name(), ns.clone())).unwrap();
-
-                    for ip in additional.iter() {
-                        if ns.get_name().get_name() == ip.get_name().get_name() {
-                            self.add_to_cache(ip.get_name().get_name(), ip.clone());
-                            tx.send((ip.get_name().get_name(), ip.clone())).unwrap();
-                            initialize_slist = true;
-                        }
-                    }
-                }
-            }
-
-            // If RRs are added, reinitialize the slist
-            if initialize_slist {
-                self.initialize_slist(self.get_sbelt());
-                let mut slist = self.get_slist();
-                slist.sort();
-                self.set_slist(slist.clone());
-            } else {
-                // Si no entrega una buena delegacion, se deberia eliminar el server de la slist? Para asi evitar preguntarle al mismo.
-                slist.delete(best_server_hostname.clone());
-                self.set_slist(slist.clone());
-            }
-            // cargarle los datos adecuados
-            self.send_query_tcp(tx.clone());
-        }
-
-        if answer.len() > 0
-            && answer[0].get_type_code() == 5
-            && answer[0].get_type_code() != self.get_stype()
-        {
-            let resource_record = answer[0].clone();
-            let rdata = resource_record.get_rdata();
-
-            let rr_data = match rdata {
-                Rdata::SomeCnameRdata(val) => val.clone(),
-                _ => unreachable!(),
-            };
-
-            let cname = rr_data.get_cname();
-            self.add_to_cache(cname.get_name(), resource_record.clone());
-            tx.send((cname.get_name(), resource_record)).unwrap();
-            self.set_sname(cname.get_name());
-            let rr_info = self.look_for_local_info();
-
-            if rr_info.len() > 0 {
-                let mut new_dns_msg = msg_from_response.clone();
-                new_dns_msg.set_answer(rr_info.clone());
-                new_dns_msg.set_authority(Vec::new());
-                new_dns_msg.set_additional(Vec::new());
-
-                let mut header = new_dns_msg.get_header();
-                header.set_ancount(rr_info.len() as u16);
-
-                return Some(new_dns_msg);
-            } else {
-                self.send_query_tcp(tx);
-                return None;
-            }
-        } else {
-            slist.delete(best_server_hostname.clone());
-            self.set_slist(slist);
-            self.send_query_tcp(tx);
-            return None;
-        }
-    }
-    */
 }
 
 // Util for TCP and UDP
@@ -607,11 +480,15 @@ impl ResolverQuery {
         ip_address: String,
         tx: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
-        let mut stream = TcpStream::connect(ip_address.clone()).unwrap();
-        stream.write(msg);
+        // Adds the two bytes needs for tcp
+        let msg_length: u16 = msg.len() as u16;
+        let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
+        let full_msg = [&tcp_bytes_length, msg].concat();
 
-        let mut received_msg = [0; 512];
-        stream.read(&mut received_msg);
+        let mut stream = TcpStream::connect(ip_address.clone()).unwrap();
+        stream.write(&full_msg);
+
+        let mut received_msg = Resolver::receive_tcp_msg(stream);
 
         let dns_response = DnsMessage::from_bytes(&received_msg);
 

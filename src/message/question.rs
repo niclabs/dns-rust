@@ -96,17 +96,23 @@ impl Question {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut question_bytes: Vec<u8> = Vec::new();
 
-        let qname_bytes = self.get_qname().to_bytes();
-        for byte in qname_bytes.as_slice() {
-            question_bytes.push(*byte);
+        let qname = self.get_qname().get_name();
+
+        if qname == "".to_string() {
+            return question_bytes;
+        } else {
+            let qname_bytes = self.get_qname().to_bytes();
+            for byte in qname_bytes.as_slice() {
+                question_bytes.push(*byte);
+            }
+
+            question_bytes.push(self.get_first_qtype_byte());
+            question_bytes.push(self.get_second_qtype_byte());
+            question_bytes.push(self.get_first_qclass_byte());
+            question_bytes.push(self.get_second_qclass_byte());
+
+            question_bytes
         }
-
-        question_bytes.push(self.get_first_qtype_byte());
-        question_bytes.push(self.get_second_qtype_byte());
-        question_bytes.push(self.get_first_qclass_byte());
-        question_bytes.push(self.get_second_qclass_byte());
-
-        question_bytes
     }
 }
 

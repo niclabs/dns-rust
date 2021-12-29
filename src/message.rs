@@ -74,6 +74,18 @@ impl DnsMessage {
         dns_message
     }
 
+    pub fn new() -> Self {
+        let msg = DnsMessage {
+            header: Header::new(),
+            question: Question::new(),
+            answer: Vec::new(),
+            authority: Vec::new(),
+            additional: Vec::new(),
+        };
+
+        msg
+    }
+
     pub fn new_response_message(
         qname: String,
         qtype: u16,
@@ -115,7 +127,15 @@ impl DnsMessage {
     // Creates a DnsMessage from an array of bytes
     pub fn from_bytes(bytes: &[u8]) -> Self {
         let header = Header::from_bytes(&bytes[0..12]);
-        let (question, mut no_question_bytes) = Question::from_bytes(&bytes[12..], bytes);
+        let q_count = header.get_qdcount();
+
+        let (mut question, mut no_question_bytes) = (Question::new(), &bytes[12..]);
+
+        if q_count > 0 {
+            let question_and_bytes = Question::from_bytes(&bytes[12..], bytes);
+            question = question_and_bytes.0;
+            no_question_bytes = question_and_bytes.1;
+        }
 
         let mut answer = Vec::<ResourceRecord>::new();
         let mut authority = Vec::<ResourceRecord>::new();
@@ -186,6 +206,40 @@ impl DnsMessage {
 
         dns_msg_bytes
     }
+
+    pub fn update_header_counters(&mut self) {
+        let answer = self.get_answer();
+        let authority = self.get_authority();
+        let additional = self.get_additional();
+
+        let mut header = self.get_header();
+        header.set_ancount(answer.len() as u16);
+        header.set_nscount(authority.len() as u16);
+        header.set_arcount(additional.len() as u16);
+
+        self.set_header(header);
+    }
+
+    pub fn add_answers(&mut self, mut answers: Vec<ResourceRecord>) {
+        let mut msg_answers = self.get_answer();
+
+        msg_answers.append(&mut answers);
+        self.set_answer(msg_answers);
+    }
+
+    pub fn add_authorities(&mut self, mut authorities: Vec<ResourceRecord>) {
+        let mut msg_authorities = self.get_authority();
+
+        msg_authorities.append(&mut authorities);
+        self.set_answer(msg_authorities);
+    }
+
+    pub fn add_additionals(&mut self, mut additionals: Vec<ResourceRecord>) {
+        let mut msg_additionals = self.get_additional();
+
+        msg_additionals.append(&mut additionals);
+        self.set_answer(msg_additionals);
+    }
 }
 
 // Getters
@@ -215,6 +269,7 @@ impl DnsMessage {
         self.additional.clone()
     }
 
+    /// Gets the id from the header
     pub fn get_query_id(&self) -> u16 {
         self.get_header().get_id()
     }
@@ -263,6 +318,13 @@ impl DnsMessage {
     /// Sets the additional field with a new Vec<ResourceRecord>
     pub fn set_additional(&mut self, additional: Vec<ResourceRecord>) {
         self.additional = additional;
+    }
+
+    /// Sets the id from the header with new value
+    pub fn set_query_id(&mut self, id: u16) {
+        let mut header = self.get_header();
+        header.set_id(id);
+        self.set_header(header);
     }
 }
 

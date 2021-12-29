@@ -25,21 +25,20 @@ use std::net::UdpSocket;
 use std::thread;
 
 pub fn main() {
-    test_tcp();
-
     /*
+    test_tcp();
+    */
+
     let mut resolver = Resolver::new();
 
-    resolver.set_ip_address("192.168.1.89".to_string());
-    resolver.set_port("58396".to_string());
+    resolver.set_ip_address("192.168.1.89:58396".to_string());
 
     let mut sbelt = Slist::new();
     sbelt.insert(".".to_string(), "8.8.8.8".to_string(), 5.0);
 
     resolver.set_sbelt(sbelt);
 
-    resolver.run_resolver_udp();
-    */
+    resolver.run_resolver_tcp();
 
     /*
 
@@ -75,10 +74,10 @@ fn test_tcp() {
 
     println!("{}", stream.local_addr().unwrap().to_string());
 
-    let new_msg: [u8; 31] = [
-        0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6, 0b01110101,
-        0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011, 0b01101100, 0,
-        0, 1, 0, 1,
+    let new_msg: [u8; 33] = [
+        0, 31, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6,
+        0b01110101, 0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011,
+        0b01101100, 0, 0, 1, 0, 1,
     ];
 
     stream.write(&new_msg);

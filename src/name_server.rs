@@ -4,6 +4,7 @@ use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
+use crate::resolver::Resolver;
 
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
@@ -43,6 +44,10 @@ impl NameServer {
         mut name_server_ip_address: String,
         local_resolver_ip_and_port: String,
     ) {
+        // Hashmap to save incomplete messages
+        let mut messages = HashMap::<u16, DnsMessage>::new();
+
+        // Add port 53 to ip address
         name_server_ip_address.push_str(":53");
 
         let (tx, rx) = mpsc::channel();
@@ -55,10 +60,23 @@ impl NameServer {
             println!("{}", "Waiting msg");
 
             // We receive the msg
-            let mut received_msg = [0; 512];
-            let (_number_of_bytes, src_address) = socket
-                .recv_from(&mut received_msg)
-                .expect("No data received");
+            let mut dns_message_option =
+                Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
+
+            let (mut dns_message, mut src_address) = (DnsMessage::new(), "".to_string());
+
+            println!("{}", "Message recv");
+
+            match dns_message_option {
+                Some(val) => {
+                    dns_message = val.0;
+                    src_address = val.1;
+                }
+                None => {
+                    continue;
+                }
+            }
+            //
 
             // Update queries ids
 
@@ -78,11 +96,6 @@ impl NameServer {
 
             //
             println!("{}", "Message recv");
-
-            // Msg parsed
-            let mut dns_message = DnsMessage::from_bytes(&received_msg);
-
-            println!("{}", "Paso parseo");
 
             let socket_copy = socket.try_clone().unwrap();
 
@@ -105,10 +118,10 @@ impl NameServer {
                         NameServer::step_5_udp(resolver_ip_clone, new_msg, socket_copy, tx_clone);
                     } else {
                         let response_dns_msg = NameServer::step_2(new_msg, zones, cache);
-                        NameServer::send_response_udp(
-                            socket_copy,
+                        NameServer::send_response_by_udp(
                             response_dns_msg,
                             src_address.to_string(),
+                            &socket_copy,
                         );
                     }
                 });
@@ -122,10 +135,10 @@ impl NameServer {
                         dns_message.set_header(header);
                         queries_id.remove(&new_id);
 
-                        NameServer::send_response_udp(
-                            socket_copy,
+                        NameServer::send_response_by_udp(
                             dns_message,
                             src_address.to_string(),
+                            &socket_copy,
                         );
                     }
                     None => {}
@@ -187,9 +200,10 @@ impl NameServer {
 
                                 response_dns_msg.set_query_id(query_id.clone());
 
-                                NameServer::send_response_tcp(
+                                NameServer::send_response_by_tcp(
                                     response_dns_msg,
                                     src_address.to_string(),
+                                    stream.try_clone().unwrap(),
                                 );
                             } else {
                                 let mut response_dns_msg =
@@ -197,9 +211,10 @@ impl NameServer {
 
                                 response_dns_msg.set_query_id(query_id);
 
-                                NameServer::send_response_tcp(
+                                NameServer::send_response_by_tcp(
                                     response_dns_msg,
                                     src_address.to_string(),
+                                    stream,
                                 );
                             }
                         });
@@ -563,12 +578,77 @@ impl NameServer {
         socket.send_to(&msg.to_bytes(), resolver_ip_and_port);
     }
 
-    fn send_response_udp(socket: UdpSocket, mut msg: DnsMessage, address: String) {
-        msg.update_header_counters();
+    // Sends the response to the address by udp
+    fn send_response_by_udp(response: DnsMessage, src_address: String, socket: &UdpSocket) {
+        let bytes = response.to_bytes();
 
-        let msg_to_bytes = msg.to_bytes();
+        if bytes.len() <= 512 {
+            socket
+                .send_to(&bytes, src_address)
+                .expect("failed to send message");
+        } else {
+            let ancount = response.get_header().get_ancount();
+            let nscount = response.get_header().get_nscount();
+            let arcount = response.get_header().get_arcount();
+            let total_rrs = ancount + nscount + arcount;
+            let half_rrs: f32 = (total_rrs / 2).into();
+            let ceil_half_rrs = half_rrs.ceil() as u32;
 
-        socket.send_to(&msg_to_bytes, address);
+            let mut answer = response.get_answer();
+            let mut authority = response.get_authority();
+            let mut additional = response.get_additional();
+
+            let mut first_tc_msg = DnsMessage::new();
+            let mut new_header = response.get_header();
+            new_header.set_tc(true);
+            first_tc_msg.set_header(new_header);
+
+            for i in 1..ceil_half_rrs + 1 {
+                if answer.len() > 0 {
+                    let rr = answer.remove(0);
+                    first_tc_msg.add_answers(vec![rr]);
+                } else if authority.len() > 0 {
+                    let rr = authority.remove(0);
+                    first_tc_msg.add_authorities(vec![rr]);
+                } else if additional.len() > 0 {
+                    let rr = additional.remove(0);
+                    first_tc_msg.add_additionals(vec![rr]);
+                } else {
+                    continue;
+                }
+            }
+
+            first_tc_msg.update_header_counters();
+
+            NameServer::send_response_by_udp(
+                first_tc_msg,
+                src_address.clone(),
+                &socket.try_clone().unwrap(),
+            );
+
+            let mut second_tc_msg = DnsMessage::new();
+            let mut new_header = response.get_header();
+            second_tc_msg.set_header(new_header);
+
+            for i in 1..ceil_half_rrs + 1 {
+                if answer.len() > 0 {
+                    let rr = answer.remove(0);
+                    second_tc_msg.add_answers(vec![rr]);
+                } else if authority.len() > 0 {
+                    let rr = authority.remove(0);
+                    second_tc_msg.add_authorities(vec![rr]);
+                } else if additional.len() > 0 {
+                    let rr = additional.remove(0);
+                    second_tc_msg.add_additionals(vec![rr]);
+                } else {
+                    continue;
+                }
+            }
+
+            second_tc_msg.update_header_counters();
+
+            NameServer::send_response_by_udp(second_tc_msg, src_address, socket);
+        }
     }
 }
 
@@ -608,15 +688,14 @@ impl NameServer {
         return NameServer::step_6(dns_response, cache, zones);
     }
 
-    fn send_response_tcp(mut msg: DnsMessage, address: String) {
+    fn send_response_by_tcp(mut msg: DnsMessage, address: String, mut stream: TcpStream) {
         msg.update_header_counters();
 
-        let msg_to_bytes = msg.to_bytes();
-        let msg_length: u16 = msg_to_bytes.len() as u16;
+        let bytes = msg.to_bytes();
+        let msg_length: u16 = bytes.len() as u16;
         let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
-        let full_msg = [&tcp_bytes_length, msg_to_bytes.as_slice()].concat();
+        let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
 
-        let mut stream = TcpStream::connect(address).unwrap();
         stream.write(&full_msg);
     }
 }

@@ -335,7 +335,7 @@ impl Resolver {
 
 // Utils
 impl Resolver {
-    fn receive_udp_msg(
+    pub fn receive_udp_msg(
         mut socket: UdpSocket,
         mut messages: HashMap<u16, DnsMessage>,
     ) -> Option<(DnsMessage, String)> {
@@ -379,7 +379,7 @@ impl Resolver {
         }
     }
 
-    fn receive_tcp_msg(mut stream: TcpStream) -> Vec<u8> {
+    pub fn receive_tcp_msg(mut stream: TcpStream) -> Vec<u8> {
         let mut received_msg = [0; 2];
         let _number_of_bytes = stream.read(&mut received_msg).expect("No data received");
 

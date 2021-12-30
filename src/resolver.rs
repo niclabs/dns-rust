@@ -128,8 +128,6 @@ impl Resolver {
 
         // Receives messages
         loop {
-            let mut resolver = self.clone();
-
             println!("{}", "Waiting msg");
 
             // We receive the msg
@@ -186,6 +184,8 @@ impl Resolver {
             self.set_cache(cache);
 
             //
+
+            let mut resolver = self.clone();
 
             println!("{}", "Message parsed");
 
@@ -349,8 +349,6 @@ impl Resolver {
 
         // Receives messages
         loop {
-            let resolver = self.clone();
-
             println!("{}", "Waiting msg");
 
             match listener.accept() {
@@ -407,6 +405,8 @@ impl Resolver {
                     let tx_delete_ns_udp_copy = tx_delete_ns_udp.clone();
                     let tx_add_ns_tcp_copy = tx_add_ns_tcp.clone();
                     let tx_delete_ns_tcp_copy = tx_delete_ns_tcp.clone();
+
+                    let resolver = self.clone();
 
                     thread::spawn(move || {
                         let dns_message = DnsMessage::from_bytes(&received_msg);

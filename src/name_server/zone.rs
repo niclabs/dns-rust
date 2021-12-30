@@ -36,7 +36,6 @@ impl NSZone {
         ns_zone.set_value(origin_rrs);
 
         for (key, value) in rrs.iter() {
-            println!("{}", key);
             ns_zone.add_node(key.clone(), value.clone());
         }
 
@@ -247,15 +246,14 @@ impl NSZone {
     }
 }
 
-
 mod test {
     use crate::name_server::master_file::MasterFile;
 
+    use super::NSZone;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-    use super::NSZone;
 
     #[test]
     fn constructor_test() {
@@ -268,9 +266,9 @@ mod test {
         assert_eq!(nszone.glue_rrs.len(), 0);
     }
 
-    // Getters and Setters 
+    // Getters and Setters
     #[test]
-    fn set_and_get_name_test(){
+    fn set_and_get_name_test() {
         let mut nszone = NSZone::new();
 
         assert_eq!(nszone.get_name(), String::from(""));
@@ -279,7 +277,7 @@ mod test {
     }
 
     #[test]
-    fn set_and_get_value_test(){
+    fn set_and_get_value_test() {
         let mut nszone = NSZone::new();
 
         let mut value: Vec<ResourceRecord> = Vec::new();
@@ -293,7 +291,7 @@ mod test {
     }
 
     #[test]
-    fn set_and_get_glue_rr_test(){
+    fn set_and_get_glue_rr_test() {
         let mut nszone = NSZone::new();
 
         let mut glue: Vec<ResourceRecord> = Vec::new();
@@ -307,7 +305,7 @@ mod test {
     }
 
     #[test]
-    fn set_and_get_subzone_test(){
+    fn set_and_get_subzone_test() {
         let mut nszone = NSZone::new();
 
         assert_eq!(nszone.get_subzone(), false);
@@ -316,11 +314,11 @@ mod test {
     }
 
     #[test]
-    fn set_and_get_childs_test(){
+    fn set_and_get_childs_test() {
         let mut nszone = NSZone::new();
 
         let mut childs: Vec<NSZone> = Vec::new();
-        let some_nszone = NSZone::new(); 
+        let some_nszone = NSZone::new();
         childs.push(some_nszone);
 
         assert_eq!(nszone.get_childs().len(), 0);
@@ -331,14 +329,14 @@ mod test {
     // Other methods
 
     //pub fn from_file(file_name: String) -> Self
-   /* 
+    /*
 
     #[test]
     fn from_file_test(){
     }*/
 
     #[test]
-    fn exist_child_test(){
+    fn exist_child_test() {
         let mut nszone = NSZone::new();
         let mut some_nszone = NSZone::new();
         some_nszone.set_name(String::from("test.com"));
@@ -349,7 +347,6 @@ mod test {
         assert_eq!(nszone.exist_child(String::from("test2.com")), false);
         assert_eq!(nszone.exist_child(String::from("test.com")), true)
     }
-
 
     #[test]
     fn get_child_test() {
@@ -363,10 +360,19 @@ mod test {
         childs.push(some_nszone);
         childs.push(some_other_nszone);
         nszone.set_childs(childs);
-        assert_eq!(nszone.get_child(String::from("other.test.com")).0.get_name(), String::from("other.test.com"));
+        assert_eq!(
+            nszone
+                .get_child(String::from("other.test.com"))
+                .0
+                .get_name(),
+            String::from("other.test.com")
+        );
         assert_eq!(nszone.get_child(String::from("other.test.com")).1, 1);
 
-        assert_eq!(nszone.get_child(String::from("some.test.com")).0.get_name(), String::from(""));
+        assert_eq!(
+            nszone.get_child(String::from("some.test.com")).0.get_name(),
+            String::from("")
+        );
         assert_eq!(nszone.get_child(String::from("some.test.com")).1, -1);
     }
 
@@ -375,8 +381,7 @@ mod test {
     }*/
 
     #[test]
-    fn check_rrs_only_ns_test(){
-
+    fn check_rrs_only_ns_test() {
         let mut nszone = NSZone::new();
         let mut rr: Vec<ResourceRecord> = Vec::new();
 
@@ -394,15 +399,15 @@ mod test {
         rr.push(resource_record_2);
         assert_eq!(nszone.check_rrs_only_ns(rr.clone()), false);
     }
-/*
+    /*
     #[test]
     fn print_zone_test(){
-    
+
     }
 
     */
     #[test]
-    fn get_rrs_by_type_test(){
+    fn get_rrs_by_type_test() {
         let mut nszone = NSZone::new();
 
         let mut value: Vec<ResourceRecord> = Vec::new();
@@ -414,8 +419,5 @@ mod test {
         assert_eq!(nszone.get_rrs_by_type(1).len(), 0);
         nszone.set_value(value);
         assert_eq!(nszone.get_rrs_by_type(1).len(), 1);
-
     }
-
 }
-

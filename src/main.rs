@@ -22,6 +22,7 @@ use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
 use std::net::UdpSocket;
+use std::sync::mpsc;
 use std::thread;
 
 pub fn main() {
@@ -29,7 +30,26 @@ pub fn main() {
     test_tcp();
     */
 
-    let mut resolver = Resolver::new();
+    /// Channels
+    let (add_sender_udp, add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+
+    let mut resolver = Resolver::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+    );
 
     resolver.set_ip_address("192.168.1.89:58396".to_string());
 
@@ -38,7 +58,7 @@ pub fn main() {
 
     resolver.set_sbelt(sbelt);
 
-    resolver.run_resolver_tcp();
+    resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
 
     /*
 

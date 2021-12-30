@@ -7,13 +7,13 @@ use crate::resolver::slist::Slist;
 
 use core::num;
 use std::collections::HashMap;
-use std::fs::hard_link;
 use std::io::Read;
 use std::io::Write;
 use std::net::UdpSocket;
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
 use std::thread;
 use std::vec::Vec;
 
@@ -31,11 +31,36 @@ pub struct Resolver {
     cache: DnsCache,
     // Name server data
     ns_data: HashMap<String, NSZone>,
+    // Channel to share cache data between threads
+    add_sender_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between threads
+    delete_sender_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between threads
+    add_sender_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between threads
+    delete_sender_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between name server and resolver
+    add_sender_ns_udp: Sender<(String, ResourceRecord)>,
+    // Channel to delete cache data in name server and resolver
+    delete_sender_ns_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between name server and resolver
+    add_sender_ns_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to delete cache data in name server and resolver
+    delete_sender_ns_tcp: Sender<(String, ResourceRecord)>,
 }
 
 impl Resolver {
     /// Creates a new Resolver with default values
-    pub fn new() -> Self {
+    pub fn new(
+        add_sender_udp: Sender<(String, ResourceRecord)>,
+        delete_sender_udp: Sender<(String, ResourceRecord)>,
+        add_sender_tcp: Sender<(String, ResourceRecord)>,
+        delete_sender_tcp: Sender<(String, ResourceRecord)>,
+        add_sender_ns_udp: Sender<(String, ResourceRecord)>,
+        delete_sender_ns_udp: Sender<(String, ResourceRecord)>,
+        add_sender_ns_tcp: Sender<(String, ResourceRecord)>,
+        delete_sender_ns_tcp: Sender<(String, ResourceRecord)>,
+    ) -> Self {
         let mut cache = DnsCache::new();
         cache.set_max_size(100);
 
@@ -44,21 +69,55 @@ impl Resolver {
             sbelt: Slist::new(),
             cache: cache,
             ns_data: HashMap::<String, NSZone>::new(),
+            add_sender_udp: add_sender_udp,
+            delete_sender_udp: delete_sender_udp,
+            add_sender_tcp: add_sender_tcp,
+            delete_sender_tcp: delete_sender_tcp,
+            add_sender_ns_udp: add_sender_ns_udp,
+            delete_sender_ns_udp: delete_sender_ns_udp,
+            add_sender_ns_tcp: add_sender_ns_tcp,
+            delete_sender_ns_tcp: delete_sender_ns_tcp,
         };
 
         resolver
     }
 
+    pub fn run_resolver(
+        &mut self,
+        rx_add_udp: Receiver<(String, ResourceRecord)>,
+        rx_delete_udp: Receiver<(String, ResourceRecord)>,
+        rx_add_tcp: Receiver<(String, ResourceRecord)>,
+        rx_delete_tcp: Receiver<(String, ResourceRecord)>,
+    ) {
+        let mut resolver_copy = self.clone();
+        thread::spawn(move || {
+            resolver_copy.run_resolver_udp(rx_add_udp, rx_delete_udp);
+        });
+
+        self.run_resolver_tcp(rx_add_tcp, rx_delete_tcp);
+    }
+
     // Runs a udp resolver
-    pub fn run_resolver_udp(&mut self) {
+    pub fn run_resolver_udp(
+        &mut self,
+        rx_add_udp: Receiver<(String, ResourceRecord)>,
+        rx_delete_udp: Receiver<(String, ResourceRecord)>,
+    ) {
         // Hashmap to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
 
         // Hashmap to save incomplete messages
         let mut messages = HashMap::<u16, DnsMessage>::new();
 
-        // Channel to send data between threads
-        let (tx, rx) = mpsc::channel();
+        // Channels to send data between threads, resolvers and name server
+        let tx_add_udp = self.get_add_sender_udp();
+        let tx_delete_udp = self.get_delete_sender_udp();
+        let tx_add_tcp = self.get_add_sender_tcp();
+        let tx_delete_tcp = self.get_delete_sender_tcp();
+        let tx_add_ns_udp = self.get_add_sender_ns_udp();
+        let tx_delete_ns_udp = self.get_delete_sender_ns_udp();
+        let tx_add_ns_tcp = self.get_add_sender_ns_tcp();
+        let tx_delete_ns_tcp = self.get_delete_sender_ns_tcp();
 
         // Create ip and port str
         let host_address_and_port = self.get_ip_address();
@@ -91,23 +150,42 @@ impl Resolver {
                 }
             }
 
-            // Updating Cache
+            // Adding to Cache
 
-            let mut received = rx.try_iter();
+            let mut received_add = rx_add_udp.try_iter();
 
-            let mut next_value = received.next();
+            let mut next_value = received_add.next();
 
             let mut cache = self.get_cache();
 
             while next_value.is_none() == false {
                 let (name, rr) = next_value.unwrap();
                 cache.add(name, rr);
-                next_value = received.next();
+                next_value = received_add.next();
             }
 
             self.set_cache(cache);
 
             ////////////////////////////////////////////////////////////////////
+
+            // Delete from cache
+
+            let mut received_delete = rx_delete_udp.try_iter();
+
+            let mut next_value = received_delete.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (name, rr) = next_value.unwrap();
+                let rr_type = rr.get_string_type();
+                cache.remove(name, rr_type);
+                next_value = received_delete.next();
+            }
+
+            self.set_cache(cache);
+
+            //
 
             println!("{}", "Message parsed");
 
@@ -115,6 +193,15 @@ impl Resolver {
             let msg_type = dns_message.get_header().get_qr();
 
             println!("Msg type: {}", msg_type.clone());
+
+            let tx_add_udp_copy = tx_add_udp.clone();
+            let tx_delete_udp_copy = tx_delete_udp.clone();
+            let tx_add_tcp_copy = tx_add_tcp.clone();
+            let tx_delete_tcp_copy = tx_delete_tcp.clone();
+            let tx_add_ns_udp_copy = tx_add_ns_udp.clone();
+            let tx_delete_ns_udp_copy = tx_delete_ns_udp.clone();
+            let tx_add_ns_tcp_copy = tx_add_ns_tcp.clone();
+            let tx_delete_ns_tcp_copy = tx_delete_ns_tcp.clone();
 
             // If it is query
             if msg_type == false {
@@ -125,7 +212,16 @@ impl Resolver {
                 let rd = dns_message.get_header().get_rd();
                 let id = dns_message.get_query_id();
 
-                let mut resolver_query = ResolverQuery::new();
+                let mut resolver_query = ResolverQuery::new(
+                    tx_add_udp_copy,
+                    tx_delete_udp_copy,
+                    tx_add_tcp_copy,
+                    tx_delete_tcp_copy,
+                    tx_add_ns_udp_copy,
+                    tx_delete_ns_udp_copy,
+                    tx_add_ns_tcp_copy,
+                    tx_delete_ns_tcp_copy,
+                );
 
                 // Initializes the query data struct
                 resolver_query.initialize(
@@ -147,7 +243,6 @@ impl Resolver {
 
                 // Get copies from some data
                 let socket_copy = socket.try_clone().unwrap();
-                let resolver_copy = resolver.clone();
                 let dns_msg_copy = dns_message.clone();
 
                 thread::spawn(move || {
@@ -185,23 +280,19 @@ impl Resolver {
             }
 
             if msg_type == true {
-                let tx_clone = tx.clone();
                 let socket_copy = socket.try_clone().unwrap();
                 let answer_id = dns_message.get_query_id();
                 let queries_hash_by_id_copy = queries_hash_by_id.clone();
-
-                let resolver_copy = resolver.clone();
 
                 if queries_hash_by_id_copy.contains_key(&answer_id) {
                     println!("Message answer ID checked");
 
                     thread::spawn(move || {
                         let resolver_query = queries_hash_by_id_copy.get(&answer_id).unwrap();
-                        let response = match resolver_query.clone().step_4_udp(
-                            dns_message,
-                            tx_clone,
-                            socket_copy.try_clone().unwrap(),
-                        ) {
+                        let response = match resolver_query
+                            .clone()
+                            .step_4_udp(dns_message, socket_copy.try_clone().unwrap())
+                        {
                             Some(val) => {
                                 let mut msg = val.clone();
                                 let mut header = msg.get_header();
@@ -231,12 +322,23 @@ impl Resolver {
     }
 
     // Runs a tcp resolver
-    pub fn run_resolver_tcp(&mut self) {
+    pub fn run_resolver_tcp(
+        &mut self,
+        rx_add_tcp: Receiver<(String, ResourceRecord)>,
+        rx_delete_tcp: Receiver<(String, ResourceRecord)>,
+    ) {
         // Vector to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
 
-        // Create sender
-        let (tx, rx) = mpsc::channel();
+        // Channels to send data between threads, resolvers and name server
+        let tx_add_udp = self.get_add_sender_udp();
+        let tx_delete_udp = self.get_delete_sender_udp();
+        let tx_add_tcp = self.get_add_sender_tcp();
+        let tx_delete_tcp = self.get_delete_sender_tcp();
+        let tx_add_ns_udp = self.get_add_sender_ns_udp();
+        let tx_delete_ns_udp = self.get_delete_sender_ns_udp();
+        let tx_add_ns_tcp = self.get_add_sender_ns_tcp();
+        let tx_delete_ns_tcp = self.get_delete_sender_ns_tcp();
 
         // Gets ip and port str
         let mut host_address_and_port = self.get_ip_address();
@@ -253,20 +355,41 @@ impl Resolver {
 
             match listener.accept() {
                 Ok((mut stream, src_address)) => {
-                    // Updating Cache
-                    let mut received = rx.try_iter();
+                    // Adding to Cache
 
-                    let mut next_value = received.next();
+                    let mut received_add = rx_add_tcp.try_iter();
+
+                    let mut next_value = received_add.next();
 
                     let mut cache = self.get_cache();
 
                     while next_value.is_none() == false {
                         let (name, rr) = next_value.unwrap();
                         cache.add(name, rr);
-                        next_value = received.next();
+                        next_value = received_add.next();
                     }
 
                     self.set_cache(cache);
+
+                    ////////////////////////////////////////////////////////////////////
+
+                    // Delete from cache
+
+                    let mut received_delete = rx_delete_tcp.try_iter();
+
+                    let mut next_value = received_delete.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (name, rr) = next_value.unwrap();
+                        let rr_type = rr.get_string_type();
+                        cache.remove(name, rr_type);
+                        next_value = received_delete.next();
+                    }
+
+                    self.set_cache(cache);
+
                     //
 
                     println!("New connection: {}", stream.peer_addr().unwrap());
@@ -276,8 +399,14 @@ impl Resolver {
 
                     println!("{}", "Message recv");
 
-                    let resolver_copy = resolver.clone();
-                    let tx_clone = tx.clone();
+                    let tx_add_udp_copy = tx_add_udp.clone();
+                    let tx_delete_udp_copy = tx_delete_udp.clone();
+                    let tx_add_tcp_copy = tx_add_tcp.clone();
+                    let tx_delete_tcp_copy = tx_delete_tcp.clone();
+                    let tx_add_ns_udp_copy = tx_add_ns_udp.clone();
+                    let tx_delete_ns_udp_copy = tx_delete_ns_udp.clone();
+                    let tx_add_ns_tcp_copy = tx_add_ns_tcp.clone();
+                    let tx_delete_ns_tcp_copy = tx_delete_ns_tcp.clone();
 
                     thread::spawn(move || {
                         let dns_message = DnsMessage::from_bytes(&received_msg);
@@ -295,7 +424,16 @@ impl Resolver {
                             let rd = dns_message.get_header().get_rd();
                             let id = dns_message.get_query_id();
 
-                            let mut resolver_query = ResolverQuery::new();
+                            let mut resolver_query = ResolverQuery::new(
+                                tx_add_udp_copy,
+                                tx_delete_udp_copy,
+                                tx_add_tcp_copy,
+                                tx_delete_tcp_copy,
+                                tx_add_ns_udp_copy,
+                                tx_delete_ns_udp_copy,
+                                tx_add_ns_tcp_copy,
+                                tx_delete_ns_tcp_copy,
+                            );
 
                             // Initializes the query data struct
                             resolver_query.initialize(
@@ -311,7 +449,7 @@ impl Resolver {
                                 id,
                             );
 
-                            let mut answer_msg = resolver_query.step_1_tcp(dns_message, tx_clone);
+                            let mut answer_msg = resolver_query.step_1_tcp(dns_message);
 
                             answer_msg.set_query_id(resolver_query.get_old_id());
 
@@ -503,6 +641,46 @@ impl Resolver {
     // Gets the ns_data
     pub fn get_ns_data(&self) -> HashMap<String, NSZone> {
         self.ns_data.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_sender_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_sender_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_sender_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_sender_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_sender_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_sender_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_sender_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_sender_ns_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_sender_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_sender_ns_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_sender_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_ns_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_sender_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_ns_tcp.clone()
     }
 }
 

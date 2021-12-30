@@ -6,6 +6,8 @@ use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
 use crate::resolver::Resolver;
 
+use chrono::{DateTime, Utc};
+use core::time;
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;
@@ -14,27 +16,52 @@ use std::io::Write;
 use std::net::UdpSocket;
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::thread;
 
 pub mod master_file;
 pub mod zone;
 
-#[derive(Clone)]
 /// Structs that represents a name server
 pub struct NameServer {
     zones: HashMap<String, NSZone>,
     cache: DnsCache,
     queries_id: HashMap<u16, u16>,
+    // Channel to share cache data between threads
+    delete_sender_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between threads
+    delete_sender_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between name server and resolver
+    add_sender_ns_udp: Sender<(String, ResourceRecord)>,
+    // Channel to delete cache data in name server and resolver
+    delete_sender_ns_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between name server and resolver
+    add_sender_ns_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to delete cache data in name server and resolver
+    delete_sender_ns_tcp: Sender<(String, ResourceRecord)>,
 }
 
 impl NameServer {
     /// Creates a new name server
-    pub fn new() -> Self {
+    pub fn new(
+        delete_channel_udp: Sender<(String, ResourceRecord)>,
+        delete_channel_tcp: Sender<(String, ResourceRecord)>,
+        add_channel_ns_udp: Sender<(String, ResourceRecord)>,
+        delete_channel_ns_udp: Sender<(String, ResourceRecord)>,
+        add_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+        delete_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+    ) -> Self {
         let name_server = NameServer {
             zones: HashMap::<String, NSZone>::new(),
             cache: DnsCache::new(),
             queries_id: HashMap::<u16, u16>::new(),
+            delete_sender_udp: delete_channel_udp,
+            delete_sender_tcp: delete_channel_tcp,
+            add_sender_ns_udp: add_channel_ns_udp,
+            delete_sender_ns_udp: delete_channel_ns_udp,
+            add_sender_ns_tcp: add_channel_ns_tcp,
+            delete_sender_ns_tcp: delete_channel_ns_tcp,
         };
 
         name_server
@@ -44,6 +71,8 @@ impl NameServer {
         &mut self,
         mut name_server_ip_address: String,
         local_resolver_ip_and_port: String,
+        rx_add_ns_udp: Receiver<(String, ResourceRecord)>,
+        rx_delete_ns_udp: Receiver<(String, ResourceRecord)>,
     ) {
         // Hashmap to save incomplete messages
         let mut messages = HashMap::<u16, DnsMessage>::new();
@@ -51,7 +80,14 @@ impl NameServer {
         // Add port 53 to ip address
         name_server_ip_address.push_str(":53");
 
+        // Chanel to share the ids queries
         let (tx, rx) = mpsc::channel();
+
+        // Channels to send data between threads, resolvers and name server
+        let tx_delete_udp = self.get_delete_channel_udp();
+        let tx_delete_tcp = self.get_delete_channel_tcp();
+        let tx_delete_ns_udp = self.get_delete_channel_ns_udp();
+        let tx_delete_ns_tcp = self.get_delete_channel_ns_tcp();
 
         // Creates an UDP socket
         let socket = UdpSocket::bind(&name_server_ip_address).expect("Failed to bind host socket");
@@ -77,6 +113,43 @@ impl NameServer {
                     continue;
                 }
             }
+            //
+
+            // Adding to Cache
+
+            let mut received_add = rx_add_ns_udp.try_iter();
+
+            let mut next_value = received_add.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (name, rr) = next_value.unwrap();
+                cache.add(name, rr);
+                next_value = received_add.next();
+            }
+
+            self.set_cache(cache);
+
+            ////////////////////////////////////////////////////////////////////
+
+            // Delete from cache
+
+            let mut received_delete = rx_delete_ns_udp.try_iter();
+
+            let mut next_value = received_delete.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (name, rr) = next_value.unwrap();
+                let rr_type = rr.get_string_type();
+                cache.remove(name, rr_type);
+                next_value = received_delete.next();
+            }
+
+            self.set_cache(cache);
+
             //
 
             // Update queries ids
@@ -109,6 +182,11 @@ impl NameServer {
 
                 let resolver_ip_clone = local_resolver_ip_and_port.clone();
 
+                let tx_delete_udp_copy = tx_delete_udp.clone();
+                let tx_delete_tcp_copy = tx_delete_tcp.clone();
+                let tx_delete_ns_udp_copy = tx_delete_ns_udp.clone();
+                let tx_delete_ns_tcp_copy = tx_delete_ns_tcp.clone();
+
                 thread::spawn(move || {
                     // Set RA bit to 1
                     let new_msg = NameServer::set_ra(dns_message, true);
@@ -118,7 +196,15 @@ impl NameServer {
                     if rd == true {
                         NameServer::step_5_udp(resolver_ip_clone, new_msg, socket_copy, tx_clone);
                     } else {
-                        let response_dns_msg = NameServer::step_2(new_msg, zones, cache);
+                        let response_dns_msg = NameServer::step_2(
+                            new_msg,
+                            zones,
+                            cache,
+                            tx_delete_udp_copy,
+                            tx_delete_tcp_copy,
+                            tx_delete_ns_udp_copy,
+                            tx_delete_ns_tcp_copy,
+                        );
                         NameServer::send_response_by_udp(
                             response_dns_msg,
                             src_address.to_string(),
@@ -152,8 +238,16 @@ impl NameServer {
         &mut self,
         mut name_server_ip_address: String,
         local_resolver_ip_and_port: String,
+        rx_add_ns_tcp: Receiver<(String, ResourceRecord)>,
+        rx_delete_ns_tcp: Receiver<(String, ResourceRecord)>,
     ) {
         name_server_ip_address.push_str(":53");
+
+        // Channels to send data between threads, resolvers and name server
+        let tx_delete_udp = self.get_delete_channel_udp();
+        let tx_delete_tcp = self.get_delete_channel_tcp();
+        let tx_delete_ns_udp = self.get_delete_channel_ns_udp();
+        let tx_delete_ns_tcp = self.get_delete_channel_ns_tcp();
 
         // Creates a TCP Listener
         let listener = TcpListener::bind(&name_server_ip_address).expect("Could not bind");
@@ -173,6 +267,43 @@ impl NameServer {
 
                     println!("{}", "Message recv");
 
+                    // Adding to Cache
+
+                    let mut received_add = rx_add_ns_tcp.try_iter();
+
+                    let mut next_value = received_add.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (name, rr) = next_value.unwrap();
+                        cache.add(name, rr);
+                        next_value = received_add.next();
+                    }
+
+                    self.set_cache(cache);
+
+                    ////////////////////////////////////////////////////////////////////
+
+                    // Delete from cache
+
+                    let mut received_delete = rx_delete_ns_tcp.try_iter();
+
+                    let mut next_value = received_delete.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (name, rr) = next_value.unwrap();
+                        let rr_type = rr.get_string_type();
+                        cache.remove(name, rr_type);
+                        next_value = received_delete.next();
+                    }
+
+                    self.set_cache(cache);
+
+                    //
+
                     // Msg parsed
                     let mut dns_message = DnsMessage::from_bytes(&received_msg);
 
@@ -182,6 +313,11 @@ impl NameServer {
                         let zones = self.get_zones();
                         let cache = self.get_cache();
                         let resolver_ip_clone = local_resolver_ip_and_port.clone();
+
+                        let tx_delete_udp_copy = tx_delete_udp.clone();
+                        let tx_delete_tcp_copy = tx_delete_tcp.clone();
+                        let tx_delete_ns_udp_copy = tx_delete_ns_udp.clone();
+                        let tx_delete_ns_tcp_copy = tx_delete_ns_tcp.clone();
 
                         thread::spawn(move || {
                             let query_id = dns_message.get_query_id();
@@ -207,8 +343,15 @@ impl NameServer {
                                     stream.try_clone().unwrap(),
                                 );
                             } else {
-                                let mut response_dns_msg =
-                                    NameServer::step_2(new_msg, zones, cache);
+                                let mut response_dns_msg = NameServer::step_2(
+                                    new_msg,
+                                    zones,
+                                    cache,
+                                    tx_delete_udp_copy,
+                                    tx_delete_tcp_copy,
+                                    tx_delete_ns_udp_copy,
+                                    tx_delete_ns_tcp_copy,
+                                );
 
                                 response_dns_msg.set_query_id(query_id);
 
@@ -236,8 +379,6 @@ impl NameServer {
         zones: HashMap<String, NSZone>,
         mut qname: String,
     ) -> (NSZone, bool) {
-        println!("{}", qname);
-
         let (mut zone, mut available) = match zones.get(&qname) {
             Some(val) => (val.clone(), true),
             None => (NSZone::new(), false),
@@ -263,12 +404,25 @@ impl NameServer {
         msg: DnsMessage,
         zones: HashMap<String, NSZone>,
         cache: DnsCache,
+        tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         let mut qname_without_zone_label = qname.replace(&zone.get_name(), "");
 
         // We were looking for the first node
         if qname_without_zone_label == "".to_string() {
-            return NameServer::step_3a(zone, msg, zones, cache);
+            return NameServer::step_3a(
+                zone,
+                msg,
+                zones,
+                cache,
+                tx_delete_resolver_udp,
+                tx_delete_resolver_tcp,
+                tx_delete_ns_udp,
+                tx_delete_ns_tcp,
+            );
         }
 
         // Delete last dot
@@ -285,7 +439,16 @@ impl NameServer {
                 let (zone, _available) = zone.get_child(label.to_string());
 
                 if zone.get_subzone() == true {
-                    return NameServer::step_3b(zone, msg, cache, zones);
+                    return NameServer::step_3b(
+                        zone,
+                        msg,
+                        cache,
+                        zones,
+                        tx_delete_resolver_udp,
+                        tx_delete_resolver_tcp,
+                        tx_delete_ns_udp,
+                        tx_delete_ns_tcp,
+                    );
                 } else {
                     continue;
                 }
@@ -294,20 +457,55 @@ impl NameServer {
             }
         }
 
-        return NameServer::step_3a(zone, msg, zones, cache);
+        return NameServer::step_3a(
+            zone,
+            msg,
+            zones,
+            cache,
+            tx_delete_resolver_udp,
+            tx_delete_resolver_tcp,
+            tx_delete_ns_udp,
+            tx_delete_ns_tcp,
+        );
     }
 
-    pub fn step_2(msg: DnsMessage, zones: HashMap<String, NSZone>, cache: DnsCache) -> DnsMessage {
+    pub fn step_2(
+        msg: DnsMessage,
+        zones: HashMap<String, NSZone>,
+        cache: DnsCache,
+        tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
+    ) -> DnsMessage {
         let qname = msg.get_question().get_qname().get_name();
         let (zone, available) =
             NameServer::search_nearest_ancestor_zone(zones.clone(), qname.clone());
 
         if available == true {
             // Step 3 RFC 1034
-            return NameServer::search_in_zone(zone, qname.clone(), msg.clone(), zones, cache);
+            return NameServer::search_in_zone(
+                zone,
+                qname.clone(),
+                msg.clone(),
+                zones,
+                cache,
+                tx_delete_resolver_udp,
+                tx_delete_resolver_tcp,
+                tx_delete_ns_udp,
+                tx_delete_ns_tcp,
+            );
         } else {
             // Step 4 RFC 1034
-            return NameServer::step_4(msg, cache, zones);
+            return NameServer::step_4(
+                msg,
+                cache,
+                zones,
+                tx_delete_resolver_udp,
+                tx_delete_resolver_tcp,
+                tx_delete_ns_udp,
+                tx_delete_ns_tcp,
+            );
         }
     }
 
@@ -316,6 +514,10 @@ impl NameServer {
         mut msg: DnsMessage,
         zones: HashMap<String, NSZone>,
         cache: DnsCache,
+        tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         // Step 3.a
         let qtype = msg.get_question().get_qtype();
@@ -367,7 +569,15 @@ impl NameServer {
                 question.set_qname(canonical_name);
                 msg.set_question(question);
 
-                return NameServer::step_2(msg, zones, cache);
+                return NameServer::step_2(
+                    msg,
+                    zones,
+                    cache,
+                    tx_delete_resolver_udp,
+                    tx_delete_resolver_tcp,
+                    tx_delete_ns_udp,
+                    tx_delete_ns_tcp,
+                );
             } else {
                 return NameServer::step_6(msg, cache, zones);
             }
@@ -380,6 +590,10 @@ impl NameServer {
         mut msg: DnsMessage,
         mut cache: DnsCache,
         zones: HashMap<String, NSZone>,
+        tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         let ns_rrs = zone.get_value();
         msg.set_authority(ns_rrs.clone());
@@ -414,7 +628,15 @@ impl NameServer {
 
         msg.set_additional(additional);
 
-        return NameServer::step_4(msg, cache, zones);
+        return NameServer::step_4(
+            msg,
+            cache,
+            zones,
+            tx_delete_resolver_udp,
+            tx_delete_resolver_tcp,
+            tx_delete_ns_udp,
+            tx_delete_ns_tcp,
+        );
     }
 
     pub fn step_3c(
@@ -465,15 +687,45 @@ impl NameServer {
         mut msg: DnsMessage,
         mut cache: DnsCache,
         zones: HashMap<String, NSZone>,
+        tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         let mut domain_name = msg.get_question().get_qname().get_name();
         let qtype = msg.get_question_qtype();
         let rrs = cache.get(domain_name.clone(), qtype);
         let mut answer = Vec::<ResourceRecord>::new();
 
-        for rr in rrs {
-            answer.push(rr.get_resource_record());
+        let now = Utc::now();
+        let timestamp = now.timestamp() as u32;
+
+        // We check the ttls from the RR's
+
+        for rr_cache in rrs.clone() {
+            let mut rr = rr_cache.get_resource_record();
+            let rr_ttl = rr.get_ttl();
+            let relative_ttl = rr_ttl - timestamp;
+
+            if relative_ttl > 0 {
+                rr.set_ttl(relative_ttl);
+                answer.push(rr);
+            }
         }
+
+        // If there are RR's with TTL < 0, we remove the RR's from the cache
+        if rrs.len() > 0 && answer.len() < rrs.len() {
+            NameServer::remove_from_cache(
+                domain_name.clone(),
+                rrs[0].clone().get_resource_record(),
+                tx_delete_resolver_udp,
+                tx_delete_resolver_tcp,
+                tx_delete_ns_udp,
+                tx_delete_ns_tcp,
+            );
+        }
+
+        //
 
         msg.set_answer(answer);
 
@@ -760,6 +1012,20 @@ impl NameServer {
 
         self.set_zones(zones);
     }
+
+    pub fn remove_from_cache(
+        domain_name: String,
+        resource_record: ResourceRecord,
+        tx_resolver_udp: Sender<(String, ResourceRecord)>,
+        tx_resolver_tcp: Sender<(String, ResourceRecord)>,
+        tx_ns_udp: Sender<(String, ResourceRecord)>,
+        tx_ns_tcp: Sender<(String, ResourceRecord)>,
+    ) {
+        tx_resolver_udp.send((domain_name.clone(), resource_record.clone()));
+        tx_resolver_tcp.send((domain_name.clone(), resource_record.clone()));
+        tx_ns_udp.send((domain_name.clone(), resource_record.clone()));
+        tx_ns_tcp.send((domain_name.clone(), resource_record.clone()));
+    }
 }
 
 // Getters
@@ -776,6 +1042,36 @@ impl NameServer {
 
     pub fn get_queries_id(&self) -> HashMap<u16, u16> {
         self.queries_id.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_sender_ns_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_sender_ns_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_ns_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_sender_ns_tcp.clone()
     }
 }
 

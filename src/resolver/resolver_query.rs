@@ -35,6 +35,22 @@ pub struct ResolverQuery {
     main_query_id: u16,
     old_id: u16,
     src_address: String,
+    // Channel to share cache data between threads
+    add_channel_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between threads
+    delete_channel_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between threads
+    add_channel_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between threads
+    delete_channel_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between name server and resolver
+    add_channel_ns_udp: Sender<(String, ResourceRecord)>,
+    // Channel to delete cache data in name server and resolver
+    delete_channel_ns_udp: Sender<(String, ResourceRecord)>,
+    // Channel to share cache data between name server and resolver
+    add_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to delete cache data in name server and resolver
+    delete_channel_ns_tcp: Sender<(String, ResourceRecord)>,
 }
 
 impl ResolverQuery {
@@ -51,12 +67,19 @@ impl ResolverQuery {
     /// assert_eq!(resolver_query.cache.clone().len(), 0);
     /// '''
     ///
-    pub fn new() -> Self {
+    pub fn new(
+        add_channel_udp: Sender<(String, ResourceRecord)>,
+        delete_channel_udp: Sender<(String, ResourceRecord)>,
+        add_channel_tcp: Sender<(String, ResourceRecord)>,
+        delete_channel_tcp: Sender<(String, ResourceRecord)>,
+        add_channel_ns_udp: Sender<(String, ResourceRecord)>,
+        delete_channel_ns_udp: Sender<(String, ResourceRecord)>,
+        add_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+        delete_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+    ) -> Self {
         let mut rng = thread_rng();
         let now = Utc::now();
         let timestamp = now.timestamp() as u32;
-
-        println!("{}", timestamp);
 
         let query = ResolverQuery {
             timestamp: timestamp,
@@ -72,6 +95,14 @@ impl ResolverQuery {
             main_query_id: rng.gen(),
             old_id: 0,
             src_address: "".to_string(),
+            add_channel_udp: add_channel_udp,
+            delete_channel_udp: delete_channel_udp,
+            add_channel_tcp: add_channel_tcp,
+            delete_channel_tcp: delete_channel_tcp,
+            add_channel_ns_udp: add_channel_ns_udp,
+            delete_channel_ns_udp: delete_channel_ns_udp,
+            add_channel_ns_tcp: add_channel_ns_tcp,
+            delete_channel_ns_tcp: delete_channel_ns_tcp,
         };
 
         query
@@ -196,7 +227,7 @@ impl ResolverQuery {
     }
 
     // Looks for local info in name server zone and cache
-    pub fn look_for_local_info(&self) -> Vec<ResourceRecord> {
+    pub fn look_for_local_info(&mut self) -> Vec<ResourceRecord> {
         let ns_data = self.get_ns_data();
         let s_type = match self.get_stype() {
             1 => "A".to_string(),
@@ -214,23 +245,31 @@ impl ResolverQuery {
 
         let s_name = self.get_sname();
 
-        println!("{}", s_name.clone());
-
-        let (mut zone, available) =
+        let (mut main_zone, available) =
             NameServer::search_nearest_ancestor_zone(self.get_ns_data(), s_name.clone());
 
         let mut rr_vec = Vec::<ResourceRecord>::new();
 
-        println!("{}", available);
+        println!("Existe la zona en el resolver: {}", available);
 
         if available == true {
-            let mut sname_without_zone_label = s_name.replace(&zone.get_name(), "");
-
-            println!("{}", sname_without_zone_label);
+            let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
 
             // We were looking for the first node
             if sname_without_zone_label == "".to_string() {
-                let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
+                let mut rrs_by_type = main_zone.get_rrs_by_type(self.get_stype());
+                let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                let soa_minimun_ttl = match soa_rr.get_rdata() {
+                    Rdata::SomeSoaRdata(val) => val.get_minimum(),
+                    _ => unreachable!(),
+                };
+
+                // Sets TTL to max between RR ttl and SOA min.
+                for rr in rrs_by_type.iter_mut() {
+                    let rr_ttl = rr.get_ttl();
+
+                    rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                }
 
                 return rrs_by_type;
             }
@@ -244,10 +283,10 @@ impl ResolverQuery {
 
             let mut last_label = "";
 
+            let mut zone = main_zone.clone();
+
             for label in labels {
                 let exist_child = zone.exist_child(label.to_string());
-
-                println!("Child exist: {}, Label: {}", exist_child, label.clone());
 
                 if exist_child == true {
                     zone = zone.get_child(label.to_string()).0;
@@ -256,22 +295,44 @@ impl ResolverQuery {
                 }
             }
 
-            println!("Last Label: {}, zone name: {}", last_label, zone.get_name());
-
             if last_label == zone.get_name() {
                 let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
 
+                let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                let soa_minimun_ttl = match soa_rr.get_rdata() {
+                    Rdata::SomeSoaRdata(val) => val.get_minimum(),
+                    _ => unreachable!(),
+                };
+
+                // Sets TTL to max between RR ttl and SOA min.
+                for rr in rrs_by_type.iter_mut() {
+                    let rr_ttl = rr.get_ttl();
+
+                    rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                }
+
                 return rrs_by_type;
             }
-        } else {
-            let mut cache = self.get_cache();
+        }
 
-            let cache_answer = cache.get(s_name, s_type);
+        let mut cache = self.get_cache();
 
-            if cache_answer.len() > 0 {
-                for answer in cache_answer.iter() {
-                    rr_vec.push(answer.get_resource_record());
+        let cache_answer = cache.get(s_name.clone(), s_type);
+
+        if cache_answer.len() > 0 {
+            for answer in cache_answer.iter() {
+                let mut rr = answer.get_resource_record();
+                let rr_ttl = rr.get_ttl();
+                let relative_ttl = rr_ttl - self.get_timestamp();
+
+                if relative_ttl > 0 {
+                    rr.set_ttl(relative_ttl);
+                    rr_vec.push(rr);
                 }
+            }
+
+            if rr_vec.len() < cache_answer.len() {
+                self.remove_from_cache(s_name, cache_answer[0].get_resource_record());
             }
         }
 
@@ -291,14 +352,17 @@ impl ResolverQuery {
         self.set_slist(slist);
     }
 
-    pub fn step_4a(&self, tx: Sender<(String, ResourceRecord)>, msg: DnsMessage) -> DnsMessage {
-        let answer = msg.get_answer();
+    pub fn step_4a(&mut self, msg: DnsMessage) -> DnsMessage {
+        let mut answer = msg.get_answer();
         let rcode = msg.get_header().get_rcode();
 
         if rcode == 0 {
-            for an in answer.iter() {
+            for an in answer.iter_mut() {
                 if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
-                    tx.send((an.get_name().get_name(), an.clone())).unwrap();
+                    an.set_ttl(an.get_ttl() + self.get_timestamp());
+
+                    // Cache
+                    self.add_to_cache(an.get_name().get_name(), an.clone());
                 }
             }
         }
@@ -351,7 +415,6 @@ impl ResolverQuery {
     pub fn step_4_udp(
         &mut self,
         msg_from_response: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
         socket: UdpSocket,
     ) -> Option<DnsMessage> {
         let rcode = msg_from_response.get_header().get_rcode();
@@ -361,7 +424,7 @@ impl ResolverQuery {
         if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
         {
-            return Some(self.step_4a(tx, msg_from_response));
+            return Some(self.step_4a(msg_from_response));
         }
 
         let authority = msg_from_response.get_authority();
@@ -374,7 +437,7 @@ impl ResolverQuery {
         // Step 4b
         /// If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
-            self.step_4b_udp(msg_from_response, tx, socket);
+            self.step_4b_udp(msg_from_response, socket);
             return None;
         }
 
@@ -384,32 +447,33 @@ impl ResolverQuery {
             && answer[0].get_type_code() == 5
             && answer[0].get_type_code() != self.get_stype()
         {
-            return self.step_4c_udp(msg_from_response, tx, socket);
+            return self.step_4c_udp(msg_from_response, socket);
         }
 
         // Step 4d
         return self.step_4d_udp(best_server_hostname.to_string(), socket);
     }
 
-    pub fn step_4b_udp(
-        &mut self,
-        msg: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
-        socket: UdpSocket,
-    ) {
-        let authority = msg.get_authority();
-        let additional = msg.get_additional();
+    pub fn step_4b_udp(&mut self, msg: DnsMessage, socket: UdpSocket) {
+        let mut authority = msg.get_authority();
+        let mut additional = msg.get_additional();
 
         // Adds NS and A RRs to cache if these can help
-        for ns in authority.iter() {
+        for ns in authority.iter_mut() {
             if self.compare_match_count(ns.get_name().get_name()) {
-                tx.send((ns.get_name().get_name(), ns.clone())).unwrap();
-                self.add_to_cache(ns.get_name().get_name(), ns.clone());
+                ns.set_ttl(ns.get_ttl() + self.get_timestamp());
 
-                for ip in additional.iter() {
+                // Cache
+                self.add_to_cache(ns.get_name().get_name(), ns.clone());
+                //
+
+                for ip in additional.iter_mut() {
                     if ns.get_name().get_name() == ip.get_name().get_name() {
-                        tx.send((ip.get_name().get_name(), ip.clone())).unwrap();
+                        ip.set_ttl(ip.get_ttl() + self.get_timestamp());
+
+                        // Cache
                         self.add_to_cache(ip.get_name().get_name(), ip.clone());
+                        //
                     }
                 }
             }
@@ -419,14 +483,9 @@ impl ResolverQuery {
         self.step_3_udp(socket);
     }
 
-    pub fn step_4c_udp(
-        &mut self,
-        mut msg: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
-        socket: UdpSocket,
-    ) -> Option<DnsMessage> {
+    pub fn step_4c_udp(&mut self, mut msg: DnsMessage, socket: UdpSocket) -> Option<DnsMessage> {
         let answer = msg.get_answer();
-        let resource_record = answer[0].clone();
+        let mut resource_record = answer[0].clone();
         let rdata = resource_record.get_rdata();
 
         let rr_data = match rdata {
@@ -435,8 +494,9 @@ impl ResolverQuery {
         };
 
         let cname = rr_data.get_cname();
-        tx.send((cname.get_name(), resource_record.clone()))
-            .unwrap();
+        resource_record.set_ttl(resource_record.get_ttl() + self.get_timestamp());
+
+        // Cache
         self.add_to_cache(cname.get_name(), resource_record);
 
         self.set_sname(cname.get_name());
@@ -481,12 +541,7 @@ impl ResolverQuery {
 
 // Utils for tcp
 impl ResolverQuery {
-    fn send_tcp_query(
-        &mut self,
-        msg: &[u8],
-        ip_address: String,
-        tx: Sender<(String, ResourceRecord)>,
-    ) -> DnsMessage {
+    fn send_tcp_query(&mut self, msg: &[u8], ip_address: String) -> DnsMessage {
         // Adds the two bytes needs for tcp
         let msg_length: u16 = msg.len() as u16;
         let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
@@ -499,14 +554,10 @@ impl ResolverQuery {
 
         let dns_response = DnsMessage::from_bytes(&received_msg);
 
-        return self.step_4_tcp(dns_response, tx);
+        return self.step_4_tcp(dns_response);
     }
 
-    pub fn step_1_tcp(
-        &mut self,
-        mut query_msg: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
-    ) -> DnsMessage {
+    pub fn step_1_tcp(&mut self, mut query_msg: DnsMessage) -> DnsMessage {
         let local_info = self.look_for_local_info();
 
         if local_info.len() > 0 {
@@ -528,11 +579,11 @@ impl ResolverQuery {
             return query_msg;
         } else {
             self.step_2();
-            return self.step_3_tcp(tx);
+            return self.step_3_tcp();
         }
     }
 
-    pub fn step_3_tcp(&mut self, tx: Sender<(String, ResourceRecord)>) -> DnsMessage {
+    pub fn step_3_tcp(&mut self) -> DnsMessage {
         let best_server_to_ask = self.get_slist().get_first();
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
@@ -550,14 +601,10 @@ impl ResolverQuery {
 
         println!("Server to ask {}", best_server_ip);
 
-        return self.send_tcp_query(&msg_to_bytes, best_server_ip, tx);
+        return self.send_tcp_query(&msg_to_bytes, best_server_ip);
     }
 
-    pub fn step_4_tcp(
-        &mut self,
-        msg_from_response: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
-    ) -> DnsMessage {
+    pub fn step_4_tcp(&mut self, msg_from_response: DnsMessage) -> DnsMessage {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
 
@@ -565,7 +612,7 @@ impl ResolverQuery {
         if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
         {
-            return self.step_4a(tx, msg_from_response);
+            return self.step_4a(msg_from_response);
         }
 
         let authority = msg_from_response.get_authority();
@@ -578,7 +625,7 @@ impl ResolverQuery {
         // Step 4b
         /// If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
-            return self.step_4b_tcp(msg_from_response, tx);
+            return self.step_4b_tcp(msg_from_response);
         }
 
         // Step 4c
@@ -587,30 +634,30 @@ impl ResolverQuery {
             && answer[0].get_type_code() == 5
             && answer[0].get_type_code() != self.get_stype()
         {
-            return self.step_4c_tcp(msg_from_response, tx);
+            return self.step_4c_tcp(msg_from_response);
         }
 
         // Step 4d
-        return self.step_4d_tcp(best_server_hostname.to_string(), tx);
+        return self.step_4d_tcp(best_server_hostname.to_string());
     }
 
-    pub fn step_4b_tcp(
-        &mut self,
-        msg: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
-    ) -> DnsMessage {
-        let authority = msg.get_authority();
-        let additional = msg.get_additional();
+    pub fn step_4b_tcp(&mut self, msg: DnsMessage) -> DnsMessage {
+        let mut authority = msg.get_authority();
+        let mut additional = msg.get_additional();
 
         // Adds NS and A RRs to cache if these can help
-        for ns in authority.iter() {
+        for ns in authority.iter_mut() {
             if self.compare_match_count(ns.get_name().get_name()) {
-                tx.send((ns.get_name().get_name(), ns.clone())).unwrap();
+                ns.set_ttl(ns.get_ttl() + self.get_timestamp());
+
+                // Cache
                 self.add_to_cache(ns.get_name().get_name(), ns.clone());
 
-                for ip in additional.iter() {
+                for ip in additional.iter_mut() {
                     if ns.get_name().get_name() == ip.get_name().get_name() {
-                        tx.send((ip.get_name().get_name(), ip.clone())).unwrap();
+                        ip.set_ttl(ip.get_ttl() + self.get_timestamp());
+
+                        // Cache
                         self.add_to_cache(ip.get_name().get_name(), ip.clone());
                     }
                 }
@@ -618,14 +665,10 @@ impl ResolverQuery {
         }
 
         self.step_2();
-        return self.step_3_tcp(tx);
+        return self.step_3_tcp();
     }
 
-    pub fn step_4c_tcp(
-        &mut self,
-        mut msg: DnsMessage,
-        tx: Sender<(String, ResourceRecord)>,
-    ) -> DnsMessage {
+    pub fn step_4c_tcp(&mut self, mut msg: DnsMessage) -> DnsMessage {
         let answer = msg.get_answer();
         let resource_record = answer[0].clone();
         let rdata = resource_record.get_rdata();
@@ -636,25 +679,21 @@ impl ResolverQuery {
         };
 
         let cname = rr_data.get_cname();
-        tx.send((cname.get_name(), resource_record.clone()))
-            .unwrap();
+
+        // Cache
         self.add_to_cache(cname.get_name(), resource_record);
 
         self.set_sname(cname.get_name());
 
-        return self.step_1_tcp(msg, tx);
+        return self.step_1_tcp(msg);
     }
 
-    pub fn step_4d_tcp(
-        &mut self,
-        host_name_asked: String,
-        tx: Sender<(String, ResourceRecord)>,
-    ) -> DnsMessage {
+    pub fn step_4d_tcp(&mut self, host_name_asked: String) -> DnsMessage {
         let mut slist = self.get_slist();
         slist.delete(host_name_asked);
         self.set_slist(slist);
 
-        return self.step_3_tcp(tx);
+        return self.step_3_tcp();
     }
 }
 
@@ -664,7 +703,43 @@ impl ResolverQuery {
     pub fn add_to_cache(&mut self, domain_name: String, resource_record: ResourceRecord) {
         let mut cache = self.get_cache();
 
+        self.get_add_channel_udp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+        self.get_add_channel_tcp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+        self.get_add_channel_ns_udp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+        self.get_add_channel_ns_tcp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+
         cache.add(domain_name, resource_record);
+
+        self.set_cache(cache);
+    }
+
+    // Add a new element to cache
+    pub fn remove_from_cache(&mut self, domain_name: String, resource_record: ResourceRecord) {
+        let mut cache = self.get_cache();
+        let rr_type = resource_record.get_string_type();
+
+        self.get_delete_channel_udp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+        self.get_delete_channel_tcp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+        self.get_delete_channel_ns_udp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+        self.get_delete_channel_ns_tcp()
+            .send((domain_name.clone(), resource_record.clone()))
+            .unwrap();
+
+        cache.remove(domain_name, rr_type);
 
         self.set_cache(cache);
     }
@@ -749,6 +824,46 @@ impl ResolverQuery {
     /// Get the owner's query address
     pub fn get_src_address(&self) -> String {
         self.src_address.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_channel_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_channel_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_channel_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_channel_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_channel_ns_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_add_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.add_channel_ns_tcp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_channel_ns_udp.clone()
+    }
+
+    /// Get the owner's query address
+    pub fn get_delete_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
+        self.delete_channel_ns_tcp.clone()
     }
 
     // utility

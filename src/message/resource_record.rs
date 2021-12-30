@@ -278,6 +278,24 @@ impl ResourceRecord {
 
         rr_bytes
     }
+
+    pub fn get_string_type(&self) -> String {
+        let qtype = match self.get_type_code() {
+            1 => "A".to_string(),
+            2 => "NS".to_string(),
+            5 => "CNAME".to_string(),
+            6 => "SOA".to_string(),
+            11 => "WKS".to_string(),
+            12 => "PTR".to_string(),
+            13 => "HINFO".to_string(),
+            14 => "MINFO".to_string(),
+            15 => "MX".to_string(),
+            16 => "TXT".to_string(),
+            _ => unreachable!(),
+        };
+
+        qtype
+    }
 }
 
 // Setters

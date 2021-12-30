@@ -11,17 +11,14 @@ mod global_tests {
     use std::str::from_utf8;
     use std::sync::mpsc;
 
+    use crate::config::IP_PORT;
+
     //#[test]
     fn udp_response_test() {
-        let server_address = "192.168.1.89:58396";
-        let server_address = "190.124.27.10:53";
     }
 
     #[test]
-    fn tcp_response_test() {
-        let server_address = "192.168.1.89:58396";
-        let server_address_2 = "190.124.27.10:53";
-        
+    fn tcp_response_test() {        
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -42,7 +39,7 @@ mod global_tests {
             delete_sender_ns_tcp,
         );
 
-        resolver.set_ip_address("190.124.27.10:58396".to_string());
+        resolver.set_ip_address(IP_PORT.to_string());
         
         let mut sbelt = Slist::new();
         sbelt.insert(".".to_string(), "8.8.8.8".to_string(), 5.0);

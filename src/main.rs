@@ -6,6 +6,7 @@ pub mod name_server;
 pub mod resolver;
 pub mod rr_cache;
 pub mod server;
+pub mod global_tests;
 
 use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;

@@ -478,7 +478,10 @@ impl Resolver {
         mut messages: HashMap<u16, DnsMessage>,
     ) -> Option<(DnsMessage, String)> {
         let mut msg = [0; 512];
-        let (number_of_bytes_msg, address) = socket.recv_from(&mut msg).expect("No data received");
+        let (number_of_bytes_msg, address) = match socket.recv_from(&mut msg) {
+            Ok((bytes, addr)) => (bytes, addr.to_string()),
+            Err(e) => (0, "".to_string()),
+        };
 
         if number_of_bytes_msg == 0 {
             return None;
@@ -507,7 +510,7 @@ impl Resolver {
                     msg.set_header(header);
                     messages.remove(&query_id);
 
-                    return Some((msg.clone(), address.to_string()));
+                    return Some((msg.clone(), address));
                 }
             }
             None => {
@@ -515,7 +518,7 @@ impl Resolver {
                     messages.insert(query_id, dns_msg_parsed);
                     return None;
                 } else {
-                    return Some((dns_msg_parsed, address.to_string()));
+                    return Some((dns_msg_parsed, address));
                 }
             }
         }

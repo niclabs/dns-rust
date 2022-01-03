@@ -7,8 +7,8 @@ pub mod resolver;
 pub mod rr_cache;
 pub mod server;
 
-pub mod global_tests;
 pub mod config;
+pub mod global_tests;
 
 use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;
@@ -43,6 +43,7 @@ pub fn main() {
     let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
     let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+    /*
     let mut resolver = Resolver::new(
         add_sender_udp,
         delete_sender_udp,
@@ -62,15 +63,31 @@ pub fn main() {
     resolver.set_sbelt(sbelt);
 
     resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
-
-    /*
+    */
 
     // Name Server initialization
-    let mut name_server = NameServer::new();
-    name_server.add_zone_from_master_file("test.txt".to_string());
+    let mut name_server = NameServer::new(
+        false,
+        delete_sender_udp.clone(),
+        delete_sender_tcp.clone(),
+        add_sender_ns_udp.clone(),
+        delete_sender_ns_udp.clone(),
+        add_sender_ns_tcp.clone(),
+        delete_sender_ns_tcp.clone(),
+    );
+    name_server.add_zone_from_master_file("test.txt".to_string(), "".to_string());
 
     // Resolver Initialization
-    let mut local_resolver = Resolver::new();
+    let mut local_resolver = Resolver::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+    );
     local_resolver.set_ip_address("192.168.1.89:58396".to_string());
     local_resolver.set_ns_data(name_server.get_zones());
 
@@ -82,12 +99,15 @@ pub fn main() {
     let local_resolver_ip = local_resolver.get_ip_address();
 
     thread::spawn(move || {
-        name_server.run_name_server_udp("192.168.1.89".to_string(), local_resolver_ip);
+        name_server.run_name_server_tcp(
+            "192.168.1.89".to_string(),
+            local_resolver_ip,
+            add_recv_ns_tcp,
+            delete_recv_ns_tcp,
+        );
     });
 
-    local_resolver.run_resolver_udp();
-
-    */
+    local_resolver.run_resolver_tcp(add_recv_tcp, delete_recv_tcp);
 }
 
 fn test_tcp() {

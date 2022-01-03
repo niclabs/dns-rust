@@ -43,7 +43,6 @@ pub fn main() {
     let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
     let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
-    /*
     let mut resolver = Resolver::new(
         add_sender_udp,
         delete_sender_udp,
@@ -58,13 +57,13 @@ pub fn main() {
     resolver.set_ip_address("192.168.1.89:58396".to_string());
 
     let mut sbelt = Slist::new();
-    sbelt.insert(".".to_string(), "8.8.8.8".to_string(), 5.0);
+    sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
 
     resolver.set_sbelt(sbelt);
 
     resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
-    */
 
+    /*
     // Name Server initialization
     let mut name_server = NameServer::new(
         false,
@@ -108,6 +107,8 @@ pub fn main() {
     });
 
     local_resolver.run_resolver_tcp(add_recv_tcp, delete_recv_tcp);
+
+    */
 }
 
 fn test_tcp() {

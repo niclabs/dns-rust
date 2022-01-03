@@ -975,11 +975,31 @@ mod test {
     use crate::resolver::slist::Slist;
     use std::collections::HashMap;
     use std::vec::Vec;
+    use std::sync::mpsc;
 
-    /*
+    
     #[test]
     fn constructor_test() {
-        let resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         assert_eq!(resolver_query.sname, "".to_string());
         assert_eq!(resolver_query.stype, 0);
@@ -990,7 +1010,26 @@ mod test {
 
     #[test]
     fn set_and_get_sname() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         assert_eq!(resolver_query.sname, "".to_string());
 
@@ -1001,7 +1040,26 @@ mod test {
 
     #[test]
     fn set_and_get_stype() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         assert_eq!(resolver_query.stype, 0);
 
@@ -1012,7 +1070,26 @@ mod test {
 
     #[test]
     fn set_and_get_sclass() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         assert_eq!(resolver_query.sclass, 0);
 
@@ -1023,7 +1100,26 @@ mod test {
 
     #[test]
     fn set_and_get_op_code() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         assert_eq!(resolver_query.op_code, 0);
 
@@ -1034,7 +1130,26 @@ mod test {
 
     #[test]
     fn set_and_get_rd() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         assert_eq!(resolver_query.rd, false);
 
@@ -1045,7 +1160,26 @@ mod test {
 
     #[test]
     fn set_and_get_slist() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
         let mut slist = Slist::new();
 
         assert_eq!(resolver_query.slist.get_ns_list().len(), 0);
@@ -1058,7 +1192,26 @@ mod test {
 
     #[test]
     fn set_and_get_sbelt() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
         let mut sbelt = Slist::new();
 
         assert_eq!(resolver_query.sbelt.get_ns_list().len(), 0);
@@ -1071,7 +1224,26 @@ mod test {
 
     #[test]
     fn set_and_get_cache() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
         let mut cache = DnsCache::new();
         cache.set_max_size(1);
 
@@ -1094,7 +1266,26 @@ mod test {
 
     #[test]
     fn create_query_message_test() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         resolver_query.set_sname("test.com".to_string());
         resolver_query.set_rd(true);
@@ -1114,7 +1305,26 @@ mod test {
 
     #[test]
     fn initialize_slist_test() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
         resolver_query.set_sname("test.test2.com".to_string());
         resolver_query.set_rd(true);
         resolver_query.set_stype(1);
@@ -1168,7 +1378,26 @@ mod test {
 
     #[test]
     fn initialize_slist_empty_test() {
-        let mut resolver_query = ResolverQuery::new();
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
         resolver_query.set_sname("test6.test4.com".to_string());
         resolver_query.set_rd(true);
         resolver_query.set_stype(1);
@@ -1243,13 +1472,33 @@ mod test {
 
         rr_type_hash.insert("NS".to_string(), host_names_hash);
 
-        let mut resolver_query_test = ResolverQuery::new();
+        
+        /// Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        
+        let mut resolver_query_test = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+        );
 
         assert_eq!(resolver_query_test.get_ns_data().len(), 0);
 
-        resolver_query_test.set_ns_data(rr_type_hash);
+        //resolver_query_test.set_ns_data(rr_type_hash);
 
-        assert_eq!(resolver_query_test.get_ns_data().len(), 1);
+        //assert_eq!(resolver_query_test.get_ns_data().len(), 1);
     }
-    */
+    
 }

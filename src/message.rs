@@ -7,6 +7,10 @@ use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
 use crate::message::resource_record::ResourceRecord;
+use crate::name_server::zone::NSZone;
+
+use rand::thread_rng;
+use rand::Rng;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -122,6 +126,17 @@ impl DnsMessage {
         };
 
         dns_message
+    }
+
+    pub fn refresh_query_msg(zone: NSZone) -> Self {
+        let mut rng = thread_rng();
+        let msg_id = rng.gen();
+
+        let zone_name = zone.get_name();
+
+        let msg = DnsMessage::new_query_message(zone_name, 6, 1, 0, false, msg_id);
+
+        msg
     }
 
     // Creates a DnsMessage from an array of bytes

@@ -478,7 +478,11 @@ impl Resolver {
         mut messages: HashMap<u16, DnsMessage>,
     ) -> Option<(DnsMessage, String)> {
         let mut msg = [0; 512];
-        let (_number_of_bytes_msg, address) = socket.recv_from(&mut msg).expect("No data received");
+        let (number_of_bytes_msg, address) = socket.recv_from(&mut msg).expect("No data received");
+
+        if number_of_bytes_msg == 0 {
+            return None;
+        }
 
         let dns_msg_parsed = DnsMessage::from_bytes(&msg);
         let query_id = dns_msg_parsed.get_query_id();

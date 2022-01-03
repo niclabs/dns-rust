@@ -5,6 +5,8 @@ use crate::name_server::master_file::MasterFile;
 /// Structs that represents data from a zone
 pub struct NSZone {
     name: String,
+    // Ip to ask the SOA RR data for refreshing
+    ip_address_for_refresh_zone: String,
     value: Vec<ResourceRecord>,
     childs: Vec<NSZone>,
     subzone: bool,
@@ -15,6 +17,7 @@ impl NSZone {
     pub fn new() -> Self {
         let ns_zone = NSZone {
             name: "".to_string(),
+            ip_address_for_refresh_zone: "".to_string(),
             value: Vec::<ResourceRecord>::new(),
             childs: Vec::<NSZone>::new(),
             subzone: false,
@@ -24,7 +27,7 @@ impl NSZone {
         ns_zone
     }
 
-    pub fn from_file(file_name: String) -> Self {
+    pub fn from_file(file_name: String, ip_address_for_refresh_zone: String) -> Self {
         let master_file_parsed = MasterFile::from_file(file_name);
         let origin = master_file_parsed.get_origin();
         let mut rrs = master_file_parsed.get_rrs();
@@ -33,6 +36,7 @@ impl NSZone {
 
         let mut ns_zone = NSZone::new();
         ns_zone.set_name(origin);
+        ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
         ns_zone.set_value(origin_rrs);
 
         for (key, value) in rrs.iter() {
@@ -197,6 +201,10 @@ impl NSZone {
         self.value = value;
     }
 
+    pub fn set_ip_address_for_refresh_zone(&mut self, ip_address_for_refresh_zone: String) {
+        self.ip_address_for_refresh_zone = ip_address_for_refresh_zone;
+    }
+
     // Sets the childs with a new value
     pub fn set_childs(&mut self, childs: Vec<NSZone>) {
         self.childs = childs;
@@ -223,6 +231,10 @@ impl NSZone {
     // Gets the values from the node
     pub fn get_value(&self) -> Vec<ResourceRecord> {
         self.value.clone()
+    }
+
+    pub fn get_ip_address_for_refresh_zone(&self) -> String {
+        self.ip_address_for_refresh_zone.clone()
     }
 
     // Gets the childs from the node

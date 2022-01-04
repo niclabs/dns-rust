@@ -111,7 +111,9 @@ mod global_tests {
         assert_eq!(ip_from_response, [192, 80, 24, 11]);
         //
     }
+    */
 
+    /*
     #[test]
     fn resolver_answer_tcp_test() {
         // Resolver settings
@@ -195,8 +197,9 @@ mod global_tests {
         assert_eq!(ip_from_response, [192, 80, 24, 11]);
         //
     }
+    */
 
-
+    /*
     #[test]
     fn resolver_delegation_udp_test() {
         // Resolver settings
@@ -283,7 +286,9 @@ mod global_tests {
         assert_eq!(ip_from_response, [192, 80, 24, 11]);
         //
     }
+    */
 
+    /*
     #[test]
     fn resolver_delegation_tcp_test() {
         // Resolver settings
@@ -368,7 +373,8 @@ mod global_tests {
         assert_eq!(ip_from_response, [192, 80, 24, 11]);
         //
     }
-
+    */
+    /*
     #[test]
     fn resolver_cname_delegation_udp_test() {
         // Resolver settings
@@ -465,6 +471,7 @@ mod global_tests {
     }
     */
 
+    /*
     #[test]
     fn resolver_delegation_tcp_test() {
         // Resolver settings
@@ -563,4 +570,5 @@ mod global_tests {
         }
         //
     }
+    */
 }

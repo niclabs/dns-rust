@@ -628,10 +628,6 @@ impl ResolverQuery {
         let authority = msg_from_response.get_authority();
         let additional = msg_from_response.get_additional();
 
-        let mut slist = self.get_slist();
-        let best_server = slist.get_first();
-        let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
-
         // Step 4b
         /// If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
@@ -646,6 +642,10 @@ impl ResolverQuery {
         {
             return self.step_4c_tcp(msg_from_response);
         }
+
+        let mut slist = self.get_slist();
+        let best_server = slist.get_first();
+        let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
         // Step 4d
         return self.step_4d_tcp(best_server_hostname.to_string());
@@ -663,8 +663,15 @@ impl ResolverQuery {
                 // Cache
                 self.add_to_cache(ns.get_name().get_name(), ns.clone());
 
+                // Get the NS domain name
+                let ns_domain_name = match ns.get_rdata() {
+                    Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
+                    _ => unreachable!(),
+                };
+                //
+
                 for ip in additional.iter_mut() {
-                    if ns.get_name().get_name() == ip.get_name().get_name() {
+                    if ns_domain_name == ip.get_name().get_name() {
                         ip.set_ttl(ip.get_ttl() + self.get_timestamp());
 
                         // Cache

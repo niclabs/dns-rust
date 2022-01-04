@@ -81,14 +81,14 @@ mod global_tests {
 
         thread::sleep(Duration::new(1, 0));
 
-        // Send query
+        // UDP
         client_socket
             .send_to(&query_msg.to_bytes(), IP_PORT.to_string())
             .expect("failed to send message");
 
         println!("{}", "Query sent");
 
-        // Receive response
+        // Receive response UDP
         let mut response = [0; 512];
 
         let (bytes_read, address) = client_socket
@@ -108,5 +108,45 @@ mod global_tests {
         };
 
         assert_eq!(ip_from_response, [200, 89, 76, 36]);
+        //
+
+        // TCP and use of cache
+        let mut client_stream = TcpStream::connect(IP_PORT).expect("Failed to connect");
+        thread::sleep(Duration::new(1, 0));
+
+        let bytes = query_msg.to_bytes();
+
+        let msg_length: u16 = bytes.len() as u16;
+
+        let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
+
+        let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
+
+        client_stream.write(&full_msg);
+
+        // Receive response TCP
+        let mut response = [0; 512];
+
+        let bytes_read = client_stream.read(&mut response).expect("No receive msg");
+
+        let dns_response = DnsMessage::from_bytes(&response[2..]);
+        let answers = dns_response.get_answer();
+
+        assert_eq!(dns_response.get_query_id(), id);
+        assert_eq!(answers.len(), 1);
+
+        let answer = answers[0].clone();
+        let ip_from_response = match answer.get_rdata() {
+            Rdata::SomeARdata(val) => val.get_address(),
+            _ => unreachable!(),
+        };
+
+        assert_eq!(ip_from_response, [200, 89, 76, 36]);
+        //
+    }
+
+    #[test]
+    fn resolver_delegation_test() {
+        unimplemented!();
     }
 }

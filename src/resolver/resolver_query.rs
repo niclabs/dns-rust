@@ -162,6 +162,8 @@ impl ResolverQuery {
             // Gets a vector of NS RR for host_name
             let ns_parent_host_name = cache.get(parent_host_name.to_string(), ns_type.clone());
 
+            println!("Found {} NS records", ns_parent_host_name.len());
+
             let mut ip_found = 0;
 
             for ns in ns_parent_host_name.clone() {
@@ -252,7 +254,7 @@ impl ResolverQuery {
 
         let mut rr_vec = Vec::<ResourceRecord>::new();
 
-        println!("Existe la zona en el resolver: {}", available);
+        //println!("Existe la zona en el resolver: {}", available);
 
         if available == true {
             let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
@@ -422,8 +424,6 @@ impl ResolverQuery {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
 
-        println!("{:?}", msg_from_response.get_answer().len());
-
         // Step 4a
         if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
@@ -448,6 +448,7 @@ impl ResolverQuery {
             && answer[0].get_type_code() == 5
             && answer[0].get_type_code() != self.get_stype()
         {
+            println!("Step 4C");
             return self.step_4c_udp(msg_from_response, socket);
         }
 
@@ -992,10 +993,10 @@ mod resolver_query_tests {
     use crate::message::resource_record::ResourceRecord;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
+    use chrono::Utc;
     use std::collections::HashMap;
     use std::sync::mpsc;
     use std::vec::Vec;
-    use chrono::Utc;
 
     #[test]
     fn constructor_test() {
@@ -1049,7 +1050,7 @@ mod resolver_query_tests {
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
         );
-        
+
         let now = Utc::now();
         let now_timestamp = now.timestamp() as u32;
 

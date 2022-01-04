@@ -296,7 +296,9 @@ impl Resolver {
                     println!("Message answer ID checked");
 
                     thread::spawn(move || {
-                        let resolver_query = queries_hash_by_id_copy.get(&answer_id).unwrap();
+                        let mut resolver_query =
+                            queries_hash_by_id_copy.get(&answer_id).unwrap().clone();
+                        resolver_query.set_cache(resolver.get_cache());
                         let response = match resolver_query
                             .clone()
                             .step_4_udp(dns_message, socket_copy.try_clone().unwrap())

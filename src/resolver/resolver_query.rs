@@ -422,6 +422,8 @@ impl ResolverQuery {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
 
+        println!("{:?}", msg_from_response.get_answer().len());
+
         // Step 4a
         if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
@@ -722,16 +724,16 @@ impl ResolverQuery {
 
         self.get_add_channel_udp()
             .send((domain_name.clone(), resource_record.clone()))
-            .unwrap();
+            .unwrap_or(());
         self.get_add_channel_tcp()
             .send((domain_name.clone(), resource_record.clone()))
-            .unwrap();
+            .unwrap_or(());
         self.get_add_channel_ns_udp()
             .send((domain_name.clone(), resource_record.clone()))
-            .unwrap();
+            .unwrap_or(());
         self.get_add_channel_ns_tcp()
             .send((domain_name.clone(), resource_record.clone()))
-            .unwrap();
+            .unwrap_or(());
 
         cache.add(domain_name, resource_record);
 

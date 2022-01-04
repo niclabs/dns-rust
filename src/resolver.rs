@@ -285,6 +285,13 @@ impl Resolver {
                 let answer_id = dns_message.get_query_id();
                 let queries_hash_by_id_copy = queries_hash_by_id.clone();
 
+                println!(
+                    "AA: {}, NS: {}, AD: {}",
+                    dns_message.get_answer().len(),
+                    dns_message.get_authority().len(),
+                    dns_message.get_additional().len()
+                );
+
                 if queries_hash_by_id_copy.contains_key(&answer_id) {
                     println!("Message answer ID checked");
 

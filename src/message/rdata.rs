@@ -52,7 +52,7 @@ impl FromBytes<Rdata> for Rdata {
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Rdata {
         let type_code = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
 
-        println!("Type code rdta {}", type_code);
+        println!("Type code rdata {}", type_code);
 
         let rdata = match type_code {
             1 => Rdata::SomeARdata(ARdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
@@ -65,6 +65,9 @@ impl FromBytes<Rdata> for Rdata {
             }
             15 => Rdata::SomeMxRdata(MxRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
             16 => Rdata::SomeTxtRdata(TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            //////////////////////// Replace the next line when AAAA is implemented /////////////////
+            28 => Rdata::SomeTxtRdata(TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            //////////////////////////////////////////////////////////////////////////////////////////
             _ => unreachable!(),
         };
         rdata

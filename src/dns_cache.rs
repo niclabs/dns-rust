@@ -46,6 +46,9 @@ impl DnsCache {
             14 => "MINFO".to_string(),
             15 => "MX".to_string(),
             16 => "TXT".to_string(),
+            //////////////////////// Replace the next line when AAAA is implemented /////////////////
+            28 => "TXT".to_string(),
+            /////////////////////////////////////////////////////////////////////////////////////////
             _ => unreachable!(),
         };
 

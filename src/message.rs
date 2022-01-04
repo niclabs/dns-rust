@@ -161,22 +161,28 @@ impl DnsMessage {
         let additional_rr_size = header.get_arcount();
 
         for _i in 0..answer_rr_size {
+            println!("Answer");
             let (resource_record, other_rr_bytes) =
                 ResourceRecord::from_bytes(no_question_bytes, bytes);
+            println!("RR Name: {}", resource_record.get_name().get_name());
             answer.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
         for _i in 0..authority_rr_size {
+            println!("Authority");
             let (resource_record, other_rr_bytes) =
                 ResourceRecord::from_bytes(no_question_bytes, bytes);
+            println!("RR Name: {}", resource_record.get_name().get_name());
             authority.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
         for _i in 0..additional_rr_size {
+            println!("Additional");
             let (resource_record, other_rr_bytes) =
                 ResourceRecord::from_bytes(no_question_bytes, bytes);
+            println!("RR Name: {}", resource_record.get_name().get_name());
             additional.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }

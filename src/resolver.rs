@@ -1,4 +1,5 @@
 use crate::dns_cache::DnsCache;
+use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
@@ -488,6 +489,7 @@ impl Resolver {
         }
 
         let dns_msg_parsed = DnsMessage::from_bytes(&msg);
+
         let query_id = dns_msg_parsed.get_query_id();
         let trunc = dns_msg_parsed.get_header().get_tc();
 
@@ -725,8 +727,8 @@ mod test {
     use crate::resolver::slist::Slist;
     use crate::resolver::Resolver;
     use std::collections::HashMap;
-    use std::vec::Vec;
     use std::sync::mpsc;
+    use std::vec::Vec;
 
     #[test]
     fn constructor_test() {
@@ -901,7 +903,6 @@ mod test {
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
         );
-
 
         assert_eq!(resolver_query_test.get_ns_data().len(), 0);
 

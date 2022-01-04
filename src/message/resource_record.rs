@@ -267,10 +267,12 @@ impl ResourceRecord {
         rr_bytes.push(self.get_second_ttl_byte());
         rr_bytes.push(self.get_third_ttl_byte());
         rr_bytes.push(self.get_fourth_ttl_byte());
-        rr_bytes.push(self.get_first_rdlength_byte());
-        rr_bytes.push(self.get_second_rdlength_byte());
 
         let rdata_bytes = self.rdata_to_bytes();
+        let rd_length: u16 = rdata_bytes.len() as u16;
+
+        rr_bytes.push((rd_length >> 8) as u8);
+        rr_bytes.push(rd_length as u8);
 
         for byte in rdata_bytes.as_slice() {
             rr_bytes.push(*byte);

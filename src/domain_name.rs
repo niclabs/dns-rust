@@ -28,7 +28,7 @@ impl DomainName {
     }
 
     /// Given an array of bytes, creates a new DomainName and returns the unused bytes
-    pub fn from_bytes_no_offset(bytes: &[u8]) -> (Self, &[u8]) {
+    pub fn from_bytes_no_offset(bytes: &[u8]) -> String {
         let mut name = String::from("");
         let mut index = 0;
 
@@ -45,26 +45,53 @@ impl DomainName {
 
         name.remove(0);
 
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(name);
-
-        (domain_name, &bytes[index + 1..])
+        name
     }
 
     pub fn from_bytes<'a>(bytes: &'a [u8], full_msg: &'a [u8]) -> (Self, &'a [u8]) {
-        let msg_compresion = bytes[0].clone() >> 6;
+        let mut first_byte = bytes[0].clone();
+        let mut domain_name_str = "".to_string();
+        let mut no_domain_bytes = bytes.clone();
 
-        if msg_compresion == 3 {
-            let offset: usize = (((bytes[0].clone() as u16) << 8 | bytes[1].clone() as u16)
-                & 0b0011111111111111) as usize;
-            let (question, mut no_question_bytes) =
-                DomainName::from_bytes_no_offset(&full_msg[offset..]);
-            no_question_bytes = &bytes[2..];
+        while first_byte != 0 {
+            let msg_compresion = first_byte.clone() >> 6;
 
-            return (question, no_question_bytes);
-        } else {
-            return DomainName::from_bytes_no_offset(&bytes[0..]);
+            if msg_compresion == 3 {
+                let offset: usize = (((no_domain_bytes[0].clone() as u16) << 8
+                    | no_domain_bytes[1].clone() as u16)
+                    & 0b0011111111111111) as usize;
+                let (domain_label, _bytes) =
+                    DomainName::from_bytes(&full_msg[offset..], full_msg.clone());
+
+                let label = domain_label.get_name();
+
+                domain_name_str.push_str(&label);
+                domain_name_str.push_str(".");
+                no_domain_bytes = &no_domain_bytes[2..];
+
+                break;
+            } else {
+                let label_string =
+                    DomainName::from_bytes_no_offset(&no_domain_bytes[..(first_byte + 1) as usize]);
+
+                domain_name_str.push_str(&label_string);
+                domain_name_str.push_str(".");
+                no_domain_bytes = &no_domain_bytes[(first_byte + 1) as usize..];
+
+                first_byte = no_domain_bytes[0].clone();
+            }
         }
+
+        if first_byte == 0 {
+            no_domain_bytes = &no_domain_bytes[1..];
+        }
+
+        domain_name_str.remove(domain_name_str.len() - 1);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(domain_name_str);
+
+        (domain_name, no_domain_bytes)
     }
 
     /// Returns an array of bytes that represents the domain name

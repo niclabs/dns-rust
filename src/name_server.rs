@@ -40,7 +40,7 @@ pub struct NameServer {
     // Ids for Soa rrs queries to refresh zone
     queries_id_for_soa_rr: HashMap<u16, String>,
     // Ids from queries
-    queries_id: HashMap<u16, u16>,
+    queries_id: HashMap<u16, Vec<(u16, String)>>,
     // Channel to share cache data between threads
     delete_sender_udp: Sender<(String, ResourceRecord)>,
     // Channel to share cache data between threads
@@ -69,7 +69,7 @@ impl NameServer {
         let name_server = NameServer {
             zones: HashMap::<String, NSZone>::new(),
             cache: DnsCache::new(),
-            queries_id: HashMap::<u16, u16>::new(),
+            queries_id: HashMap::<u16, Vec<(u16, String)>>::new(),
             queries_id_for_soa_rr: HashMap::<u16, String>::new(),
             primary_server: primary_server,
             refresh_zones_data: HashMap::<String, ZoneRefresh>::new(),
@@ -354,7 +354,13 @@ impl NameServer {
                     let rd = new_msg.get_header().get_rd();
 
                     if rd == true {
-                        NameServer::step_5_udp(resolver_ip_clone, new_msg, socket_copy, tx_clone);
+                        NameServer::step_5_udp(
+                            resolver_ip_clone,
+                            new_msg,
+                            socket_copy,
+                            tx_clone,
+                            src_address,
+                        );
                     } else {
                         let response_dns_msg = NameServer::step_2(
                             new_msg,
@@ -381,20 +387,26 @@ impl NameServer {
             } else {
                 let mut queries_id = self.get_queries_id();
                 let new_id = dns_message.get_query_id();
-                match queries_id.get(&new_id) {
-                    Some(&val) => {
+
+                println!("Pasa por respuesta");
+
+                match queries_id.get(&new_id.clone()) {
+                    Some(val) => {
+                        let val_copy = val.clone();
+                        println!("Encuentra la id en las queries id");
                         let mut header = dns_message.get_header();
-                        header.set_id(val);
+                        header.set_id(val_copy[0].clone().0);
                         dns_message.set_header(header);
                         queries_id.remove(&new_id);
 
                         NameServer::send_response_by_udp(
                             dns_message,
-                            src_address.to_string(),
+                            val_copy[0].clone().1,
                             &socket_copy,
                         );
                     }
                     None => {
+                        println!("No encuentra la id en las queries id");
                         // If the msg is a refresh soa rr query
                         let mut queries_id_for_soa_rr = self.get_queries_id_for_soa_rr();
 
@@ -566,6 +578,8 @@ impl NameServer {
                             let rd = new_msg.get_header().get_rd();
 
                             if rd == true {
+                                println!("RD true");
+
                                 let mut response_dns_msg = NameServer::step_5_tcp(
                                     resolver_ip_clone,
                                     new_msg,
@@ -574,6 +588,8 @@ impl NameServer {
                                 );
 
                                 response_dns_msg.set_query_id(query_id.clone());
+
+                                println!("{:#?}", response_dns_msg.to_bytes());
 
                                 NameServer::send_response_by_tcp(
                                     response_dns_msg,
@@ -1122,15 +1138,14 @@ impl NameServer {
 
             return NameServer::step_6(msg, cache, zones);
         } else {
-            if msg.get_answer().len() > 0 {
-                if msg.get_answer()[0].get_type_code() == 5 {
-                    let mut header = msg.get_header();
-                    header.set_rcode(3);
-                    header.set_aa(true);
+            let mut header = msg.get_header();
+            header.set_rcode(3);
 
-                    msg.set_header(header);
-                }
+            if msg.get_answer().len() == 0 {
+                header.set_aa(true);
             }
+
+            msg.set_header(header);
 
             return msg;
         }
@@ -1293,7 +1308,8 @@ impl NameServer {
         resolver_ip_and_port: String,
         mut msg: DnsMessage,
         socket: UdpSocket,
-        tx: Sender<(u16, u16)>,
+        tx: Sender<(Vec<(u16, String)>, u16)>,
+        src_address: String,
     ) {
         let old_id = msg.get_query_id();
         let mut rng = thread_rng();
@@ -1304,7 +1320,7 @@ impl NameServer {
 
         msg.set_header(header);
 
-        tx.send((old_id, new_id));
+        tx.send((vec![(old_id, src_address)], new_id));
 
         // Send request to resolver
         socket.send_to(&msg.to_bytes(), resolver_ip_and_port);
@@ -1316,6 +1332,8 @@ impl NameServer {
         let bytes = response.to_bytes();
 
         if bytes.len() <= 512 {
+            println!("Enviando mensaje de respuesta: {}", src_address.clone());
+
             socket
                 .send_to(&bytes, src_address)
                 .expect("failed to send message");
@@ -1413,10 +1431,9 @@ impl NameServer {
         let mut stream = TcpStream::connect(resolver_ip_and_port).unwrap();
         stream.write(&full_msg);
 
-        let mut received_msg = Vec::new();
-        stream.read(&mut received_msg);
+        let mut received_msg = Resolver::receive_tcp_msg(stream);
 
-        let dns_response = DnsMessage::from_bytes(&received_msg[2..]);
+        let dns_response = DnsMessage::from_bytes(&received_msg);
 
         return NameServer::step_6(dns_response, cache, zones);
     }
@@ -1509,7 +1526,7 @@ impl NameServer {
         self.queries_id_for_soa_rr.clone()
     }
 
-    pub fn get_queries_id(&self) -> HashMap<u16, u16> {
+    pub fn get_queries_id(&self) -> HashMap<u16, Vec<(u16, String)>> {
         self.queries_id.clone()
     }
 
@@ -1566,7 +1583,7 @@ impl NameServer {
     }
 
     // Sets the queries ids with a new value
-    pub fn set_queries_id(&mut self, queries_id: HashMap<u16, u16>) {
+    pub fn set_queries_id(&mut self, queries_id: HashMap<u16, Vec<(u16, String)>>) {
         self.queries_id = queries_id;
     }
 

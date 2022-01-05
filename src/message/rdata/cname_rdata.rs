@@ -70,6 +70,7 @@ impl CnameRdata {
         let name = values.next().unwrap();
 
         domain_name.set_name(name.to_string());
+        cname_rdata.set_cname(domain_name);
 
         let rdata = Rdata::SomeCnameRdata(cname_rdata);
 

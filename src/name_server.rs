@@ -29,6 +29,7 @@ pub mod master_file;
 pub mod zone;
 pub mod zone_refresh;
 
+#[derive(Clone)]
 /// Structs that represents a name server
 pub struct NameServer {
     zones: HashMap<String, NSZone>,
@@ -81,6 +82,36 @@ impl NameServer {
         };
 
         name_server
+    }
+
+    pub fn run_name_server(
+        &mut self,
+        mut name_server_ip_address: String,
+        local_resolver_ip_and_port: String,
+        rx_add_ns_udp: Receiver<(String, ResourceRecord)>,
+        rx_delete_ns_udp: Receiver<(String, ResourceRecord)>,
+        rx_add_ns_tcp: Receiver<(String, ResourceRecord)>,
+        rx_delete_ns_tcp: Receiver<(String, ResourceRecord)>,
+    ) {
+        let mut name_server_copy = self.clone();
+        let name_server_ip_address_copy = name_server_ip_address.clone();
+        let local_resolver_ip_and_port_copy = local_resolver_ip_and_port.clone();
+
+        thread::spawn(move || {
+            name_server_copy.run_name_server_udp(
+                name_server_ip_address_copy,
+                local_resolver_ip_and_port_copy,
+                rx_add_ns_udp,
+                rx_delete_ns_udp,
+            );
+        });
+
+        self.run_name_server_tcp(
+            name_server_ip_address,
+            local_resolver_ip_and_port,
+            rx_add_ns_tcp,
+            rx_delete_ns_tcp,
+        );
     }
 
     pub fn run_name_server_udp(
@@ -334,6 +365,12 @@ impl NameServer {
                             tx_delete_ns_udp_copy,
                             tx_delete_ns_tcp_copy,
                         );
+
+                        println!(
+                            "Response answer len: {}",
+                            response_dns_msg.get_answer().len()
+                        );
+
                         NameServer::send_response_by_udp(
                             response_dns_msg,
                             src_address.to_string(),
@@ -464,9 +501,7 @@ impl NameServer {
                     println!("New connection: {}", stream.peer_addr().unwrap());
 
                     // We receive the msg
-                    let mut received_msg = Vec::new();
-                    let _number_of_bytes =
-                        stream.read(&mut received_msg).expect("No data received");
+                    let mut received_msg = Resolver::receive_tcp_msg(stream.try_clone().unwrap());
 
                     println!("{}", "Message recv");
 
@@ -788,6 +823,9 @@ impl NameServer {
         tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         let mut qname_without_zone_label = qname.replace(&zone.get_name(), "");
+        let mut zone = zone.clone();
+
+        println!("Qname sin label: {}", qname_without_zone_label.clone());
 
         // We were looking for the first node
         if qname_without_zone_label == "".to_string() {
@@ -813,8 +851,10 @@ impl NameServer {
         for label in labels {
             let exist_child = zone.exist_child(label.to_string());
 
+            println!("Existe child: {}", exist_child.clone());
+
             if exist_child == true {
-                let (zone, _available) = zone.get_child(label.to_string());
+                zone = zone.get_child(label.to_string()).0.clone();
 
                 if zone.get_subzone() == true {
                     return NameServer::step_3b(
@@ -860,6 +900,8 @@ impl NameServer {
         let (zone, available) =
             NameServer::search_nearest_ancestor_zone(zones.clone(), qname.clone());
 
+        println!("Ancestor zone for {}: {}", qname.clone(), available.clone());
+
         if available == true {
             // Step 3 RFC 1034
             return NameServer::search_in_zone(
@@ -901,6 +943,8 @@ impl NameServer {
         let qtype = msg.get_question().get_qtype();
         let mut rrs_by_type = zone.get_rrs_by_type(qtype);
 
+        println!("RRS len: {}", rrs_by_type.len());
+
         if rrs_by_type.len() > 0 {
             // Set the ttl from SOA RR
             let (main_zone, _available) = NameServer::search_nearest_ancestor_zone(
@@ -923,6 +967,8 @@ impl NameServer {
             }
             //
 
+            println!("rrs by type len: {}", rrs_by_type.len());
+
             msg.set_answer(rrs_by_type);
 
             let mut header = msg.get_header();
@@ -934,13 +980,22 @@ impl NameServer {
         } else {
             let rr = zone.get_value()[0].clone();
             if rr.get_type_code() == 5 && qtype != 5 {
+                println!("CNAME!!!");
+
                 rrs_by_type.push(rr.clone());
                 msg.set_answer(rrs_by_type);
+
+                let mut header = msg.get_header();
+                header.set_aa(true);
+
+                msg.set_header(header);
 
                 let canonical_name = match rr.get_rdata() {
                     Rdata::SomeCnameRdata(val) => val.get_cname(),
                     _ => unreachable!(),
                 };
+
+                println!("Cname name: {}", canonical_name.get_name());
 
                 let mut question = msg.get_question();
 
@@ -974,6 +1029,7 @@ impl NameServer {
         tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         let ns_rrs = zone.get_value();
+
         msg.set_authority(ns_rrs.clone());
         let mut additional = Vec::<ResourceRecord>::new();
 
@@ -990,12 +1046,31 @@ impl NameServer {
                     additional.push(rr.get_resource_record());
                 }
             } else {
-                match name_ns.find(&zone.get_name()) {
-                    Some(val) => {
-                        let glue_rrs = zone.get_glue_rrs();
+                println!("Ns name: {}", name_ns.clone());
 
-                        let mut a_glue_rrs =
-                            NameServer::look_for_type_records(name_ns, glue_rrs, 1);
+                match name_ns.find(&zone.get_name()) {
+                    Some(index) => {
+                        let new_ns_name = name_ns[..index - 1].to_string();
+                        let labels: Vec<&str> = new_ns_name.split(".").collect();
+                        let mut a_glue_rrs = Vec::<ResourceRecord>::new();
+                        let mut glue_zone = zone.clone();
+
+                        // Goes down for the tree looking for the zone with glue rrs
+                        for label in labels {
+                            let exist_child = glue_zone.exist_child(label.to_string());
+
+                            if exist_child == true {
+                                glue_zone = glue_zone.get_child(label.to_string()).0;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        // Gets the rrs from the zone
+                        let glue_rrs = glue_zone.get_value();
+
+                        // Gets the glue rrs for the ns rr
+                        a_glue_rrs = NameServer::look_for_type_records(name_ns, glue_rrs, 1);
 
                         additional.append(&mut a_glue_rrs);
                     }
@@ -1105,7 +1180,12 @@ impl NameServer {
 
         //
 
-        msg.set_answer(answer);
+        if answer.len() > 0 {
+            msg.set_answer(answer);
+            let mut header = msg.get_header();
+            header.set_aa(false);
+            msg.set_header(header);
+        }
 
         if msg.get_authority().len() > 0 {
             return NameServer::step_6(msg, cache, zones);
@@ -1145,7 +1225,7 @@ impl NameServer {
         zones: HashMap<String, NSZone>,
     ) -> DnsMessage {
         let answers = msg.get_answer();
-        let mut additional = Vec::<ResourceRecord>::new();
+        let mut additional = msg.get_additional();
         let aa = msg.get_header().get_aa();
 
         for answer in answers {
@@ -1231,7 +1311,8 @@ impl NameServer {
     }
 
     // Sends the response to the address by udp
-    fn send_response_by_udp(response: DnsMessage, src_address: String, socket: &UdpSocket) {
+    fn send_response_by_udp(mut response: DnsMessage, src_address: String, socket: &UdpSocket) {
+        response.update_header_counters();
         let bytes = response.to_bytes();
 
         if bytes.len() <= 512 {

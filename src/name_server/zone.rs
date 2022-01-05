@@ -40,6 +40,7 @@ impl NSZone {
         ns_zone.set_value(origin_rrs);
 
         for (key, value) in rrs.iter() {
+            println!("{} - {}", key.clone(), value.len());
             ns_zone.add_node(key.clone(), value.clone());
         }
 
@@ -93,29 +94,25 @@ impl NSZone {
         if exist_child == true {
             let (mut child, index) = self.get_child(label.to_string());
 
-            if child.get_subzone() == true {
-                child.set_glue_rrs(rrs.clone());
-            } else {
-                if labels.len() == 0 {
-                    child.set_value(rrs.clone());
+            if labels.len() == 0 {
+                child.set_value(rrs.clone());
 
-                    if self.check_rrs_only_ns(rrs) == true {
-                        child.set_subzone(true);
-                    }
-                } else {
-                    let mut new_name = "".to_string();
-
-                    labels.reverse();
-
-                    for label in labels {
-                        new_name.push_str(label);
-                        new_name.push_str(".");
-                    }
-
-                    new_name.pop();
-
-                    child.add_node(new_name, rrs);
+                if self.check_rrs_only_ns(rrs) == true {
+                    child.set_subzone(true);
                 }
+            } else {
+                let mut new_name = "".to_string();
+
+                labels.reverse();
+
+                for label in labels {
+                    new_name.push_str(label);
+                    new_name.push_str(".");
+                }
+
+                new_name.pop();
+
+                child.add_node(new_name, rrs);
             }
 
             childs.remove(index as usize);
@@ -124,6 +121,8 @@ impl NSZone {
         } else {
             let mut new_ns_zone = NSZone::new();
             new_ns_zone.set_name(label.to_string());
+
+            println!("RRs len: {}", rrs.len());
 
             if labels.len() == 0 {
                 new_ns_zone.set_value(rrs.clone());
@@ -183,6 +182,8 @@ impl NSZone {
     pub fn get_rrs_by_type(&self, rr_type: u16) -> Vec<ResourceRecord> {
         let rrs = self.get_value();
         let mut rr_by_type = Vec::<ResourceRecord>::new();
+
+        println!("RRs len zone: {}", rrs.len());
 
         for rr in rrs {
             if rr.get_type_code() == rr_type {

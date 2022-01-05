@@ -139,6 +139,16 @@ impl DnsMessage {
         msg
     }
 
+    pub fn format_error_msg() -> Self {
+        let mut msg = DnsMessage::new();
+        let mut header = msg.get_header();
+
+        header.set_rcode(1);
+        msg.set_header(header);
+
+        msg
+    }
+
     // Creates a DnsMessage from an array of bytes
     pub fn from_bytes(bytes: &[u8]) -> Self {
         let header = Header::from_bytes(&bytes[0..12]);

@@ -134,13 +134,8 @@ impl ResolverQuery {
         self.set_old_id(old_id);
     }
 
-    pub fn initialize_slist(&mut self, sbelt: Slist) {
-        // Buscar NS de los ancentros del sname en el caché y agregarlos al slist
-        // Agregar las ips conocidas de estos ns a la slist
-        // Si no se tienen ips, se deben encontrar usando una query (mientras que con las ips disponibles voy preguntando por la respuesta para el usuario). A menos que no exista ninguna ip, en cuyo caso se debe reiniciar la slist, pero ahora con el ancestro siguiente
-        // Finalmente agregar a la slist, información adicional para poder ordenar lo que esta en la slist, como por ej tiempo de respuesta, y porcentaje que ha respondido.
-        // Si no hay info, entre 5 y 10 seg es un tiempo de peor caso
-        let host_name = self.get_sname();
+    pub fn initialize_slist(&mut self, sbelt: Slist, start_look_up_host_name: String) {
+        let host_name = start_look_up_host_name;
         let mut cache = self.get_cache();
         let ns_type = "NS".to_string();
         let host_name_copy = host_name.clone();
@@ -348,7 +343,8 @@ impl ResolverQuery {
 impl ResolverQuery {
     pub fn step_2(&mut self) {
         let sbelt = self.get_sbelt();
-        self.initialize_slist(sbelt);
+        let sname = self.get_sname();
+        self.initialize_slist(sbelt, sname);
 
         let mut slist = self.get_slist();
         slist.sort();
@@ -360,13 +356,38 @@ impl ResolverQuery {
         let mut answer = msg.get_answer();
         let rcode = msg.get_header().get_rcode();
 
-        if rcode == 0 {
-            for an in answer.iter_mut() {
-                if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
-                    an.set_ttl(an.get_ttl() + self.get_timestamp());
+        let aa = msg.get_header().get_aa();
 
-                    // Cache
-                    self.add_to_cache(an.get_name().get_name(), an.clone());
+        if rcode == 0 {
+            if aa == true {
+                let mut remove_exist_cache = true;
+                for an in answer.iter_mut() {
+                    if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                        an.set_ttl(an.get_ttl() + self.get_timestamp());
+
+                        // Remove old cache
+                        if remove_exist_cache == true {
+                            self.remove_from_cache(an.get_name().get_name(), an.clone());
+                            remove_exist_cache = false;
+                        }
+
+                        // Add new Cache
+                        self.add_to_cache(an.get_name().get_name(), an.clone());
+                    }
+                }
+            } else {
+                let exist_in_cache = self
+                    .exist_cache_data(msg.get_question().get_qname().get_name(), answer[0].clone());
+
+                if exist_in_cache == false {
+                    for an in answer.iter_mut() {
+                        if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                            an.set_ttl(an.get_ttl() + self.get_timestamp());
+
+                            // Cache
+                            self.add_to_cache(an.get_name().get_name(), an.clone());
+                        }
+                    }
                 }
             }
         }
@@ -465,12 +486,21 @@ impl ResolverQuery {
         let mut additional = msg.get_additional();
 
         // Adds NS and A RRs to cache if these can help
+        let mut remove_exist_cache = true;
         for ns in authority.iter_mut() {
             if self.compare_match_count(ns.get_name().get_name()) {
                 ns.set_ttl(ns.get_ttl() + self.get_timestamp());
 
                 // Cache
+                // Remove old cache
+                if remove_exist_cache == true {
+                    self.remove_from_cache(ns.get_name().get_name(), ns.clone());
+                    remove_exist_cache = false;
+                }
+
+                // Add new cache
                 self.add_to_cache(ns.get_name().get_name(), ns.clone());
+
                 //
 
                 // Get the NS domain name
@@ -480,9 +510,17 @@ impl ResolverQuery {
                 };
                 //
 
+                let mut remove_exist_cache_ip = true;
+
                 for ip in additional.iter_mut() {
                     if ns_domain_name == ip.get_name().get_name() {
                         ip.set_ttl(ip.get_ttl() + self.get_timestamp());
+
+                        // Remove old cache
+                        if remove_exist_cache_ip == true {
+                            self.remove_from_cache(ip.get_name().get_name(), ip.clone());
+                            remove_exist_cache_ip = false;
+                        }
 
                         // Cache
                         self.add_to_cache(ip.get_name().get_name(), ip.clone());
@@ -510,6 +548,8 @@ impl ResolverQuery {
         resource_record.set_ttl(resource_record.get_ttl() + self.get_timestamp());
 
         // Cache
+
+        self.remove_from_cache(cname.get_name(), resource_record.clone());
         self.add_to_cache(cname.get_name(), resource_record);
 
         self.set_sname(cname.get_name());
@@ -545,8 +585,22 @@ impl ResolverQuery {
         socket: UdpSocket,
     ) -> Option<DnsMessage> {
         let mut slist = self.get_slist();
-        slist.delete(host_name_asked);
-        self.set_slist(slist);
+        slist.delete(host_name_asked.clone());
+
+        if slist.len() == 0 {
+            match host_name_asked.find(".") {
+                Some(index) => {
+                    let parent_host_name = &host_name_asked[index + 1..];
+                    self.initialize_slist(self.get_sbelt(), parent_host_name.to_string());
+                }
+                None => {
+                    self.initialize_slist(self.get_sbelt(), ".".to_string());
+                }
+            }
+        } else {
+            self.set_slist(slist);
+        }
+
         self.step_3_udp(socket);
         return None;
     }
@@ -658,13 +712,23 @@ impl ResolverQuery {
         let mut authority = msg.get_authority();
         let mut additional = msg.get_additional();
 
+        let mut remove_exist_cache = true;
         // Adds NS and A RRs to cache if these can help
         for ns in authority.iter_mut() {
             if self.compare_match_count(ns.get_name().get_name()) {
                 ns.set_ttl(ns.get_ttl() + self.get_timestamp());
 
                 // Cache
+                // Remove old cache
+                if remove_exist_cache == true {
+                    self.remove_from_cache(ns.get_name().get_name(), ns.clone());
+                    remove_exist_cache = false;
+                }
+
+                // Add new cache
                 self.add_to_cache(ns.get_name().get_name(), ns.clone());
+
+                //
 
                 // Get the NS domain name
                 let ns_domain_name = match ns.get_rdata() {
@@ -673,9 +737,17 @@ impl ResolverQuery {
                 };
                 //
 
+                let mut remove_exist_cache_ip = true;
+
                 for ip in additional.iter_mut() {
                     if ns_domain_name == ip.get_name().get_name() {
                         ip.set_ttl(ip.get_ttl() + self.get_timestamp());
+
+                        // Remove old cache
+                        if remove_exist_cache_ip == true {
+                            self.remove_from_cache(ip.get_name().get_name(), ip.clone());
+                            remove_exist_cache_ip = false;
+                        }
 
                         // Cache
                         self.add_to_cache(ip.get_name().get_name(), ip.clone());
@@ -701,6 +773,7 @@ impl ResolverQuery {
         let cname = rr_data.get_cname();
 
         // Cache
+        self.remove_from_cache(cname.get_name(), resource_record.clone());
         self.add_to_cache(cname.get_name(), resource_record);
 
         self.set_sname(cname.get_name());
@@ -710,8 +783,21 @@ impl ResolverQuery {
 
     pub fn step_4d_tcp(&mut self, host_name_asked: String) -> DnsMessage {
         let mut slist = self.get_slist();
-        slist.delete(host_name_asked);
-        self.set_slist(slist);
+        slist.delete(host_name_asked.clone());
+
+        if slist.len() == 0 {
+            match host_name_asked.find(".") {
+                Some(index) => {
+                    let parent_host_name = &host_name_asked[index + 1..];
+                    self.initialize_slist(self.get_sbelt(), parent_host_name.to_string());
+                }
+                None => {
+                    self.initialize_slist(self.get_sbelt(), ".".to_string());
+                }
+            }
+        } else {
+            self.set_slist(slist);
+        }
 
         return self.step_3_tcp();
     }
@@ -762,6 +848,23 @@ impl ResolverQuery {
         cache.remove(domain_name, rr_type);
 
         self.set_cache(cache);
+    }
+
+    pub fn exist_cache_data(
+        &mut self,
+        domain_name: String,
+        resource_record: ResourceRecord,
+    ) -> bool {
+        let mut cache = self.get_cache();
+        let rr_type = resource_record.get_string_type();
+
+        let data_in_cache = cache.get(domain_name, rr_type);
+
+        if data_in_cache.len() > 0 {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     // Creates a new query dns message
@@ -1413,7 +1516,7 @@ mod resolver_query_tests {
         let mut sbelt = Slist::new();
         sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5.0);
 
-        resolver_query.initialize_slist(sbelt);
+        resolver_query.initialize_slist(sbelt, resolver_query.get_sname());
 
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
 
@@ -1486,7 +1589,7 @@ mod resolver_query_tests {
         let mut sbelt = Slist::new();
         sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5.0);
 
-        resolver_query.initialize_slist(sbelt);
+        resolver_query.initialize_slist(sbelt, resolver_query.get_sname());
 
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
         assert_eq!(

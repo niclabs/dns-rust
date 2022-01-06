@@ -274,24 +274,6 @@ impl NameServer {
             }
             //
 
-            // Adding to Cache
-
-            let mut received_add = rx_add_ns_udp.try_iter();
-
-            let mut next_value = received_add.next();
-
-            let mut cache = self.get_cache();
-
-            while next_value.is_none() == false {
-                let (name, rr) = next_value.unwrap();
-                cache.add(name, rr);
-                next_value = received_add.next();
-            }
-
-            self.set_cache(cache);
-
-            ////////////////////////////////////////////////////////////////////
-
             // Delete from cache
 
             let mut received_delete = rx_delete_ns_udp.try_iter();
@@ -310,6 +292,24 @@ impl NameServer {
             self.set_cache(cache);
 
             //
+
+            // Adding to Cache
+
+            let mut received_add = rx_add_ns_udp.try_iter();
+
+            let mut next_value = received_add.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (name, rr) = next_value.unwrap();
+                cache.add(name, rr);
+                next_value = received_add.next();
+            }
+
+            self.set_cache(cache);
+
+            ////////////////////////////////////////////////////////////////////
 
             // Update queries ids
 
@@ -517,24 +517,6 @@ impl NameServer {
 
                     println!("{}", "Message recv");
 
-                    // Adding to Cache
-
-                    let mut received_add = rx_add_ns_tcp.try_iter();
-
-                    let mut next_value = received_add.next();
-
-                    let mut cache = self.get_cache();
-
-                    while next_value.is_none() == false {
-                        let (name, rr) = next_value.unwrap();
-                        cache.add(name, rr);
-                        next_value = received_add.next();
-                    }
-
-                    self.set_cache(cache);
-
-                    ////////////////////////////////////////////////////////////////////
-
                     // Delete from cache
 
                     let mut received_delete = rx_delete_ns_tcp.try_iter();
@@ -553,6 +535,24 @@ impl NameServer {
                     self.set_cache(cache);
 
                     //
+
+                    // Adding to Cache
+
+                    let mut received_add = rx_add_ns_tcp.try_iter();
+
+                    let mut next_value = received_add.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (name, rr) = next_value.unwrap();
+                        cache.add(name, rr);
+                        next_value = received_add.next();
+                    }
+
+                    self.set_cache(cache);
+
+                    ////////////////////////////////////////////////////////////////////
 
                     // Msg parsed
                     let mut dns_message = DnsMessage::from_bytes(&received_msg);

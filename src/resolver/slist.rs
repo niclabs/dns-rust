@@ -188,6 +188,12 @@ impl Slist {
 
         self.set_ns_list(ns_list);
     }
+
+    pub fn len(&self) -> usize {
+        let ns_list = self.get_ns_list();
+
+        ns_list.len()
+    }
 }
 
 // Getters

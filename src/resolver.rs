@@ -120,6 +120,9 @@ impl Resolver {
         let tx_add_ns_tcp = self.get_add_sender_ns_tcp();
         let tx_delete_ns_tcp = self.get_delete_sender_ns_tcp();
 
+        // Channel to delete queries ids from queries already response
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         // Create ip and port str
         let host_address_and_port = self.get_ip_address();
 
@@ -149,23 +152,20 @@ impl Resolver {
                 }
             }
 
-            // Adding to Cache
+            // Delete queries already answered
 
-            let mut received_add = rx_add_udp.try_iter();
+            let mut queries_to_delete = rx_delete_query.try_iter();
+            let mut next_query_value = queries_to_delete.next();
 
-            let mut next_value = received_add.next();
+            while next_query_value.is_none() == false {
+                let id = next_query_value.unwrap();
 
-            let mut cache = self.get_cache();
+                queries_hash_by_id.remove(&id);
 
-            while next_value.is_none() == false {
-                let (name, rr) = next_value.unwrap();
-                cache.add(name, rr);
-                next_value = received_add.next();
+                next_query_value = queries_to_delete.next();
             }
 
-            self.set_cache(cache);
-
-            ////////////////////////////////////////////////////////////////////
+            //
 
             // Delete from cache
 
@@ -185,6 +185,24 @@ impl Resolver {
             self.set_cache(cache);
 
             //
+
+            // Adding to Cache
+
+            let mut received_add = rx_add_udp.try_iter();
+
+            let mut next_value = received_add.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (name, rr) = next_value.unwrap();
+                cache.add(name, rr);
+                next_value = received_add.next();
+            }
+
+            self.set_cache(cache);
+
+            ////////////////////////////////////////////////////////////////////
 
             let mut resolver = self.clone();
 
@@ -295,6 +313,8 @@ impl Resolver {
                 if queries_hash_by_id_copy.contains_key(&answer_id) {
                     println!("Message answer ID checked");
 
+                    let tx_query_delete_clone = tx_delete_query.clone();
+
                     thread::spawn(move || {
                         let mut resolver_query =
                             queries_hash_by_id_copy.get(&answer_id).unwrap().clone();
@@ -316,6 +336,8 @@ impl Resolver {
                                 header.set_nscount(authority.len() as u16);
                                 header.set_arcount(additional.len() as u16);
                                 msg.set_header(header);
+
+                                tx_query_delete_clone.send(old_id);
 
                                 Resolver::send_answer_by_udp(
                                     msg,
@@ -363,24 +385,6 @@ impl Resolver {
 
             match listener.accept() {
                 Ok((mut stream, src_address)) => {
-                    // Adding to Cache
-
-                    let mut received_add = rx_add_tcp.try_iter();
-
-                    let mut next_value = received_add.next();
-
-                    let mut cache = self.get_cache();
-
-                    while next_value.is_none() == false {
-                        let (name, rr) = next_value.unwrap();
-                        cache.add(name, rr);
-                        next_value = received_add.next();
-                    }
-
-                    self.set_cache(cache);
-
-                    ////////////////////////////////////////////////////////////////////
-
                     // Delete from cache
 
                     let mut received_delete = rx_delete_tcp.try_iter();
@@ -399,6 +403,24 @@ impl Resolver {
                     self.set_cache(cache);
 
                     //
+
+                    // Adding to Cache
+
+                    let mut received_add = rx_add_tcp.try_iter();
+
+                    let mut next_value = received_add.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (name, rr) = next_value.unwrap();
+                        cache.add(name, rr);
+                        next_value = received_add.next();
+                    }
+
+                    self.set_cache(cache);
+
+                    ////////////////////////////////////////////////////////////////////
 
                     println!("New connection: {}", stream.peer_addr().unwrap());
 

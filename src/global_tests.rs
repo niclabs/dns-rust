@@ -278,6 +278,7 @@ mod global_tests {
 
         assert_eq!(dns_response.get_query_id(), id);
         assert_eq!(answers.len(), 1);
+        assert_eq!(dns_response.get_header().get_aa(), true);
 
         let answer = answers[0].clone();
         let ip_from_response = match answer.get_rdata() {

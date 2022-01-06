@@ -1,7 +1,7 @@
 # Rust implementation of DNS library
 
 (In progress) : implementation of DNS library in rustlang. 
-DNSSEC supported in the future. 
+DNSSEC will be supported ... eventually 
 
 
 ## Supported RFCs 

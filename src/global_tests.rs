@@ -53,7 +53,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "8.8.8.8".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "8.8.8.8".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         //
@@ -142,7 +142,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "8.8.8.8".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "8.8.8.8".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         //
@@ -228,7 +228,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         //
@@ -318,7 +318,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         //
@@ -405,7 +405,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         //
@@ -502,7 +502,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         //
@@ -1926,7 +1926,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         resolver.set_ns_data(name_server.get_zones());
@@ -2092,7 +2092,7 @@ mod global_tests {
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
 
         let mut sbelt = Slist::new();
-        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
+        sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
 
         resolver.set_sbelt(sbelt);
         resolver.set_ns_data(name_server.get_zones());

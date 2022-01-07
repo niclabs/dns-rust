@@ -55,7 +55,7 @@ impl Slist {
     /// assert_eq!(slist.get_ns_list().len(), 1);
     /// '''
     ///
-    pub fn insert(&mut self, name: String, ip_address: String, response_time: f32) {
+    pub fn insert(&mut self, name: String, ip_address: String, response_time: u32) {
         let mut new_element = HashMap::new();
         new_element.insert("name".to_string(), name);
         new_element.insert("ip_address".to_string(), ip_address);
@@ -119,7 +119,7 @@ impl Slist {
     /// );
     /// '''
     ///
-    pub fn update_response_time(&mut self, name: String, response_time: f32) {
+    pub fn update_response_time(&mut self, name: String, response_time: u32) {
         let ns_list = self.get_ns_list();
         let mut index = 0;
         let mut new_ns_list = Vec::new();
@@ -140,6 +140,11 @@ impl Slist {
     pub fn get_first(&self) -> HashMap<String, String> {
         let ns_list = self.get_ns_list();
         ns_list[0].clone()
+    }
+
+    pub fn get(&self, index: u16) -> HashMap<String, String> {
+        let ns_list = self.get_ns_list();
+        ns_list[index as usize].clone()
     }
 
     /// Sorts the ns list by response time
@@ -171,12 +176,12 @@ impl Slist {
             let a = k
                 .get(&"response_time".to_string())
                 .unwrap()
-                .parse::<f32>()
+                .parse::<u32>()
                 .unwrap();
             let b = j
                 .get(&"response_time".to_string())
                 .unwrap()
-                .parse::<f32>()
+                .parse::<u32>()
                 .unwrap();
 
             a.partial_cmp(&b).unwrap()
@@ -268,7 +273,7 @@ mod test {
 
         assert_eq!(slist.get_ns_list().len(), 0);
 
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5 as f32);
+        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
 
         assert_eq!(slist.get_ns_list().len(), 1);
 
@@ -280,30 +285,30 @@ mod test {
     #[test]
     fn update_response_time_and_get_first_test() {
         let mut slist = Slist::new();
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5 as f32);
+        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
 
         assert_eq!(
             *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            5.to_string()
+            5000.to_string()
         );
 
-        slist.update_response_time("test.com".to_string(), 2 as f32);
+        slist.update_response_time("test.com".to_string(), 2000);
 
         assert_eq!(
             *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            2.to_string()
+            2000.to_string()
         );
     }
 
     #[test]
     fn sort_test() {
         let mut slist = Slist::new();
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5 as f32);
-        slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2 as f32);
+        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+        slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2000);
 
         assert_eq!(
             *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            5.to_string()
+            5000.to_string()
         );
         assert_eq!(slist.get_ns_list().len(), 2);
 
@@ -311,7 +316,7 @@ mod test {
 
         assert_eq!(
             *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            2.to_string()
+            2000.to_string()
         );
         assert_eq!(slist.get_ns_list().len(), 2);
     }

@@ -7,7 +7,10 @@ use crate::name_server::NameServer;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
+use crate::config::QUERIES_FOR_CLIENT_REQUEST;
+
 use chrono::{DateTime, Utc};
+use core::time;
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;
@@ -17,6 +20,7 @@ use std::net::TcpStream;
 use std::net::UdpSocket;
 use std::sync::mpsc::Sender;
 use std::thread;
+use std::time::Duration;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -51,6 +55,20 @@ pub struct ResolverQuery {
     add_channel_ns_tcp: Sender<(String, ResourceRecord)>,
     // Channel to delete cache data in name server and resolver
     delete_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+    // Number of queries that the resolver do before send temporary error
+    queries_before_temporary_error: u16,
+    // Sender to update ResolverQuery struct in the resolver
+    tx_update_query: Sender<ResolverQuery>,
+    // Sender to delete ResolverQuery struct in the resolver
+    tx_delete_query: Sender<ResolverQuery>,
+    // Client msg
+    client_msg: DnsMessage,
+    // Index to choose from Slist
+    index_to_choose: u16,
+    // Timeout
+    timeout: u32,
+    // Last query timestamp
+    last_query_timestamp: u64,
 }
 
 impl ResolverQuery {
@@ -76,6 +94,9 @@ impl ResolverQuery {
         delete_channel_ns_udp: Sender<(String, ResourceRecord)>,
         add_channel_ns_tcp: Sender<(String, ResourceRecord)>,
         delete_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+        tx_update_query: Sender<ResolverQuery>,
+        tx_delete_query: Sender<ResolverQuery>,
+        client_msg: DnsMessage,
     ) -> Self {
         let mut rng = thread_rng();
         let now = Utc::now();
@@ -103,6 +124,13 @@ impl ResolverQuery {
             delete_channel_ns_udp: delete_channel_ns_udp,
             add_channel_ns_tcp: add_channel_ns_tcp,
             delete_channel_ns_tcp: delete_channel_ns_tcp,
+            queries_before_temporary_error: QUERIES_FOR_CLIENT_REQUEST,
+            tx_update_query: tx_update_query,
+            tx_delete_query: tx_delete_query,
+            client_msg: client_msg,
+            index_to_choose: 0,
+            last_query_timestamp: 0,
+            timeout: 0,
         };
 
         query
@@ -203,7 +231,7 @@ impl ResolverQuery {
                     new_slist.insert(
                         ns_parent_host_name_string.clone(),
                         ip_address.to_string(),
-                        response_time as f32,
+                        response_time as u32,
                     );
                     ip_found = ip_found + 1;
                 }
@@ -417,13 +445,38 @@ impl ResolverQuery {
     }
 
     pub fn step_3_udp(&mut self, socket: UdpSocket) {
-        let best_server_to_ask = self.get_slist().get_first();
+        let queries_left = self.get_queries_before_temporary_error();
+
+        // Temporary Error
+        if queries_left <= 0 {
+            let old_id = self.get_old_id();
+            let tx_delete_query = self.get_tx_delete_query();
+            tx_delete_query.send(self.clone());
+            panic!("Temporary Error");
+        }
+
+        let slist = self.get_slist();
+        let index_to_choose = self.get_index_to_choose();
+        let best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
             .unwrap()
             .clone();
 
+        // Set query timeout
+        let response_time = best_server_to_ask
+            .get(&"response_time".to_string())
+            .unwrap();
+
+        self.set_timeout(response_time.parse::<u32>().unwrap() * 1.5 as u32);
+
+        //
+
         best_server_ip.push_str(":53");
+
+        // Update the index to choose
+        self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
+        //
 
         // Implementar: se deben consultar las ips de los ns que no tienen ips
 
@@ -433,6 +486,21 @@ impl ResolverQuery {
         let msg_to_bytes = query_msg.to_bytes();
 
         println!("Server to ask {}", best_server_ip);
+
+        // Update the queries count before temporary error
+        self.set_queries_before_temporary_error(queries_left - 1);
+
+        //
+
+        // Set query timestamp
+        let now = Utc::now();
+        let timestamp_query = now.timestamp_millis();
+        self.set_last_query_timestamp(timestamp_query as u64);
+        //
+
+        // Send the resolver query to the resolver for update
+        self.get_tx_update_query().send(self.clone());
+        //
 
         self.send_udp_query(&msg_to_bytes, best_server_ip, socket);
     }
@@ -473,8 +541,9 @@ impl ResolverQuery {
             return self.step_4c_udp(msg_from_response, socket);
         }
 
+        let index_to_choose = self.get_index_to_choose();
         let mut slist = self.get_slist();
-        let best_server = slist.get_first();
+        let best_server = slist.get(index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
         // Step 4d
@@ -592,14 +661,21 @@ impl ResolverQuery {
                 Some(index) => {
                     let parent_host_name = &host_name_asked[index + 1..];
                     self.initialize_slist(self.get_sbelt(), parent_host_name.to_string());
+                    self.set_index_to_choose(0);
                 }
                 None => {
                     self.initialize_slist(self.get_sbelt(), ".".to_string());
+                    self.set_index_to_choose(0);
                 }
             }
         } else {
+            self.set_index_to_choose(self.get_index_to_choose() % slist.len() as u16);
             self.set_slist(slist);
         }
+
+        // Update the query data in resolver
+        self.get_tx_update_query().send(self.clone());
+        //
 
         self.step_3_udp(socket);
         return None;
@@ -614,14 +690,25 @@ impl ResolverQuery {
         let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg = [&tcp_bytes_length, msg].concat();
 
+        // Timeout config
+        let timeout = self.get_timeout();
+        //
+
         let mut stream = TcpStream::connect(ip_address.clone()).unwrap();
+
+        // Set timeout for read
+        stream.set_read_timeout(Some(Duration::from_millis(timeout as u64)));
+
         stream.write(&full_msg);
 
-        let mut received_msg = Resolver::receive_tcp_msg(stream);
+        match Resolver::receive_tcp_msg(stream) {
+            Some(val) => {
+                let dns_response = DnsMessage::from_bytes(&val);
 
-        let dns_response = DnsMessage::from_bytes(&received_msg);
-
-        return self.step_4_tcp(dns_response);
+                return self.step_4_tcp(dns_response);
+            }
+            None => return self.step_3_tcp(),
+        };
     }
 
     pub fn step_1_tcp(&mut self, mut query_msg: DnsMessage) -> DnsMessage {
@@ -651,13 +738,35 @@ impl ResolverQuery {
     }
 
     pub fn step_3_tcp(&mut self) -> DnsMessage {
-        let best_server_to_ask = self.get_slist().get_first();
+        let queries_left = self.get_queries_before_temporary_error();
+
+        // Temporary Error
+        if queries_left <= 0 {
+            panic!("Temporary Error");
+        }
+
+        let slist = self.get_slist();
+        let index_to_choose = self.get_index_to_choose();
+        let best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
             .unwrap()
             .clone();
 
+        // Set query timeout
+        let response_time = best_server_to_ask
+            .get(&"response_time".to_string())
+            .unwrap();
+
+        self.set_timeout(response_time.parse::<u32>().unwrap() * 1.5 as u32);
+
+        //
+
         best_server_ip.push_str(":53");
+
+        // Update the index to choose
+        self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
+        //
 
         // Implementar: se deben consultar las ips de los ns que no tienen ips
 
@@ -667,6 +776,17 @@ impl ResolverQuery {
         let msg_to_bytes = query_msg.to_bytes();
 
         println!("Server to ask {}", best_server_ip);
+
+        // Update the queries count before temporary error
+        self.set_queries_before_temporary_error(queries_left - 1);
+
+        //
+
+        // Set query timestamp
+        let now = Utc::now();
+        let timestamp_query = now.timestamp_millis();
+        self.set_last_query_timestamp(timestamp_query as u64);
+        //
 
         return self.send_tcp_query(&msg_to_bytes, best_server_ip);
     }
@@ -700,8 +820,9 @@ impl ResolverQuery {
             return self.step_4c_tcp(msg_from_response);
         }
 
+        let index_to_choose = self.get_index_to_choose();
         let mut slist = self.get_slist();
-        let best_server = slist.get_first();
+        let best_server = slist.get(index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
         // Step 4d
@@ -790,12 +911,15 @@ impl ResolverQuery {
                 Some(index) => {
                     let parent_host_name = &host_name_asked[index + 1..];
                     self.initialize_slist(self.get_sbelt(), parent_host_name.to_string());
+                    self.set_index_to_choose(0);
                 }
                 None => {
                     self.initialize_slist(self.get_sbelt(), ".".to_string());
+                    self.set_index_to_choose(0);
                 }
             }
         } else {
+            self.set_index_to_choose(self.get_index_to_choose() % slist.len() as u16);
             self.set_slist(slist);
         }
 
@@ -989,6 +1113,36 @@ impl ResolverQuery {
         self.delete_channel_ns_tcp.clone()
     }
 
+    /// Gets the queries before temporary error field
+    pub fn get_queries_before_temporary_error(&self) -> u16 {
+        self.queries_before_temporary_error
+    }
+
+    /// Gets the sender to update the resolver query in the resolver
+    pub fn get_tx_update_query(&self) -> Sender<ResolverQuery> {
+        self.tx_update_query.clone()
+    }
+
+    /// Gets the sender to delete the resolver query in the resolver
+    pub fn get_tx_delete_query(&self) -> Sender<ResolverQuery> {
+        self.tx_delete_query.clone()
+    }
+
+    /// Gets the index to choose from slist
+    pub fn get_index_to_choose(&self) -> u16 {
+        self.index_to_choose
+    }
+
+    /// Gets the last query timestamp
+    pub fn get_last_query_timestamp(&self) -> u64 {
+        self.last_query_timestamp
+    }
+
+    /// Gets the timeout for the actual query to name server
+    pub fn get_timeout(&self) -> u32 {
+        self.timeout
+    }
+
     // utility
     pub fn compare_match_count(&self, name: String) -> bool {
         let slist_match_count = self.get_slist().get_zone_name_equivalent();
@@ -1085,6 +1239,26 @@ impl ResolverQuery {
     pub fn set_src_address(&mut self, address: String) {
         self.src_address = address;
     }
+
+    /// Sets the queries before temporary error field with a new value
+    pub fn set_queries_before_temporary_error(&mut self, queries_before_temporary_error: u16) {
+        self.queries_before_temporary_error = queries_before_temporary_error;
+    }
+
+    /// Sets the index to choose from slist with a new value
+    pub fn set_index_to_choose(&mut self, index_to_choose: u16) {
+        self.index_to_choose = index_to_choose;
+    }
+
+    /// Sets the timestamp for the last query for the request
+    pub fn set_last_query_timestamp(&mut self, last_query_timestamp: u64) {
+        self.last_query_timestamp = last_query_timestamp;
+    }
+
+    /// Sets the timeout for a query to name server
+    pub fn set_timeout(&mut self, timeout: u32) {
+        self.timeout = timeout;
+    }
 }
 
 mod resolver_query_tests {
@@ -1094,6 +1268,7 @@ mod resolver_query_tests {
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::message::DnsMessage;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use chrono::Utc;
@@ -1113,6 +1288,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1122,6 +1300,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.sname, "".to_string());
@@ -1143,6 +1324,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1152,6 +1336,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         let now = Utc::now();
@@ -1174,6 +1361,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1183,6 +1373,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.sname, "".to_string());
@@ -1204,6 +1397,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1213,6 +1409,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.stype, 0);
@@ -1234,6 +1433,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1243,6 +1445,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.sclass, 0);
@@ -1264,6 +1469,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1273,6 +1481,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.op_code, 0);
@@ -1294,6 +1505,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1303,6 +1517,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.rd, false);
@@ -1324,6 +1541,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1333,12 +1553,16 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
+
         let mut slist = Slist::new();
 
         assert_eq!(resolver_query.slist.get_ns_list().len(), 0);
 
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5.0);
+        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
         resolver_query.set_slist(slist);
 
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
@@ -1356,6 +1580,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1365,12 +1592,16 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
+
         let mut sbelt = Slist::new();
 
         assert_eq!(resolver_query.sbelt.get_ns_list().len(), 0);
 
-        sbelt.insert("test.com".to_string(), "127.0.0.1".to_string(), 5.0);
+        sbelt.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
         resolver_query.set_sbelt(sbelt);
 
         assert_eq!(resolver_query.get_sbelt().get_ns_list().len(), 1);
@@ -1388,6 +1619,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1397,7 +1631,11 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
+
         let mut cache = DnsCache::new();
         cache.set_max_size(1);
 
@@ -1430,6 +1668,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1439,6 +1680,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         resolver_query.set_sname("test.com".to_string());
@@ -1469,6 +1713,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1478,6 +1725,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
         resolver_query.set_sname("test.test2.com".to_string());
         resolver_query.set_rd(true);
@@ -1514,7 +1764,7 @@ mod resolver_query_tests {
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
 
         let mut sbelt = Slist::new();
-        sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5.0);
+        sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
 
         resolver_query.initialize_slist(sbelt, resolver_query.get_sname());
 
@@ -1542,6 +1792,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1551,6 +1804,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
         resolver_query.set_sname("test6.test4.com".to_string());
         resolver_query.set_rd(true);
@@ -1587,7 +1843,7 @@ mod resolver_query_tests {
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
 
         let mut sbelt = Slist::new();
-        sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5.0);
+        sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
 
         resolver_query.initialize_slist(sbelt, resolver_query.get_sname());
 
@@ -1636,6 +1892,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query_test = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1645,6 +1904,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query_test.get_ns_data().len(), 0);
@@ -1666,6 +1928,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1675,6 +1940,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         resolver_query.set_main_query_id(0);
@@ -1694,6 +1962,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1703,6 +1974,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.get_old_id(), 0);
@@ -1724,6 +1998,9 @@ mod resolver_query_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1733,6 +2010,9 @@ mod resolver_query_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
         );
 
         assert_eq!(resolver_query.get_src_address(), "".to_string());

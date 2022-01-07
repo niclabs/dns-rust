@@ -57,7 +57,7 @@ pub fn main() {
     resolver.set_ip_address("192.168.1.89:58396".to_string());
 
     let mut sbelt = Slist::new();
-    sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5.0);
+    sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
 
     resolver.set_sbelt(sbelt);
 
@@ -91,7 +91,7 @@ pub fn main() {
     local_resolver.set_ns_data(name_server.get_zones());
 
     let mut sbelt = Slist::new();
-    sbelt.insert(".".to_string(), "198.41.0.4".to_string(), 5.0);
+    sbelt.insert(".".to_string(), "198.41.0.4".to_string(), 5000);
 
     local_resolver.set_sbelt(sbelt);
 

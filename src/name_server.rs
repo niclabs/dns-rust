@@ -513,7 +513,8 @@ impl NameServer {
                     println!("New connection: {}", stream.peer_addr().unwrap());
 
                     // We receive the msg
-                    let mut received_msg = Resolver::receive_tcp_msg(stream.try_clone().unwrap());
+                    let mut received_msg =
+                        Resolver::receive_tcp_msg(stream.try_clone().unwrap()).unwrap();
 
                     println!("{}", "Message recv");
 
@@ -1431,7 +1432,7 @@ impl NameServer {
         let mut stream = TcpStream::connect(resolver_ip_and_port).unwrap();
         stream.write(&full_msg);
 
-        let mut received_msg = Resolver::receive_tcp_msg(stream);
+        let mut received_msg = Resolver::receive_tcp_msg(stream).unwrap();
 
         let dns_response = DnsMessage::from_bytes(&received_msg);
 

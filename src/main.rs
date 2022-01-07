@@ -33,6 +33,7 @@ pub fn main() {
     test_tcp();
     */
 
+    /*
     /// Channels
     let (add_sender_udp, add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
@@ -63,6 +64,7 @@ pub fn main() {
 
     resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
 
+    */
     /*
     // Name Server initialization
     let mut name_server = NameServer::new(

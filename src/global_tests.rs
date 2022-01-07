@@ -39,6 +39,11 @@ mod global_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -48,6 +53,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -79,7 +88,14 @@ mod global_tests {
 
         // Runs resolver
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));
@@ -128,6 +144,11 @@ mod global_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -137,6 +158,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -170,7 +195,14 @@ mod global_tests {
 
         // Runs resolver
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));
@@ -214,6 +246,11 @@ mod global_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -223,6 +260,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -254,7 +295,14 @@ mod global_tests {
 
         // Runs resolver
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));
@@ -304,6 +352,11 @@ mod global_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -313,6 +366,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -346,7 +403,14 @@ mod global_tests {
 
         // Runs resolver
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));
@@ -391,6 +455,11 @@ mod global_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -400,6 +469,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -431,7 +504,14 @@ mod global_tests {
 
         // Runs resolver
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));
@@ -488,6 +568,11 @@ mod global_tests {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -497,6 +582,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -530,7 +619,14 @@ mod global_tests {
 
         // Runs resolver
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));
@@ -613,6 +709,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -658,6 +771,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -735,6 +850,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -784,6 +916,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -861,6 +995,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -906,6 +1057,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -985,6 +1138,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1034,6 +1204,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
             );
         });
 
@@ -1113,6 +1285,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1158,6 +1347,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -1252,6 +1443,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1301,6 +1509,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
             );
         });
 
@@ -1395,6 +1605,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1440,6 +1667,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -1514,6 +1743,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1563,6 +1809,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -1637,6 +1885,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1682,6 +1947,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -1764,6 +2031,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1813,6 +2097,8 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
@@ -1895,6 +2181,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -1921,6 +2224,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -1962,11 +2269,20 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));
@@ -2061,6 +2377,23 @@ mod global_tests {
             Receiver<(String, ResourceRecord)>,
         ) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp): (
+            Sender<(String, String, u32)>,
+            Receiver<(String, String, u32)>,
+        ) = mpsc::channel();
+
         // Name Server initialization
         let mut name_server = NameServer::new(
             true,
@@ -2087,6 +2420,10 @@ mod global_tests {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
@@ -2132,11 +2469,20 @@ mod global_tests {
                 delete_recv_ns_udp,
                 add_recv_ns_tcp,
                 delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
             );
         });
 
         thread::spawn(move || {
-            resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+            );
         });
 
         thread::sleep(Duration::new(1, 0));

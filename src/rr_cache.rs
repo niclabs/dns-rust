@@ -7,7 +7,7 @@ pub struct RRCache {
     // Resource Records of the domain name
     resource_record: ResourceRecord,
     // Mean of response time of the ip address
-    response_time: f32,
+    response_time: u32,
     // Last use of the rr
     last_use: DateTime<Utc>,
 }
@@ -26,7 +26,7 @@ impl RRCache {
     pub fn new(resource_record: ResourceRecord) -> Self {
         let rr_cache = RRCache {
             resource_record: resource_record,
-            response_time: 5.0,
+            response_time: 5000,
             last_use: Utc::now(),
         };
 
@@ -42,7 +42,7 @@ impl RRCache {
     }
 
     // Gets the mean response time of the ip address of the domain name
-    pub fn get_response_time(&self) -> f32 {
+    pub fn get_response_time(&self) -> u32 {
         self.response_time
     }
 
@@ -60,7 +60,7 @@ impl RRCache {
     }
 
     // Sets the response time attribute with new value
-    pub fn set_response_time(&mut self, response_time: f32) {
+    pub fn set_response_time(&mut self, response_time: u32) {
         self.response_time = response_time;
     }
 
@@ -91,7 +91,7 @@ mod test {
         let rr_cache = RRCache::new(resource_record);
 
         assert_eq!(rr_cache.resource_record.get_type_code(), 1);
-        assert_eq!(rr_cache.response_time, 5.0);
+        assert_eq!(rr_cache.response_time, 5000);
     }
 
     #[test]
@@ -136,11 +136,11 @@ mod test {
 
         let mut rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(rr_cache.get_response_time(), 5.0);
+        assert_eq!(rr_cache.get_response_time(), 5000);
 
-        rr_cache.set_response_time(2.0);
+        rr_cache.set_response_time(2000);
 
-        assert_eq!(rr_cache.get_response_time(), 2.0);
+        assert_eq!(rr_cache.get_response_time(), 2000);
     }
 
     #[test]

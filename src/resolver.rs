@@ -49,6 +49,14 @@ pub struct Resolver {
     add_sender_ns_tcp: Sender<(String, ResourceRecord)>,
     // Channel to delete cache data in name server and resolver
     delete_sender_ns_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to update response time in cache data in name server and resolver
+    update_cache_sender_udp: Sender<(String, String, u32)>,
+    // Channel to update response time in cache data in name server and resolver
+    update_cache_sender_tcp: Sender<(String, String, u32)>,
+    // Channel to update response time in cache data in name server and resolver
+    update_cache_sender_ns_udp: Sender<(String, String, u32)>,
+    // Channel to update response time in cache data in name server and resolver
+    update_cache_sender_ns_tcp: Sender<(String, String, u32)>,
 }
 
 impl Resolver {
@@ -62,6 +70,10 @@ impl Resolver {
         delete_sender_ns_udp: Sender<(String, ResourceRecord)>,
         add_sender_ns_tcp: Sender<(String, ResourceRecord)>,
         delete_sender_ns_tcp: Sender<(String, ResourceRecord)>,
+        update_cache_sender_udp: Sender<(String, String, u32)>,
+        update_cache_sender_tcp: Sender<(String, String, u32)>,
+        update_cache_sender_ns_udp: Sender<(String, String, u32)>,
+        update_cache_sender_ns_tcp: Sender<(String, String, u32)>,
     ) -> Self {
         let mut cache = DnsCache::new();
         cache.set_max_size(100);
@@ -79,6 +91,10 @@ impl Resolver {
             delete_sender_ns_udp: delete_sender_ns_udp,
             add_sender_ns_tcp: add_sender_ns_tcp,
             delete_sender_ns_tcp: delete_sender_ns_tcp,
+            update_cache_sender_udp: update_cache_sender_udp,
+            update_cache_sender_tcp: update_cache_sender_tcp,
+            update_cache_sender_ns_udp: update_cache_sender_ns_udp,
+            update_cache_sender_ns_tcp: update_cache_sender_ns_tcp,
         };
 
         resolver
@@ -90,13 +106,15 @@ impl Resolver {
         rx_delete_udp: Receiver<(String, ResourceRecord)>,
         rx_add_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_tcp: Receiver<(String, ResourceRecord)>,
+        rx_update_cache_udp: Receiver<(String, String, u32)>,
+        rx_update_cache_tcp: Receiver<(String, String, u32)>,
     ) {
         let mut resolver_copy = self.clone();
         thread::spawn(move || {
-            resolver_copy.run_resolver_udp(rx_add_udp, rx_delete_udp);
+            resolver_copy.run_resolver_udp(rx_add_udp, rx_delete_udp, rx_update_cache_udp);
         });
 
-        self.run_resolver_tcp(rx_add_tcp, rx_delete_tcp);
+        self.run_resolver_tcp(rx_add_tcp, rx_delete_tcp, rx_update_cache_tcp);
     }
 
     // Runs a udp resolver
@@ -104,6 +122,7 @@ impl Resolver {
         &mut self,
         rx_add_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_udp: Receiver<(String, ResourceRecord)>,
+        rx_update_cache_udp: Receiver<(String, String, u32)>,
     ) {
         // Hashmap to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
@@ -120,6 +139,10 @@ impl Resolver {
         let tx_delete_ns_udp = self.get_delete_sender_ns_udp();
         let tx_add_ns_tcp = self.get_add_sender_ns_tcp();
         let tx_delete_ns_tcp = self.get_delete_sender_ns_tcp();
+        let tx_update_cache_udp = self.get_update_cache_udp();
+        let tx_update_cache_tcp = self.get_update_cache_tcp();
+        let tx_update_cache_ns_udp = self.get_update_cache_ns_udp();
+        let tx_update_cache_ns_tcp = self.get_update_cache_ns_tcp();
 
         // Channel to delete queries ids from queries already response
         let (tx_delete_query, rx_delete_query): (Sender<ResolverQuery>, Receiver<ResolverQuery>) =
@@ -210,6 +233,24 @@ impl Resolver {
 
             //
 
+            // Update response time cache
+
+            let mut received_update = rx_update_cache_udp.try_iter();
+
+            let mut next_value = received_update.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (host_name, address, response_time) = next_value.unwrap();
+                cache.update_response_time(host_name, "A".to_string(), response_time, address);
+                next_value = received_update.next();
+            }
+
+            self.set_cache(cache);
+
+            //
+
             // Adding to Cache
 
             let mut received_add = rx_add_udp.try_iter();
@@ -265,6 +306,13 @@ impl Resolver {
             let tx_update_query_copy = tx_update_query.clone();
             let tx_delete_query_copy = tx_delete_query.clone();
 
+            let tx_update_cache_udp_copy = tx_update_cache_udp.clone();
+            let tx_update_cache_tcp_copy = tx_update_cache_tcp.clone();
+            let tx_update_cache_ns_udp_copy = tx_update_cache_ns_udp.clone();
+            let tx_update_cache_ns_tcp_copy = tx_update_cache_ns_tcp.clone();
+
+            let src_address_copy = src_address.clone();
+
             // If it is query
             if msg_type == false {
                 let sname = dns_message.get_question().get_qname().get_name();
@@ -286,6 +334,10 @@ impl Resolver {
                     tx_update_query_copy,
                     tx_delete_query_copy,
                     dns_message.clone(),
+                    tx_update_cache_udp_copy.clone(),
+                    tx_update_cache_tcp_copy.clone(),
+                    tx_update_cache_ns_udp_copy.clone(),
+                    tx_update_cache_ns_tcp_copy.clone(),
                 );
 
                 // Initializes the query data struct
@@ -333,7 +385,7 @@ impl Resolver {
 
                             Resolver::send_answer_by_udp(
                                 new_dns_msg,
-                                src_address.to_string(),
+                                src_address.clone().to_string(),
                                 &socket_copy,
                             );
                         }
@@ -367,10 +419,38 @@ impl Resolver {
                         let mut resolver_query =
                             queries_hash_by_id_copy.get(&answer_id).unwrap().clone();
 
-                        println!(
-                            "queries left: {}",
-                            resolver_query.get_queries_before_temporary_error()
-                        );
+                        let last_query_timestamp = resolver_query.get_last_query_timestamp();
+                        let now = Utc::now();
+                        let timestamp_ms = now.timestamp_millis() as u64;
+
+                        let response_time: u32 = (timestamp_ms - last_query_timestamp) as u32;
+
+                        // Send request to update cache to resolver and name server
+                        tx_update_cache_udp_copy.send((
+                            resolver_query.get_last_query_hostname(),
+                            src_address_copy.clone(),
+                            response_time,
+                        ));
+
+                        tx_update_cache_tcp_copy.send((
+                            resolver_query.get_last_query_hostname(),
+                            src_address_copy.clone(),
+                            response_time,
+                        ));
+
+                        tx_update_cache_ns_udp_copy.send((
+                            resolver_query.get_last_query_hostname(),
+                            src_address_copy.clone(),
+                            response_time,
+                        ));
+
+                        tx_update_cache_ns_tcp_copy.send((
+                            resolver_query.get_last_query_hostname(),
+                            src_address_copy.clone(),
+                            response_time,
+                        ));
+                        //
+
                         resolver_query.set_cache(resolver.get_cache());
                         let response = match resolver_query
                             .clone()
@@ -411,6 +491,7 @@ impl Resolver {
         &mut self,
         rx_add_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_tcp: Receiver<(String, ResourceRecord)>,
+        rx_update_cache_tcp: Receiver<(String, String, u32)>,
     ) {
         // Vector to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
@@ -424,6 +505,10 @@ impl Resolver {
         let tx_delete_ns_udp = self.get_delete_sender_ns_udp();
         let tx_add_ns_tcp = self.get_add_sender_ns_tcp();
         let tx_delete_ns_tcp = self.get_delete_sender_ns_tcp();
+        let tx_update_cache_udp = self.get_update_cache_udp();
+        let tx_update_cache_tcp = self.get_update_cache_tcp();
+        let tx_update_cache_ns_udp = self.get_update_cache_ns_udp();
+        let tx_update_cache_ns_tcp = self.get_update_cache_ns_tcp();
 
         // Channel to delete queries ids from queries already response
         let (tx_delete_query, rx_delete_query) = mpsc::channel();
@@ -457,6 +542,29 @@ impl Resolver {
                         let rr_type = rr.get_string_type();
                         cache.remove(name, rr_type);
                         next_value = received_delete.next();
+                    }
+
+                    self.set_cache(cache);
+
+                    //
+
+                    // Update response time cache
+
+                    let mut received_update = rx_update_cache_tcp.try_iter();
+
+                    let mut next_value = received_update.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (host_name, address, response_time) = next_value.unwrap();
+                        cache.update_response_time(
+                            host_name,
+                            "A".to_string(),
+                            response_time,
+                            address,
+                        );
+                        next_value = received_update.next();
                     }
 
                     self.set_cache(cache);
@@ -498,6 +606,11 @@ impl Resolver {
                     let tx_add_ns_tcp_copy = tx_add_ns_tcp.clone();
                     let tx_delete_ns_tcp_copy = tx_delete_ns_tcp.clone();
 
+                    let tx_update_cache_udp_copy = tx_update_cache_udp.clone();
+                    let tx_update_cache_tcp_copy = tx_update_cache_tcp.clone();
+                    let tx_update_cache_ns_udp_copy = tx_update_cache_ns_udp.clone();
+                    let tx_update_cache_ns_tcp_copy = tx_update_cache_ns_tcp.clone();
+
                     let tx_update_query_copy = tx_update_query.clone();
                     let tx_delete_query_copy = tx_delete_query.clone();
 
@@ -531,6 +644,10 @@ impl Resolver {
                                 tx_update_query_copy,
                                 tx_delete_query_copy,
                                 dns_message.clone(),
+                                tx_update_cache_udp_copy,
+                                tx_update_cache_tcp_copy,
+                                tx_update_cache_ns_udp_copy,
+                                tx_update_cache_ns_tcp_copy,
                             );
 
                             // Initializes the query data struct
@@ -792,6 +909,26 @@ impl Resolver {
     pub fn get_delete_sender_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_tcp.clone()
     }
+
+    /// Gets the sender for updating cache
+    pub fn get_update_cache_udp(&self) -> Sender<(String, String, u32)> {
+        self.update_cache_sender_udp.clone()
+    }
+
+    /// Gets the sender for updating cache
+    pub fn get_update_cache_tcp(&self) -> Sender<(String, String, u32)> {
+        self.update_cache_sender_tcp.clone()
+    }
+
+    /// Gets the sender for updating cache
+    pub fn get_update_cache_ns_udp(&self) -> Sender<(String, String, u32)> {
+        self.update_cache_sender_ns_udp.clone()
+    }
+
+    /// Gets the sender for updating cache
+    pub fn get_update_cache_ns_tcp(&self) -> Sender<(String, String, u32)> {
+        self.update_cache_sender_ns_tcp.clone()
+    }
 }
 
 //Setters
@@ -844,6 +981,11 @@ mod test {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -853,6 +995,10 @@ mod test {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         assert_eq!(resolver.ip_address, "".to_string());
@@ -872,6 +1018,11 @@ mod test {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -881,6 +1032,10 @@ mod test {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         assert_eq!(resolver.get_ip_address(), "".to_string());
@@ -902,6 +1057,11 @@ mod test {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -911,6 +1071,10 @@ mod test {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
         let mut sbelt_test = Slist::new();
 
@@ -933,6 +1097,11 @@ mod test {
         let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
@@ -942,7 +1111,12 @@ mod test {
             delete_sender_ns_udp,
             add_sender_ns_tcp,
             delete_sender_ns_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
+
         let mut cache_test = DnsCache::new();
         let ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut a_rdata = ARdata::new();
@@ -999,6 +1173,11 @@ mod test {
         let (tx_update_query, rx_update_query) = mpsc::channel();
         let (tx_delete_query, rx_delete_query) = mpsc::channel();
 
+        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
         let mut resolver_query_test = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1011,6 +1190,10 @@ mod test {
             tx_update_query,
             tx_delete_query,
             DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
         );
 
         assert_eq!(resolver_query_test.get_ns_data().len(), 0);

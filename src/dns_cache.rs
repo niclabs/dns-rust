@@ -1,5 +1,7 @@
+use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::rr_cache::RRCache;
+
 use chrono::prelude::*;
 use std::collections::HashMap;
 
@@ -160,15 +162,96 @@ impl DnsCache {
     }
 
     /// Gets the response time from a domain name and type resource record
-    pub fn get_response_time(&mut self, domain_name: String, rr_type: String) -> f32 {
+    pub fn get_response_time(
+        &mut self,
+        domain_name: String,
+        rr_type: String,
+        ip_address: String,
+    ) -> u32 {
         let rr_cache_vec = self.get(domain_name, rr_type);
 
-        if rr_cache_vec.len() > 0 {
-            return rr_cache_vec[0].get_response_time();
+        for rr_cache in rr_cache_vec {
+            let rr_ip_address = match rr_cache.get_resource_record().get_rdata() {
+                Rdata::SomeARdata(val) => val.get_address(),
+                _ => unreachable!(),
+            };
+
+            let vec_ip_str_from_string_with_port =
+                ip_address.split(":").collect::<Vec<&str>>()[0].clone();
+
+            let vec_ip_str_from_string: Vec<&str> =
+                vec_ip_str_from_string_with_port.split(".").collect();
+
+            let mut ip_address_bytes: [u8; 4] = [0; 4];
+
+            let mut index = 0;
+
+            for byte in vec_ip_str_from_string {
+                let byte = byte.parse::<u8>().unwrap();
+                ip_address_bytes[index] = byte;
+                index = index + 1;
+            }
+
+            if ip_address_bytes == rr_ip_address {
+                return rr_cache.get_response_time();
+            }
         }
 
         // Default response time in RFC 1034/1035
-        return 5.0;
+        return 5000;
+    }
+
+    /// Gets the response time from a domain name and type resource record
+    pub fn update_response_time(
+        &mut self,
+        domain_name: String,
+        rr_type: String,
+        response_time: u32,
+        ip_address: String,
+    ) {
+        let mut cache = self.get_cache();
+
+        if let Some(x) = cache.get(&rr_type) {
+            let mut new_x = x.clone();
+            if let Some(y) = new_x.get(&domain_name) {
+                let new_y = y.clone();
+                let mut rr_cache_vec = Vec::<RRCache>::new();
+
+                for mut rr_cache in new_y {
+                    let rr_ip_address = match rr_cache.get_resource_record().get_rdata() {
+                        Rdata::SomeARdata(val) => val.get_address(),
+                        _ => unreachable!(),
+                    };
+
+                    let vec_ip_str_from_string_with_port =
+                        ip_address.split(":").collect::<Vec<&str>>()[0].clone();
+
+                    let vec_ip_str_from_string: Vec<&str> =
+                        vec_ip_str_from_string_with_port.split(".").collect();
+
+                    let mut ip_address_bytes: [u8; 4] = [0; 4];
+                    let mut index = 0;
+
+                    for byte in vec_ip_str_from_string {
+                        let byte = byte.parse::<u8>().unwrap();
+                        ip_address_bytes[index] = byte;
+                        index = index + 1;
+                    }
+
+                    if ip_address_bytes == rr_ip_address {
+                        rr_cache.set_response_time(response_time);
+                    }
+
+                    rr_cache_vec.push(rr_cache.clone());
+                }
+
+                new_x.insert(domain_name, rr_cache_vec.clone());
+
+                cache.insert(rr_type, new_x);
+
+                self.set_cache(cache);
+            }
+        }
     }
 }
 

@@ -293,6 +293,7 @@ impl ResourceRecord {
             14 => "MINFO".to_string(),
             15 => "MX".to_string(),
             16 => "TXT".to_string(),
+            28 => "AAAA".to_string(),
             _ => unreachable!(),
         };
 

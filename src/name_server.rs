@@ -92,6 +92,8 @@ impl NameServer {
         rx_delete_ns_udp: Receiver<(String, ResourceRecord)>,
         rx_add_ns_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_ns_tcp: Receiver<(String, ResourceRecord)>,
+        rx_update_cache_ns_udp: Receiver<(String, String, u32)>,
+        rx_update_cache_ns_tcp: Receiver<(String, String, u32)>,
     ) {
         let mut name_server_copy = self.clone();
         let name_server_ip_address_copy = name_server_ip_address.clone();
@@ -103,6 +105,7 @@ impl NameServer {
                 local_resolver_ip_and_port_copy,
                 rx_add_ns_udp,
                 rx_delete_ns_udp,
+                rx_update_cache_ns_udp,
             );
         });
 
@@ -111,6 +114,7 @@ impl NameServer {
             local_resolver_ip_and_port,
             rx_add_ns_tcp,
             rx_delete_ns_tcp,
+            rx_update_cache_ns_tcp,
         );
     }
 
@@ -120,6 +124,7 @@ impl NameServer {
         local_resolver_ip_and_port: String,
         rx_add_ns_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_ns_udp: Receiver<(String, ResourceRecord)>,
+        rx_update_cache_ns_udp: Receiver<(String, String, u32)>,
     ) {
         // Hashmap to save incomplete messages
         let mut messages = HashMap::<u16, DnsMessage>::new();
@@ -287,6 +292,24 @@ impl NameServer {
                 let rr_type = rr.get_string_type();
                 cache.remove(name, rr_type);
                 next_value = received_delete.next();
+            }
+
+            self.set_cache(cache);
+
+            //
+
+            // Update response time cache
+
+            let mut received_update = rx_update_cache_ns_udp.try_iter();
+
+            let mut next_value = received_update.next();
+
+            let mut cache = self.get_cache();
+
+            while next_value.is_none() == false {
+                let (host_name, address, response_time) = next_value.unwrap();
+                cache.update_response_time(host_name, "A".to_string(), response_time, address);
+                next_value = received_update.next();
             }
 
             self.set_cache(cache);
@@ -462,6 +485,7 @@ impl NameServer {
         local_resolver_ip_and_port: String,
         rx_add_ns_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_ns_tcp: Receiver<(String, ResourceRecord)>,
+        rx_update_cache_ns_tcp: Receiver<(String, String, u32)>,
     ) {
         name_server_ip_address.push_str(":53");
 
@@ -531,6 +555,29 @@ impl NameServer {
                         let rr_type = rr.get_string_type();
                         cache.remove(name, rr_type);
                         next_value = received_delete.next();
+                    }
+
+                    self.set_cache(cache);
+
+                    //
+
+                    // Update response time cache
+
+                    let mut received_update = rx_update_cache_ns_tcp.try_iter();
+
+                    let mut next_value = received_update.next();
+
+                    let mut cache = self.get_cache();
+
+                    while next_value.is_none() == false {
+                        let (host_name, address, response_time) = next_value.unwrap();
+                        cache.update_response_time(
+                            host_name,
+                            "A".to_string(),
+                            response_time,
+                            address,
+                        );
+                        next_value = received_update.next();
                     }
 
                     self.set_cache(cache);

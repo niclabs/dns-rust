@@ -48,20 +48,38 @@ impl DomainName {
         name
     }
 
-    pub fn from_bytes<'a>(bytes: &'a [u8], full_msg: &'a [u8]) -> (Self, &'a [u8]) {
+    pub fn from_bytes<'a>(
+        bytes: &'a [u8],
+        full_msg: &'a [u8],
+    ) -> Result<(Self, &'a [u8]), &'static str> {
         let mut first_byte = bytes[0].clone();
         let mut domain_name_str = "".to_string();
         let mut no_domain_bytes = bytes.clone();
 
         while first_byte != 0 {
+            let bytes_len = no_domain_bytes.len();
             let msg_compresion = first_byte.clone() >> 6;
 
             if msg_compresion == 3 {
+                if bytes_len < 2 {
+                    return Err("Format Error");
+                }
+
                 let offset: usize = (((no_domain_bytes[0].clone() as u16) << 8
                     | no_domain_bytes[1].clone() as u16)
                     & 0b0011111111111111) as usize;
-                let (domain_label, _bytes) =
+
+                let domain_name_result =
                     DomainName::from_bytes(&full_msg[offset..], full_msg.clone());
+
+                match domain_name_result {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                let (domain_label, _bytes) = domain_name_result.unwrap();
 
                 let label = domain_label.get_name();
 
@@ -71,6 +89,10 @@ impl DomainName {
 
                 break;
             } else {
+                if bytes_len < (first_byte + 1) as usize {
+                    return Err("Format Error");
+                }
+
                 let label_string =
                     DomainName::from_bytes_no_offset(&no_domain_bytes[..(first_byte + 1) as usize]);
 
@@ -91,7 +113,7 @@ impl DomainName {
         let mut domain_name = DomainName::new();
         domain_name.set_name(domain_name_str);
 
-        (domain_name, no_domain_bytes)
+        Ok((domain_name, no_domain_bytes))
     }
 
     /// Returns an array of bytes that represents the domain name
@@ -171,7 +193,7 @@ mod test {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
-        let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test);
+        let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test).unwrap();
 
         assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
     }

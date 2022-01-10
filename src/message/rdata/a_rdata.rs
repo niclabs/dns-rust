@@ -24,16 +24,22 @@ impl ToBytes for ARdata {
     }
 }
 
-impl FromBytes<ARdata> for ARdata {
+impl FromBytes<Result<Self, &'static str>> for ARdata {
     /// Creates a new ARdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 4 {
+            return Err("Format Error");
+        }
+
         let mut a_rdata = ARdata::new();
 
         let array_bytes = [bytes[0], bytes[1], bytes[2], bytes[3]];
 
         a_rdata.set_address(array_bytes);
 
-        a_rdata
+        Ok(a_rdata)
     }
 }
 
@@ -182,7 +188,7 @@ mod test {
     #[test]
     fn from_bytes_test() {
         let bytes: [u8; 4] = [128, 0, 0, 1];
-        let a_rdata = ARdata::from_bytes(&bytes, &bytes);
+        let a_rdata = ARdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(a_rdata.get_address()[0], 128);
         assert_eq!(a_rdata.get_address()[1], 0);

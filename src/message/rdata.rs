@@ -47,29 +47,127 @@ impl ToBytes for Rdata {
     }
 }
 
-impl FromBytes<Rdata> for Rdata {
+impl FromBytes<Result<Rdata, &'static str>> for Rdata {
     /// Given an array of bytes and a type code, returns a new Rdata
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Rdata {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Rdata, &'static str> {
         let type_code = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
 
         println!("Type code rdata {}", type_code);
 
-        let rdata = match type_code {
-            1 => Rdata::SomeARdata(ARdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
-            2 => Rdata::SomeNsRdata(NsRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
-            5 => Rdata::SomeCnameRdata(CnameRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
-            6 => Rdata::SomeSoaRdata(SoaRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
-            12 => Rdata::SomePtrRdata(PtrRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
-            13 => {
-                Rdata::SomeHinfoRdata(HinfoRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg))
+        let especific_rdata = match type_code {
+            1 => {
+                let rdata = ARdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeARdata(rdata.unwrap()))
             }
-            15 => Rdata::SomeMxRdata(MxRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
-            16 => Rdata::SomeTxtRdata(TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            2 => {
+                let rdata = NsRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeNsRdata(rdata.unwrap()))
+            }
+            5 => {
+                let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeCnameRdata(rdata.unwrap()))
+            }
+            6 => {
+                let rdata = SoaRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeSoaRdata(rdata.unwrap()))
+            }
+            12 => {
+                let rdata = PtrRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomePtrRdata(rdata.unwrap()))
+            }
+            13 => {
+                let rdata = HinfoRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeHinfoRdata(rdata.unwrap()))
+            }
+            15 => {
+                let rdata = MxRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeMxRdata(rdata.unwrap()))
+            }
+            16 => {
+                let rdata = TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeTxtRdata(rdata.unwrap()))
+            }
             //////////////////////// Replace the next line when AAAA is implemented /////////////////
-            28 => Rdata::SomeTxtRdata(TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg)),
+            28 => {
+                let rdata = TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeTxtRdata(rdata.unwrap()))
+            }
             //////////////////////////////////////////////////////////////////////////////////////////
-            _ => unreachable!(),
+            _ => Err("Format Error"),
         };
-        rdata
+
+        especific_rdata
     }
 }

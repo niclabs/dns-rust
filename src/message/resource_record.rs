@@ -102,8 +102,24 @@ impl ResourceRecord {
     /// );
     /// ```
     ///
-    pub fn from_bytes<'a>(bytes: &'a [u8], full_msg: &'a [u8]) -> (ResourceRecord, &'a [u8]) {
-        let (name, bytes_without_name) = DomainName::from_bytes(bytes, full_msg.clone());
+    pub fn from_bytes<'a>(
+        bytes: &'a [u8],
+        full_msg: &'a [u8],
+    ) -> Result<(ResourceRecord, &'a [u8]), &'static str> {
+        let bytes_len = bytes.len();
+
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg.clone());
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => return Err(e),
+        }
+
+        let (name, bytes_without_name) = domain_name_result.unwrap();
+
+        if bytes_without_name.len() < 10 {
+            return Err("Format Error");
+        }
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
@@ -113,11 +129,26 @@ impl ResourceRecord {
             | bytes_without_name[7] as u32;
         let rdlength = ((bytes_without_name[8] as u16) << 8) | bytes_without_name[9] as u16;
 
+        let end_rr_byte = 10 + rdlength as usize;
+
+        if bytes_without_name.len() < end_rr_byte {
+            return Err("Format Error");
+        }
+
         let mut rdata_bytes_vec = bytes_without_name[10..].to_vec();
         rdata_bytes_vec.push(bytes_without_name[0]);
         rdata_bytes_vec.push(bytes_without_name[1]);
 
-        let rdata = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
+        let rdata_result = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
+
+        match rdata_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let rdata = rdata_result.unwrap();
 
         let resource_record = ResourceRecord {
             name: name,
@@ -128,9 +159,7 @@ impl ResourceRecord {
             rdata: rdata,
         };
 
-        let end_rr_byte = 10 + rdlength as usize;
-
-        (resource_record, &bytes_without_name[end_rr_byte..])
+        Ok((resource_record, &bytes_without_name[end_rr_byte..]))
     }
 
     /// Returns a byte that represents the first byte from type code in the dns message.
@@ -499,7 +528,7 @@ mod test {
         ];
 
         let (resource_record_test, _other_rr_bytes) =
-            ResourceRecord::from_bytes(&bytes_msg, &full_msg);
+            ResourceRecord::from_bytes(&bytes_msg, &full_msg).unwrap();
 
         assert_eq!(
             resource_record_test.get_name().get_name(),

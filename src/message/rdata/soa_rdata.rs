@@ -145,16 +145,39 @@ impl ToBytes for SoaRdata {
     }
 }
 
-impl FromBytes<SoaRdata> for SoaRdata {
+impl FromBytes<Result<Self, &'static str>> for SoaRdata {
     /// Creates a new SoaRdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
-        let mut soa_rdata = SoaRdata::new();
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let mname_result = DomainName::from_bytes(bytes, full_msg);
 
-        let (mname, bytes_without_mname) = DomainName::from_bytes(bytes, full_msg);
-        let (rname, bytes_without_rname) = DomainName::from_bytes(bytes_without_mname, full_msg);
+        match mname_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (mname, bytes_without_mname) = mname_result.unwrap();
+
+        let rname_result = DomainName::from_bytes(bytes_without_mname, full_msg);
+
+        match rname_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (rname, bytes_without_rname) = rname_result.unwrap();
+
+        let mut soa_rdata = SoaRdata::new();
 
         soa_rdata.set_mname(mname);
         soa_rdata.set_rname(rname);
+
+        if bytes_without_rname.len() < 20 {
+            return Err("Format Error");
+        }
 
         soa_rdata.set_serial_from_bytes(&bytes_without_rname[0..4]);
         soa_rdata.set_refresh_from_bytes(&bytes_without_rname[4..8]);
@@ -162,7 +185,7 @@ impl FromBytes<SoaRdata> for SoaRdata {
         soa_rdata.set_expire_from_bytes(&bytes_without_rname[12..16]);
         soa_rdata.set_minimum_from_bytes(&bytes_without_rname[16..20]);
 
-        soa_rdata
+        Ok(soa_rdata)
     }
 }
 
@@ -644,7 +667,7 @@ mod test {
             0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1,
         ];
 
-        let soa_rdata = SoaRdata::from_bytes(&bytes, &bytes);
+        let soa_rdata = SoaRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(soa_rdata.get_mname().get_name(), String::from("test.com"));
         assert_eq!(soa_rdata.get_rname().get_name(), String::from("test.com"));

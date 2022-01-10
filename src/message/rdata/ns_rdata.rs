@@ -31,15 +31,30 @@ impl ToBytes for NsRdata {
     }
 }
 
-impl FromBytes<NsRdata> for NsRdata {
+impl FromBytes<Result<Self, &'static str>> for NsRdata {
     /// Creates a new NsRdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
-        let mut ns_rdata = NsRdata::new();
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
 
-        let (domain_name, _) = DomainName::from_bytes(bytes, full_msg);
+        if bytes_len < 2 {
+            return Err("Format Error");
+        }
+
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let mut ns_rdata = NsRdata::new();
+        let (domain_name, _) = domain_name_result.unwrap();
+
         ns_rdata.set_nsdname(domain_name);
 
-        ns_rdata
+        Ok(ns_rdata)
     }
 }
 
@@ -165,7 +180,7 @@ mod test {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
-        let ns_rdata = NsRdata::from_bytes(&bytes_test, &bytes_test);
+        let ns_rdata = NsRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
 
         assert_eq!(
             ns_rdata.get_nsdname().get_name(),

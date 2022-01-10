@@ -46,8 +46,24 @@ impl Question {
     }
 
     /// Given an array of bytes, creates a new Question.
-    pub fn from_bytes<'a>(bytes: &'a [u8], full_msg: &'a [u8]) -> (Question, &'a [u8]) {
-        let (qname, bytes_without_name) = DomainName::from_bytes(bytes, full_msg);
+    pub fn from_bytes<'a>(
+        bytes: &'a [u8],
+        full_msg: &'a [u8],
+    ) -> Result<(Question, &'a [u8]), &'static str> {
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (qname, bytes_without_name) = domain_name_result.unwrap();
+
+        if bytes_without_name.len() < 4 {
+            return Err("Format Error");
+        }
 
         let qtype = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let qclass = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
@@ -57,7 +73,7 @@ impl Question {
         question.set_qtype(qtype);
         question.set_qclass(qclass);
 
-        (question, &bytes_without_name[4..])
+        Ok((question, &bytes_without_name[4..]))
     }
 
     /// Returns a byte that represents the first byte from qtype.
@@ -221,7 +237,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2];
 
-        let (question, _others_msg_bytes) = Question::from_bytes(&bytes, &bytes);
+        let (question, _others_msg_bytes) = Question::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
         assert_eq!(question.get_qtype(), 5);

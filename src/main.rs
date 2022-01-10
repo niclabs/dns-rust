@@ -156,7 +156,7 @@ fn test_udp() {
         .recv_from(&mut received_msg)
         .expect("No data received");
 
-    let dns_msg = DnsMessage::from_bytes(&received_msg);
+    let dns_msg = DnsMessage::from_bytes(&received_msg).unwrap();
 
     let answers = dns_msg.get_answer();
 

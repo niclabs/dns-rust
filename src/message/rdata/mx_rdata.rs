@@ -39,20 +39,34 @@ impl ToBytes for MxRdata {
     }
 }
 
-impl FromBytes<MxRdata> for MxRdata {
+impl FromBytes<Result<Self, &'static str>> for MxRdata {
     /// Creates a new MxRdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 3 {
+            return Err("Format Error");
+        }
+
         let preference = (bytes[0] as u16) << 8 | bytes[1] as u16;
 
-        // This must be replace for a DomainName struct
-        let (exchange, _) = DomainName::from_bytes(&bytes[2..], full_msg);
+        let domain_name_result = DomainName::from_bytes(&bytes[2..], full_msg);
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (exchange, _) = domain_name_result.unwrap();
 
         let mut mx_rdata = MxRdata::new();
 
         mx_rdata.set_preference(preference);
         mx_rdata.set_exchange(exchange);
 
-        mx_rdata
+        Ok(mx_rdata)
     }
 }
 
@@ -212,7 +226,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 12] = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0];
 
-        let mx_rdata = MxRdata::from_bytes(&bytes, &bytes);
+        let mx_rdata = MxRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(mx_rdata.get_preference(), 128);
         assert_eq!(mx_rdata.get_exchange().get_name(), String::from("test.com"));

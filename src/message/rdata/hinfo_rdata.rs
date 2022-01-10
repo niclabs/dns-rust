@@ -46,9 +46,9 @@ impl ToBytes for HinfoRdata {
     }
 }
 
-impl FromBytes<HinfoRdata> for HinfoRdata {
+impl FromBytes<Result<Self, &'static str>> for HinfoRdata {
     /// Creates a new HinfoRdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut cpu = String::from("");
         let mut os = String::from("");
 
@@ -72,7 +72,7 @@ impl FromBytes<HinfoRdata> for HinfoRdata {
         hinfo_rdata.set_cpu(cpu);
         hinfo_rdata.set_os(os);
 
-        hinfo_rdata
+        Ok(hinfo_rdata)
     }
 }
 
@@ -211,7 +211,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 7] = [99, 112, 117, 0, 111, 115, 0];
 
-        let hinfo_rdata = HinfoRdata::from_bytes(&bytes, &bytes);
+        let hinfo_rdata = HinfoRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(hinfo_rdata.get_cpu(), String::from("cpu"));
         assert_eq!(hinfo_rdata.get_os(), String::from("os"));

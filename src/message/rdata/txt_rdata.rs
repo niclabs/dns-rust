@@ -31,9 +31,9 @@ impl ToBytes for TxtRdata {
     }
 }
 
-impl FromBytes<TxtRdata> for TxtRdata {
+impl FromBytes<Result<Self, &'static str>> for TxtRdata {
     /// Creates a new TxtRdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut string = String::from("");
 
         for byte in bytes {
@@ -42,7 +42,7 @@ impl FromBytes<TxtRdata> for TxtRdata {
 
         let txt_rdata = TxtRdata::new(string);
 
-        txt_rdata
+        Ok(txt_rdata)
     }
 }
 
@@ -147,7 +147,7 @@ mod test {
         let bytes: [u8; 4] = [116, 101, 115, 116];
 
         // bytes is not the full msg, but in this case it will not use inside
-        let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes);
+        let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(txt_rdata.get_text(), String::from("test"));
     }

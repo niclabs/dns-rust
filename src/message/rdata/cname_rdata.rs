@@ -29,16 +29,31 @@ impl ToBytes for CnameRdata {
     }
 }
 
-impl FromBytes<CnameRdata> for CnameRdata {
+impl FromBytes<Result<Self, &'static str>> for CnameRdata {
     /// Creates a new Cname from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
-        let mut cname_rdata = CnameRdata::new();
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
 
-        let (cname, _) = DomainName::from_bytes(bytes, full_msg);
+        if bytes_len < 1 {
+            return Err("Format Error");
+        }
+
+        let domain_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (cname, _) = domain_result.unwrap();
+
+        let mut cname_rdata = CnameRdata::new();
 
         cname_rdata.set_cname(cname);
 
-        cname_rdata
+        Ok(cname_rdata)
     }
 }
 
@@ -159,7 +174,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 7] = [5, 99, 110, 97, 109, 101, 0];
 
-        let cname_rdata = CnameRdata::from_bytes(&bytes, &bytes);
+        let cname_rdata = CnameRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(cname_rdata.get_cname().get_name(), String::from("cname"));
     }

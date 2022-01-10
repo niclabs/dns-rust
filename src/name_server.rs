@@ -603,7 +603,24 @@ impl NameServer {
                     ////////////////////////////////////////////////////////////////////
 
                     // Msg parsed
-                    let mut dns_message = DnsMessage::from_bytes(&received_msg);
+                    let dns_message_parse_result = DnsMessage::from_bytes(&received_msg);
+
+                    match dns_message_parse_result {
+                        Ok(_) => {}
+                        Err(e) => {
+                            let dns_msg_format_error = DnsMessage::format_error_msg();
+
+                            NameServer::send_response_by_tcp(
+                                dns_msg_format_error,
+                                src_address.clone().to_string(),
+                                stream,
+                            );
+
+                            continue;
+                        }
+                    }
+
+                    let mut dns_message = dns_message_parse_result.unwrap();
 
                     println!("{}", "Message parsed");
 
@@ -742,7 +759,7 @@ impl NameServer {
                                         val.set_last_fails(true);
                                         val.set_timestamp(now_timestamp);
                                     } else {
-                                        let msg = DnsMessage::from_bytes(&received_msg);
+                                        let msg = DnsMessage::from_bytes(&received_msg).unwrap();
                                         let rcode = msg.get_header().get_rcode();
 
                                         if rcode == 0 {
@@ -808,7 +825,7 @@ impl NameServer {
                                         val.set_last_fails(true);
                                         val.set_timestamp(now_timestamp);
                                     } else {
-                                        let msg = DnsMessage::from_bytes(&received_msg);
+                                        let msg = DnsMessage::from_bytes(&received_msg).unwrap();
                                         let rcode = msg.get_header().get_rcode();
 
                                         if rcode == 0 {
@@ -1481,7 +1498,16 @@ impl NameServer {
 
         let mut received_msg = Resolver::receive_tcp_msg(stream).unwrap();
 
-        let dns_response = DnsMessage::from_bytes(&received_msg);
+        let dns_response_result = DnsMessage::from_bytes(&received_msg);
+
+        match dns_response_result {
+            Ok(_) => {}
+            Err(e) => {
+                return DnsMessage::format_error_msg();
+            }
+        }
+
+        let dns_response = dns_response_result.unwrap();
 
         return NameServer::step_6(dns_response, cache, zones);
     }

@@ -31,15 +31,30 @@ impl ToBytes for PtrRdata {
     }
 }
 
-impl FromBytes<PtrRdata> for PtrRdata {
+impl FromBytes<Result<Self, &'static str>> for PtrRdata {
     /// Creates a new PtrRdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Self {
-        let mut ptr_rdata = PtrRdata::new();
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
 
-        let (domain_name, _) = DomainName::from_bytes(bytes, full_msg);
+        if bytes_len < 2 {
+            return Err("Format Error");
+        }
+
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let mut ptr_rdata = PtrRdata::new();
+        let (domain_name, _) = domain_name_result.unwrap();
+
         ptr_rdata.set_ptrdname(domain_name);
 
-        ptr_rdata
+        Ok(ptr_rdata)
     }
 }
 
@@ -169,7 +184,7 @@ mod test {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
-        let ptr_rdata = PtrRdata::from_bytes(&bytes_test, &bytes_test);
+        let ptr_rdata = PtrRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
 
         assert_eq!(
             ptr_rdata.get_ptrdname().get_name(),

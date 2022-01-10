@@ -818,7 +818,16 @@ impl ResolverQuery {
 
         match Resolver::receive_tcp_msg(stream) {
             Some(val) => {
-                let dns_response = DnsMessage::from_bytes(&val);
+                let dns_response_result = DnsMessage::from_bytes(&val);
+
+                match dns_response_result {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return DnsMessage::format_error_msg();
+                    }
+                }
+
+                let dns_response = dns_response_result.unwrap();
 
                 // Update response time in cache
                 let last_query_timestamp = self.get_last_query_timestamp();

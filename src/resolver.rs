@@ -181,6 +181,15 @@ impl Resolver {
                 }
             }
 
+            // Format Error
+            if dns_message.get_header().get_rcode() == 1 {
+                Resolver::send_answer_by_udp(
+                    dns_message.clone(),
+                    src_address.clone(),
+                    &socket.try_clone().unwrap(),
+                );
+            }
+
             // Delete queries already answered
 
             let mut queries_to_delete = rx_delete_query.try_iter();
@@ -677,8 +686,25 @@ impl Resolver {
 
                     let resolver = self.clone();
 
+                    let dns_message_parse_result = DnsMessage::from_bytes(&received_msg);
+
+                    match dns_message_parse_result {
+                        Ok(_) => {}
+                        Err(_) => {
+                            let dns_format_error_msg = DnsMessage::format_error_msg();
+
+                            Resolver::send_answer_by_tcp(
+                                dns_format_error_msg,
+                                stream.peer_addr().unwrap().to_string(),
+                                stream,
+                            );
+
+                            continue;
+                        }
+                    }
+
                     thread::spawn(move || {
-                        let dns_message = DnsMessage::from_bytes(&received_msg);
+                        let dns_message = dns_message_parse_result.unwrap();
 
                         println!("{}", "Query message parsed");
 
@@ -767,7 +793,16 @@ impl Resolver {
             return None;
         }
 
-        let dns_msg_parsed = DnsMessage::from_bytes(&msg);
+        let dns_msg_parsed_result = DnsMessage::from_bytes(&msg);
+
+        let dns_msg_parsed = match dns_msg_parsed_result {
+            Ok(_) => {}
+            Err(_) => {
+                return Some((DnsMessage::format_error_msg(), address));
+            }
+        };
+
+        let dns_msg_parsed = dns_msg_parsed_result.unwrap();
 
         let query_id = dns_msg_parsed.get_query_id();
         let trunc = dns_msg_parsed.get_header().get_tc();

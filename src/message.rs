@@ -150,17 +150,41 @@ impl DnsMessage {
     }
 
     // Creates a DnsMessage from an array of bytes
-    pub fn from_bytes(bytes: &[u8]) -> Self {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 12 {
+            return Err("Format Error");
+        }
+
+        // Header
         let header = Header::from_bytes(&bytes[0..12]);
+
+        // Question
         let q_count = header.get_qdcount();
+
+        if bytes_len < 13 {
+            return Err("Format Error");
+        }
 
         let (mut question, mut no_question_bytes) = (Question::new(), &bytes[12..]);
 
         if q_count > 0 {
-            let question_and_bytes = Question::from_bytes(&bytes[12..], bytes);
+            let question_result = Question::from_bytes(&bytes[12..], bytes);
+
+            match question_result {
+                Ok(_) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+
+            let question_and_bytes = question_result.unwrap();
             question = question_and_bytes.0;
             no_question_bytes = question_and_bytes.1;
         }
+
+        // ResourceRecords
 
         let mut answer = Vec::<ResourceRecord>::new();
         let mut authority = Vec::<ResourceRecord>::new();
@@ -170,33 +194,62 @@ impl DnsMessage {
         let authority_rr_size = header.get_nscount();
         let additional_rr_size = header.get_arcount();
 
+        // Answers
         for _i in 0..answer_rr_size {
             println!("Answer");
-            let (resource_record, other_rr_bytes) =
-                ResourceRecord::from_bytes(no_question_bytes, bytes);
+
+            let rr_result = ResourceRecord::from_bytes(no_question_bytes, bytes);
+
+            match rr_result {
+                Ok(_) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+
+            let (resource_record, other_rr_bytes) = rr_result.unwrap();
             println!("RR Name: {}", resource_record.get_name().get_name());
             answer.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
+        // Authorities
         for _i in 0..authority_rr_size {
             println!("Authority");
-            let (resource_record, other_rr_bytes) =
-                ResourceRecord::from_bytes(no_question_bytes, bytes);
+            let rr_result = ResourceRecord::from_bytes(no_question_bytes, bytes);
+
+            match rr_result {
+                Ok(_) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+
+            let (resource_record, other_rr_bytes) = rr_result.unwrap();
             println!("RR Name: {}", resource_record.get_name().get_name());
             authority.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
+        // Additional
         for _i in 0..additional_rr_size {
             println!("Additional");
-            let (resource_record, other_rr_bytes) =
-                ResourceRecord::from_bytes(no_question_bytes, bytes);
+            let rr_result = ResourceRecord::from_bytes(no_question_bytes, bytes);
+
+            match rr_result {
+                Ok(_) => {}
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+
+            let (resource_record, other_rr_bytes) = rr_result.unwrap();
             println!("RR Name: {}", resource_record.get_name().get_name());
             additional.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
+        // Create message
         let dns_message = DnsMessage {
             header: header,
             question: question,
@@ -205,7 +258,7 @@ impl DnsMessage {
             additional: additional,
         };
 
-        dns_message
+        Ok(dns_message)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -472,7 +525,7 @@ mod test {
             0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
         ];
 
-        let dns_message = DnsMessage::from_bytes(&bytes);
+        let dns_message = DnsMessage::from_bytes(&bytes).unwrap();
 
         let header = dns_message.get_header();
         let question = dns_message.get_question();

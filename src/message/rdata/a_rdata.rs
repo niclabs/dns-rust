@@ -102,6 +102,21 @@ impl ARdata {
 
         resource_record
     }
+
+    pub fn get_string_address(&self) -> String {
+        let ip = self.get_address();
+
+        let mut ip_address = "".to_string();
+
+        for num in ip.iter() {
+            ip_address.push_str(num.to_string().as_str());
+            ip_address.push_str(".");
+        }
+
+        ip_address.pop();
+
+        ip_address
+    }
 }
 
 // Getters

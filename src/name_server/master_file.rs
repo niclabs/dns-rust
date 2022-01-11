@@ -122,7 +122,13 @@ impl MasterFile {
         }
 
         // Replace @ for the origin domain
-        let new_line = line.replace("@", &self.get_origin());
+        let contains_non_especial_at_sign = line.contains("\\@");
+
+        if contains_non_especial_at_sign == false {
+            let new_line = line.replace("@", &self.get_origin());
+        }
+
+        let new_line = line.replace("\\@", "@");
 
         // Backslash replace
         let line = new_line.replace("\\", "");
@@ -174,6 +180,7 @@ impl MasterFile {
         } else {
             let mut iter = line.split_whitespace();
             host_name = iter.next().unwrap().to_string();
+
             self.set_last_host(host_name.clone());
             line_left_to_process = line.get(line.find(" ").unwrap()..).unwrap().to_string();
         }
@@ -261,7 +268,7 @@ impl MasterFile {
         let origin = self.get_origin();
         let mut full_host_name = host_name.clone();
 
-        if origin != host_name {
+        if host_name.ends_with(".") == false {
             full_host_name.push_str(".");
             full_host_name.push_str(&origin);
         }

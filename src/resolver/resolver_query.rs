@@ -714,8 +714,8 @@ impl ResolverQuery {
     }
 
     pub fn step_4c_udp(&mut self, mut msg: DnsMessage, socket: UdpSocket) -> Option<DnsMessage> {
-        let answer = msg.get_answer();
-        let mut resource_record = answer[0].clone();
+        let answers = msg.get_answer();
+        let mut resource_record = answers[0].clone();
         let rdata = resource_record.get_rdata();
 
         let rr_data = match rdata {
@@ -731,6 +731,41 @@ impl ResolverQuery {
         self.remove_from_cache(cname.get_name(), resource_record.clone());
         self.add_to_cache(cname.get_name(), resource_record);
 
+        //
+
+        // Check if contains the answer for cname
+
+        if answers.len() > 1 {
+            let cname_name = cname.get_name();
+            let mut answers_found = 0;
+            let qtype = self.get_stype();
+
+            let mut answers_for_cname = Vec::<ResourceRecord>::new();
+
+            for answer in answers[1..].into_iter() {
+                let answer_name = answer.get_name().get_name();
+                let answer_type = answer.get_type_code();
+
+                if answer_name == cname_name && answer_type == qtype {
+                    answers_found = answers_found + 1;
+                    answers_for_cname.push(answer.clone());
+                }
+            }
+
+            // Add to cache and return msg
+            if answers_found > 0 {
+                let mut msg_without_answer_cname = msg.clone();
+                msg_without_answer_cname.set_answer(answers_for_cname);
+                msg_without_answer_cname.update_header_counters();
+
+                self.step_4a(msg_without_answer_cname);
+
+                return Some(msg);
+            }
+        }
+
+        //
+
         self.set_sname(cname.get_name());
 
         let resp = match self.step_1_udp(socket) {
@@ -742,7 +777,7 @@ impl ResolverQuery {
                 msg.set_additional(Vec::new());
 
                 let mut header = msg.get_header();
-                header.set_ancount(answer.len() as u16);
+                header.set_ancount(answers.len() as u16);
                 header.set_nscount(0);
                 header.set_arcount(0);
                 header.set_id(self.get_old_id());

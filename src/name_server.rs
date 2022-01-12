@@ -53,6 +53,14 @@ pub struct NameServer {
     add_sender_ns_tcp: Sender<(String, ResourceRecord)>,
     // Channel to delete cache data in name server and resolver
     delete_sender_ns_tcp: Sender<(String, ResourceRecord)>,
+    // Channel to update the zones when AXFR msg arrive
+    update_refresh_zone_udp: Sender<ZoneRefresh>,
+    // Channel to update the zones when AXFR msg arrive
+    update_refresh_zone_tcp: Sender<ZoneRefresh>,
+    // Channel to update the zones when AXFR msg arrive
+    update_zone_udp_resolver: Sender<NSZone>,
+    // Channel to update the zones when AXFR msg arrive
+    update_zone_tcp_resolver: Sender<NSZone>,
 }
 
 impl NameServer {
@@ -65,6 +73,10 @@ impl NameServer {
         delete_channel_ns_udp: Sender<(String, ResourceRecord)>,
         add_channel_ns_tcp: Sender<(String, ResourceRecord)>,
         delete_channel_ns_tcp: Sender<(String, ResourceRecord)>,
+        update_refresh_zone_udp: Sender<ZoneRefresh>,
+        update_refresh_zone_tcp: Sender<ZoneRefresh>,
+        update_zone_udp_resolver: Sender<NSZone>,
+        update_zone_tcp_resolver: Sender<NSZone>,
     ) -> Self {
         let name_server = NameServer {
             zones: HashMap::<String, NSZone>::new(),
@@ -79,6 +91,10 @@ impl NameServer {
             delete_sender_ns_udp: delete_channel_ns_udp,
             add_sender_ns_tcp: add_channel_ns_tcp,
             delete_sender_ns_tcp: delete_channel_ns_tcp,
+            update_refresh_zone_udp: update_refresh_zone_udp,
+            update_refresh_zone_tcp: update_refresh_zone_tcp,
+            update_zone_udp_resolver: update_zone_udp_resolver,
+            update_zone_tcp_resolver: update_zone_tcp_resolver,
         };
 
         name_server
@@ -94,6 +110,8 @@ impl NameServer {
         rx_delete_ns_tcp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_ns_udp: Receiver<(String, String, u32)>,
         rx_update_cache_ns_tcp: Receiver<(String, String, u32)>,
+        rx_update_refresh_zone_udp: Receiver<ZoneRefresh>,
+        rx_update_refresh_zone_tcp: Receiver<ZoneRefresh>,
     ) {
         let mut name_server_copy = self.clone();
         let name_server_ip_address_copy = name_server_ip_address.clone();
@@ -106,6 +124,7 @@ impl NameServer {
                 rx_add_ns_udp,
                 rx_delete_ns_udp,
                 rx_update_cache_ns_udp,
+                rx_update_refresh_zone_udp,
             );
         });
 
@@ -115,6 +134,7 @@ impl NameServer {
             rx_add_ns_tcp,
             rx_delete_ns_tcp,
             rx_update_cache_ns_tcp,
+            rx_update_refresh_zone_tcp,
         );
     }
 
@@ -125,6 +145,7 @@ impl NameServer {
         rx_add_ns_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_ns_udp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_ns_udp: Receiver<(String, String, u32)>,
+        rx_update_refresh_zone_udp: Receiver<ZoneRefresh>,
     ) {
         // Hashmap to save incomplete messages
         let mut messages = HashMap::<u16, DnsMessage>::new();
@@ -140,6 +161,14 @@ impl NameServer {
         let tx_delete_tcp = self.get_delete_channel_tcp();
         let tx_delete_ns_udp = self.get_delete_channel_ns_udp();
         let tx_delete_ns_tcp = self.get_delete_channel_ns_tcp();
+
+        // Channel to update zones
+        let tx_update_refresh_zone_udp = self.get_update_refresh_zone_udp();
+        let tx_update_refresh_zone_tcp = self.get_update_refresh_zone_tcp();
+
+        // Channel to update zones in local resolvers
+        let tx_update_zone_udp_resolver = self.get_update_zone_udp_resolver();
+        let tx_update_zone_tcp_resolver = self.get_update_zone_tcp_resolver();
 
         // Creates refresh data for zones
         let primary_server = self.get_primary_server();
@@ -178,6 +207,32 @@ impl NameServer {
         println!("{}", "Socket Created");
 
         loop {
+            // Updates zone refresh and zones
+            let mut received_update_refresh_zone = rx_update_refresh_zone_udp.try_iter();
+
+            let mut next_value = received_update_refresh_zone.next();
+
+            let mut refresh_zones = self.get_refresh_zones_data();
+            let mut zones = self.get_zones();
+
+            while next_value.is_none() == false {
+                let updated_refresh_zone = next_value.unwrap();
+                let zone = updated_refresh_zone.get_zone();
+                let zone_name = zone.get_name();
+
+                tx_update_zone_udp_resolver.send(zone.clone());
+                tx_update_zone_tcp_resolver.send(zone.clone());
+
+                refresh_zones.insert(zone_name.clone(), updated_refresh_zone);
+                zones.insert(zone_name, zone);
+
+                next_value = received_update_refresh_zone.next();
+            }
+
+            self.set_zones(zones);
+            self.set_refresh_zones_data(refresh_zones);
+            //
+
             // Checking refresh queries
             let mut queries_id_for_soa_rr = self.get_queries_id_for_soa_rr();
             let mut refresh_zone_data = self.get_refresh_zones_data();
@@ -221,7 +276,7 @@ impl NameServer {
 
                         if time_between_queries > retry {
                             let zone = val.get_zone();
-                            let msg = DnsMessage::refresh_query_msg(zone.clone());
+                            let msg = DnsMessage::soa_rr_query_msg(zone.clone());
                             let msg_id = msg.get_query_id();
                             let mut queries_id_for_soa_rr = self.get_queries_id_for_soa_rr();
                             queries_id_for_soa_rr.insert(msg_id, key.to_string());
@@ -238,7 +293,7 @@ impl NameServer {
 
                         if time_between_queries > refresh {
                             let zone = val.get_zone();
-                            let msg = DnsMessage::refresh_query_msg(zone.clone());
+                            let msg = DnsMessage::soa_rr_query_msg(zone.clone());
                             let msg_id = msg.get_query_id();
                             let mut queries_id_for_soa_rr = self.get_queries_id_for_soa_rr();
                             queries_id_for_soa_rr.insert(msg_id, key.to_string());
@@ -432,34 +487,118 @@ impl NameServer {
                         println!("No encuentra la id en las queries id");
                         // If the msg is a refresh soa rr query
                         let mut queries_id_for_soa_rr = self.get_queries_id_for_soa_rr();
+                        let host_name_result = queries_id_for_soa_rr.get(&new_id);
 
-                        match queries_id_for_soa_rr.get(&new_id) {
+                        match host_name_result {
                             Some(val) => {
                                 let rcode = dns_message.get_header().get_rcode();
+                                let qtype = dns_message.get_question().get_qtype();
+
                                 let mut refresh_zone_data = self.get_refresh_zones_data();
                                 let mut refresh_data_actual_zone =
                                     refresh_zone_data.get(val).unwrap().clone();
 
                                 if rcode == 0 {
-                                    let soa_rr = dns_message.get_answer()[0].clone();
-                                    let soa_rdata = match soa_rr.get_rdata() {
-                                        Rdata::SomeSoaRdata(val) => val,
-                                        _ => unreachable!(),
-                                    };
+                                    if qtype == 6 {
+                                        let soa_rr = dns_message.get_answer()[0].clone();
+                                        let soa_rdata = match soa_rr.get_rdata() {
+                                            Rdata::SomeSoaRdata(val) => val,
+                                            _ => unreachable!(),
+                                        };
 
-                                    let serial = soa_rdata.get_serial();
+                                        let serial = soa_rdata.get_serial();
 
-                                    let new_serial_greater_than_old = refresh_data_actual_zone
-                                        .new_serial_greater_than_old(serial);
+                                        let new_serial_greater_than_old = refresh_data_actual_zone
+                                            .new_serial_greater_than_old(serial);
 
-                                    if new_serial_greater_than_old == true {
-                                        // Ask for the zone transfer by AXFR
-                                        // Update refresh zones data in NameServer
+                                        // Refresh zone necessary
+                                        if new_serial_greater_than_old == true {
+                                            // Copy variables for using in threads
+                                            let mut refresh_data_actual_zone_copy =
+                                                refresh_data_actual_zone.clone();
+
+                                            let tx_update_refresh_zone_tcp_copy =
+                                                tx_update_refresh_zone_tcp.clone();
+                                            let tx_update_refresh_zone_udp_copy =
+                                                tx_update_refresh_zone_udp.clone();
+                                            //
+
+                                            thread::spawn(move || {
+                                                // Creates AXFR message
+                                                let qname = refresh_data_actual_zone_copy
+                                                    .get_zone()
+                                                    .get_name();
+                                                let axfr_message =
+                                                    DnsMessage::axfr_query_message(qname);
+                                                //
+
+                                                // Send TCP query to the name server
+                                                let mut stream = TcpStream::connect(
+                                                    refresh_data_actual_zone_copy
+                                                        .get_ip_address_for_refresh_zone(),
+                                                )
+                                                .expect("Connect Failed");
+
+                                                let bytes = axfr_message.to_bytes();
+
+                                                let msg_length: u16 = bytes.len() as u16;
+
+                                                let tcp_bytes_length =
+                                                    [(msg_length >> 8) as u8, msg_length as u8];
+
+                                                let full_msg =
+                                                    [&tcp_bytes_length, bytes.as_slice()].concat();
+
+                                                stream.write(&full_msg);
+                                                //
+
+                                                // Receive response from name server and parse the msg
+
+                                                let mut received_msg = Resolver::receive_tcp_msg(
+                                                    stream.try_clone().unwrap(),
+                                                )
+                                                .unwrap();
+
+                                                let dns_axfr_msg_parse =
+                                                    DnsMessage::from_bytes(&received_msg).unwrap();
+                                                //
+
+                                                // Check no errors and update zone
+                                                if dns_axfr_msg_parse.get_header().get_rcode() == 0
+                                                {
+                                                    let mut update_zone =
+                                                        NSZone::from_axfr_msg(dns_axfr_msg_parse);
+
+                                                    update_zone.set_ip_address_for_refresh_zone(
+                                                        refresh_data_actual_zone_copy
+                                                            .get_ip_address_for_refresh_zone(),
+                                                    );
+
+                                                    // Update refresh zone with new soa values in tcp and udp name servers
+                                                    refresh_data_actual_zone_copy
+                                                        .update_zone(update_zone);
+
+                                                    tx_update_refresh_zone_udp_copy.send(
+                                                        refresh_data_actual_zone_copy.clone(),
+                                                    );
+
+                                                    tx_update_refresh_zone_tcp_copy
+                                                        .send(refresh_data_actual_zone_copy);
+                                                    //
+                                                }
+                                                //
+                                            });
+                                        }
+                                        //
+                                        else {
+                                            // Updates the last query timestamp
+                                            let now = Utc::now();
+                                            let now_timestamp = now.timestamp() as u32;
+
+                                            refresh_data_actual_zone.set_timestamp(now_timestamp);
+                                            //
+                                        }
                                     }
-                                    let now = Utc::now();
-                                    let now_timestamp = now.timestamp() as u32;
-
-                                    refresh_data_actual_zone.set_timestamp(now_timestamp);
                                 } else {
                                     refresh_data_actual_zone.set_last_fails(true);
                                 }
@@ -467,12 +606,12 @@ impl NameServer {
                                 refresh_zone_data
                                     .insert(val.to_string(), refresh_data_actual_zone.clone());
                                 self.set_refresh_zones_data(refresh_zone_data);
+
+                                queries_id_for_soa_rr.remove(&new_id);
+                                self.set_queries_id_for_soa_rr(queries_id_for_soa_rr.clone());
                             }
                             None => {}
                         }
-
-                        queries_id_for_soa_rr.remove(&new_id);
-                        self.set_queries_id_for_soa_rr(queries_id_for_soa_rr);
                     }
                 }
             }
@@ -486,6 +625,7 @@ impl NameServer {
         rx_add_ns_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_ns_tcp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_ns_tcp: Receiver<(String, String, u32)>,
+        rx_update_refresh_zone_tcp: Receiver<ZoneRefresh>,
     ) {
         name_server_ip_address.push_str(":53");
 
@@ -494,6 +634,14 @@ impl NameServer {
         let tx_delete_tcp = self.get_delete_channel_tcp();
         let tx_delete_ns_udp = self.get_delete_channel_ns_udp();
         let tx_delete_ns_tcp = self.get_delete_channel_ns_tcp();
+
+        // Channel to update zones
+        let tx_update_refresh_zone_udp = self.get_update_refresh_zone_udp();
+        let tx_update_refresh_zone_tcp = self.get_update_refresh_zone_tcp();
+
+        // Channel to update zones in local resolvers
+        let tx_update_zone_udp_resolver = self.get_update_zone_udp_resolver();
+        let tx_update_zone_tcp_resolver = self.get_update_zone_tcp_resolver();
 
         // Creates refresh data for zones
         let primary_server = self.get_primary_server();
@@ -541,6 +689,32 @@ impl NameServer {
                         Resolver::receive_tcp_msg(stream.try_clone().unwrap()).unwrap();
 
                     println!("{}", "Message recv");
+
+                    // Updates zone refresh and zones
+                    let mut received_update_refresh_zone = rx_update_refresh_zone_tcp.try_iter();
+
+                    let mut next_value = received_update_refresh_zone.next();
+
+                    let mut refresh_zones = self.get_refresh_zones_data();
+                    let mut zones = self.get_zones();
+
+                    while next_value.is_none() == false {
+                        let updated_refresh_zone = next_value.unwrap();
+                        let zone = updated_refresh_zone.get_zone();
+                        let zone_name = zone.get_name();
+
+                        tx_update_zone_udp_resolver.send(zone.clone());
+                        tx_update_zone_tcp_resolver.send(zone.clone());
+
+                        refresh_zones.insert(zone_name.clone(), updated_refresh_zone);
+                        zones.insert(zone_name, zone);
+
+                        next_value = received_update_refresh_zone.next();
+                    }
+
+                    self.set_zones(zones);
+                    self.set_refresh_zones_data(refresh_zones);
+                    //
 
                     // Delete from cache
 
@@ -636,49 +810,59 @@ impl NameServer {
 
                         thread::spawn(move || {
                             let query_id = dns_message.get_query_id();
+                            let qtype = dns_message.get_question().get_qtype();
 
-                            // Set RA bit to 1
-                            let new_msg = NameServer::set_ra(dns_message, true);
-
-                            let rd = new_msg.get_header().get_rd();
-
-                            if rd == true {
-                                println!("RD true");
-
-                                let mut response_dns_msg = NameServer::step_5_tcp(
-                                    resolver_ip_clone,
-                                    new_msg,
-                                    cache.clone(),
+                            if qtype == 253 {
+                                NameServer::send_axfr_response(
+                                    dns_message.clone(),
+                                    src_address.clone().to_string(),
                                     zones.clone(),
-                                );
-
-                                response_dns_msg.set_query_id(query_id.clone());
-
-                                println!("{:#?}", response_dns_msg.to_bytes());
-
-                                NameServer::send_response_by_tcp(
-                                    response_dns_msg,
-                                    src_address.to_string(),
-                                    stream.try_clone().unwrap(),
-                                );
-                            } else {
-                                let mut response_dns_msg = NameServer::step_2(
-                                    new_msg,
-                                    zones,
-                                    cache,
-                                    tx_delete_udp_copy,
-                                    tx_delete_tcp_copy,
-                                    tx_delete_ns_udp_copy,
-                                    tx_delete_ns_tcp_copy,
-                                );
-
-                                response_dns_msg.set_query_id(query_id);
-
-                                NameServer::send_response_by_tcp(
-                                    response_dns_msg,
-                                    src_address.to_string(),
                                     stream,
                                 );
+                            } else {
+                                // Set RA bit to 1
+                                let new_msg = NameServer::set_ra(dns_message, true);
+
+                                let rd = new_msg.get_header().get_rd();
+
+                                if rd == true {
+                                    println!("RD true");
+
+                                    let mut response_dns_msg = NameServer::step_5_tcp(
+                                        resolver_ip_clone,
+                                        new_msg,
+                                        cache.clone(),
+                                        zones.clone(),
+                                    );
+
+                                    response_dns_msg.set_query_id(query_id.clone());
+
+                                    println!("{:#?}", response_dns_msg.to_bytes());
+
+                                    NameServer::send_response_by_tcp(
+                                        response_dns_msg,
+                                        src_address.to_string(),
+                                        stream.try_clone().unwrap(),
+                                    );
+                                } else {
+                                    let mut response_dns_msg = NameServer::step_2(
+                                        new_msg,
+                                        zones,
+                                        cache,
+                                        tx_delete_udp_copy,
+                                        tx_delete_tcp_copy,
+                                        tx_delete_ns_udp_copy,
+                                        tx_delete_ns_tcp_copy,
+                                    );
+
+                                    response_dns_msg.set_query_id(query_id);
+
+                                    NameServer::send_response_by_tcp(
+                                        response_dns_msg,
+                                        src_address.to_string(),
+                                        stream,
+                                    );
+                                }
                             }
                         });
                     }
@@ -727,7 +911,7 @@ impl NameServer {
 
                                 if time_between_queries > retry {
                                     let zone = val.get_zone();
-                                    let msg = DnsMessage::refresh_query_msg(zone.clone());
+                                    let msg = DnsMessage::soa_rr_query_msg(zone.clone());
                                     let msg_id = msg.get_query_id();
                                     let mut queries_id_for_soa_rr =
                                         self.get_queries_id_for_soa_rr();
@@ -760,27 +944,115 @@ impl NameServer {
                                         val.set_timestamp(now_timestamp);
                                     } else {
                                         let msg = DnsMessage::from_bytes(&received_msg).unwrap();
+                                        let qtype = msg.get_question().get_qtype();
                                         let rcode = msg.get_header().get_rcode();
 
                                         if rcode == 0 {
-                                            let soa_rr = msg.get_answer()[0].clone();
-                                            let soa_rdata = match soa_rr.get_rdata() {
-                                                Rdata::SomeSoaRdata(val) => val,
-                                                _ => unreachable!(),
-                                            };
+                                            if qtype == 6 {
+                                                let soa_rr = msg.get_answer()[0].clone();
+                                                let soa_rdata = match soa_rr.get_rdata() {
+                                                    Rdata::SomeSoaRdata(val) => val,
+                                                    _ => unreachable!(),
+                                                };
 
-                                            let serial = soa_rdata.get_serial();
+                                                let serial = soa_rdata.get_serial();
 
-                                            let new_serial_greater_than_old =
-                                                val.new_serial_greater_than_old(serial);
+                                                let new_serial_greater_than_old =
+                                                    val.new_serial_greater_than_old(serial);
 
-                                            if new_serial_greater_than_old == true {
-                                                // Ask for the zone transfer by AXFR
-                                                // Update refresh zones data in NameServer
+                                                // Refresh zone necessary
+                                                if new_serial_greater_than_old == true {
+                                                    // Clone values for using in threads
+                                                    let mut val_copy = val.clone();
+                                                    let tx_update_refresh_zone_tcp_copy =
+                                                        tx_update_refresh_zone_tcp.clone();
+                                                    let tx_update_refresh_zone_udp_copy =
+                                                        tx_update_refresh_zone_udp.clone();
+                                                    //
+
+                                                    thread::spawn(move || {
+                                                        // Creates AXFR message
+                                                        let qname =
+                                                            val_copy.clone().get_zone().get_name();
+                                                        let axfr_message =
+                                                            DnsMessage::axfr_query_message(qname);
+                                                        //
+
+                                                        // Send TCP query to the name server
+                                                        let mut stream = TcpStream::connect(
+                                                            val_copy
+                                                                .get_ip_address_for_refresh_zone(),
+                                                        )
+                                                        .expect("Connect Failed");
+
+                                                        let bytes = axfr_message.to_bytes();
+
+                                                        let msg_length: u16 = bytes.len() as u16;
+
+                                                        let tcp_bytes_length = [
+                                                            (msg_length >> 8) as u8,
+                                                            msg_length as u8,
+                                                        ];
+
+                                                        let full_msg =
+                                                            [&tcp_bytes_length, bytes.as_slice()]
+                                                                .concat();
+
+                                                        stream.write(&full_msg);
+                                                        //
+
+                                                        // Receive response from name server and parse the msg
+
+                                                        let mut received_msg =
+                                                            Resolver::receive_tcp_msg(
+                                                                stream.try_clone().unwrap(),
+                                                            )
+                                                            .unwrap();
+
+                                                        let dns_axfr_msg_parse =
+                                                            DnsMessage::from_bytes(&received_msg)
+                                                                .unwrap();
+                                                        //
+
+                                                        // Check no errors and update zone
+                                                        if dns_axfr_msg_parse
+                                                            .get_header()
+                                                            .get_rcode()
+                                                            == 0
+                                                        {
+                                                            let mut update_zone =
+                                                                NSZone::from_axfr_msg(
+                                                                    dns_axfr_msg_parse,
+                                                                );
+
+                                                            update_zone.set_ip_address_for_refresh_zone(
+                                                                val_copy
+                                                                    .get_ip_address_for_refresh_zone(),
+                                                            );
+
+                                                            // Update refresh zone with new soa values in tcp and udp name servers
+                                                            val_copy.update_zone(update_zone);
+
+                                                            tx_update_refresh_zone_udp_copy
+                                                                .send(val_copy.clone());
+
+                                                            tx_update_refresh_zone_tcp_copy
+                                                                .send(val_copy.clone());
+                                                            //
+                                                        }
+                                                        //
+                                                    });
+                                                }
+                                                //
+                                                else {
+                                                    // Updates the last query timestamp
+                                                    let now = Utc::now();
+                                                    let now_timestamp = now.timestamp() as u32;
+
+                                                    val.set_timestamp(now_timestamp);
+                                                    //
+                                                }
                                             }
-                                            let now = Utc::now();
-                                            let now_timestamp = now.timestamp() as u32;
-                                            val.set_timestamp(now_timestamp);
                                         } else {
                                             val.set_last_fails(true);
                                             val.set_timestamp(now_timestamp);
@@ -793,7 +1065,7 @@ impl NameServer {
 
                                 if time_between_queries > refresh {
                                     let zone = val.get_zone();
-                                    let msg = DnsMessage::refresh_query_msg(zone.clone());
+                                    let msg = DnsMessage::soa_rr_query_msg(zone.clone());
                                     let msg_id = msg.get_query_id();
                                     let mut queries_id_for_soa_rr =
                                         self.get_queries_id_for_soa_rr();
@@ -826,27 +1098,115 @@ impl NameServer {
                                         val.set_timestamp(now_timestamp);
                                     } else {
                                         let msg = DnsMessage::from_bytes(&received_msg).unwrap();
+                                        let qtype = msg.get_question().get_qtype();
                                         let rcode = msg.get_header().get_rcode();
 
                                         if rcode == 0 {
-                                            let soa_rr = msg.get_answer()[0].clone();
-                                            let soa_rdata = match soa_rr.get_rdata() {
-                                                Rdata::SomeSoaRdata(val) => val,
-                                                _ => unreachable!(),
-                                            };
+                                            if qtype == 6 {
+                                                let soa_rr = msg.get_answer()[0].clone();
+                                                let soa_rdata = match soa_rr.get_rdata() {
+                                                    Rdata::SomeSoaRdata(rdata) => rdata,
+                                                    _ => unreachable!(),
+                                                };
 
-                                            let serial = soa_rdata.get_serial();
+                                                let serial = soa_rdata.get_serial();
 
-                                            let new_serial_greater_than_old =
-                                                val.new_serial_greater_than_old(serial);
+                                                let new_serial_greater_than_old =
+                                                    val.new_serial_greater_than_old(serial);
 
-                                            if new_serial_greater_than_old == true {
-                                                // Ask for the zone transfer by AXFR
-                                                // Update refresh zones data in NameServer
+                                                // Refresh zone necessary
+                                                if new_serial_greater_than_old == true {
+                                                    // Clone values for using in threads
+                                                    let mut val_copy = val.clone();
+                                                    let tx_update_refresh_zone_tcp_copy =
+                                                        tx_update_refresh_zone_tcp.clone();
+                                                    let tx_update_refresh_zone_udp_copy =
+                                                        tx_update_refresh_zone_udp.clone();
+                                                    //
+
+                                                    thread::spawn(move || {
+                                                        // Creates AXFR message
+                                                        let qname =
+                                                            val_copy.clone().get_zone().get_name();
+                                                        let axfr_message =
+                                                            DnsMessage::axfr_query_message(qname);
+                                                        //
+
+                                                        // Send TCP query to the name server
+                                                        let mut stream = TcpStream::connect(
+                                                            val_copy
+                                                                .get_ip_address_for_refresh_zone(),
+                                                        )
+                                                        .expect("Connect Failed");
+
+                                                        let bytes = axfr_message.to_bytes();
+
+                                                        let msg_length: u16 = bytes.len() as u16;
+
+                                                        let tcp_bytes_length = [
+                                                            (msg_length >> 8) as u8,
+                                                            msg_length as u8,
+                                                        ];
+
+                                                        let full_msg =
+                                                            [&tcp_bytes_length, bytes.as_slice()]
+                                                                .concat();
+
+                                                        stream.write(&full_msg);
+                                                        //
+
+                                                        // Receive response from name server and parse the msg
+
+                                                        let mut received_msg =
+                                                            Resolver::receive_tcp_msg(
+                                                                stream.try_clone().unwrap(),
+                                                            )
+                                                            .unwrap();
+
+                                                        let dns_axfr_msg_parse =
+                                                            DnsMessage::from_bytes(&received_msg)
+                                                                .unwrap();
+                                                        //
+
+                                                        // Check no errors and update zone
+                                                        if dns_axfr_msg_parse
+                                                            .get_header()
+                                                            .get_rcode()
+                                                            == 0
+                                                        {
+                                                            let mut update_zone =
+                                                                NSZone::from_axfr_msg(
+                                                                    dns_axfr_msg_parse,
+                                                                );
+
+                                                            update_zone.set_ip_address_for_refresh_zone(
+                                                                val_copy
+                                                                    .get_ip_address_for_refresh_zone(),
+                                                            );
+
+                                                            // Update refresh zone with new soa values in tcp and udp name servers
+                                                            val_copy.update_zone(update_zone);
+
+                                                            tx_update_refresh_zone_udp_copy
+                                                                .send(val_copy.clone());
+
+                                                            tx_update_refresh_zone_tcp_copy
+                                                                .send(val_copy.clone());
+                                                            //
+                                                        }
+                                                        //
+                                                    });
+                                                }
+                                                //
+                                                else {
+                                                    // Updates the last query timestamp
+                                                    let now = Utc::now();
+                                                    let now_timestamp = now.timestamp() as u32;
+
+                                                    val.set_timestamp(now_timestamp);
+                                                    //
+                                                }
                                             }
-                                            let now = Utc::now();
-                                            let now_timestamp = now.timestamp() as u32;
-                                            val.set_timestamp(now_timestamp);
                                         } else {
                                             val.set_last_fails(true);
                                             val.set_timestamp(now_timestamp);
@@ -1334,7 +1694,7 @@ impl NameServer {
                     }
                 }
                 2 => {
-                    let mut name_ns = match answer.get_rdata() {
+                    let name_ns = match answer.get_rdata() {
                         Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
                         _ => unreachable!(),
                     };
@@ -1522,6 +1882,60 @@ impl NameServer {
 
         stream.write(&full_msg);
     }
+
+    fn send_axfr_response(
+        mut msg: DnsMessage,
+        address: String,
+        zones: HashMap<String, NSZone>,
+        stream: TcpStream,
+    ) {
+        let zone_name = msg.get_question().get_qname().get_name();
+        let zone = zones.get(&zone_name).unwrap();
+
+        // Create response msg
+        let mut header = msg.get_header();
+        let mut answers = msg.get_answer();
+
+        // Set headers bits
+        header.set_qr(true);
+        //
+
+        // Add Soa rr first
+        let soa_rr = zone.get_rrs_by_type(6)[0].clone();
+
+        answers.push(soa_rr.clone());
+        //
+
+        // Add others RRs from top node to the answer
+        let rrs = zone.get_value();
+
+        for rr in rrs {
+            if rr.get_type_code() != 6 {
+                answers.push(rr);
+            }
+        }
+        //
+
+        // Add rrs from the children
+        let children = zone.get_children();
+
+        for child in children {
+            let mut rrs_from_child = child.get_all_rrs();
+            answers.append(&mut rrs_from_child);
+        }
+        //
+
+        // Add Soa rr last
+        answers.push(soa_rr);
+        //
+
+        msg.set_answer(answers);
+        msg.set_header(header);
+
+        //
+
+        NameServer::send_response_by_tcp(msg, address, stream);
+    }
 }
 
 // Utils
@@ -1636,6 +2050,26 @@ impl NameServer {
     /// Get the owner's query address
     pub fn get_delete_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_tcp.clone()
+    }
+
+    /// Gets the sender to update a refresh zone in name server udp
+    pub fn get_update_refresh_zone_tcp(&self) -> Sender<ZoneRefresh> {
+        self.update_refresh_zone_tcp.clone()
+    }
+
+    /// Gets the sender to update a refresh zone in name server tcp
+    pub fn get_update_refresh_zone_udp(&self) -> Sender<ZoneRefresh> {
+        self.update_refresh_zone_udp.clone()
+    }
+
+    /// Gets the sender to update a zone in the udp resolver
+    pub fn get_update_zone_udp_resolver(&self) -> Sender<NSZone> {
+        self.update_zone_udp_resolver.clone()
+    }
+
+    /// Gets the sender to update a zone in the tcp resolver
+    pub fn get_update_zone_tcp_resolver(&self) -> Sender<NSZone> {
+        self.update_zone_tcp_resolver.clone()
     }
 }
 

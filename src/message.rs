@@ -128,7 +128,7 @@ impl DnsMessage {
         dns_message
     }
 
-    pub fn refresh_query_msg(zone: NSZone) -> Self {
+    pub fn soa_rr_query_msg(zone: NSZone) -> Self {
         let mut rng = thread_rng();
         let msg_id = rng.gen();
 
@@ -145,6 +145,15 @@ impl DnsMessage {
 
         header.set_rcode(1);
         msg.set_header(header);
+
+        msg
+    }
+
+    pub fn axfr_query_message(qname: String) -> Self {
+        let mut rng = thread_rng();
+        let msg_id = rng.gen();
+
+        let msg = DnsMessage::new_query_message(qname, 252, 1, 0, false, msg_id);
 
         msg
     }

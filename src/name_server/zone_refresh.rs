@@ -54,6 +54,29 @@ impl ZoneRefresh {
             return false;
         }
     }
+
+    pub fn update_zone(&mut self, zone: NSZone) {
+        let soa_rr = zone.get_rrs_by_type(6)[0].clone();
+        let soa_rdata = match soa_rr.get_rdata() {
+            Rdata::SomeSoaRdata(val) => val,
+            _ => unreachable!(),
+        };
+
+        let serial = soa_rdata.get_serial();
+        let refresh = soa_rdata.get_refresh();
+        let retry = soa_rdata.get_retry();
+        let expire = soa_rdata.get_expire();
+        let now = Utc::now();
+        let now_timestamp = now.timestamp() as u32;
+
+        self.set_serial(serial);
+        self.set_refresh(refresh);
+        self.set_retry(retry);
+        self.set_expire(expire);
+        self.set_zone(zone);
+        self.set_last_fails(false);
+        self.set_timestamp(now_timestamp);
+    }
 }
 
 // Setters

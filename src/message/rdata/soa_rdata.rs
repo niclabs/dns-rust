@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for soa type
@@ -143,16 +145,39 @@ impl ToBytes for SoaRdata {
     }
 }
 
-impl FromBytes<SoaRdata> for SoaRdata {
+impl FromBytes<Result<Self, &'static str>> for SoaRdata {
     /// Creates a new SoaRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
-        let mut soa_rdata = SoaRdata::new();
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let mname_result = DomainName::from_bytes(bytes, full_msg);
 
-        let (mname, bytes_without_mname) = DomainName::from_bytes(bytes);
-        let (rname, bytes_without_rname) = DomainName::from_bytes(bytes_without_mname);
+        match mname_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (mname, bytes_without_mname) = mname_result.unwrap();
+
+        let rname_result = DomainName::from_bytes(bytes_without_mname, full_msg);
+
+        match rname_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (rname, bytes_without_rname) = rname_result.unwrap();
+
+        let mut soa_rdata = SoaRdata::new();
 
         soa_rdata.set_mname(mname);
         soa_rdata.set_rname(rname);
+
+        if bytes_without_rname.len() < 20 {
+            return Err("Format Error");
+        }
 
         soa_rdata.set_serial_from_bytes(&bytes_without_rname[0..4]);
         soa_rdata.set_refresh_from_bytes(&bytes_without_rname[4..8]);
@@ -160,7 +185,7 @@ impl FromBytes<SoaRdata> for SoaRdata {
         soa_rdata.set_expire_from_bytes(&bytes_without_rname[12..16]);
         soa_rdata.set_minimum_from_bytes(&bytes_without_rname[16..20]);
 
-        soa_rdata
+        Ok(soa_rdata)
     }
 }
 
@@ -189,6 +214,59 @@ impl SoaRdata {
         };
 
         soa_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        mut ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> (ResourceRecord, u32) {
+        let mut soa_rdata = SoaRdata::new();
+        let mut m_name = DomainName::new();
+        let mut r_name = DomainName::new();
+
+        let m_name_str = values.next().unwrap();
+        let r_name_str = values.next().unwrap();
+        let serial = values.next().unwrap().parse::<u32>().unwrap();
+        let refresh = values.next().unwrap().parse::<u32>().unwrap();
+        let retry = values.next().unwrap().parse::<u32>().unwrap();
+        let expire = values.next().unwrap().parse::<u32>().unwrap();
+        let minimum = values.next().unwrap().parse::<u32>().unwrap();
+
+        m_name.set_name(m_name_str.to_string());
+        r_name.set_name(r_name_str.to_string());
+
+        soa_rdata.set_mname(m_name);
+        soa_rdata.set_rname(r_name);
+        soa_rdata.set_serial(serial);
+        soa_rdata.set_refresh(refresh);
+        soa_rdata.set_retry(retry);
+        soa_rdata.set_expire(expire);
+        soa_rdata.set_minimum(minimum);
+
+        let rdata = Rdata::SomeSoaRdata(soa_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(6);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(20 + m_name_str.len() as u16 + r_name_str.len() as u16 + 4);
+
+        (resource_record, minimum)
     }
 
     /// Gets the first byte from the serial value
@@ -460,8 +538,8 @@ impl SoaRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::soa_rdata::SoaRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::soa_rdata::SoaRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -589,7 +667,7 @@ mod test {
             0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1,
         ];
 
-        let soa_rdata = SoaRdata::from_bytes(&bytes);
+        let soa_rdata = SoaRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(soa_rdata.get_mname().get_name(), String::from("test.com"));
         assert_eq!(soa_rdata.get_rname().get_name(), String::from("test.com"));

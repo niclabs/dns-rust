@@ -1,4 +1,8 @@
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::domain_name::DomainName;
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+
+use std::str::SplitWhitespace;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for a type
@@ -20,16 +24,22 @@ impl ToBytes for ARdata {
     }
 }
 
-impl FromBytes<ARdata> for ARdata {
+impl FromBytes<Result<Self, &'static str>> for ARdata {
     /// Creates a new ARdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 4 {
+            return Err("Format Error");
+        }
+
         let mut a_rdata = ARdata::new();
 
         let array_bytes = [bytes[0], bytes[1], bytes[2], bytes[3]];
 
         a_rdata.set_address(array_bytes);
 
-        a_rdata
+        Ok(a_rdata)
     }
 }
 
@@ -52,6 +62,67 @@ impl ARdata {
 
         a_rdata
     }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let mut a_rdata = ARdata::new();
+        let mut address: [u8; 4] = [0; 4];
+        let str_ip = values.next().unwrap();
+        let bytes_str: Vec<&str> = str_ip.split(".").collect();
+        let mut index = 0;
+
+        for byte in bytes_str {
+            let numb_byte = byte.parse::<u8>().unwrap();
+            address[index] = numb_byte;
+            index = index + 1;
+        }
+
+        a_rdata.set_address(address);
+
+        let rdata = Rdata::SomeARdata(a_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+
+        resource_record.set_type_code(1);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(4);
+
+        resource_record
+    }
+
+    pub fn get_string_address(&self) -> String {
+        let ip = self.get_address();
+
+        let mut ip_address = "".to_string();
+
+        for num in ip.iter() {
+            ip_address.push_str(num.to_string().as_str());
+            ip_address.push_str(".");
+        }
+
+        ip_address.pop();
+
+        ip_address
+    }
 }
 
 // Getters
@@ -71,8 +142,8 @@ impl ARdata {
 }
 
 mod test {
-    use crate::rdata::a_rdata::ARdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -117,7 +188,7 @@ mod test {
     #[test]
     fn from_bytes_test() {
         let bytes: [u8; 4] = [128, 0, 0, 1];
-        let a_rdata = ARdata::from_bytes(&bytes);
+        let a_rdata = ARdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(a_rdata.get_address()[0], 128);
         assert_eq!(a_rdata.get_address()[1], 0);

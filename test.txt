@@ -1,0 +1,25 @@
+$ORIGIN uchile.cl
+@   IN        SOA     VENERA      Action\.domains (
+                                 20     ; SERIAL
+                                 7200   ; REFRESH
+                                 600    ; RETRY
+                                 3600000; EXPIRE
+                                 60)    ; MINIMUM
+
+              NS      A.ISI.EDU.
+              NS      VENERA
+              NS      VAXA
+              MX      10      VENERA
+              MX      20      VAXA
+
+dcc           A       192.80.24.11
+
+*.dcc         A       192.80.24.10
+              NS      test.com
+
+test          CNAME   test.com
+
+delegation    NS  ns.delegation.uchile.cl
+              NS  ns2.test.com
+
+ns.delegation A 127.0.0.1

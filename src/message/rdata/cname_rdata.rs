@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for cname type
@@ -27,18 +29,33 @@ impl ToBytes for CnameRdata {
     }
 }
 
-impl FromBytes<CnameRdata> for CnameRdata {
+impl FromBytes<Result<Self, &'static str>> for CnameRdata {
     /// Creates a new Cname from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 1 {
+            return Err("Format Error");
+        }
+
+        let domain_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (cname, _) = domain_result.unwrap();
+
         let mut cname_rdata = CnameRdata::new();
 
-        let (cname, _) = DomainName::from_bytes(bytes);
+        cname_rdata.set_cname(cname);
 
-        cname_rdata.set_cname(cname); 
-
-        cname_rdata
+        Ok(cname_rdata)
     }
-}            
+}
 
 impl CnameRdata {
     /// Creates a new CnameRdata with default values.
@@ -51,10 +68,48 @@ impl CnameRdata {
     ///
 
     pub fn new() -> Self {
-        let cname_rdata = CnameRdata { 
+        let cname_rdata = CnameRdata {
             cname: DomainName::new(),
         };
         cname_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let mut cname_rdata = CnameRdata::new();
+        let mut domain_name = DomainName::new();
+        let name = values.next().unwrap();
+
+        domain_name.set_name(name.to_string());
+        cname_rdata.set_cname(domain_name);
+
+        let rdata = Rdata::SomeCnameRdata(cname_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(5);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(name.len() as u16 + 2);
+
+        resource_record
     }
 }
 
@@ -76,8 +131,8 @@ impl CnameRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::cname_rdata::CnameRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::cname_rdata::CnameRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -119,7 +174,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 7] = [5, 99, 110, 97, 109, 101, 0];
 
-        let cname_rdata = CnameRdata::from_bytes(&bytes);
+        let cname_rdata = CnameRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(cname_rdata.get_cname().get_name(), String::from("cname"));
     }

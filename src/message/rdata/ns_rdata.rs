@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for ns type
@@ -29,15 +31,30 @@ impl ToBytes for NsRdata {
     }
 }
 
-impl FromBytes<NsRdata> for NsRdata {
+impl FromBytes<Result<Self, &'static str>> for NsRdata {
     /// Creates a new NsRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
-        let mut ns_rdata = NsRdata::new();
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
 
-        let (domain_name, _) = DomainName::from_bytes(bytes);
+        if bytes_len < 2 {
+            return Err("Format Error");
+        }
+
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let mut ns_rdata = NsRdata::new();
+        let (domain_name, _) = domain_name_result.unwrap();
+
         ns_rdata.set_nsdname(domain_name);
 
-        ns_rdata
+        Ok(ns_rdata)
     }
 }
 
@@ -57,6 +74,44 @@ impl NsRdata {
         };
 
         ns_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let mut ns_rdata = NsRdata::new();
+        let mut domain_name = DomainName::new();
+        let name = values.next().unwrap();
+
+        domain_name.set_name(name.to_string());
+
+        ns_rdata.set_nsdname(domain_name);
+
+        let rdata = Rdata::SomeNsRdata(ns_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(2);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(name.len() as u16 + 2);
+
+        resource_record
     }
 }
 
@@ -78,8 +133,8 @@ impl NsRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::ns_rdata::NsRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::ns_rdata::NsRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -125,7 +180,7 @@ mod test {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
-        let ns_rdata = NsRdata::from_bytes(&bytes_test);
+        let ns_rdata = NsRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
 
         assert_eq!(
             ns_rdata.get_nsdname().get_name(),

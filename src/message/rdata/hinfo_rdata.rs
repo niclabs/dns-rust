@@ -1,4 +1,8 @@
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::domain_name::DomainName;
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+
+use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone)]
@@ -40,41 +44,37 @@ impl ToBytes for HinfoRdata {
 
         bytes
     }
-
 }
 
-impl FromBytes<HinfoRdata> for HinfoRdata {
+impl FromBytes<Result<Self, &'static str>> for HinfoRdata {
     /// Creates a new HinfoRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut cpu = String::from("");
         let mut os = String::from("");
 
         let mut string_num = 0;
-        
+
         for byte in bytes {
-            if *byte == 0{
-                if string_num == 0{
-                    string_num +=1;
+            if *byte == 0 {
+                if string_num == 0 {
+                    string_num += 1;
+                } else {
+                    break;
                 }
-                else{
-                    break; 
-                }
-            } 
-            else if string_num == 0{
-                cpu.push(*byte as char); 
-            }
-            else if string_num > 0{
+            } else if string_num == 0 {
+                cpu.push(*byte as char);
+            } else if string_num > 0 {
                 os.push(*byte as char);
             }
         }
 
         let mut hinfo_rdata = HinfoRdata::new();
         hinfo_rdata.set_cpu(cpu);
-        hinfo_rdata.set_os(os); 
+        hinfo_rdata.set_os(os);
 
-        hinfo_rdata
+        Ok(hinfo_rdata)
     }
-}            
+}
 
 impl HinfoRdata {
     /// Creates a new HinfoRdata with default values.
@@ -89,11 +89,48 @@ impl HinfoRdata {
     ///
 
     pub fn new() -> Self {
-        let hinfo_rdata = HinfoRdata { 
+        let hinfo_rdata = HinfoRdata {
             cpu: String::new(),
             os: String::new(),
         };
         hinfo_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let mut hinfo_rdata = HinfoRdata::new();
+        let cpu = values.next().unwrap();
+        let os = values.next().unwrap();
+
+        hinfo_rdata.set_cpu(cpu.to_string());
+        hinfo_rdata.set_os(os.to_string());
+
+        let rdata = Rdata::SomeHinfoRdata(hinfo_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(13);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(cpu.len() as u16 + os.len() as u16);
+
+        resource_record
     }
 }
 
@@ -122,8 +159,8 @@ impl HinfoRdata {
 }
 
 mod test {
-    use crate::rdata::hinfo_rdata::HinfoRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::hinfo_rdata::HinfoRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -174,7 +211,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 7] = [99, 112, 117, 0, 111, 115, 0];
 
-        let hinfo_rdata = HinfoRdata::from_bytes(&bytes);
+        let hinfo_rdata = HinfoRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(hinfo_rdata.get_cpu(), String::from("cpu"));
         assert_eq!(hinfo_rdata.get_os(), String::from("os"));

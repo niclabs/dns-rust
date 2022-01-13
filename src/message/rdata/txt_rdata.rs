@@ -1,4 +1,8 @@
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::domain_name::DomainName;
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+
+use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone)]
@@ -27,9 +31,9 @@ impl ToBytes for TxtRdata {
     }
 }
 
-impl FromBytes<TxtRdata> for TxtRdata {
+impl FromBytes<Result<Self, &'static str>> for TxtRdata {
     /// Creates a new TxtRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut string = String::from("");
 
         for byte in bytes {
@@ -38,7 +42,7 @@ impl FromBytes<TxtRdata> for TxtRdata {
 
         let txt_rdata = TxtRdata::new(string);
 
-        txt_rdata
+        Ok(txt_rdata)
     }
 }
 
@@ -56,6 +60,40 @@ impl TxtRdata {
         let txt_rdata = TxtRdata { text: text };
 
         txt_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let text = values.next().unwrap();
+
+        let mut txt_rdata = TxtRdata::new(text.to_string());
+
+        let rdata = Rdata::SomeTxtRdata(txt_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(16);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(text.len() as u16);
+
+        resource_record
     }
 }
 
@@ -76,8 +114,8 @@ impl TxtRdata {
 }
 
 mod test {
-    use crate::rdata::txt_rdata::TxtRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::txt_rdata::TxtRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -108,7 +146,8 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 4] = [116, 101, 115, 116];
 
-        let txt_rdata = TxtRdata::from_bytes(&bytes);
+        // bytes is not the full msg, but in this case it will not use inside
+        let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(txt_rdata.get_text(), String::from("test"));
     }

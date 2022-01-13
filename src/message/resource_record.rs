@@ -1,5 +1,5 @@
 use crate::domain_name::DomainName;
-use crate::rdata::Rdata;
+use crate::message::rdata::Rdata;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -47,7 +47,7 @@ pub trait ToBytes {
 
 /// Trait to create an struct from bytes
 pub trait FromBytes<T> {
-    fn from_bytes(bytes: &[u8]) -> T;
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> T;
 }
 
 // Methods
@@ -102,8 +102,24 @@ impl ResourceRecord {
     /// );
     /// ```
     ///
-    fn from_bytes(bytes: &[u8]) -> ResourceRecord {
-        let (name, bytes_without_name) = DomainName::from_bytes(bytes);
+    pub fn from_bytes<'a>(
+        bytes: &'a [u8],
+        full_msg: &'a [u8],
+    ) -> Result<(ResourceRecord, &'a [u8]), &'static str> {
+        let bytes_len = bytes.len();
+
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg.clone());
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => return Err(e),
+        }
+
+        let (name, bytes_without_name) = domain_name_result.unwrap();
+
+        if bytes_without_name.len() < 10 {
+            return Err("Format Error");
+        }
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
@@ -113,11 +129,26 @@ impl ResourceRecord {
             | bytes_without_name[7] as u32;
         let rdlength = ((bytes_without_name[8] as u16) << 8) | bytes_without_name[9] as u16;
 
+        let end_rr_byte = 10 + rdlength as usize;
+
+        if bytes_without_name.len() < end_rr_byte {
+            return Err("Format Error");
+        }
+
         let mut rdata_bytes_vec = bytes_without_name[10..].to_vec();
         rdata_bytes_vec.push(bytes_without_name[0]);
         rdata_bytes_vec.push(bytes_without_name[1]);
 
-        let rdata = Rdata::from_bytes(rdata_bytes_vec.as_slice());
+        let rdata_result = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
+
+        match rdata_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let rdata = rdata_result.unwrap();
 
         let resource_record = ResourceRecord {
             name: name,
@@ -128,7 +159,7 @@ impl ResourceRecord {
             rdata: rdata,
         };
 
-        resource_record
+        Ok((resource_record, &bytes_without_name[end_rr_byte..]))
     }
 
     /// Returns a byte that represents the first byte from type code in the dns message.
@@ -265,18 +296,37 @@ impl ResourceRecord {
         rr_bytes.push(self.get_second_ttl_byte());
         rr_bytes.push(self.get_third_ttl_byte());
         rr_bytes.push(self.get_fourth_ttl_byte());
-        rr_bytes.push(self.get_first_rdlength_byte());
-        rr_bytes.push(self.get_second_rdlength_byte());
 
         let rdata_bytes = self.rdata_to_bytes();
+        let rd_length: u16 = rdata_bytes.len() as u16;
 
-        println!("{:#?}", rdata_bytes);
+        rr_bytes.push((rd_length >> 8) as u8);
+        rr_bytes.push(rd_length as u8);
 
         for byte in rdata_bytes.as_slice() {
             rr_bytes.push(*byte);
         }
 
         rr_bytes
+    }
+
+    pub fn get_string_type(&self) -> String {
+        let qtype = match self.get_type_code() {
+            1 => "A".to_string(),
+            2 => "NS".to_string(),
+            5 => "CNAME".to_string(),
+            6 => "SOA".to_string(),
+            11 => "WKS".to_string(),
+            12 => "PTR".to_string(),
+            13 => "HINFO".to_string(),
+            14 => "MINFO".to_string(),
+            15 => "MX".to_string(),
+            16 => "TXT".to_string(),
+            28 => "AAAA".to_string(),
+            _ => unreachable!(),
+        };
+
+        qtype
     }
 }
 
@@ -349,9 +399,9 @@ impl ResourceRecord {
 // Tests
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::txt_rdata::TxtRdata;
-    use crate::rdata::Rdata;
-    use crate::resource_record::ResourceRecord;
+    use crate::message::rdata::txt_rdata::TxtRdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
 
     #[test]
     fn constructor_test() {
@@ -470,7 +520,15 @@ mod test {
             101, 108, 108, 111,
         ];
 
-        let resource_record_test = ResourceRecord::from_bytes(&bytes_msg);
+        let full_msg: [u8; 54] = [
+            0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6,
+            0b01110101, 0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011,
+            0b01101100, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0,
+            0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
+        ];
+
+        let (resource_record_test, _other_rr_bytes) =
+            ResourceRecord::from_bytes(&bytes_msg, &full_msg).unwrap();
 
         assert_eq!(
             resource_record_test.get_name().get_name(),

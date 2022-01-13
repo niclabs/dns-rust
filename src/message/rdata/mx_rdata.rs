@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
-use crate::resource_record::{FromBytes, ToBytes};
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 
 #[derive(Clone)]
 /// An struct that represents the rdata for mx type
@@ -37,20 +39,34 @@ impl ToBytes for MxRdata {
     }
 }
 
-impl FromBytes<MxRdata> for MxRdata {
+impl FromBytes<Result<Self, &'static str>> for MxRdata {
     /// Creates a new MxRdata from an array of bytes
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 3 {
+            return Err("Format Error");
+        }
+
         let preference = (bytes[0] as u16) << 8 | bytes[1] as u16;
 
-        // This must be replace for a DomainName struct
-        let (exchange, _) = DomainName::from_bytes(&bytes[2..]);
+        let domain_name_result = DomainName::from_bytes(&bytes[2..], full_msg);
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (exchange, _) = domain_name_result.unwrap();
 
         let mut mx_rdata = MxRdata::new();
 
         mx_rdata.set_preference(preference);
         mx_rdata.set_exchange(exchange);
 
-        mx_rdata
+        Ok(mx_rdata)
     }
 }
 
@@ -70,6 +86,47 @@ impl MxRdata {
             exchange: DomainName::new(),
         };
         mx_rdata
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        host_name: String,
+    ) -> ResourceRecord {
+        let mut mx_rdata = MxRdata::new();
+        let mut domain_name = DomainName::new();
+
+        let preference = values.next().unwrap().parse::<u16>().unwrap();
+        let name = values.next().unwrap();
+
+        domain_name.set_name(name.to_string());
+
+        mx_rdata.set_exchange(domain_name);
+        mx_rdata.set_preference(preference);
+
+        let rdata = Rdata::SomeMxRdata(mx_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(15);
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        resource_record.set_class(class_int);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(name.len() as u16 + 4);
+
+        resource_record
     }
 
     // Gets the first byte from the preference attribute
@@ -111,8 +168,8 @@ impl MxRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::rdata::mx_rdata::MxRdata;
-    use crate::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::mx_rdata::MxRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -169,7 +226,7 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 12] = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0];
 
-        let mx_rdata = MxRdata::from_bytes(&bytes);
+        let mx_rdata = MxRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(mx_rdata.get_preference(), 128);
         assert_eq!(mx_rdata.get_exchange().get_name(), String::from("test.com"));

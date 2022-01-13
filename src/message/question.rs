@@ -1,6 +1,6 @@
 use crate::domain_name::DomainName;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 /// An struct that represents the question section from a dns message
 ///
 ///                                1  1  1  1  1  1
@@ -15,12 +15,12 @@ use crate::domain_name::DomainName;
 ///
 
 // DNS question format of a query.
-pub struct Question{
-	qname: DomainName,
+pub struct Question {
+    qname: DomainName,
     // type of query
-	qtype: u16,
+    qtype: u16,
     // class of query
-	qclass: u16,
+    qclass: u16,
 }
 
 // Methods
@@ -44,10 +44,26 @@ impl Question {
         };
         question
     }
-    
+
     /// Given an array of bytes, creates a new Question.
-    fn from_bytes(bytes: &[u8]) -> Question {
-        let (qname, bytes_without_name) = DomainName::from_bytes(bytes);
+    pub fn from_bytes<'a>(
+        bytes: &'a [u8],
+        full_msg: &'a [u8],
+    ) -> Result<(Question, &'a [u8]), &'static str> {
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (qname, bytes_without_name) = domain_name_result.unwrap();
+
+        if bytes_without_name.len() < 4 {
+            return Err("Format Error");
+        }
 
         let qtype = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let qclass = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
@@ -57,14 +73,14 @@ impl Question {
         question.set_qtype(qtype);
         question.set_qclass(qclass);
 
-        question
+        Ok((question, &bytes_without_name[4..]))
     }
 
     /// Returns a byte that represents the first byte from qtype.
     fn get_first_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
         let first_byte = (qtype >> 8) as u8;
-    
+
         first_byte
     }
 
@@ -96,25 +112,30 @@ impl Question {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut question_bytes: Vec<u8> = Vec::new();
 
-        let qname_bytes = self.get_qname().to_bytes();
-        for byte in qname_bytes.as_slice() {
-            question_bytes.push(*byte);
+        let qname = self.get_qname().get_name();
+
+        if qname == "".to_string() {
+            return question_bytes;
+        } else {
+            let qname_bytes = self.get_qname().to_bytes();
+            for byte in qname_bytes.as_slice() {
+                question_bytes.push(*byte);
+            }
+
+            question_bytes.push(self.get_first_qtype_byte());
+            question_bytes.push(self.get_second_qtype_byte());
+            question_bytes.push(self.get_first_qclass_byte());
+            question_bytes.push(self.get_second_qclass_byte());
+
+            question_bytes
         }
-
-        question_bytes.push(self.get_first_qtype_byte());
-        question_bytes.push(self.get_second_qtype_byte());
-        question_bytes.push(self.get_first_qclass_byte());
-        question_bytes.push(self.get_second_qclass_byte());
-
-        question_bytes
     }
 }
-
 
 // Setters
 impl Question {
     pub fn set_qname(&mut self, qname: DomainName) {
-        self.qname = qname; 
+        self.qname = qname;
     }
 
     pub fn set_qtype(&mut self, qtype: u16) {
@@ -143,8 +164,8 @@ impl Question {
 
 // Tests
 mod test {
+    use super::Question;
     use crate::domain_name::DomainName;
-    use super::Question; 
 
     #[test]
     fn constructor_test() {
@@ -189,7 +210,7 @@ mod test {
 
         question.set_qclass(1 as u16);
         let qclass = question.get_qclass();
-        
+
         assert_eq!(qclass, 1 as u16);
     }
 
@@ -216,12 +237,10 @@ mod test {
     fn from_bytes_test() {
         let bytes: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2];
 
-        let question = Question::from_bytes(&bytes);
+        let (question, _others_msg_bytes) = Question::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
         assert_eq!(question.get_qtype(), 5);
         assert_eq!(question.get_qclass(), 2);
     }
 }
-
-

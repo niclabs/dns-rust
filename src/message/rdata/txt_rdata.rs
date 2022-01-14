@@ -12,7 +12,7 @@ use std::string::String;
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 ///
 pub struct TxtRdata {
-    // One or more characters
+    // One or more <character-string>s.
     text: String,
 }
 

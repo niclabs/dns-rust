@@ -159,7 +159,7 @@ impl NSZone {
             children.remove(index as usize);
             children.push(child);
             self.set_children(children);
-        } else {
+        } else if self.check_label_name(label.to_string()) {
             let mut new_ns_zone = NSZone::new();
             new_ns_zone.set_name(label.to_string());
 
@@ -244,6 +244,24 @@ impl NSZone {
         }
 
         rrs
+    }
+
+    fn check_label_name(&self, name: String) -> bool {
+        if name.len() > 63 {
+            return false;
+        }
+        
+        for (i, c) in name.chars().enumerate() {
+            if i==0 && !c.is_ascii_alphabetic(){
+                return false;
+            } else if i==name.len()-1 && !c.is_ascii_alphanumeric(){
+                return false;
+            } else if !(c.is_ascii_alphanumeric() || c=='_') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
@@ -443,6 +461,10 @@ mod test {
 
     /*#[test]
     fn add_node_test(){
+    }*/
+
+    /*#[test]
+    fn add_node_test(){ using a wrong domain
     }*/
 
     #[test]

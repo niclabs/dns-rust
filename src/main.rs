@@ -1,18 +1,6 @@
 pub mod client;
 pub mod dns_cache;
 pub mod domain_name;
-<<<<<<< HEAD
-pub mod header;
-pub mod question; 
-pub mod rdata;
-pub mod resource_record;
-pub mod udp_client;
-pub mod udp_server;
-pub mod tcp_client;
-pub mod tcp_server; 
-
-pub fn main() {}
-=======
 pub mod message;
 pub mod name_server;
 pub mod resolver;
@@ -193,4 +181,3 @@ fn test_udp() {
 
     println!("Recibidos {} bytes", number_of_bytes);
 }
->>>>>>> server

@@ -76,7 +76,7 @@ impl Resolver {
         update_cache_sender_ns_tcp: Sender<(String, String, u32)>,
     ) -> Self {
         let mut cache = DnsCache::new();
-        cache.set_max_size(100);
+        cache.set_max_size(1000);
 
         let resolver = Resolver {
             ip_address: String::from(""),
@@ -222,14 +222,41 @@ impl Resolver {
             self.set_ns_data(zones);
             //
 
+            // Updates queries
+
+            let mut queries_to_update = rx_update_query.try_iter();
+            let mut next_query_to_update = queries_to_update.next();
+
+            println!("Queries before update len: {}", queries_hash_by_id.len());
+
+            while next_query_to_update.is_none() == false {
+                println!("Queries to update");
+                let resolver_query_to_update = next_query_to_update.unwrap();
+
+                let id: u16 = resolver_query_to_update.get_main_query_id();
+
+                println!("Queries to update: {}", id);
+
+                queries_hash_by_id.insert(id, resolver_query_to_update);
+
+                next_query_to_update = queries_to_update.next();
+            }
+
+            //
+
+            println!("Queries len: {}", queries_hash_by_id.len());
+
             // Delete queries already answered
 
             let mut queries_to_delete = rx_delete_query.try_iter();
+
             let mut next_query_value = queries_to_delete.next();
 
             while next_query_value.is_none() == false {
                 let resolver_query_to_delete = next_query_value.unwrap();
-                let id: u16 = resolver_query_to_delete.get_old_id();
+                let id: u16 = resolver_query_to_delete.get_main_query_id();
+
+                println!("Queries to delete: {}", id);
 
                 queries_hash_by_id.remove(&id);
 
@@ -238,22 +265,7 @@ impl Resolver {
 
             //
 
-            // Updates queries
-
-            let mut queries_to_update = rx_update_query.try_iter();
-            let mut next_query_to_update = queries_to_update.next();
-
-            while next_query_to_update.is_none() == false {
-                let resolver_query_to_update = next_query_to_update.unwrap();
-
-                let id: u16 = resolver_query_to_update.get_main_query_id();
-
-                queries_hash_by_id.insert(id, resolver_query_to_update);
-
-                next_query_to_update = queries_to_update.next();
-            }
-
-            //
+            println!("Queries len after delete: {}", queries_hash_by_id.len());
 
             // Delete from cache
 
@@ -319,7 +331,10 @@ impl Resolver {
                 let now = Utc::now();
                 let timestamp_ms = now.timestamp_millis() as u64;
 
+                println!("Query to {}", query.get_sname());
+
                 if timestamp_ms > (timeout as u64 + last_query_timestamp) {
+                    println!("Timeout!!!!!!!!");
                     query.step_3_udp(socket.try_clone().unwrap());
                 }
             }
@@ -375,7 +390,7 @@ impl Resolver {
                     tx_add_ns_tcp_copy,
                     tx_delete_ns_tcp_copy,
                     tx_update_query_copy,
-                    tx_delete_query_copy,
+                    tx_delete_query_copy.clone(),
                     dns_message.clone(),
                     tx_update_cache_udp_copy.clone(),
                     tx_update_cache_tcp_copy.clone(),
@@ -405,6 +420,7 @@ impl Resolver {
                 // Get copies from some data
                 let socket_copy = socket.try_clone().unwrap();
                 let dns_msg_copy = dns_message.clone();
+                let tx_query_delete_clone = tx_delete_query_copy.clone();
 
                 thread::spawn(move || {
                     let answer_local = resolver_query.step_1_udp(socket_copy.try_clone().unwrap());
@@ -426,6 +442,8 @@ impl Resolver {
                             header.set_qr(true);
 
                             new_dns_msg.set_header(header);
+
+                            tx_query_delete_clone.send(resolver_query.clone());
 
                             Resolver::send_answer_by_udp(
                                 new_dns_msg,

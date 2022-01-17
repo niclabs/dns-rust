@@ -1,14 +1,11 @@
-pub mod client;
+pub mod config;
 pub mod dns_cache;
 pub mod domain_name;
+pub mod global_tests;
 pub mod message;
 pub mod name_server;
 pub mod resolver;
 pub mod rr_cache;
-pub mod server;
-
-pub mod config;
-pub mod global_tests;
 
 use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;
@@ -29,12 +26,7 @@ use std::sync::mpsc;
 use std::thread;
 
 pub fn main() {
-    /*
-    test_tcp();
-    */
-
-    /*
-    /// Channels
+    // Channels
     let (add_sender_udp, add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
     let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -43,6 +35,13 @@ pub fn main() {
     let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
     let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
     let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+    let (update_cache_sender_udp, rx_update_cache_udp) = mpsc::channel();
+    let (update_cache_sender_tcp, rx_update_cache_tcp) = mpsc::channel();
+    let (update_cache_sender_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+    let (update_cache_sender_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+
+    let (update_zone_udp, rx_update_zone_udp) = mpsc::channel();
+    let (update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
 
     let mut resolver = Resolver::new(
         add_sender_udp,
@@ -53,6 +52,10 @@ pub fn main() {
         delete_sender_ns_udp,
         add_sender_ns_tcp,
         delete_sender_ns_tcp,
+        update_cache_sender_udp,
+        update_cache_sender_tcp,
+        update_cache_sender_ns_udp,
+        update_cache_sender_ns_tcp,
     );
 
     resolver.set_ip_address("192.168.1.89:58396".to_string());
@@ -62,9 +65,17 @@ pub fn main() {
 
     resolver.set_sbelt(sbelt);
 
-    resolver.run_resolver(add_recv_udp, delete_recv_udp, add_recv_tcp, delete_recv_tcp);
+    resolver.run_resolver(
+        add_recv_udp,
+        delete_recv_udp,
+        add_recv_tcp,
+        delete_recv_tcp,
+        rx_update_cache_udp,
+        rx_update_cache_tcp,
+        rx_update_zone_udp,
+        rx_update_zone_tcp,
+    );
 
-    */
     /*
     // Name Server initialization
     let mut name_server = NameServer::new(

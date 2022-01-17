@@ -261,6 +261,8 @@ impl ResolverQuery {
                 }
             }
 
+            println!("Ip found: {}", ip_found);
+
             if ip_found == 0 {
                 new_slist = Slist::new();
                 labels.remove(0);
@@ -401,6 +403,8 @@ impl ResolverQuery {
         let mut slist = self.get_slist();
         slist.sort();
 
+        println!("Slist intia len: {}", slist.len());
+
         self.set_slist(slist);
     }
 
@@ -481,6 +485,7 @@ impl ResolverQuery {
 
         let slist = self.get_slist();
         let index_to_choose = self.get_index_to_choose();
+        println!("Slist len step3 : {}", slist.len());
         let best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
@@ -513,6 +518,7 @@ impl ResolverQuery {
                 let qname = ns.get(&"name".to_string()).unwrap().to_string();
 
                 if ip_addr == "".to_string() {
+                    println!("Internal Query para {}", qname.clone());
                     let mut rng = thread_rng();
                     let id: u16 = rng.gen();
                     let dns_msg = DnsMessage::new_query_message(qname.clone(), 1, 1, 0, false, id);
@@ -1156,9 +1162,9 @@ impl ResolverQuery {
             return self.step_4c_tcp(msg_from_response, update_slist_tcp_recv);
         }
 
-        let index_to_choose = self.get_index_to_choose();
+        let last_index_to_choose = self.get_index_to_choose() - 1;
         let mut slist = self.get_slist();
-        let best_server = slist.get(index_to_choose);
+        let best_server = slist.get(last_index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
         // Step 4d

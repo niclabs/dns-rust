@@ -205,8 +205,6 @@ impl DnsMessage {
 
         // Answers
         for _i in 0..answer_rr_size {
-            println!("Answer");
-
             let rr_result = ResourceRecord::from_bytes(no_question_bytes, bytes);
 
             match rr_result {
@@ -217,14 +215,13 @@ impl DnsMessage {
             }
 
             let (resource_record, other_rr_bytes) = rr_result.unwrap();
-            println!("RR Name: {}", resource_record.get_name().get_name());
+
             answer.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
         // Authorities
         for _i in 0..authority_rr_size {
-            println!("Authority");
             let rr_result = ResourceRecord::from_bytes(no_question_bytes, bytes);
 
             match rr_result {
@@ -235,14 +232,13 @@ impl DnsMessage {
             }
 
             let (resource_record, other_rr_bytes) = rr_result.unwrap();
-            println!("RR Name: {}", resource_record.get_name().get_name());
+            
             authority.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }
 
         // Additional
         for _i in 0..additional_rr_size {
-            println!("Additional");
             let rr_result = ResourceRecord::from_bytes(no_question_bytes, bytes);
 
             match rr_result {
@@ -253,7 +249,7 @@ impl DnsMessage {
             }
 
             let (resource_record, other_rr_bytes) = rr_result.unwrap();
-            println!("RR Name: {}", resource_record.get_name().get_name());
+
             additional.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }

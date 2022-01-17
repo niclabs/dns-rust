@@ -1,3 +1,4 @@
+pub mod client;
 pub mod config;
 pub mod dns_cache;
 pub mod domain_name;
@@ -7,119 +8,209 @@ pub mod name_server;
 pub mod resolver;
 pub mod rr_cache;
 
-use crate::message::rdata::Rdata;
-use crate::message::DnsMessage;
-use crate::name_server::master_file::MasterFile;
-use crate::name_server::zone::NSZone;
 use crate::name_server::NameServer;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
-use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
-use std::io::Read;
-use std::io::Write;
-use std::net::TcpStream;
-use std::net::UdpSocket;
 use std::sync::mpsc;
 use std::thread;
 
+use crate::config::RESOLVER_IP_PORT;
+use crate::config::SBELT_ROOT_IPS;
+use crate::config::MASTER_FILES;
+use crate::config::NAME_SERVER_IP;
+
+
 pub fn main() {
-    // Channels
-    let (add_sender_udp, add_recv_udp) = mpsc::channel();
-    let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
-    let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
-    let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-    let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
-    let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
-    let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
-    let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
-    let (update_cache_sender_udp, rx_update_cache_udp) = mpsc::channel();
-    let (update_cache_sender_tcp, rx_update_cache_tcp) = mpsc::channel();
-    let (update_cache_sender_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
-    let (update_cache_sender_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+    // Users input
+    let mut input_line = String::new();
+    println!("Enter program to run [C/R/N/NR]: ");
+    std::io::stdin().read_line(&mut input_line).unwrap();
 
-    let (update_zone_udp, rx_update_zone_udp) = mpsc::channel();
-    let (update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
+    let trim_input_line = input_line.trim();
 
-    let mut resolver = Resolver::new(
-        add_sender_udp,
-        delete_sender_udp,
-        add_sender_tcp,
-        delete_sender_tcp,
-        add_sender_ns_udp,
-        delete_sender_ns_udp,
-        add_sender_ns_tcp,
-        delete_sender_ns_tcp,
-        update_cache_sender_udp,
-        update_cache_sender_tcp,
-        update_cache_sender_ns_udp,
-        update_cache_sender_ns_tcp,
-    );
+    if trim_input_line == "C" {
+        client::run_client();
+    }
+    else {
+        // Channels
+        let (add_sender_udp, add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        let (update_cache_sender_udp, rx_update_cache_udp) = mpsc::channel();
+        let (update_cache_sender_tcp, rx_update_cache_tcp) = mpsc::channel();
+        let (update_cache_sender_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+        let (update_cache_sender_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
-    resolver.set_ip_address("192.168.1.89:58396".to_string());
+        let (update_zone_udp, rx_update_zone_udp) = mpsc::channel();
+        let (update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
 
-    let mut sbelt = Slist::new();
-    sbelt.insert(".".to_string(), "192.33.4.12".to_string(), 5000);
+        if trim_input_line == "R" {
+            let mut resolver = Resolver::new(
+                add_sender_udp.clone(),
+                delete_sender_udp.clone(),
+                add_sender_tcp.clone(),
+                delete_sender_tcp.clone(),
+                add_sender_ns_udp.clone(),
+                delete_sender_ns_udp.clone(),
+                add_sender_ns_tcp.clone(),
+                delete_sender_ns_tcp.clone(),
+                update_cache_sender_udp.clone(),
+                update_cache_sender_tcp.clone(),
+                update_cache_sender_ns_udp.clone(),
+                update_cache_sender_ns_tcp.clone(),
+            );
+        
+            resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
+        
+            let mut sbelt = Slist::new();
 
-    resolver.set_sbelt(sbelt);
+            for ip in SBELT_ROOT_IPS {
+                sbelt.insert(".".to_string(), ip.to_string(), 5000);
+            }
+        
+            resolver.set_sbelt(sbelt);
+        
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+                rx_update_zone_udp,
+                rx_update_zone_tcp,
+            );
+        }
 
-    resolver.run_resolver(
-        add_recv_udp,
-        delete_recv_udp,
-        add_recv_tcp,
-        delete_recv_tcp,
-        rx_update_cache_udp,
-        rx_update_cache_tcp,
-        rx_update_zone_udp,
-        rx_update_zone_tcp,
-    );
+        else if trim_input_line == "N" {
 
-    /*
-    // Name Server initialization
-    let mut name_server = NameServer::new(
-        false,
-        delete_sender_udp.clone(),
-        delete_sender_tcp.clone(),
-        add_sender_ns_udp.clone(),
-        delete_sender_ns_udp.clone(),
-        add_sender_ns_tcp.clone(),
-        delete_sender_ns_tcp.clone(),
-    );
-    name_server.add_zone_from_master_file("test.txt".to_string(), "".to_string());
+            let (update_refresh_zone_udp, rx_update_refresh_zone_udp) = mpsc::channel();
+            let (update_refresh_zone_tcp, rx_update_refresh_zone_tcp) = mpsc::channel();
 
-    // Resolver Initialization
-    let mut local_resolver = Resolver::new(
-        add_sender_udp,
-        delete_sender_udp,
-        add_sender_tcp,
-        delete_sender_tcp,
-        add_sender_ns_udp,
-        delete_sender_ns_udp,
-        add_sender_ns_tcp,
-        delete_sender_ns_tcp,
-    );
-    local_resolver.set_ip_address("192.168.1.89:58396".to_string());
-    local_resolver.set_ns_data(name_server.get_zones());
 
-    let mut sbelt = Slist::new();
-    sbelt.insert(".".to_string(), "198.41.0.4".to_string(), 5000);
+            let mut name_server = NameServer::new(
+                false,
+                delete_sender_udp.clone(),
+                delete_sender_tcp.clone(),
+                add_sender_ns_udp.clone(),
+                delete_sender_ns_udp.clone(),
+                add_sender_ns_tcp.clone(),
+                delete_sender_ns_tcp.clone(),
+                update_refresh_zone_udp.clone(),
+                update_refresh_zone_tcp.clone(),
+                update_zone_udp.clone(),
+                update_zone_tcp.clone(),
+            );
+            
+            for master_file in MASTER_FILES {
+                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string()); 
+            }
 
-    local_resolver.set_sbelt(sbelt);
+            name_server.run_name_server(
+                NAME_SERVER_IP.to_string(),
+                RESOLVER_IP_PORT.to_string(),
+                add_recv_ns_udp,
+                delete_recv_ns_udp,
+                add_recv_ns_tcp,
+                delete_recv_ns_tcp,
+                rx_update_cache_ns_udp,
+                rx_update_cache_ns_tcp,
+                rx_update_refresh_zone_udp,
+                rx_update_refresh_zone_tcp,
+            );
+        }
 
-    let local_resolver_ip = local_resolver.get_ip_address();
+        else if trim_input_line == "NR" {
+            // Resolver Initialize
+            let mut resolver = Resolver::new(
+                add_sender_udp.clone(),
+                delete_sender_udp.clone(),
+                add_sender_tcp.clone(),
+                delete_sender_tcp.clone(),
+                add_sender_ns_udp.clone(),
+                delete_sender_ns_udp.clone(),
+                add_sender_ns_tcp.clone(),
+                delete_sender_ns_tcp.clone(),
+                update_cache_sender_udp.clone(),
+                update_cache_sender_tcp.clone(),
+                update_cache_sender_ns_udp.clone(),
+                update_cache_sender_ns_tcp.clone(),
+            );
+        
+            resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
+        
+            let mut sbelt = Slist::new();
 
-    thread::spawn(move || {
-        name_server.run_name_server_tcp(
-            "192.168.1.89".to_string(),
-            local_resolver_ip,
-            add_recv_ns_tcp,
-            delete_recv_ns_tcp,
-        );
-    });
+            for ip in SBELT_ROOT_IPS {
+                sbelt.insert(".".to_string(), ip.to_string(), 5000);
+            }
+        
+            resolver.set_sbelt(sbelt);
+            //
 
-    local_resolver.run_resolver_tcp(add_recv_tcp, delete_recv_tcp);
+            // Name Server initialize
+            let (update_refresh_zone_udp, rx_update_refresh_zone_udp) = mpsc::channel();
+            let (update_refresh_zone_tcp, rx_update_refresh_zone_tcp) = mpsc::channel();
 
-    */
+
+            let mut name_server = NameServer::new(
+                false,
+                delete_sender_udp.clone(),
+                delete_sender_tcp.clone(),
+                add_sender_ns_udp.clone(),
+                delete_sender_ns_udp.clone(),
+                add_sender_ns_tcp.clone(),
+                delete_sender_ns_tcp.clone(),
+                update_refresh_zone_udp,
+                update_refresh_zone_tcp,
+                update_zone_udp,
+                update_zone_tcp,
+            );
+            
+            for master_file in MASTER_FILES {
+                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string()); 
+            }
+            //
+
+            // Set zones to resolver
+            resolver.set_ns_data(name_server.get_zones());
+
+
+            // Run Name server
+            thread::spawn(move || {
+                name_server.run_name_server(
+                    NAME_SERVER_IP.to_string(),
+                    RESOLVER_IP_PORT.to_string(),
+                    add_recv_ns_udp,
+                    delete_recv_ns_udp,
+                    add_recv_ns_tcp,
+                    delete_recv_ns_tcp,
+                    rx_update_cache_ns_udp,
+                    rx_update_cache_ns_tcp,
+                    rx_update_refresh_zone_udp,
+                    rx_update_refresh_zone_tcp,
+                );
+            });
+            //
+
+            // Run Resolver
+            resolver.run_resolver(
+                add_recv_udp,
+                delete_recv_udp,
+                add_recv_tcp,
+                delete_recv_tcp,
+                rx_update_cache_udp,
+                rx_update_cache_tcp,
+                rx_update_zone_udp,
+                rx_update_zone_tcp,
+            );
+            //
+        }   
+    }
 }

@@ -484,8 +484,8 @@ impl ResolverQuery {
         }
 
         let slist = self.get_slist();
-        let index_to_choose = self.get_index_to_choose();
-        println!("Slist len step3 : {}", slist.len());
+        let index_to_choose = self.get_index_to_choose()&slist.len() as u16;
+
         let best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
@@ -657,8 +657,8 @@ impl ResolverQuery {
             return self.step_4c_udp(msg_from_response, socket);
         }
 
-        let index_to_choose = self.get_index_to_choose();
         let mut slist = self.get_slist();
+        let index_to_choose = (self.get_index_to_choose() - 1)% slist.len() as u16;
         let best_server = slist.get(index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
@@ -995,7 +995,7 @@ impl ResolverQuery {
         //
 
         let slist = self.get_slist();
-        let index_to_choose = self.get_index_to_choose();
+        let index_to_choose = self.get_index_to_choose()%slist.len() as u16;
         let best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
@@ -1162,8 +1162,8 @@ impl ResolverQuery {
             return self.step_4c_tcp(msg_from_response, update_slist_tcp_recv);
         }
 
-        let last_index_to_choose = self.get_index_to_choose() - 1;
-        let mut slist = self.get_slist();
+        let slist = self.get_slist();
+        let last_index_to_choose = (self.get_index_to_choose() - 1)% slist.len() as u16;
         let best_server = slist.get(last_index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 

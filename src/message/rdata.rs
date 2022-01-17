@@ -52,8 +52,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Rdata, &'static str> {
         let type_code = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
 
-        println!("Type code rdata {}", type_code);
-
         let especific_rdata = match type_code {
             1 => {
                 let rdata = ARdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);

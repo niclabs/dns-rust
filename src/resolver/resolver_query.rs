@@ -8,13 +8,12 @@ use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
 use crate::config::QUERIES_FOR_CLIENT_REQUEST;
+use crate::config::USE_CACHE;
 
-use chrono::{DateTime, Utc};
-use core::time;
+use chrono::Utc;
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;
-use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
 use std::net::UdpSocket;
@@ -124,6 +123,7 @@ impl ResolverQuery {
         let mut rng = thread_rng();
         let now = Utc::now();
         let timestamp = now.timestamp() as u32;
+        let queries_before_temporary_error = QUERIES_FOR_CLIENT_REQUEST;
 
         let query = ResolverQuery {
             timestamp: timestamp,
@@ -147,7 +147,7 @@ impl ResolverQuery {
             delete_channel_ns_udp: delete_channel_ns_udp,
             add_channel_ns_tcp: add_channel_ns_tcp,
             delete_channel_ns_tcp: delete_channel_ns_tcp,
-            queries_before_temporary_error: QUERIES_FOR_CLIENT_REQUEST,
+            queries_before_temporary_error: queries_before_temporary_error,
             tx_update_query: tx_update_query,
             tx_delete_query: tx_delete_query,
             client_msg: client_msg,
@@ -244,7 +244,7 @@ impl ResolverQuery {
                         _ => unreachable!(),
                     };
 
-                    let mut ip_address = ns_ip_address_rdata.get_string_address();
+                    let ip_address = ns_ip_address_rdata.get_string_address();
 
                     let response_time = cache.get_response_time(
                         ns_parent_host_name_string.clone(),
@@ -281,7 +281,6 @@ impl ResolverQuery {
 
     // Looks for local info in name server zone and cache
     pub fn look_for_local_info(&mut self) -> Vec<ResourceRecord> {
-        let ns_data = self.get_ns_data();
         let s_type = match self.get_stype() {
             1 => "A".to_string(),
             2 => "NS".to_string(),
@@ -298,7 +297,7 @@ impl ResolverQuery {
 
         let s_name = self.get_sname();
 
-        let (mut main_zone, available) =
+        let (main_zone, available) =
             NameServer::search_nearest_ancestor_zone(self.get_ns_data(), s_name.clone());
 
         let mut rr_vec = Vec::<ResourceRecord>::new();
@@ -368,25 +367,27 @@ impl ResolverQuery {
             }
         }
 
-        let mut cache = self.get_cache();
+        if USE_CACHE == true {
+            let mut cache = self.get_cache();
 
-        let cache_answer = cache.get(s_name.clone(), s_type);
-
-        if cache_answer.len() > 0 {
-            for answer in cache_answer.iter() {
-                let mut rr = answer.get_resource_record();
-                let rr_ttl = rr.get_ttl();
-                let relative_ttl = rr_ttl - self.get_timestamp();
-
-                if relative_ttl > 0 {
-                    rr.set_ttl(relative_ttl);
-                    rr_vec.push(rr);
+            let cache_answer = cache.get(s_name.clone(), s_type);
+    
+            if cache_answer.len() > 0 {
+                for answer in cache_answer.iter() {
+                    let mut rr = answer.get_resource_record();
+                    let rr_ttl = rr.get_ttl();
+                    let relative_ttl = rr_ttl - self.get_timestamp();
+    
+                    if relative_ttl > 0 {
+                        rr.set_ttl(relative_ttl);
+                        rr_vec.push(rr);
+                    }
                 }
-            }
-
-            if rr_vec.len() < cache_answer.len() {
-                self.remove_from_cache(s_name, cache_answer[0].get_resource_record());
-            }
+    
+                if rr_vec.len() < cache_answer.len() {
+                    self.remove_from_cache(s_name, cache_answer[0].get_resource_record());
+                }
+            } 
         }
 
         return rr_vec;
@@ -415,33 +416,39 @@ impl ResolverQuery {
         let aa = msg.get_header().get_aa();
 
         if rcode == 0 {
-            if aa == true {
-                let mut remove_exist_cache = true;
-                for an in answer.iter_mut() {
-                    if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
-                        an.set_ttl(an.get_ttl() + self.get_timestamp());
+            // Get qname
+            let qname = msg.get_question().get_qname().get_name();
 
-                        // Remove old cache
-                        if remove_exist_cache == true {
-                            self.remove_from_cache(an.get_name().get_name(), an.clone());
-                            remove_exist_cache = false;
-                        }
-
-                        // Add new Cache
-                        self.add_to_cache(an.get_name().get_name(), an.clone());
-                    }
-                }
-            } else {
-                let exist_in_cache = self
-                    .exist_cache_data(msg.get_question().get_qname().get_name(), answer[0].clone());
-
-                if exist_in_cache == false {
+            // Check if qnanem contains *, if its true dont cache the data
+            if qname.contains("*") == false {
+                if aa == true {
+                    let mut remove_exist_cache = true;
                     for an in answer.iter_mut() {
                         if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
                             an.set_ttl(an.get_ttl() + self.get_timestamp());
-
-                            // Cache
+    
+                            // Remove old cache
+                            if remove_exist_cache == true {
+                                self.remove_from_cache(an.get_name().get_name(), an.clone());
+                                remove_exist_cache = false;
+                            }
+    
+                            // Add new Cache
                             self.add_to_cache(an.get_name().get_name(), an.clone());
+                        }
+                    }
+                } else {
+                    let exist_in_cache = self
+                        .exist_cache_data(msg.get_question().get_qname().get_name(), answer[0].clone());
+    
+                    if exist_in_cache == false {
+                        for an in answer.iter_mut() {
+                            if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                                an.set_ttl(an.get_ttl() + self.get_timestamp());
+    
+                                // Cache
+                                self.add_to_cache(an.get_name().get_name(), an.clone());
+                            }
                         }
                     }
                 }
@@ -477,7 +484,6 @@ impl ResolverQuery {
 
         // Temporary Error
         if queries_left <= 0 {
-            let old_id = self.get_old_id();
             let tx_delete_query = self.get_tx_delete_query();
             tx_delete_query.send(self.clone());
             panic!("Temporary Error");
@@ -512,6 +518,7 @@ impl ResolverQuery {
         for ns in slist.get_ns_list() {
             let resolver_query_to_update = self.clone();
             let socket_copy = socket.try_clone().unwrap();
+            let queries_left = self.get_queries_before_temporary_error();
 
             thread::spawn(move || {
                 let ip_addr = ns.get(&"ip_address".to_string()).unwrap().to_string();
@@ -542,7 +549,7 @@ impl ResolverQuery {
                     let tx_update_cache_ns_tcp_copy =
                         resolver_query_to_update.get_update_cache_ns_tcp();
 
-                    let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+                    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
 
                     let mut internal_query = ResolverQuery::new(
                         tx_add_udp_copy,
@@ -577,7 +584,7 @@ impl ResolverQuery {
                         id,
                     );
 
-                    internal_query.set_internal_query(true);
+                    internal_query.set_internal_query(true, queries_left - 1);
                     internal_query
                         .set_query_id_update_slist(resolver_query_to_update.get_main_query_id());
 
@@ -637,10 +644,9 @@ impl ResolverQuery {
         }
 
         let authority = msg_from_response.get_authority();
-        let additional = msg_from_response.get_additional();
 
         // Step 4b
-        /// If there is authority and it is NS type
+        // If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
             println!("Delegation response");
             self.step_4b_udp(msg_from_response, socket);
@@ -648,7 +654,7 @@ impl ResolverQuery {
         }
 
         // Step 4c
-        /// If the answer is CName and the user dont want CName
+        // If the answer is CName and the user dont want CName
         if answer.len() > 0
             && answer[0].get_type_code() == 5
             && answer[0].get_type_code() != self.get_stype()
@@ -657,7 +663,7 @@ impl ResolverQuery {
             return self.step_4c_udp(msg_from_response, socket);
         }
 
-        let mut slist = self.get_slist();
+        let slist = self.get_slist();
         let index_to_choose = (self.get_index_to_choose() - 1)% slist.len() as u16;
         let best_server = slist.get(index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
@@ -774,7 +780,7 @@ impl ResolverQuery {
 
         self.set_sname(cname.get_name());
 
-        let resp = match self.step_1_udp(socket) {
+        match self.step_1_udp(socket) {
             Some(val) => {
                 println!("Local info!");
 
@@ -796,7 +802,7 @@ impl ResolverQuery {
             None => {
                 return None;
             }
-        };
+        }
     }
 
     pub fn step_4d_udp(
@@ -1021,6 +1027,7 @@ impl ResolverQuery {
 
         for ns in slist.get_ns_list() {
             let resolver_query_to_update = self.clone();
+            let queries_left = self.get_queries_before_temporary_error();
 
             thread::spawn(move || {
                 let ip_addr = ns.get(&"ip_address".to_string()).unwrap().to_string();
@@ -1085,7 +1092,7 @@ impl ResolverQuery {
                         id,
                     );
 
-                    internal_query.set_internal_query(true);
+                    internal_query.set_internal_query(true, queries_left - 1);
                     internal_query
                         .set_query_id_update_slist(resolver_query_to_update.get_main_query_id());
 
@@ -1148,13 +1155,13 @@ impl ResolverQuery {
         let additional = msg_from_response.get_additional();
 
         // Step 4b
-        /// If there is authority and it is NS type
+        // If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
             return self.step_4b_tcp(msg_from_response, update_slist_tcp_recv);
         }
 
         // Step 4c
-        /// If the answer is CName and the user dont want CName
+        // If the answer is CName and the user dont want CName
         if answer.len() > 0
             && answer[0].get_type_code() == 5
             && answer[0].get_type_code() != self.get_stype()
@@ -1664,8 +1671,9 @@ impl ResolverQuery {
     }
 
     /// Sets the value for the internal query
-    pub fn set_internal_query(&mut self, internal_query: bool) {
+    pub fn set_internal_query(&mut self, internal_query: bool, queries_left: u16) {
         self.internal_query = internal_query;
+        self.queries_before_temporary_error = queries_left;
     }
 }
 

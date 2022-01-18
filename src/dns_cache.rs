@@ -239,7 +239,7 @@ impl DnsCache {
                     }
 
                     if ip_address_bytes == rr_ip_address {
-                        rr_cache.set_response_time(response_time);
+                        rr_cache.set_response_time((response_time + rr_cache.get_response_time())/2);
                     }
 
                     rr_cache_vec.push(rr_cache.clone());

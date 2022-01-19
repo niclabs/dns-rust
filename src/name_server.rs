@@ -1453,6 +1453,10 @@ impl NameServer {
                     tx_delete_ns_tcp,
                 );
             } else {
+                let mut header = msg.get_header();
+                header.set_aa(true);
+
+                msg.set_header(header);
                 return NameServer::step_6(msg, cache, zones);
             }
         }

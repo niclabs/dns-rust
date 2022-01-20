@@ -423,7 +423,7 @@ impl NameServer {
 
                 // If is an inverse query
                 if op_code == 1 {
-                    let not_implemented_msg = DnsMessage::not_implemented_msg();
+                    let not_implemented_msg = DnsMessage::not_implemented_msg(dns_message.clone());
 
                     NameServer::send_response_by_udp(
                         not_implemented_msg,
@@ -829,6 +829,23 @@ impl NameServer {
                     println!("{}", "Message parsed");
 
                     if dns_message.get_header().get_qr() == false {
+                        let op_code = dns_message.get_header().get_op_code();
+
+                        // If is an inverse query
+                        if op_code == 1 {
+                            let not_implemented_msg =
+                                DnsMessage::not_implemented_msg(dns_message.clone());
+
+                            NameServer::send_response_by_tcp(
+                                not_implemented_msg,
+                                src_address.to_string(),
+                                stream,
+                            );
+
+                            continue;
+                        }
+                        //
+
                         let zones = self.get_zones();
                         let cache = self.get_cache();
                         let resolver_ip_clone = local_resolver_ip_and_port.clone();

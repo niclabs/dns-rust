@@ -158,6 +158,15 @@ impl DnsMessage {
         msg
     }
 
+    pub fn not_implemented_msg(msg: DnsMessage) -> Self {
+        let mut header = msg.get_header();
+        header.set_rcode(4);
+
+        msg.set_header(header);
+
+        msg
+    }
+
     // Creates a DnsMessage from an array of bytes
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
@@ -232,7 +241,7 @@ impl DnsMessage {
             }
 
             let (resource_record, other_rr_bytes) = rr_result.unwrap();
-            
+
             authority.push(resource_record);
             no_question_bytes = other_rr_bytes;
         }

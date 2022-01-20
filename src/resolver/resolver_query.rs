@@ -36,7 +36,7 @@ pub struct ResolverQuery {
     slist: Slist,
     sbelt: Slist,
     cache: DnsCache,
-    ns_data: HashMap<String, NSZone>,
+    ns_data: HashMap<u16, HashMap<String, NSZone>>,
     main_query_id: u16,
     old_id: u16,
     src_address: String,
@@ -135,7 +135,7 @@ impl ResolverQuery {
             slist: Slist::new(),
             sbelt: Slist::new(),
             cache: DnsCache::new(),
-            ns_data: HashMap::<String, NSZone>::new(),
+            ns_data: HashMap::<u16, HashMap<String, NSZone>>::new(),
             main_query_id: rng.gen(),
             old_id: 0,
             src_address: "".to_string(),
@@ -177,7 +177,7 @@ impl ResolverQuery {
         rd: bool,
         sbelt: Slist,
         cache: DnsCache,
-        ns_data: HashMap<String, NSZone>,
+        ns_data: HashMap<u16, HashMap<String, NSZone>>,
         src_address: String,
         old_id: u16,
     ) {
@@ -296,9 +296,10 @@ impl ResolverQuery {
         };
 
         let s_name = self.get_sname();
+        let s_class = self.get_sclass();
 
         let (main_zone, available) =
-            NameServer::search_nearest_ancestor_zone(self.get_ns_data(), s_name.clone());
+            NameServer::search_nearest_ancestor_zone(self.get_ns_data(), s_name.clone(), s_class);
 
         let mut rr_vec = Vec::<ResourceRecord>::new();
 
@@ -371,23 +372,23 @@ impl ResolverQuery {
             let mut cache = self.get_cache();
 
             let cache_answer = cache.get(s_name.clone(), s_type);
-    
+
             if cache_answer.len() > 0 {
                 for answer in cache_answer.iter() {
                     let mut rr = answer.get_resource_record();
                     let rr_ttl = rr.get_ttl();
                     let relative_ttl = rr_ttl - self.get_timestamp();
-    
+
                     if relative_ttl > 0 {
                         rr.set_ttl(relative_ttl);
                         rr_vec.push(rr);
                     }
                 }
-    
+
                 if rr_vec.len() < cache_answer.len() {
                     self.remove_from_cache(s_name, cache_answer[0].get_resource_record());
                 }
-            } 
+            }
         }
 
         return rr_vec;
@@ -426,26 +427,28 @@ impl ResolverQuery {
                     for an in answer.iter_mut() {
                         if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
                             an.set_ttl(an.get_ttl() + self.get_timestamp());
-    
+
                             // Remove old cache
                             if remove_exist_cache == true {
                                 self.remove_from_cache(an.get_name().get_name(), an.clone());
                                 remove_exist_cache = false;
                             }
-    
+
                             // Add new Cache
                             self.add_to_cache(an.get_name().get_name(), an.clone());
                         }
                     }
                 } else {
-                    let exist_in_cache = self
-                        .exist_cache_data(msg.get_question().get_qname().get_name(), answer[0].clone());
-    
+                    let exist_in_cache = self.exist_cache_data(
+                        msg.get_question().get_qname().get_name(),
+                        answer[0].clone(),
+                    );
+
                     if exist_in_cache == false {
                         for an in answer.iter_mut() {
                             if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
                                 an.set_ttl(an.get_ttl() + self.get_timestamp());
-    
+
                                 // Cache
                                 self.add_to_cache(an.get_name().get_name(), an.clone());
                             }
@@ -490,7 +493,7 @@ impl ResolverQuery {
         }
 
         let slist = self.get_slist();
-        let index_to_choose = self.get_index_to_choose()&slist.len() as u16;
+        let index_to_choose = self.get_index_to_choose() & slist.len() as u16;
 
         let best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
@@ -664,7 +667,7 @@ impl ResolverQuery {
         }
 
         let slist = self.get_slist();
-        let index_to_choose = (self.get_index_to_choose() - 1)% slist.len() as u16;
+        let index_to_choose = (self.get_index_to_choose() - 1) % slist.len() as u16;
         let best_server = slist.get(index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
@@ -1001,7 +1004,7 @@ impl ResolverQuery {
         //
 
         let slist = self.get_slist();
-        let index_to_choose = self.get_index_to_choose()%slist.len() as u16;
+        let index_to_choose = self.get_index_to_choose() % slist.len() as u16;
         let best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
@@ -1170,7 +1173,7 @@ impl ResolverQuery {
         }
 
         let slist = self.get_slist();
-        let last_index_to_choose = (self.get_index_to_choose() - 1)% slist.len() as u16;
+        let last_index_to_choose = (self.get_index_to_choose() - 1) % slist.len() as u16;
         let best_server = slist.get(last_index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
@@ -1444,7 +1447,7 @@ impl ResolverQuery {
     }
 
     /// Gets the ns_data
-    pub fn get_ns_data(&self) -> HashMap<String, NSZone> {
+    pub fn get_ns_data(&self) -> HashMap<u16, HashMap<String, NSZone>> {
         self.ns_data.clone()
     }
 
@@ -1621,7 +1624,7 @@ impl ResolverQuery {
     }
 
     /// Sets the ns_data attribute with a new value
-    pub fn set_ns_data(&mut self, ns_data: HashMap<String, NSZone>) {
+    pub fn set_ns_data(&mut self, ns_data: HashMap<u16, HashMap<String, NSZone>>) {
         self.ns_data = ns_data;
     }
 

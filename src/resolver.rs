@@ -32,7 +32,7 @@ pub struct Resolver {
     // Cache for the resolver
     cache: DnsCache,
     // Name server data
-    ns_data: HashMap<String, NSZone>,
+    ns_data: HashMap<u16, HashMap<String, NSZone>>,
     // Channel to share cache data between threads
     add_sender_udp: Sender<(String, ResourceRecord)>,
     // Channel to share cache data between threads
@@ -82,7 +82,7 @@ impl Resolver {
             ip_address: String::from(""),
             sbelt: Slist::new(),
             cache: cache,
-            ns_data: HashMap::<String, NSZone>::new(),
+            ns_data: HashMap::<u16, HashMap<String, NSZone>>::new(),
             add_sender_udp: add_sender_udp,
             delete_sender_udp: delete_sender_udp,
             add_sender_tcp: add_sender_tcp,
@@ -213,8 +213,12 @@ impl Resolver {
             while next_value.is_none() == false {
                 let zone = next_value.unwrap();
                 let zone_name = zone.get_name();
+                let zone_class = zone.get_class_default();
+                let mut new_zone_hash = HashMap::new();
 
-                zones.insert(zone_name, zone);
+                new_zone_hash.insert(zone_name, zone);
+
+                zones.insert(zone_class, new_zone_hash);
 
                 next_value = received_update_refresh_zone.next();
             }
@@ -660,8 +664,12 @@ impl Resolver {
                     while next_value.is_none() == false {
                         let zone = next_value.unwrap();
                         let zone_name = zone.get_name();
+                        let zone_class = zone.get_class_default();
+                        let mut new_zone_hash = HashMap::new();
 
-                        zones.insert(zone_name, zone);
+                        new_zone_hash.insert(zone_name, zone);
+
+                        zones.insert(zone_class, new_zone_hash);
 
                         next_value = received_update_refresh_zone.next();
                     }
@@ -1036,7 +1044,7 @@ impl Resolver {
     }
 
     // Gets the ns_data
-    pub fn get_ns_data(&self) -> HashMap<String, NSZone> {
+    pub fn get_ns_data(&self) -> HashMap<u16, HashMap<String, NSZone>> {
         self.ns_data.clone()
     }
 
@@ -1119,7 +1127,7 @@ impl Resolver {
     }
 
     // Sets the ns_data attribute with a new value
-    pub fn set_ns_data(&mut self, ns_data: HashMap<String, NSZone>) {
+    pub fn set_ns_data(&mut self, ns_data: HashMap<u16, HashMap<String, NSZone>>) {
         self.ns_data = ns_data;
     }
 }

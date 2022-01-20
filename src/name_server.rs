@@ -1398,35 +1398,97 @@ impl NameServer {
     ) -> DnsMessage {
         let qname = msg.get_question().get_qname().get_name();
         let qclass = msg.get_question().get_qclass();
-        let (zone, available) =
-            NameServer::search_nearest_ancestor_zone(zones.clone(), qname.clone(), qclass.clone());
 
-        println!("Ancestor zone for {}: {}", qname.clone(), available.clone());
+        // Class is *
+        if qclass == 255 {
+            let mut all_answers = Vec::new();
 
-        if available == true {
-            // Step 3 RFC 1034
-            return NameServer::search_in_zone(
-                zone,
-                qname.clone(),
-                msg.clone(),
-                zones,
-                cache,
-                tx_delete_resolver_udp,
-                tx_delete_resolver_tcp,
-                tx_delete_ns_udp,
-                tx_delete_ns_tcp,
-            );
+            // Gets all answers for all classes
+            for (class, hashzones) in zones.iter() {
+                let (zone, available) = NameServer::search_nearest_ancestor_zone(
+                    zones.clone(),
+                    qname.clone(),
+                    class.clone(),
+                );
+
+                if available == true {
+                    let new_msg = NameServer::search_in_zone(
+                        zone,
+                        qname.clone(),
+                        msg.clone(),
+                        zones,
+                        cache,
+                        tx_delete_resolver_udp,
+                        tx_delete_resolver_tcp,
+                        tx_delete_ns_udp,
+                        tx_delete_ns_tcp,
+                    );
+
+                    all_answers.append(&mut new_msg.get_answer());
+                }
+            }
+            //
+
+            // If answers were found
+            if all_answers.len() > 0 {
+                // Set answers
+                msg.set_answer(all_answers);
+
+                // Set AA to 0
+                let mut header = msg.get_header();
+                header.set_aa(false);
+                msg.set_header(header);
+
+                // Update header coutners
+                msg.update_header_counters();
+
+                return msg;
+            } else {
+                return NameServer::step_4(
+                    msg,
+                    cache,
+                    zones,
+                    tx_delete_resolver_udp,
+                    tx_delete_resolver_tcp,
+                    tx_delete_ns_udp,
+                    tx_delete_ns_tcp,
+                );
+            }
+            //
         } else {
-            // Step 4 RFC 1034
-            return NameServer::step_4(
-                msg,
-                cache,
-                zones,
-                tx_delete_resolver_udp,
-                tx_delete_resolver_tcp,
-                tx_delete_ns_udp,
-                tx_delete_ns_tcp,
+            let (zone, available) = NameServer::search_nearest_ancestor_zone(
+                zones.clone(),
+                qname.clone(),
+                qclass.clone(),
             );
+
+            println!("Ancestor zone for {}: {}", qname.clone(), available.clone());
+
+            if available == true {
+                // Step 3 RFC 1034
+                return NameServer::search_in_zone(
+                    zone,
+                    qname.clone(),
+                    msg.clone(),
+                    zones,
+                    cache,
+                    tx_delete_resolver_udp,
+                    tx_delete_resolver_tcp,
+                    tx_delete_ns_udp,
+                    tx_delete_ns_tcp,
+                );
+            } else {
+                // Step 4 RFC 1034
+                return NameServer::step_4(
+                    msg,
+                    cache,
+                    zones,
+                    tx_delete_resolver_udp,
+                    tx_delete_resolver_tcp,
+                    tx_delete_ns_udp,
+                    tx_delete_ns_tcp,
+                );
+            }
         }
     }
 
@@ -1647,10 +1709,29 @@ impl NameServer {
         tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
         tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
-        let mut domain_name = msg.get_question().get_qname().get_name();
         let qtype = msg.get_question_qtype();
-        let rrs = cache.get(domain_name.clone(), qtype);
+        let qclass = msg.get_question().get_qclass();
+        let mut domain_name = msg.get_question().get_qname().get_name();
         let mut answer = Vec::<ResourceRecord>::new();
+
+        let rrs_by_type = cache.get(domain_name.clone(), qtype);
+        let mut rrs = Vec::new();
+
+        // Get the rrs for qname and qclass
+        if qclass != 255 {
+            // Get rrs for qclass
+            for rr in rrs_by_type {
+                let rr_class = rr.get_resource_record().get_class();
+
+                if rr_class == qclass {
+                    rrs.push(rr);
+                }
+            }
+            //
+        } else {
+            rrs = rrs_by_type;
+        }
+        //
 
         let now = Utc::now();
         let timestamp = now.timestamp() as u32;

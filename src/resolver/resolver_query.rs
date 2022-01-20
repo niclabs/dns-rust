@@ -292,89 +292,182 @@ impl ResolverQuery {
             14 => "MINFO".to_string(),
             15 => "MX".to_string(),
             16 => "TXT".to_string(),
+            255 => "*".to_string(),
             _ => unreachable!(),
         };
 
         let s_name = self.get_sname();
         let s_class = self.get_sclass();
 
-        let (main_zone, available) =
-            NameServer::search_nearest_ancestor_zone(self.get_ns_data(), s_name.clone(), s_class);
+        // Class is *
+        if s_class == 255 {
+            let mut all_answers = Vec::new();
 
-        let mut rr_vec = Vec::<ResourceRecord>::new();
+            for (class, hashzone) in self.get_ns_data().iter() {
+                let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
+                    self.get_ns_data(),
+                    s_name.clone(),
+                    *class,
+                );
 
-        //println!("Existe la zona en el resolver: {}", available);
+                if available == true {
+                    let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
 
-        if available == true {
-            let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
+                    // We were looking for the first node
+                    if sname_without_zone_label == "".to_string() {
+                        let mut rrs_by_type = main_zone.get_rrs_by_type(self.get_stype());
+                        let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                        let soa_minimun_ttl = match soa_rr.get_rdata() {
+                            Rdata::SomeSoaRdata(val) => val.get_minimum(),
+                            _ => unreachable!(),
+                        };
 
-            // We were looking for the first node
-            if sname_without_zone_label == "".to_string() {
-                let mut rrs_by_type = main_zone.get_rrs_by_type(self.get_stype());
-                let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
-                let soa_minimun_ttl = match soa_rr.get_rdata() {
-                    Rdata::SomeSoaRdata(val) => val.get_minimum(),
-                    _ => unreachable!(),
-                };
+                        // Sets TTL to max between RR ttl and SOA min.
+                        for rr in rrs_by_type.iter_mut() {
+                            let rr_ttl = rr.get_ttl();
 
-                // Sets TTL to max between RR ttl and SOA min.
-                for rr in rrs_by_type.iter_mut() {
-                    let rr_ttl = rr.get_ttl();
+                            rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                        }
 
-                    rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                        return rrs_by_type;
+                    }
+
+                    // Delete last dot
+                    sname_without_zone_label.pop().unwrap();
+
+                    let mut labels: Vec<&str> = sname_without_zone_label.split(".").collect();
+
+                    labels.reverse();
+
+                    let mut last_label = "";
+
+                    let mut zone = main_zone.clone();
+
+                    for label in labels {
+                        let exist_child = zone.exist_child(label.to_string());
+
+                        if exist_child == true {
+                            zone = zone.get_child(label.to_string()).0;
+                            last_label = label.clone();
+                            continue;
+                        }
+                    }
+
+                    if last_label == zone.get_name() {
+                        let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
+
+                        let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                        let soa_minimun_ttl = match soa_rr.get_rdata() {
+                            Rdata::SomeSoaRdata(val) => val.get_minimum(),
+                            _ => unreachable!(),
+                        };
+
+                        // Sets TTL to max between RR ttl and SOA min.
+                        for rr in rrs_by_type.iter_mut() {
+                            let rr_ttl = rr.get_ttl();
+
+                            rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                        }
+
+                        all_answers.append(&mut rrs_by_type);
+                    }
                 }
-
-                return rrs_by_type;
             }
 
-            // Delete last dot
-            sname_without_zone_label.pop().unwrap();
-
-            let mut labels: Vec<&str> = sname_without_zone_label.split(".").collect();
-
-            labels.reverse();
-
-            let mut last_label = "";
-
-            let mut zone = main_zone.clone();
-
-            for label in labels {
-                let exist_child = zone.exist_child(label.to_string());
-
-                if exist_child == true {
-                    zone = zone.get_child(label.to_string()).0;
-                    last_label = label.clone();
-                    continue;
-                }
+            if all_answers.len() > 0 {
+                return all_answers;
             }
+        } else {
+            let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
+                self.get_ns_data(),
+                s_name.clone(),
+                s_class,
+            );
 
-            if last_label == zone.get_name() {
-                let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
+            if available == true {
+                let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
 
-                let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
-                let soa_minimun_ttl = match soa_rr.get_rdata() {
-                    Rdata::SomeSoaRdata(val) => val.get_minimum(),
-                    _ => unreachable!(),
-                };
+                // We were looking for the first node
+                if sname_without_zone_label == "".to_string() {
+                    let mut rrs_by_type = main_zone.get_rrs_by_type(self.get_stype());
+                    let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                    let soa_minimun_ttl = match soa_rr.get_rdata() {
+                        Rdata::SomeSoaRdata(val) => val.get_minimum(),
+                        _ => unreachable!(),
+                    };
 
-                // Sets TTL to max between RR ttl and SOA min.
-                for rr in rrs_by_type.iter_mut() {
-                    let rr_ttl = rr.get_ttl();
+                    // Sets TTL to max between RR ttl and SOA min.
+                    for rr in rrs_by_type.iter_mut() {
+                        let rr_ttl = rr.get_ttl();
 
-                    rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                        rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                    }
+
+                    return rrs_by_type;
                 }
 
-                return rrs_by_type;
+                // Delete last dot
+                sname_without_zone_label.pop().unwrap();
+
+                let mut labels: Vec<&str> = sname_without_zone_label.split(".").collect();
+
+                labels.reverse();
+
+                let mut last_label = "";
+
+                let mut zone = main_zone.clone();
+
+                for label in labels {
+                    let exist_child = zone.exist_child(label.to_string());
+
+                    if exist_child == true {
+                        zone = zone.get_child(label.to_string()).0;
+                        last_label = label.clone();
+                        continue;
+                    }
+                }
+
+                if last_label == zone.get_name() {
+                    let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
+
+                    let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                    let soa_minimun_ttl = match soa_rr.get_rdata() {
+                        Rdata::SomeSoaRdata(val) => val.get_minimum(),
+                        _ => unreachable!(),
+                    };
+
+                    // Sets TTL to max between RR ttl and SOA min.
+                    for rr in rrs_by_type.iter_mut() {
+                        let rr_ttl = rr.get_ttl();
+
+                        rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+                    }
+
+                    return rrs_by_type;
+                }
             }
         }
+
+        let mut rr_vec = Vec::<ResourceRecord>::new();
 
         if USE_CACHE == true {
             let mut cache = self.get_cache();
 
             let cache_answer = cache.get(s_name.clone(), s_type);
+            let rrs_cache_answer = Vec::new();
 
-            if cache_answer.len() > 0 {
-                for answer in cache_answer.iter() {
+            if s_class != 255 {
+                for rr in cache_answer {
+                    let rr_class = rr.get_resource_record().get_class();
+
+                    if rr_class == s_class {
+                        rrs_cache_answer.push(rr);
+                    }
+                }
+            }
+
+            if rrs_cache_answer.len() > 0 {
+                for answer in rrs_cache_answer.iter() {
                     let mut rr = answer.get_resource_record();
                     let rr_ttl = rr.get_ttl();
                     let relative_ttl = rr_ttl - self.get_timestamp();
@@ -385,8 +478,8 @@ impl ResolverQuery {
                     }
                 }
 
-                if rr_vec.len() < cache_answer.len() {
-                    self.remove_from_cache(s_name, cache_answer[0].get_resource_record());
+                if rr_vec.len() < rrs_cache_answer.len() {
+                    self.remove_from_cache(s_name, rrs_cache_answer[0].get_resource_record());
                 }
             }
         }

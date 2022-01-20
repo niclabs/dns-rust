@@ -527,12 +527,12 @@ mod test {
         assert_eq!(dns_query_message.get_additional().len(), 1);
     }
 
-    /*
+    
     #[test]
     fn from_bytes_test() {
         let bytes: [u8; 50] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
-            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
+            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0,
+            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108,
             0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
 
@@ -549,13 +549,13 @@ mod test {
         assert_eq!(header.get_qr(), true);
         assert_eq!(header.get_op_code(), 2);
         assert_eq!(header.get_tc(), true);
-        assert_eq!(header.get_rcode(), 8);
+        assert_eq!(header.get_rcode(), 0);
         assert_eq!(header.get_ancount(), 1);
 
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(question.get_qtype(), 5);
-        assert_eq!(question.get_qclass(), 2);
+        assert_eq!(question.get_qtype(), 1);
+        assert_eq!(question.get_qclass(), 1);
 
         // Answer
         assert_eq!(answer.len(), 1);
@@ -578,7 +578,7 @@ mod test {
 
         // Additional
         assert_eq!(additional.len(), 0);
-    }*/
+    }
 
     #[test]
     fn to_bytes_test() {

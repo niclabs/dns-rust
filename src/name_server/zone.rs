@@ -123,71 +123,72 @@ impl NSZone {
     fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) {
         let mut children = self.get_children();
         let mut labels: Vec<&str> = host_name.split(".").collect();
+        // Check if the total number of octets is 255 or less
+        if host_name.len()-labels.len()+1 <= 255 {
 
-        labels.reverse();
+            labels.reverse();
 
-        let mut index = 0;
+            let label = labels.remove(0);
 
-        let label = labels.remove(0);
+            let exist_child = self.exist_child(label.to_string());
 
-        let exist_child = self.exist_child(label.to_string());
+            if exist_child == true {
+                let (mut child, index) = self.get_child(label.to_string());
 
-        if exist_child == true {
-            let (mut child, index) = self.get_child(label.to_string());
+                if labels.len() == 0 {
+                    child.set_value(rrs.clone());
 
-            if labels.len() == 0 {
-                child.set_value(rrs.clone());
+                    if self.check_rrs_only_ns(rrs) == true {
+                        child.set_subzone(true);
+                    }
+                } else {
+                    let mut new_name = "".to_string();
 
-                if self.check_rrs_only_ns(rrs) == true {
-                    child.set_subzone(true);
+                    labels.reverse();
+
+                    for label in labels {
+                        new_name.push_str(label);
+                        new_name.push_str(".");
+                    }
+
+                    new_name.pop();
+
+                    child.add_node(new_name, rrs);
                 }
-            } else {
-                let mut new_name = "".to_string();
 
-                labels.reverse();
+                children.remove(index as usize);
+                children.push(child);
+                self.set_children(children);
+            } else if self.check_label_name(label.to_string()) {
+                let mut new_ns_zone = NSZone::new();
+                new_ns_zone.set_name(label.to_string());
 
-                for label in labels {
-                    new_name.push_str(label);
-                    new_name.push_str(".");
+                println!("RRs len: {}", rrs.len());
+
+                if labels.len() == 0 {
+                    new_ns_zone.set_value(rrs.clone());
+
+                    if self.check_rrs_only_ns(rrs) == true {
+                        new_ns_zone.set_subzone(true);
+                    }
+                } else {
+                    let mut new_name = "".to_string();
+
+                    labels.reverse();
+
+                    for label in labels {
+                        new_name.push_str(label);
+                        new_name.push_str(".");
+                    }
+
+                    new_name.pop();
+
+                    new_ns_zone.add_node(new_name, rrs);
                 }
 
-                new_name.pop();
-
-                child.add_node(new_name, rrs);
+                children.push(new_ns_zone);
+                self.set_children(children);
             }
-
-            children.remove(index as usize);
-            children.push(child);
-            self.set_children(children);
-        } else if self.check_label_name(label.to_string()) {
-            let mut new_ns_zone = NSZone::new();
-            new_ns_zone.set_name(label.to_string());
-
-            println!("RRs len: {}", rrs.len());
-
-            if labels.len() == 0 {
-                new_ns_zone.set_value(rrs.clone());
-
-                if self.check_rrs_only_ns(rrs) == true {
-                    new_ns_zone.set_subzone(true);
-                }
-            } else {
-                let mut new_name = "".to_string();
-
-                labels.reverse();
-
-                for label in labels {
-                    new_name.push_str(label);
-                    new_name.push_str(".");
-                }
-
-                new_name.pop();
-
-                new_ns_zone.add_node(new_name, rrs);
-            }
-
-            children.push(new_ns_zone);
-            self.set_children(children);
         }
     }
 
@@ -247,7 +248,7 @@ impl NSZone {
     }
 
     fn check_label_name(&self, name: String) -> bool {
-        if name.len() > 63 {
+        if name.len() > 63 || name.len() == 0 {
             return false;
         }
         

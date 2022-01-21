@@ -22,7 +22,7 @@ mod global_tests {
     use std::thread;
     use std::time::Duration;
 
-    use crate::config::CLIENT_IP_PORT;
+    use crate::client::config::CLIENT_IP_PORT;
     use crate::config::NAME_SERVER_IP;
     use crate::config::RESOLVER_IP_PORT;
 

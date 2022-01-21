@@ -278,6 +278,21 @@ impl NSZone {
 
     // Sets the children with a new value
     pub fn set_children(&mut self, children: Vec<NSZone>) {
+        // check if there is duplicates labels
+        // checks from the vector's tail to keep the last added child
+        let mut labels: Vec<String> = ([]).to_vec();
+        let mut n = children.len();
+        while n > 0 {
+            let label = children[n-1].get_name();
+            if labels.contains(&label.clone()){
+                children.remove(n-1);
+                //TODO: add warning
+            } else {
+                labels.push(label.clone());
+            }
+            n -= 1;
+        }
+
         self.children = children;
     }
 
@@ -407,6 +422,29 @@ mod test {
         assert_eq!(nszone.get_children().len(), 0);
         nszone.set_children(children);
         assert_eq!(nszone.get_children().len(), 1);
+    }
+
+    
+    #[test]
+    fn set_duplicate_children_test() {
+        let mut nszone = NSZone::new();
+
+        let mut children: Vec<NSZone> = Vec::new();
+        let nszone_1 = NSZone::new();
+        nszone_1.set_name(String::from("test1"));
+        children.push(nszone_1);
+        let nszone_2 = NSZone::new();
+        nszone_2.set_name(String::from("test2"));
+        children.push(nszone_2);
+        let nszone_3 = NSZone::new();
+        nszone_3.set_name(String::from("test1"));
+        nszone_3.set_ip_address_for_refresh_zone(String::from("1.2.3"));
+        children.push(nszone_3);
+
+        assert_eq!(nszone.get_children().len(), 0);
+        nszone.set_children(children);
+        assert_eq!(nszone.get_children().len(), 2);
+        assert_eq!(nszone.get_children()[1].get_ip_address_for_refresh_zone(), String::from("1.2.3"));
     }
 
     // Other methods

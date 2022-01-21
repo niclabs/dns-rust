@@ -93,14 +93,12 @@ impl MxRdata {
         ttl: u32,
         class: String,
         host_name: String,
+        origin: String,
     ) -> ResourceRecord {
         let mut mx_rdata = MxRdata::new();
-        let mut domain_name = DomainName::new();
-
         let preference = values.next().unwrap().parse::<u16>().unwrap();
         let name = values.next().unwrap();
-
-        domain_name.set_name(name.to_string());
+        let mut domain_name = DomainName::from_master_file(name.to_string(), origin);
 
         mx_rdata.set_exchange(domain_name);
         mx_rdata.set_preference(preference);

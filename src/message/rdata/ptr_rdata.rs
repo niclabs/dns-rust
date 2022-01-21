@@ -81,12 +81,11 @@ impl PtrRdata {
         ttl: u32,
         class: String,
         host_name: String,
+        origin: String,
     ) -> ResourceRecord {
         let mut ptr_rdata = PtrRdata::new();
-        let mut domain_name = DomainName::new();
         let name = values.next().unwrap();
-
-        domain_name.set_name(name.to_string());
+        let mut domain_name = DomainName::from_master_file(name.to_string(), origin);
 
         ptr_rdata.set_ptrdname(domain_name);
 

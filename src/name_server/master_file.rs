@@ -275,18 +275,47 @@ impl MasterFile {
 
         let resource_record = match rr_type.as_str() {
             "A" => ARdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
-            "NS" => NsRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
-            "CNAME" => CnameRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "NS" => NsRdata::rr_from_master_file(
+                items,
+                ttl,
+                class,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
+            "CNAME" => CnameRdata::rr_from_master_file(
+                items,
+                ttl,
+                class,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
             "SOA" => {
                 self.set_class_default(class.clone());
-                let (rr, minimum) =
-                    SoaRdata::rr_from_master_file(items, ttl, class, full_host_name.clone());
+                let (rr, minimum) = SoaRdata::rr_from_master_file(
+                    items,
+                    ttl,
+                    class,
+                    full_host_name.clone(),
+                    origin.clone(),
+                );
                 self.set_ttl_default(minimum);
                 rr
             }
-            "PTR" => PtrRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "PTR" => PtrRdata::rr_from_master_file(
+                items,
+                ttl,
+                class,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
             "HINFO" => HinfoRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
-            "MX" => MxRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "MX" => MxRdata::rr_from_master_file(
+                items,
+                ttl,
+                class,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
             "TXT" => TxtRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
             _ => unreachable!(),
         };

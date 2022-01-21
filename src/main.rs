@@ -15,11 +15,10 @@ use crate::resolver::Resolver;
 use std::sync::mpsc;
 use std::thread;
 
-use crate::config::RESOLVER_IP_PORT;
-use crate::config::SBELT_ROOT_IPS;
 use crate::config::MASTER_FILES;
 use crate::config::NAME_SERVER_IP;
-
+use crate::config::RESOLVER_IP_PORT;
+use crate::config::SBELT_ROOT_IPS;
 
 pub fn main() {
     // Users input
@@ -31,8 +30,7 @@ pub fn main() {
 
     if trim_input_line == "C" {
         client::run_client();
-    }
-    else {
+    } else {
         // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
@@ -65,17 +63,17 @@ pub fn main() {
                 update_cache_sender_ns_udp.clone(),
                 update_cache_sender_ns_tcp.clone(),
             );
-        
+
             resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
-        
+
             let mut sbelt = Slist::new();
 
             for ip in SBELT_ROOT_IPS {
                 sbelt.insert(".".to_string(), ip.to_string(), 5000);
             }
-        
+
             resolver.set_sbelt(sbelt);
-        
+
             resolver.run_resolver(
                 add_recv_udp,
                 delete_recv_udp,
@@ -86,13 +84,9 @@ pub fn main() {
                 rx_update_zone_udp,
                 rx_update_zone_tcp,
             );
-        }
-
-        else if trim_input_line == "N" {
-
+        } else if trim_input_line == "N" {
             let (update_refresh_zone_udp, rx_update_refresh_zone_udp) = mpsc::channel();
             let (update_refresh_zone_tcp, rx_update_refresh_zone_tcp) = mpsc::channel();
-
 
             let mut name_server = NameServer::new(
                 false,
@@ -107,9 +101,9 @@ pub fn main() {
                 update_zone_udp.clone(),
                 update_zone_tcp.clone(),
             );
-            
+
             for master_file in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string()); 
+                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string());
             }
 
             name_server.run_name_server(
@@ -124,9 +118,7 @@ pub fn main() {
                 rx_update_refresh_zone_udp,
                 rx_update_refresh_zone_tcp,
             );
-        }
-
-        else if trim_input_line == "NR" {
+        } else if trim_input_line == "NR" {
             // Resolver Initialize
             let mut resolver = Resolver::new(
                 add_sender_udp.clone(),
@@ -142,22 +134,21 @@ pub fn main() {
                 update_cache_sender_ns_udp.clone(),
                 update_cache_sender_ns_tcp.clone(),
             );
-        
+
             resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
-        
+
             let mut sbelt = Slist::new();
 
             for ip in SBELT_ROOT_IPS {
                 sbelt.insert(".".to_string(), ip.to_string(), 5000);
             }
-        
+
             resolver.set_sbelt(sbelt);
             //
 
             // Name Server initialize
             let (update_refresh_zone_udp, rx_update_refresh_zone_udp) = mpsc::channel();
             let (update_refresh_zone_tcp, rx_update_refresh_zone_tcp) = mpsc::channel();
-
 
             let mut name_server = NameServer::new(
                 false,
@@ -172,15 +163,14 @@ pub fn main() {
                 update_zone_udp,
                 update_zone_tcp,
             );
-            
+
             for master_file in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string()); 
+                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string());
             }
             //
 
             // Set zones to resolver
             resolver.set_ns_data(name_server.get_zones());
-
 
             // Run Name server
             thread::spawn(move || {
@@ -211,75 +201,6 @@ pub fn main() {
                 rx_update_zone_tcp,
             );
             //
-        }   
-    }
-}
-
-fn test_tcp() {
-    let mut stream = TcpStream::connect("8.8.8.8:53").expect("No conection");
-
-    println!("{}", stream.peer_addr().unwrap().to_string());
-
-    println!("{}", stream.local_addr().unwrap().to_string());
-
-    let new_msg: [u8; 33] = [
-        0, 31, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6,
-        0b01110101, 0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011,
-        0b01101100, 0, 0, 1, 0, 1,
-    ];
-
-    stream.write(&new_msg);
-
-    println!("{}", "Enviado");
-
-    let mut received_msg = [0; 512];
-    let size = stream.read(&mut received_msg);
-
-    println!("Recibidos {} bytes", size.unwrap());
-}
-
-fn test_udp() {
-    let socket = UdpSocket::bind("192.168.1.89:58396").expect("Failed to bind host socket");
-
-    let new_msg: [u8; 31] = [
-        0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6, 0b01110101,
-        0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011, 0b01101100, 0,
-        0, 1, 0, 1,
-    ];
-
-    socket
-        .send_to(&new_msg, "8.8.8.8:53")
-        .expect("failed to send message");
-
-    println!("{}", "Enviado");
-
-    let mut received_msg = [0; 512];
-    let (number_of_bytes, src_address) = socket
-        .recv_from(&mut received_msg)
-        .expect("No data received");
-
-    let dns_msg = DnsMessage::from_bytes(&received_msg).unwrap();
-
-    let answers = dns_msg.get_answer();
-
-    for answer in answers {
-        let name = answer.get_name();
-        let r_data = answer.get_rdata();
-
-        println!("Name: {}", name.get_name());
-
-        let a_rdata = match r_data {
-            Rdata::SomeARdata(val) => val,
-            _ => unreachable!(),
-        };
-
-        let address = a_rdata.get_address();
-
-        println!("Address:");
-        for a in address {
-            println!("{}", a);
         }
     }
-
-    println!("Recibidos {} bytes", number_of_bytes);
 }

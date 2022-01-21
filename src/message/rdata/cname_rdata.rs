@@ -79,12 +79,13 @@ impl CnameRdata {
         ttl: u32,
         class: String,
         host_name: String,
+        origin: String,
     ) -> ResourceRecord {
         let mut cname_rdata = CnameRdata::new();
-        let mut domain_name = DomainName::new();
-        let name = values.next().unwrap();
 
-        domain_name.set_name(name.to_string());
+        let name = values.next().unwrap();
+        let mut domain_name = DomainName::from_master_file(name.to_string(), origin);
+
         cname_rdata.set_cname(domain_name);
 
         let rdata = Rdata::SomeCnameRdata(cname_rdata);

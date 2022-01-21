@@ -155,6 +155,25 @@ impl DomainName {
 
         bytes
     }
+
+    pub fn from_master_file(mut name: String, host_name: String) -> Self {
+        let end_dot = name.ends_with(".");
+
+        // Absolute host name
+        if end_dot == true {
+            name.remove(name.len() - 1);
+            return DomainName { name: name };
+        } else {
+            // Add the origin host_name
+            let full_host_name = name.clone();
+            full_host_name.push_str(".");
+            full_host_name.push_str(&host_name);
+
+            return DomainName {
+                name: full_host_name,
+            };
+        }
+    }
 }
 
 // Setters Domain Name

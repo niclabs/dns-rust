@@ -81,12 +81,11 @@ impl NsRdata {
         ttl: u32,
         class: String,
         host_name: String,
+        origin: String,
     ) -> ResourceRecord {
         let mut ns_rdata = NsRdata::new();
-        let mut domain_name = DomainName::new();
         let name = values.next().unwrap();
-
-        domain_name.set_name(name.to_string());
+        let mut domain_name = DomainName::from_master_file(name.to_string(), origin);
 
         ns_rdata.set_nsdname(domain_name);
 

@@ -221,10 +221,9 @@ impl SoaRdata {
         mut ttl: u32,
         class: String,
         host_name: String,
+        origin: String,
     ) -> (ResourceRecord, u32) {
         let mut soa_rdata = SoaRdata::new();
-        let mut m_name = DomainName::new();
-        let mut r_name = DomainName::new();
 
         let m_name_str = values.next().unwrap();
         let r_name_str = values.next().unwrap();
@@ -234,8 +233,8 @@ impl SoaRdata {
         let expire = values.next().unwrap().parse::<u32>().unwrap();
         let minimum = values.next().unwrap().parse::<u32>().unwrap();
 
-        m_name.set_name(m_name_str.to_string());
-        r_name.set_name(r_name_str.to_string());
+        let mut m_name = DomainName::from_master_file(m_name_str.to_string(), origin.clone());
+        let mut r_name = DomainName::from_master_file(r_name_str.to_string(), origin);
 
         soa_rdata.set_mname(m_name);
         soa_rdata.set_rname(r_name);

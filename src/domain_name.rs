@@ -1,3 +1,5 @@
+use crate::name_server::zone::NSZone;
+
 use std::string::String;
 
 #[derive(Clone, Default)]
@@ -96,6 +98,14 @@ impl DomainName {
                 let label_string =
                     DomainName::from_bytes_no_offset(&no_domain_bytes[..(first_byte + 1) as usize]);
 
+                // Checks label restrictions
+                let check_label = NSZone::check_label_name(label_string);
+
+                if check_label == false {
+                    return Err("Format Error");
+                }
+                //
+
                 domain_name_str.push_str(&label_string);
                 domain_name_str.push_str(".");
                 no_domain_bytes = &no_domain_bytes[(first_byte + 1) as usize..];
@@ -109,6 +119,17 @@ impl DomainName {
         }
 
         domain_name_str.remove(domain_name_str.len() - 1);
+
+        // Check domain name restriction, max 255 octets
+        let initial_bytes_len = bytes.len();
+        let final_bytes_len = no_domain_bytes.len();
+
+        let domain_name_len = initial_bytes_len - final_bytes_len;
+
+        if domain_name_len > 255 {
+            return Err("Format Error");
+        }
+        //
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(domain_name_str);
@@ -133,6 +154,25 @@ impl DomainName {
         bytes.push(0 as u8);
 
         bytes
+    }
+
+    pub fn from_master_file(mut name: String, host_name: String) -> Self {
+        let end_dot = name.ends_with(".");
+
+        // Absolute host name
+        if end_dot == true {
+            name.remove(name.len() - 1);
+            return DomainName { name: name };
+        } else {
+            // Add the origin host_name
+            let full_host_name = name.clone();
+            full_host_name.push_str(".");
+            full_host_name.push_str(&host_name);
+
+            return DomainName {
+                name: full_host_name,
+            };
+        }
     }
 }
 

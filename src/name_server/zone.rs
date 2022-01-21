@@ -158,7 +158,7 @@ impl NSZone {
                 children.remove(index as usize);
                 children.push(child);
                 self.set_children(children);
-            } else if self.check_label_name(label.to_string()) {
+            } else if NSZone::check_label_name(label.to_string()) {
                 let mut new_ns_zone = NSZone::new();
                 new_ns_zone.set_name(label.to_string());
 
@@ -246,7 +246,7 @@ impl NSZone {
         rrs
     }
 
-    fn check_label_name(name: String) -> bool {
+    pub fn check_label_name(name: String) -> bool {
         if name.len() > 63 || name.len() == 0 {
             return false;
         }
@@ -256,7 +256,7 @@ impl NSZone {
                 return false;
             } else if i == name.len() - 1 && !c.is_ascii_alphanumeric() {
                 return false;
-            } else if !(c.is_ascii_alphanumeric() || c == '_') {
+            } else if !(c.is_ascii_alphanumeric() || c=='-') {
                 return false;
             }
         }

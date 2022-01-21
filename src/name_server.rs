@@ -6,6 +6,7 @@ use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
 use crate::name_server::zone_refresh::ZoneRefresh;
 use crate::resolver::Resolver;
+use crate::config::RECURSIVE_AVAILABLE;
 
 use chrono::{DateTime, Utc};
 use core::time;
@@ -449,12 +450,19 @@ impl NameServer {
                 let tx_delete_ns_tcp_copy = tx_delete_ns_tcp.clone();
 
                 thread::spawn(move || {
-                    // Set RA bit to 1
-                    let new_msg = NameServer::set_ra(dns_message, true);
+                    // default RA bit to 1
+                    let mut ra = true;
+                    let mut new_msg = NameServer::set_ra(dns_message, true);
+
+                    // RA bit to 0
+                    if RECURSIVE_AVAILABLE == false {
+                        new_msg = NameServer::set_ra(dns_message, false);
+                        ra = false;
+                    }
 
                     let rd = new_msg.get_header().get_rd();
 
-                    if rd == true {
+                    if rd == true && ra == true {
                         NameServer::step_5_udp(
                             resolver_ip_clone,
                             new_msg,

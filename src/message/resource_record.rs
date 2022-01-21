@@ -1,5 +1,14 @@
-use crate::domain_name::DomainName;
+use crate::message::rdata::cname_rdata::CnameRdata;
+use crate::message::rdata::a_rdata::ARdata;
+use crate::message::rdata::hinfo_rdata::HinfoRdata;
+use crate::message::rdata::mx_rdata::MxRdata;
+use crate::message::rdata::ns_rdata::NsRdata;
+use crate::message::rdata::ptr_rdata::PtrRdata;
+use crate::message::rdata::soa_rdata::SoaRdata;
+use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::rdata::Rdata;
+
+use crate::domain_name::DomainName;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -360,6 +369,17 @@ impl ResourceRecord {
     /// Sets the rdata attribute with a value
     pub fn set_rdata(&mut self, rdata: Rdata) {
         self.rdata = rdata;
+        match rdata {
+            Rdata::SomeARdata(val) => self.type_code = 1 ,
+            Rdata::SomeNsRdata(val) => self.type_code = 2 ,
+            Rdata::SomeCnameRdata(val) => self.type_code = 5 ,
+            Rdata::SomeSoaRdata(val) => self.type_code = 6 ,
+            Rdata::SomePtrRdata(val) => self.type_code = 12 ,
+            Rdata::SomeHinfoRdata(val) => self.type_code = 13 ,
+            Rdata::SomeMxRdata(val) => self.type_code = 15 ,
+            Rdata::SomeTxtRdata(val) => self.type_code = 16 ,
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -397,6 +417,7 @@ impl ResourceRecord {
 }
 
 
+
 // Tests
 mod test {
     use crate::domain_name::DomainName;
@@ -410,7 +431,7 @@ mod test {
         let resource_record = ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(resource_record.type_code, 0);
+        assert_eq!(resource_record.type_code, 16);
         assert_eq!(resource_record.class, 0);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);

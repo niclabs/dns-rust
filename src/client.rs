@@ -144,7 +144,7 @@ pub fn run_client() {
                     println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
                 }
                 Rdata::SomeTxtRdata(val) => {
-                    println!("Txt: {}", val.get_text())
+                    println!("Txt: {:#?}", val.get_text())
                 }
             }
         }
@@ -177,7 +177,7 @@ pub fn run_client() {
                     println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
                 }
                 Rdata::SomeTxtRdata(val) => {
-                    println!("Txt: {}", val.get_text())
+                    println!("Txt: {:#?}", val.get_text())
                 }
             }
         }
@@ -210,7 +210,7 @@ pub fn run_client() {
                     println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
                 }
                 Rdata::SomeTxtRdata(val) => {
-                    println!("Txt: {}", val.get_text())
+                    println!("Txt: {:#?}", val.get_text())
                 }
             }
         }

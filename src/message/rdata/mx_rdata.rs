@@ -91,7 +91,7 @@ impl MxRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: u16,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -111,16 +111,7 @@ impl MxRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(15);
-
-        let class_int = match class.as_str() {
-            "IN" => 1,
-            "CS" => 2,
-            "CH" => 3,
-            "HS" => 4,
-            _ => unreachable!(),
-        };
-
-        resource_record.set_class(class_int);
+        resource_record.set_class(class);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
 

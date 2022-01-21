@@ -10,4 +10,3 @@ pub static QTYPE: u16 = 2;
 pub static QCLASS: u16 = 1;
 pub static TRANSPORT: &'static str = "UDP";
 pub static TIMEOUT: u64 = 5;
-pub static RECURSIVE_MODE = true; // default is recursive ?

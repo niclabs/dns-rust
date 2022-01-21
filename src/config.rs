@@ -20,4 +20,5 @@ pub static USE_CACHE: bool = true;
 // ------------- NameServer Config -------------------
 pub static NAME_SERVER_IP: &'static str = "192.168.1.89";
 pub static MASTER_FILES: [&str; 1] = ["test.txt"];
+pub static RECURSIVE_AVAILABLE = true; // recursive name server available as default
 // ---------------------------------------------------

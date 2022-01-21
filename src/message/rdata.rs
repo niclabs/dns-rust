@@ -1,3 +1,4 @@
+pub mod a_ch_rdata;
 pub mod a_rdata;
 pub mod cname_rdata;
 pub mod hinfo_rdata;
@@ -8,6 +9,7 @@ pub mod soa_rdata;
 pub mod txt_rdata;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
+use a_ch_rdata::AChRdata;
 use a_rdata::ARdata;
 use cname_rdata::CnameRdata;
 use hinfo_rdata::HinfoRdata;
@@ -21,6 +23,7 @@ use txt_rdata::TxtRdata;
 /// This enum, enumerates the differents types of rdata struct
 pub enum Rdata {
     SomeARdata(ARdata),
+    SomeAChRdata(AChRdata),
     SomeMxRdata(MxRdata),
     SomeNsRdata(NsRdata),
     SomePtrRdata(PtrRdata),
@@ -36,6 +39,7 @@ impl ToBytes for Rdata {
     fn to_bytes(&self) -> Vec<u8> {
         match self {
             Rdata::SomeARdata(val) => val.to_bytes(),
+            Rdata::SomeAChRdata(val) => val.to_bytes(),
             Rdata::SomeMxRdata(val) => val.to_bytes(),
             Rdata::SomeNsRdata(val) => val.to_bytes(),
             Rdata::SomePtrRdata(val) => val.to_bytes(),
@@ -50,20 +54,34 @@ impl ToBytes for Rdata {
 impl FromBytes<Result<Rdata, &'static str>> for Rdata {
     /// Given an array of bytes and a type code, returns a new Rdata
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Rdata, &'static str> {
-        let type_code = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
+        let type_code = (bytes[bytes.len() - 4] as u16) << 8 | bytes[bytes.len() - 3] as u16;
+        let class = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
 
         let especific_rdata = match type_code {
             1 => {
-                let rdata = ARdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                if class == 3 {
+                    let rdata = AChRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
-                match rdata {
-                    Ok(_) => {}
-                    Err(e) => {
-                        return Err(e);
+                    match rdata {
+                        Ok(_) => {}
+                        Err(e) => {
+                            return Err(e);
+                        }
                     }
-                }
 
-                Ok(Rdata::SomeARdata(rdata.unwrap()))
+                    Ok(Rdata::SomeAChRdata(rdata.unwrap()))
+                } else {
+                    let rdata = ARdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+
+                    match rdata {
+                        Ok(_) => {}
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
+
+                    Ok(Rdata::SomeARdata(rdata.unwrap()))
+                }
             }
             2 => {
                 let rdata = NsRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);

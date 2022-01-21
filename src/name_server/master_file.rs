@@ -1,3 +1,4 @@
+use crate::message::rdata::a_ch_rdata::AChRdata;
 use crate::message::rdata::a_rdata::ARdata;
 use crate::message::rdata::cname_rdata::CnameRdata;
 use crate::message::rdata::hinfo_rdata::HinfoRdata;
@@ -273,19 +274,39 @@ impl MasterFile {
             full_host_name.push_str(&origin);
         }
 
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
         let resource_record = match rr_type.as_str() {
-            "A" => ARdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "A" => {
+                if class_int == 3 {
+                    AChRdata::rr_from_master_file(
+                        items,
+                        ttl,
+                        class_int,
+                        full_host_name.clone(),
+                        origin.clone(),
+                    )
+                } else {
+                    ARdata::rr_from_master_file(items, ttl, class_int, full_host_name.clone())
+                }
+            }
             "NS" => NsRdata::rr_from_master_file(
                 items,
                 ttl,
-                class,
+                class_int,
                 full_host_name.clone(),
                 origin.clone(),
             ),
             "CNAME" => CnameRdata::rr_from_master_file(
                 items,
                 ttl,
-                class,
+                class_int,
                 full_host_name.clone(),
                 origin.clone(),
             ),
@@ -294,7 +315,7 @@ impl MasterFile {
                 let (rr, minimum) = SoaRdata::rr_from_master_file(
                     items,
                     ttl,
-                    class,
+                    class_int,
                     full_host_name.clone(),
                     origin.clone(),
                 );
@@ -304,19 +325,21 @@ impl MasterFile {
             "PTR" => PtrRdata::rr_from_master_file(
                 items,
                 ttl,
-                class,
+                class_int,
                 full_host_name.clone(),
                 origin.clone(),
             ),
-            "HINFO" => HinfoRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "HINFO" => {
+                HinfoRdata::rr_from_master_file(items, ttl, class_int, full_host_name.clone())
+            }
             "MX" => MxRdata::rr_from_master_file(
                 items,
                 ttl,
-                class,
+                class_int,
                 full_host_name.clone(),
                 origin.clone(),
             ),
-            "TXT" => TxtRdata::rr_from_master_file(items, ttl, class, full_host_name.clone()),
+            "TXT" => TxtRdata::rr_from_master_file(items, ttl, class_int, full_host_name.clone()),
             _ => unreachable!(),
         };
 

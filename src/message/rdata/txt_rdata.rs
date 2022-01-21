@@ -79,10 +79,9 @@ impl TxtRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: u16,
         host_name: String,
     ) -> ResourceRecord {
-
         let mut text: Vec<String> = Vec::new();
         for string in values {
             text.push(string.to_string());
@@ -99,16 +98,7 @@ impl TxtRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(16);
-
-        let class_int = match class.as_str() {
-            "IN" => 1,
-            "CS" => 2,
-            "CH" => 3,
-            "HS" => 4,
-            _ => unreachable!(),
-        };
-
-        resource_record.set_class(class_int);
+        resource_record.set_class(class);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(rd_lenght as u16);
 
@@ -141,7 +131,10 @@ mod test {
         let text = vec!["constructor".to_string(), "test".to_string()];
         let txt_rdata = TxtRdata::new(text);
 
-        assert_eq!(txt_rdata.text, vec!["constructor".to_string(), "test".to_string()]);
+        assert_eq!(
+            txt_rdata.text,
+            vec!["constructor".to_string(), "test".to_string()]
+        );
     }
 
     #[test]
@@ -154,7 +147,7 @@ mod test {
 
     #[test]
     fn to_bytes_test() {
-        let text = vec!["dcc".to_string(), "test".to_string()]; 
+        let text = vec!["dcc".to_string(), "test".to_string()];
         let txt_rdata = TxtRdata::new(text);
 
         let bytes_test = [3, 100, 99, 99, 4, 116, 101, 115, 116];
@@ -164,12 +157,14 @@ mod test {
 
     #[test]
     fn from_bytes_test() {
-
         let bytes_test: [u8; 9] = [3, 100, 99, 99, 4, 116, 101, 115, 116];
 
         // bytes is not the full msg, but in this case it will not use inside
         let txt_rdata = TxtRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
 
-        assert_eq!(txt_rdata.get_text(), vec!["dcc".to_string(), "test".to_string()]);
+        assert_eq!(
+            txt_rdata.get_text(),
+            vec!["dcc".to_string(), "test".to_string()]
+        );
     }
 }

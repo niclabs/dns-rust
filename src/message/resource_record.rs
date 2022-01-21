@@ -147,6 +147,8 @@ impl ResourceRecord {
         let mut rdata_bytes_vec = bytes_without_name[10..].to_vec();
         rdata_bytes_vec.push(bytes_without_name[0]);
         rdata_bytes_vec.push(bytes_without_name[1]);
+        rdata_bytes_vec.push(bytes_without_name[2]);
+        rdata_bytes_vec.push(bytes_without_name[3]);
 
         let rdata_result = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
 
@@ -416,8 +418,6 @@ impl ResourceRecord {
     }
 }
 
-
-
 // Tests
 mod test {
     use crate::domain_name::DomainName;
@@ -505,7 +505,7 @@ mod test {
         let rdlength = resource_record.get_rdlength();
         assert_eq!(rdlength, 59 as u16);
     }
-    
+
     #[test]
     fn to_bytes_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
@@ -533,7 +533,7 @@ mod test {
             assert_eq!(*value, bytes_msg[i]);
             i += 1;
         }
-    } 
+    }
 
     #[test]
     fn bytes_to_resource_record_test() {

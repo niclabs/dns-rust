@@ -396,6 +396,7 @@ impl ResourceRecord {
     }
 }
 
+
 // Tests
 mod test {
     use crate::domain_name::DomainName;
@@ -405,7 +406,7 @@ mod test {
 
     #[test]
     fn constructor_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let resource_record = ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
@@ -418,13 +419,13 @@ mod test {
                 Rdata::SomeTxtRdata(val) => val.get_text(),
                 _ => unreachable!(),
             },
-            String::from("dcc")
+            vec!["dcc".to_string()]
         );
     }
 
     #[test]
     fn set_and_get_name_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_name().get_name(), String::from(""));
 
@@ -438,7 +439,7 @@ mod test {
 
     #[test]
     fn set_and_get_type_code_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_type_code(), 0);
 
@@ -450,7 +451,7 @@ mod test {
 
     #[test]
     fn set_and_get_class_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_class(), 0);
 
@@ -462,7 +463,7 @@ mod test {
 
     #[test]
     fn set_and_get_ttl_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_ttl(), 0);
 
@@ -474,7 +475,7 @@ mod test {
 
     #[test]
     fn set_and_get_rdlength_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_rdlength(), 0);
 
@@ -483,10 +484,10 @@ mod test {
         let rdlength = resource_record.get_rdlength();
         assert_eq!(rdlength, 59 as u16);
     }
-
+    
     #[test]
     fn to_bytes_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
 
         let mut domain_name = DomainName::new();
@@ -496,10 +497,10 @@ mod test {
         resource_record.set_type_code(16);
         resource_record.set_class(1);
         resource_record.set_ttl(5642);
-        resource_record.set_rdlength(3);
+        resource_record.set_rdlength(4);
 
         let bytes_msg = [
-            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 3, 100,
+            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 4, 3, 100,
             99, 99,
         ];
 
@@ -511,20 +512,20 @@ mod test {
             assert_eq!(*value, bytes_msg[i]);
             i += 1;
         }
-    }
+    } 
 
     #[test]
     fn bytes_to_resource_record_test() {
-        let bytes_msg: [u8; 23] = [
-            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104,
+        let bytes_msg: [u8; 24] = [
+            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104,
             101, 108, 108, 111,
         ];
 
-        let full_msg: [u8; 54] = [
+        let full_msg: [u8; 55] = [
             0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6,
             0b01110101, 0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011,
             0b01101100, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0,
-            0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
+            0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
 
         let (resource_record_test, _other_rr_bytes) =
@@ -537,13 +538,13 @@ mod test {
         assert_eq!(resource_record_test.get_type_code(), 16);
         assert_eq!(resource_record_test.get_class(), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
-        assert_eq!(resource_record_test.get_rdlength(), 5);
+        assert_eq!(resource_record_test.get_rdlength(), 6);
         assert_eq!(
             match resource_record_test.get_rdata() {
                 Rdata::SomeTxtRdata(val) => val.get_text(),
                 _ => unreachable!(),
             },
-            String::from("hello")
+            vec!["hello".to_string()]
         );
     }
 }

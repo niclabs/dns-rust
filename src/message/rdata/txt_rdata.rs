@@ -13,18 +13,22 @@ use std::string::String;
 ///
 pub struct TxtRdata {
     // One or more <character-string>s.
-    text: String,
+    text: Vec<String>,
 }
 
 impl ToBytes for TxtRdata {
     /// Return a vec of bytes that represents the txt rdata
     fn to_bytes(&self) -> Vec<u8> {
-        let mut text = self.get_text();
+        let text = self.get_text();
         let mut bytes: Vec<u8> = Vec::new();
 
-        for _character_index in 0..text.len() {
-            let character_to_byte = text.remove(0) as u8;
-            bytes.push(character_to_byte);
+        for mut string in text {
+            let lenght_octet = string.len();
+            bytes.push(lenght_octet as u8);
+            for _character_index in 0..string.len() {
+                let character_to_byte = string.remove(0) as u8;
+                bytes.push(character_to_byte);
+            }
         }
 
         bytes
@@ -35,12 +39,22 @@ impl FromBytes<Result<Self, &'static str>> for TxtRdata {
     /// Creates a new TxtRdata from an array of bytes
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut string = String::from("");
+        let mut txt: Vec<String> = Vec::new();
+        let mut i = 0;
 
-        for byte in bytes {
-            string.push(*byte as char);
+        while i < bytes.len() {
+            let mut lenght_octet = bytes[i];
+            i += 1;
+            for _chars in 0..lenght_octet {
+                let byte = bytes[i];
+                string.push(byte as char);
+                i += 1;
+            }
+            txt.push(string);
+            string = String::from("");
         }
 
-        let txt_rdata = TxtRdata::new(string);
+        let txt_rdata = TxtRdata::new(txt);
 
         Ok(txt_rdata)
     }
@@ -56,7 +70,7 @@ impl TxtRdata {
     /// assert_eq!(txt_rdata.text, String::from("test"));
     /// ```
     ///
-    pub fn new(text: String) -> Self {
+    pub fn new(text: Vec<String>) -> Self {
         let txt_rdata = TxtRdata { text: text };
 
         txt_rdata
@@ -68,9 +82,14 @@ impl TxtRdata {
         class: String,
         host_name: String,
     ) -> ResourceRecord {
-        let text = values.next().unwrap();
 
-        let mut txt_rdata = TxtRdata::new(text.to_string());
+        let mut text: Vec<String> = Vec::new();
+        for string in values {
+            text.push(string.to_string());
+        }
+
+        let rd_lenght = text.len();
+        let mut txt_rdata = TxtRdata::new(text);
 
         let rdata = Rdata::SomeTxtRdata(txt_rdata);
 
@@ -91,7 +110,7 @@ impl TxtRdata {
 
         resource_record.set_class(class_int);
         resource_record.set_ttl(ttl);
-        resource_record.set_rdlength(text.len() as u16);
+        resource_record.set_rdlength(rd_lenght as u16);
 
         resource_record
     }
@@ -100,7 +119,7 @@ impl TxtRdata {
 // Getters
 impl TxtRdata {
     // Gets the text attribute
-    pub fn get_text(&self) -> String {
+    pub fn get_text(&self) -> Vec<String> {
         self.text.clone()
     }
 }
@@ -108,7 +127,7 @@ impl TxtRdata {
 // Setters
 impl TxtRdata {
     // Sets the text field with a value
-    pub fn set_text(&mut self, text: String) {
+    pub fn set_text(&mut self, text: Vec<String>) {
         self.text = text;
     }
 }
@@ -119,36 +138,38 @@ mod test {
 
     #[test]
     fn constructor_test() {
-        let txt_rdata = TxtRdata::new(String::from("test"));
+        let text = vec!["constructor".to_string(), "test".to_string()];
+        let txt_rdata = TxtRdata::new(text);
 
-        assert_eq!(txt_rdata.text, String::from("test"));
+        assert_eq!(txt_rdata.text, vec!["constructor".to_string(), "test".to_string()]);
     }
 
     #[test]
     fn set_and_get_text_test() {
-        let mut txt_rdata = TxtRdata::new(String::from("test"));
+        let mut txt_rdata = TxtRdata::new(vec!["".to_string()]);
+        txt_rdata.set_text(vec!["test".to_string()]);
 
-        txt_rdata.set_text(String::from("second test"));
-
-        assert_eq!(txt_rdata.get_text(), String::from("second test"));
+        assert_eq!(txt_rdata.get_text(), vec!["test".to_string()]);
     }
 
     #[test]
     fn to_bytes_test() {
-        let txt_rdata = TxtRdata::new(String::from("dcc"));
+        let text = vec!["dcc".to_string(), "test".to_string()]; 
+        let txt_rdata = TxtRdata::new(text);
 
-        let bytes_test = [100, 99, 99];
+        let bytes_test = [3, 100, 99, 99, 4, 116, 101, 115, 116];
 
         assert_eq!(txt_rdata.to_bytes(), bytes_test);
     }
 
     #[test]
     fn from_bytes_test() {
-        let bytes: [u8; 4] = [116, 101, 115, 116];
+
+        let bytes_test: [u8; 9] = [3, 100, 99, 99, 4, 116, 101, 115, 116];
 
         // bytes is not the full msg, but in this case it will not use inside
-        let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes).unwrap();
+        let txt_rdata = TxtRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
 
-        assert_eq!(txt_rdata.get_text(), String::from("test"));
+        assert_eq!(txt_rdata.get_text(), vec!["dcc".to_string(), "test".to_string()]);
     }
 }

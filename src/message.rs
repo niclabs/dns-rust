@@ -426,6 +426,7 @@ impl DnsMessage {
     }
 }
 
+
 mod test {
     use crate::domain_name::DomainName;
     use crate::message::header::Header;
@@ -531,12 +532,13 @@ mod test {
         assert_eq!(dns_query_message.get_additional().len(), 1);
     }
 
+    
     #[test]
     fn from_bytes_test() {
-        let bytes: [u8; 49] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
-            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
-            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
+        let bytes: [u8; 50] = [
+            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0,
+            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108,
+            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
 
         let dns_message = DnsMessage::from_bytes(&bytes).unwrap();
@@ -552,13 +554,13 @@ mod test {
         assert_eq!(header.get_qr(), true);
         assert_eq!(header.get_op_code(), 2);
         assert_eq!(header.get_tc(), true);
-        assert_eq!(header.get_rcode(), 8);
+        assert_eq!(header.get_rcode(), 0);
         assert_eq!(header.get_ancount(), 1);
 
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(question.get_qtype(), 5);
-        assert_eq!(question.get_qclass(), 2);
+        assert_eq!(question.get_qtype(), 1);
+        assert_eq!(question.get_qclass(), 1);
 
         // Answer
         assert_eq!(answer.len(), 1);
@@ -567,13 +569,13 @@ mod test {
         assert_eq!(answer[0].get_type_code(), 16);
         assert_eq!(answer[0].get_class(), 1);
         assert_eq!(answer[0].get_ttl(), 5642);
-        assert_eq!(answer[0].get_rdlength(), 5);
+        assert_eq!(answer[0].get_rdlength(), 6);
         assert_eq!(
             match answer[0].get_rdata() {
                 Rdata::SomeTxtRdata(val) => val.get_text(),
                 _ => unreachable!(),
             },
-            String::from("hello")
+            vec!["hello".to_string()]
         );
 
         // Authority
@@ -603,7 +605,7 @@ mod test {
         question.set_qtype(5);
         question.set_qclass(2);
 
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("hello")));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
 
         let mut domain_name = DomainName::new();
@@ -613,7 +615,7 @@ mod test {
         resource_record.set_type_code(16);
         resource_record.set_class(1);
         resource_record.set_ttl(5642);
-        resource_record.set_rdlength(5);
+        resource_record.set_rdlength(6);
 
         let answer = vec![resource_record];
 
@@ -627,10 +629,10 @@ mod test {
 
         let msg_bytes = &dns_msg.to_bytes();
 
-        let real_bytes: [u8; 49] = [
+        let real_bytes: [u8; 50] = [
             0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
             0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
-            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104, 101, 108, 108, 111,
+            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
 
         let mut i = 0;

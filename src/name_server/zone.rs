@@ -257,7 +257,7 @@ impl NSZone {
                 return false;
             } else if i==name.len()-1 && !c.is_ascii_alphanumeric(){
                 return false;
-            } else if !(c.is_ascii_alphanumeric() || c=='_') {
+            } else if !(c.is_ascii_alphanumeric() || c=='-') {
                 return false;
             }
         }

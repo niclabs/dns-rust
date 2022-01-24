@@ -12,6 +12,8 @@ pub struct NSZone {
     children: Vec<NSZone>,
     subzone: bool,
     glue_rrs: Vec<ResourceRecord>,
+    // Zone class
+    class: u16,
 }
 
 impl NSZone {
@@ -23,6 +25,7 @@ impl NSZone {
             children: Vec::<NSZone>::new(),
             subzone: false,
             glue_rrs: Vec::<ResourceRecord>::new(),
+            class: 1,
         };
 
         ns_zone
@@ -39,6 +42,7 @@ impl NSZone {
         ns_zone.set_name(origin);
         ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
         ns_zone.set_value(origin_rrs);
+        ns_zone.set_class_str(master_file_parsed.get_class_default());
 
         for (key, value) in rrs.iter() {
             println!("{} - {}", key.clone(), value.len());
@@ -222,6 +226,11 @@ impl NSZone {
 
     pub fn get_rrs_by_type(&self, rr_type: u16) -> Vec<ResourceRecord> {
         let rrs = self.get_value();
+
+        if rr_type == 255 {
+            return rrs;
+        }
+
         let mut rr_by_type = Vec::<ResourceRecord>::new();
 
         println!("RRs len zone: {}", rrs.len());
@@ -256,7 +265,7 @@ impl NSZone {
                 return false;
             } else if i == name.len() - 1 && !c.is_ascii_alphanumeric() {
                 return false;
-            } else if !(c.is_ascii_alphanumeric() || c=='-') {
+            } else if !(c.is_ascii_alphanumeric() || c == '-') {
                 return false;
             }
         }
@@ -283,9 +292,9 @@ impl NSZone {
         let mut labels: Vec<String> = ([]).to_vec();
         let mut n = children.len();
         while n > 0 {
-            let label = children[n-1].get_name();
-            if labels.contains(&label.clone()){
-                children.remove(n-1);
+            let label = children[n - 1].get_name();
+            if labels.contains(&label.clone()) {
+                children.remove(n - 1);
                 //TODO: add warning
             } else {
                 labels.push(label.clone());
@@ -309,6 +318,23 @@ impl NSZone {
     // Sets the glue_rrs with a new value
     pub fn set_glue_rrs(&mut self, glue_rrs: Vec<ResourceRecord>) {
         self.glue_rrs = glue_rrs;
+    }
+
+    // Sets the class for the zone
+    pub fn set_class(&mut self, class: u16) {
+        self.class = class;
+    }
+
+    // Sets the class from a string
+    pub fn set_class_str(&mut self, class: String) {
+        let class = match class.as_str() {
+            "IN" => 1,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        self.set_class(class);
     }
 }
 
@@ -341,6 +367,11 @@ impl NSZone {
     // Gets the glue rrs from the node
     pub fn get_glue_rrs(&self) -> Vec<ResourceRecord> {
         self.glue_rrs.clone()
+    }
+
+    // Gets the zone class
+    pub fn get_class(&self) -> u16 {
+        self.class
     }
 }
 
@@ -424,7 +455,6 @@ mod test {
         assert_eq!(nszone.get_children().len(), 1);
     }
 
-    
     #[test]
     fn set_duplicate_children_test() {
         let mut nszone = NSZone::new();
@@ -444,7 +474,10 @@ mod test {
         assert_eq!(nszone.get_children().len(), 0);
         nszone.set_children(children);
         assert_eq!(nszone.get_children().len(), 2);
-        assert_eq!(nszone.get_children()[1].get_ip_address_for_refresh_zone(), String::from("1.2.3"));
+        assert_eq!(
+            nszone.get_children()[1].get_ip_address_for_refresh_zone(),
+            String::from("1.2.3")
+        );
     }
 
     // Other methods

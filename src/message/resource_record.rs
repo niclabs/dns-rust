@@ -78,8 +78,87 @@ impl ResourceRecord {
     /// );
     /// ```
     ///
-    pub fn new(rdata: Rdata) -> ResourceRecord {
-        let resource_record = ResourceRecord {
+
+   pub fn new(rdata: Rdata) -> ResourceRecord {
+        match rdata {
+            Rdata::SomeARdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 1 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomeARdata(val),
+            },
+
+            Rdata::SomeNsRdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 2 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomeNsRdata(val),
+            },
+            Rdata::SomeCnameRdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 5 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomeCnameRdata(val),
+            },
+            Rdata::SomeSoaRdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 6 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomeSoaRdata(val),
+            },
+            Rdata::SomePtrRdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 12 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomePtrRdata(val),
+            },
+            Rdata::SomeHinfoRdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 13 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomeHinfoRdata(val),
+            },
+            Rdata::SomeMxRdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 15 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomeMxRdata(val),
+            },
+            Rdata::SomeTxtRdata(val) => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 16 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::SomeTxtRdata(val),
+            },
+            _ => ResourceRecord {
+                name: DomainName::new(),
+                type_code: 0 as u16,
+                class: 0 as u16,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: rdata,
+            },
+        }
+    }
+
+   /* pub fn new(rdata: Rdata) -> ResourceRecord {
+        let mut resource_record = ResourceRecord {
             name: DomainName::new(),
             type_code: 0 as u16,
             class: 0 as u16,
@@ -87,8 +166,10 @@ impl ResourceRecord {
             rdlength: 0 as u16,
             rdata: rdata,
         };
+
         resource_record
-    }
+    }*/
+
 
     /// Given an array of bytes, creates a new ResourceRecord
     /// # Examples
@@ -371,17 +452,6 @@ impl ResourceRecord {
     /// Sets the rdata attribute with a value
     pub fn set_rdata(&mut self, rdata: Rdata) {
         self.rdata = rdata.clone();
-        match rdata {
-            Rdata::SomeARdata(val) => self.type_code = 1,
-            Rdata::SomeNsRdata(val) => self.type_code = 2,
-            Rdata::SomeCnameRdata(val) => self.type_code = 5,
-            Rdata::SomeSoaRdata(val) => self.type_code = 6,
-            Rdata::SomePtrRdata(val) => self.type_code = 12,
-            Rdata::SomeHinfoRdata(val) => self.type_code = 13,
-            Rdata::SomeMxRdata(val) => self.type_code = 15,
-            Rdata::SomeTxtRdata(val) => self.type_code = 16,
-            _ => unreachable!(),
-        }
     }
 }
 
@@ -462,7 +532,7 @@ mod test {
     fn set_and_get_type_code_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
-        assert_eq!(resource_record.get_type_code(), 0);
+        assert_eq!(resource_record.get_type_code(), 16);
 
         resource_record.set_type_code(1 as u16);
 

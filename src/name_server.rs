@@ -1,3 +1,4 @@
+use crate::config::RECURSIVE_AVAILABLE;
 use crate::dns_cache::DnsCache;
 use crate::message::rdata::cname_rdata::CnameRdata;
 use crate::message::rdata::Rdata;
@@ -6,7 +7,6 @@ use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
 use crate::name_server::zone_refresh::ZoneRefresh;
 use crate::resolver::Resolver;
-use crate::config::RECURSIVE_AVAILABLE;
 
 use chrono::{DateTime, Utc};
 use core::time;
@@ -222,7 +222,7 @@ impl NameServer {
                 let updated_refresh_zone = next_value.unwrap();
                 let zone = updated_refresh_zone.get_zone();
                 let zone_name = zone.get_name();
-                let zone_class = zone.get_class_default();
+                let zone_class = zone.get_class();
 
                 tx_update_zone_udp_resolver.send(zone.clone());
                 tx_update_zone_tcp_resolver.send(zone.clone());
@@ -452,7 +452,7 @@ impl NameServer {
                 thread::spawn(move || {
                     // default RA bit to 1
                     let mut ra = true;
-                    let mut new_msg = NameServer::set_ra(dns_message, true);
+                    let mut new_msg = NameServer::set_ra(dns_message.clone(), true);
 
                     // RA bit to 0
                     if RECURSIVE_AVAILABLE == false {
@@ -735,7 +735,7 @@ impl NameServer {
                         let updated_refresh_zone = next_value.unwrap();
                         let zone = updated_refresh_zone.get_zone();
                         let zone_name = zone.get_name();
-                        let zone_class = zone.get_class_default();
+                        let zone_class = zone.get_class();
 
                         tx_update_zone_udp_resolver.send(zone.clone());
                         tx_update_zone_tcp_resolver.send(zone.clone());
@@ -1396,7 +1396,7 @@ impl NameServer {
     }
 
     pub fn step_2(
-        msg: DnsMessage,
+        mut msg: DnsMessage,
         zones: HashMap<u16, HashMap<String, NSZone>>,
         cache: DnsCache,
         tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
@@ -1424,12 +1424,12 @@ impl NameServer {
                         zone,
                         qname.clone(),
                         msg.clone(),
-                        zones,
-                        cache,
-                        tx_delete_resolver_udp,
-                        tx_delete_resolver_tcp,
-                        tx_delete_ns_udp,
-                        tx_delete_ns_tcp,
+                        zones.clone(),
+                        cache.clone(),
+                        tx_delete_resolver_udp.clone(),
+                        tx_delete_resolver_tcp.clone(),
+                        tx_delete_ns_udp.clone(),
+                        tx_delete_ns_tcp.clone(),
                     );
 
                     all_answers.append(&mut new_msg.get_answer());
@@ -2137,7 +2137,7 @@ impl NameServer {
     pub fn add_zone_from_master_file(&mut self, file_name: String, ip_address_for_refresh: String) {
         let new_zone = NSZone::from_file(file_name, ip_address_for_refresh);
         let mut zones = self.get_zones();
-        let zone_class = new_zone.get_class_default();
+        let zone_class = new_zone.get_class();
 
         // Create the new zone hash
         let mut new_zone_hash = HashMap::<String, NSZone>::new();

@@ -99,7 +99,7 @@ impl DomainName {
                     DomainName::from_bytes_no_offset(&no_domain_bytes[..(first_byte + 1) as usize]);
 
                 // Checks label restrictions
-                let check_label = NSZone::check_label_name(label_string);
+                let check_label = NSZone::check_label_name(label_string.clone());
 
                 if check_label == false {
                     return Err("Format Error");
@@ -165,7 +165,7 @@ impl DomainName {
             return DomainName { name: name };
         } else {
             // Add the origin host_name
-            let full_host_name = name.clone();
+            let mut full_host_name = name.clone();
             full_host_name.push_str(".");
             full_host_name.push_str(&host_name);
 

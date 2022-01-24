@@ -454,7 +454,7 @@ impl ResolverQuery {
             let mut cache = self.get_cache();
 
             let cache_answer = cache.get(s_name.clone(), s_type);
-            let rrs_cache_answer = Vec::new();
+            let mut rrs_cache_answer = Vec::new();
 
             if s_class != 255 {
                 for rr in cache_answer {

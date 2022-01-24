@@ -121,6 +121,13 @@ pub fn run_client() {
                 Rdata::SomeARdata(val) => {
                     println!("Ip Address: {}", val.get_string_address())
                 }
+                Rdata::SomeAChRdata(val) => {
+                    println!(
+                        "Domain name: {} - Ch Ip address: {}",
+                        val.get_domain_name().get_name(),
+                        val.get_ch_adress()
+                    )
+                }
                 Rdata::SomeNsRdata(val) => {
                     println!("Name Server: {}", val.get_nsdname().get_name())
                 }
@@ -154,6 +161,13 @@ pub fn run_client() {
                 Rdata::SomeARdata(val) => {
                     println!("Ip Address: {}", val.get_string_address())
                 }
+                Rdata::SomeAChRdata(val) => {
+                    println!(
+                        "Domain name: {} - Ch Ip address: {}",
+                        val.get_domain_name().get_name(),
+                        val.get_ch_adress()
+                    )
+                }
                 Rdata::SomeNsRdata(val) => {
                     println!("Name Server: {}", val.get_nsdname().get_name())
                 }
@@ -186,6 +200,13 @@ pub fn run_client() {
             match answer.get_rdata() {
                 Rdata::SomeARdata(val) => {
                     println!("Ip Address: {}", val.get_string_address())
+                }
+                Rdata::SomeAChRdata(val) => {
+                    println!(
+                        "Domain name: {} - Ch Ip address: {}",
+                        val.get_domain_name().get_name(),
+                        val.get_ch_adress()
+                    )
                 }
                 Rdata::SomeNsRdata(val) => {
                     println!("Name Server: {}", val.get_nsdname().get_name())

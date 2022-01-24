@@ -66,7 +66,7 @@ impl FromBytes<Result<Self, &'static str>> for AChRdata {
         //
 
         // Ch address from bytes
-        let ch_address = (bytes_without_name[0] << 8) as u16 | bytes_without_name[1] as u16;
+        let ch_address = (bytes_without_name[0] as u16) << 8 | bytes_without_name[1] as u16;
         //
 
         // Creates A Ch Rdata

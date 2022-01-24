@@ -213,7 +213,7 @@ impl Resolver {
             while next_value.is_none() == false {
                 let zone = next_value.unwrap();
                 let zone_name = zone.get_name();
-                let zone_class = zone.get_class_default();
+                let zone_class = zone.get_class();
                 let mut new_zone_hash = HashMap::new();
 
                 new_zone_hash.insert(zone_name, zone);
@@ -664,7 +664,7 @@ impl Resolver {
                     while next_value.is_none() == false {
                         let zone = next_value.unwrap();
                         let zone_name = zone.get_name();
-                        let zone_class = zone.get_class_default();
+                        let zone_class = zone.get_class();
                         let mut new_zone_hash = HashMap::new();
 
                         new_zone_hash.insert(zone_name, zone);

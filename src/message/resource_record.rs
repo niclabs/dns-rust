@@ -1,5 +1,5 @@
-use crate::message::rdata::cname_rdata::CnameRdata;
 use crate::message::rdata::a_rdata::ARdata;
+use crate::message::rdata::cname_rdata::CnameRdata;
 use crate::message::rdata::hinfo_rdata::HinfoRdata;
 use crate::message::rdata::mx_rdata::MxRdata;
 use crate::message::rdata::ns_rdata::NsRdata;
@@ -370,16 +370,16 @@ impl ResourceRecord {
 
     /// Sets the rdata attribute with a value
     pub fn set_rdata(&mut self, rdata: Rdata) {
-        self.rdata = rdata;
+        self.rdata = rdata.clone();
         match rdata {
-            Rdata::SomeARdata(val) => self.type_code = 1 ,
-            Rdata::SomeNsRdata(val) => self.type_code = 2 ,
-            Rdata::SomeCnameRdata(val) => self.type_code = 5 ,
-            Rdata::SomeSoaRdata(val) => self.type_code = 6 ,
-            Rdata::SomePtrRdata(val) => self.type_code = 12 ,
-            Rdata::SomeHinfoRdata(val) => self.type_code = 13 ,
-            Rdata::SomeMxRdata(val) => self.type_code = 15 ,
-            Rdata::SomeTxtRdata(val) => self.type_code = 16 ,
+            Rdata::SomeARdata(val) => self.type_code = 1,
+            Rdata::SomeNsRdata(val) => self.type_code = 2,
+            Rdata::SomeCnameRdata(val) => self.type_code = 5,
+            Rdata::SomeSoaRdata(val) => self.type_code = 6,
+            Rdata::SomePtrRdata(val) => self.type_code = 12,
+            Rdata::SomeHinfoRdata(val) => self.type_code = 13,
+            Rdata::SomeMxRdata(val) => self.type_code = 15,
+            Rdata::SomeTxtRdata(val) => self.type_code = 16,
             _ => unreachable!(),
         }
     }

@@ -286,7 +286,7 @@ impl NSZone {
     }
 
     // Sets the children with a new value
-    pub fn set_children(&mut self, children: Vec<NSZone>) {
+    pub fn set_children(&mut self, mut children: Vec<NSZone>) {
         // check if there is duplicates labels
         // checks from the vector's tail to keep the last added child
         let mut labels: Vec<String> = ([]).to_vec();

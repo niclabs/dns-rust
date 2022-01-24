@@ -158,7 +158,7 @@ impl DnsMessage {
         msg
     }
 
-    pub fn not_implemented_msg(msg: DnsMessage) -> Self {
+    pub fn not_implemented_msg(mut msg: DnsMessage) -> Self {
         let mut header = msg.get_header();
         header.set_rcode(4);
 
@@ -426,7 +426,6 @@ impl DnsMessage {
     }
 }
 
-
 mod test {
     use crate::domain_name::DomainName;
     use crate::message::header::Header;
@@ -532,13 +531,12 @@ mod test {
         assert_eq!(dns_query_message.get_additional().len(), 1);
     }
 
-    
     #[test]
     fn from_bytes_test() {
         let bytes: [u8; 50] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0,
-            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108,
-            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4,
+            116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0,
+            16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
 
         let dns_message = DnsMessage::from_bytes(&bytes).unwrap();

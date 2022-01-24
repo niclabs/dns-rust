@@ -606,7 +606,7 @@ mod test {
     }
 
     #[test]
-    fn bytes_to_resource_record_test() {
+    fn from_bytes_test() {
         let bytes_msg: [u8; 24] = [
             3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104,
             101, 108, 108, 111,

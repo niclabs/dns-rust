@@ -14,6 +14,7 @@ pub struct ZoneRefresh {
     expire: u32,
     timestamp: u32,
     last_fails: bool,
+    last_serial_check: u32,
 }
 
 impl ZoneRefresh {
@@ -37,6 +38,7 @@ impl ZoneRefresh {
             expire: soa_rdata.get_expire(),
             timestamp: timestamp,
             last_fails: false,
+            last_serial_check: timestamp,
         };
 
         zone_refresh
@@ -112,6 +114,10 @@ impl ZoneRefresh {
     pub fn set_last_fails(&mut self, last_fails: bool) {
         self.last_fails = last_fails;
     }
+
+    pub fn set_last_serial_check(&mut self, last_serial_check: u32) {
+        self.last_serial_check = last_serial_check;
+    }
 }
 
 // Getters
@@ -128,23 +134,27 @@ impl ZoneRefresh {
         self.serial
     }
 
-    pub fn get_refresh(&mut self) -> u32 {
+    pub fn get_refresh(&self) -> u32 {
         self.refresh
     }
 
-    pub fn get_retry(&mut self) -> u32 {
+    pub fn get_retry(&self) -> u32 {
         self.retry
     }
 
-    pub fn get_expire(&mut self) -> u32 {
+    pub fn get_expire(&self) -> u32 {
         self.expire
     }
 
-    pub fn get_timestamp(&mut self) -> u32 {
+    pub fn get_timestamp(&self) -> u32 {
         self.timestamp
     }
 
-    pub fn get_last_fails(&mut self) -> bool {
+    pub fn get_last_fails(&self) -> bool {
         self.last_fails
+    }
+
+    pub fn get_last_serial_check(&self) -> u32 {
+        self.last_serial_check
     }
 }

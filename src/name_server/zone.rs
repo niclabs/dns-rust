@@ -14,6 +14,8 @@ pub struct NSZone {
     glue_rrs: Vec<ResourceRecord>,
     // Zone class
     class: u16,
+    // Zone is active
+    active: bool,
 }
 
 impl NSZone {
@@ -26,6 +28,7 @@ impl NSZone {
             subzone: false,
             glue_rrs: Vec::<ResourceRecord>::new(),
             class: 1,
+            active: true,
         };
 
         ns_zone
@@ -336,6 +339,11 @@ impl NSZone {
 
         self.set_class(class);
     }
+
+    // Sets if the zone is active or not
+    pub fn set_active(&mut self, active: bool) {
+        self.active = active;
+    }
 }
 
 // Getters
@@ -372,6 +380,11 @@ impl NSZone {
     // Gets the zone class
     pub fn get_class(&self) -> u16 {
         self.class
+    }
+
+    // Gets if the zone is active
+    pub fn get_active(&self) -> bool {
+        self.active
     }
 }
 

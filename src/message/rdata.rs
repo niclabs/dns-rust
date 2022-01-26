@@ -169,16 +169,9 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
             }
             //////////////////////// Replace the next line when AAAA is implemented /////////////////
             28 => {
-                let rdata = TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = TxtRdata::new(vec!["AAAA".to_string()]);
 
-                match rdata {
-                    Ok(_) => {}
-                    Err(e) => {
-                        return Err(e);
-                    }
-                }
-
-                Ok(Rdata::SomeTxtRdata(rdata.unwrap()))
+                Ok(Rdata::SomeTxtRdata(rdata))
             }
             //////////////////////////////////////////////////////////////////////////////////////////
             _ => Err("Format Error"),

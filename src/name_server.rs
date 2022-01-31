@@ -1434,7 +1434,7 @@ impl NameServer {
         for label in labels {
             let exist_child = zone.exist_child(label.to_string());
 
-            println!("Existe child: {}", exist_child.clone());
+            println!("Exist child: {}", exist_child.clone());
 
             if exist_child == true {
                 zone = zone.get_child(label.to_string()).0.clone();
@@ -1765,20 +1765,36 @@ impl NameServer {
                 }
             }
 
-            msg.set_answer(answer);
 
             let mut header = msg.get_header();
             header.set_aa(true);
 
+            if answer.len() == 0 {
+                header.set_rcode(2);
+            }
+
+            msg.set_answer(answer);
+
             msg.set_header(header);
-
             return NameServer::step_6(msg, cache, zones);
-        } else {
+        } 
+        
+        else { // * label does not exists
             let mut header = msg.get_header();
-            header.set_rcode(3);
+            let rr = zone.get_value()[0].clone();
+            let qname = msg.get_question().get_qname(); 
+            let qtype = msg.get_question().get_qtype();
 
-            if msg.get_answer().len() == 0 {
-                header.set_aa(true);
+            let canonical_name = match rr.get_rdata() {
+                    Rdata::SomeCnameRdata(val) => val.get_cname(),
+                    _ => unreachable!(),
+                };
+
+            if qname.get_name() != canonical_name.get_name(){
+                header.set_rcode(3);
+                if msg.get_answer().len() == 0 {
+                    header.set_aa(true);
+                } 
             }
 
             msg.set_header(header);
@@ -1850,9 +1866,10 @@ impl NameServer {
 
         //
 
+        let mut header = msg.get_header();
+
         if answer.len() > 0 {
             msg.set_answer(answer);
-            let mut header = msg.get_header();
             header.set_aa(false);
             msg.set_header(header);
         }
@@ -1965,6 +1982,12 @@ impl NameServer {
 }
 
 // Utils for UDP
+
+/*
+5. Using the local resolver or a copy of its algorithm to answer the query. Store
+the results, including any intermediate CNAMEs, in the answer
+section of the response.
+*/
 impl NameServer {
     fn step_5_udp(
         resolver_ip_and_port: String,
@@ -2170,10 +2193,13 @@ impl NameServer {
         answers.push(soa_rr);
         //
 
-        msg.set_answer(answers);
-        msg.set_header(header);
+        if answers.len() == 0 {
+            header.set_rcode(5);
+        }
 
-        //
+        msg.set_answer(answers);
+    
+        msg.set_header(header);
 
         NameServer::send_response_by_tcp(msg, address, stream);
     }

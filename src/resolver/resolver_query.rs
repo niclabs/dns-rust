@@ -11,6 +11,7 @@ use crate::config::QUERIES_FOR_CLIENT_REQUEST;
 use crate::config::USE_CACHE;
 
 use chrono::Utc;
+use rand::seq::index;
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;
@@ -86,6 +87,8 @@ pub struct ResolverQuery {
     query_id_update_slist: u16,
     // Channel to update slist in tcp resolver
     update_slist_tcp_sender: Sender<(String, Vec<ResourceRecord>)>,
+    // Channel to update slist inside a resolver query
+    tx_update_self_slist: Sender<Slist>,
 }
 
 impl ResolverQuery {
@@ -119,6 +122,7 @@ impl ResolverQuery {
         update_cache_sender_ns_udp: Sender<(String, String, u32)>,
         update_cache_sender_ns_tcp: Sender<(String, String, u32)>,
         update_slist_tcp_sender: Sender<(String, Vec<ResourceRecord>)>,
+        tx_update_self_slist: Sender<Slist>,
     ) -> Self {
         let mut rng = thread_rng();
         let now = Utc::now();
@@ -162,6 +166,7 @@ impl ResolverQuery {
             internal_query: false,
             query_id_update_slist: 0,
             update_slist_tcp_sender: update_slist_tcp_sender,
+            tx_update_self_slist: tx_update_self_slist,
         };
 
         query
@@ -193,7 +198,12 @@ impl ResolverQuery {
         self.set_old_id(old_id);
     }
 
-    pub fn initialize_slist(&mut self, sbelt: Slist, start_look_up_host_name: String) {
+    pub fn initialize_slist_udp(
+        &mut self,
+        sbelt: Slist,
+        start_look_up_host_name: String,
+        socket: UdpSocket,
+    ) {
         let host_name = start_look_up_host_name;
         let mut cache = self.get_cache();
         let ns_type = "NS".to_string();
@@ -264,6 +274,121 @@ impl ResolverQuery {
             println!("Ip found: {}", ip_found);
 
             if ip_found == 0 {
+                if new_slist.len() > 0
+                    && new_slist
+                        .get_first()
+                        .get(&"name".to_string())
+                        .unwrap()
+                        .contains(&parent_host_name)
+                        == false
+                {
+                    self.send_internal_queries_for_slist_udp(
+                        new_slist.clone(),
+                        socket.try_clone().unwrap(),
+                    );
+
+                    break;
+                }
+
+                new_slist = Slist::new();
+                labels.remove(0);
+                continue;
+            }
+
+            break;
+        }
+
+        if new_slist.get_zone_name_equivalent() == -1 {
+            self.set_slist(sbelt.clone());
+        } else {
+            self.set_slist(new_slist.clone());
+        }
+    }
+
+    pub fn initialize_slist_tcp(&mut self, sbelt: Slist, start_look_up_host_name: String) {
+        let host_name = start_look_up_host_name;
+        let mut cache = self.get_cache();
+        let ns_type = "NS".to_string();
+        let host_name_copy = host_name.clone();
+        let mut labels: Vec<&str> = host_name_copy.split('.').collect();
+        let mut new_slist = Slist::new();
+
+        while labels.len() > 0 {
+            let mut parent_host_name = "".to_string();
+
+            for label in labels.iter() {
+                parent_host_name.push_str(label);
+                parent_host_name.push_str(".");
+            }
+
+            parent_host_name.pop();
+
+            println!("Hostname in slist: {}", parent_host_name.clone());
+
+            // Gets a vector of NS RR for host_name
+            let ns_parent_host_name = cache.get(parent_host_name.to_string(), ns_type.clone());
+
+            println!("Found {} NS records", ns_parent_host_name.len());
+
+            let mut ip_found = 0;
+
+            for ns in ns_parent_host_name.clone() {
+                let rr_rdata = match ns.get_resource_record().get_rdata() {
+                    Rdata::SomeNsRdata(val) => val.clone(),
+                    _ => unreachable!(),
+                };
+
+                let ns_parent_host_name_string = rr_rdata.get_nsdname().get_name();
+
+                new_slist.set_zone_name_equivalent(labels.len() as i32);
+
+                // Gets list of ip addresses
+                let ns_ip_address = cache.get(ns_parent_host_name_string.clone(), "A".to_string());
+
+                if ns_ip_address.len() == 0 {
+                    new_slist.insert(ns_parent_host_name_string, "".to_string(), 6000);
+                    continue;
+                }
+
+                for ip in ns_ip_address.clone() {
+                    let ns_ip_address_rdata = match ip.get_resource_record().get_rdata() {
+                        Rdata::SomeARdata(val) => val.clone(),
+                        _ => unreachable!(),
+                    };
+
+                    let ip_address = ns_ip_address_rdata.get_string_address();
+
+                    let response_time = cache.get_response_time(
+                        ns_parent_host_name_string.clone(),
+                        "A".to_string(),
+                        ip_address.clone(),
+                    );
+
+                    new_slist.insert(
+                        ns_parent_host_name_string.clone(),
+                        ip_address.to_string(),
+                        response_time as u32,
+                    );
+                    ip_found = ip_found + 1;
+                }
+            }
+
+            println!("Ip found: {}", ip_found);
+
+            if ip_found == 0 {
+                if new_slist.len() > 0
+                    && new_slist
+                        .get_first()
+                        .get(&"name".to_string())
+                        .unwrap()
+                        .contains(&parent_host_name)
+                        == false
+                {
+                    self.send_internal_queries_for_slist_tcp(new_slist.clone());
+
+                    break;
+                }
+
                 new_slist = Slist::new();
                 labels.remove(0);
                 continue;
@@ -490,10 +615,10 @@ impl ResolverQuery {
 
 // Util for TCP and UDP
 impl ResolverQuery {
-    pub fn step_2(&mut self) {
+    pub fn step_2_tcp(&mut self) {
         let sbelt = self.get_sbelt();
         let sname = self.get_sname();
-        self.initialize_slist(sbelt, sname);
+        self.initialize_slist_tcp(sbelt, sname);
 
         let mut slist = self.get_slist();
         slist.sort();
@@ -501,6 +626,19 @@ impl ResolverQuery {
         println!("Slist intia len: {}", slist.len());
 
         self.set_slist(slist);
+    }
+
+    pub fn step_2_udp(&mut self, socket: UdpSocket) {
+        let sbelt = self.get_sbelt();
+        let sname = self.get_sname();
+        self.initialize_slist_udp(sbelt, sname, socket);
+
+        let mut slist = self.get_slist();
+        slist.sort();
+
+        self.set_slist(slist);
+
+        self.get_tx_update_query().send(self.clone());
     }
 
     pub fn step_4a(&mut self, msg: DnsMessage) -> DnsMessage {
@@ -563,19 +701,23 @@ impl ResolverQuery {
             .expect("failed to send message");
     }
 
-    pub fn step_1_udp(&mut self, socket: UdpSocket) -> Option<Vec<ResourceRecord>> {
+    pub fn step_1_udp(
+        &mut self,
+        socket: UdpSocket,
+        rx_update_self_slist: Receiver<Slist>,
+    ) -> Option<Vec<ResourceRecord>> {
         let local_info = self.look_for_local_info();
 
         if local_info.len() > 0 {
             return Some(local_info);
         } else {
-            self.step_2();
-            self.step_3_udp(socket);
+            self.step_2_udp(socket.try_clone().unwrap());
+            self.step_3_udp(socket, rx_update_self_slist);
             return None;
         }
     }
 
-    pub fn step_3_udp(&mut self, socket: UdpSocket) {
+    pub fn step_3_udp(&mut self, socket: UdpSocket, rx_update_self_slist: Receiver<Slist>) {
         let queries_left = self.get_queries_before_temporary_error();
 
         // Temporary Error
@@ -585,14 +727,46 @@ impl ResolverQuery {
             panic!("Temporary Error");
         }
 
-        let slist = self.get_slist();
-        let index_to_choose = self.get_index_to_choose() & slist.len() as u16;
+        let mut slist = self.get_slist();
+        let mut slist_len = slist.len();
 
-        let best_server_to_ask = slist.get(index_to_choose);
+        let mut index_to_choose = self.get_index_to_choose() % slist_len as u16;
+
+        let mut best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
             .unwrap()
             .clone();
+
+        let mut counter = 0;
+
+        while &best_server_ip == "" {
+            if counter > slist.len() {
+                let mut received_update_slist = rx_update_self_slist.try_iter();
+
+                let mut next_slist_value = received_update_slist.next();
+
+                while next_slist_value.is_none() == false {
+                    println!("Habia un valor kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
+                    let new_slist = next_slist_value.unwrap();
+
+                    self.set_slist(new_slist);
+
+                    next_slist_value = received_update_slist.next();
+                }
+            }
+
+            slist = self.get_slist();
+            self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
+            index_to_choose = self.get_index_to_choose();
+
+            best_server_to_ask = slist.get(index_to_choose);
+            best_server_ip = best_server_to_ask
+                .get(&"ip_address".to_string())
+                .unwrap()
+                .clone();
+            counter = counter + 1;
+        }
 
         // Set query timeout
         let response_time = best_server_to_ask
@@ -611,86 +785,7 @@ impl ResolverQuery {
 
         // Implementar: se deben consultar las ips de los ns que no tienen ips
 
-        for ns in slist.get_ns_list() {
-            let resolver_query_to_update = self.clone();
-            let socket_copy = socket.try_clone().unwrap();
-            let queries_left = self.get_queries_before_temporary_error();
-
-            thread::spawn(move || {
-                let ip_addr = ns.get(&"ip_address".to_string()).unwrap().to_string();
-                let qname = ns.get(&"name".to_string()).unwrap().to_string();
-
-                if ip_addr == "".to_string() {
-                    println!("Internal Query para {}", qname.clone());
-                    let mut rng = thread_rng();
-                    let id: u16 = rng.gen();
-                    let dns_msg = DnsMessage::new_query_message(qname.clone(), 1, 1, 0, false, id);
-
-                    let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
-                    let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
-                    let tx_add_tcp_copy = resolver_query_to_update.get_add_channel_tcp();
-                    let tx_delete_tcp_copy = resolver_query_to_update.get_delete_channel_tcp();
-                    let tx_add_ns_udp_copy = resolver_query_to_update.get_add_channel_ns_udp();
-                    let tx_delete_ns_udp_copy =
-                        resolver_query_to_update.get_delete_channel_ns_udp();
-                    let tx_add_ns_tcp_copy = resolver_query_to_update.get_add_channel_ns_tcp();
-                    let tx_delete_ns_tcp_copy =
-                        resolver_query_to_update.get_delete_channel_ns_tcp();
-                    let tx_update_query_copy = resolver_query_to_update.get_tx_update_query();
-                    let tx_delete_query_copy = resolver_query_to_update.get_tx_delete_query();
-                    let tx_update_cache_udp_copy = resolver_query_to_update.get_update_cache_udp();
-                    let tx_update_cache_tcp_copy = resolver_query_to_update.get_update_cache_tcp();
-                    let tx_update_cache_ns_udp_copy =
-                        resolver_query_to_update.get_update_cache_ns_udp();
-                    let tx_update_cache_ns_tcp_copy =
-                        resolver_query_to_update.get_update_cache_ns_tcp();
-
-                    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-
-                    let mut internal_query = ResolverQuery::new(
-                        tx_add_udp_copy,
-                        tx_delete_udp_copy,
-                        tx_add_tcp_copy,
-                        tx_delete_tcp_copy,
-                        tx_add_ns_udp_copy,
-                        tx_delete_ns_udp_copy,
-                        tx_add_ns_tcp_copy,
-                        tx_delete_ns_tcp_copy,
-                        tx_update_query_copy.clone(),
-                        tx_delete_query_copy,
-                        dns_msg,
-                        tx_update_cache_udp_copy,
-                        tx_update_cache_tcp_copy,
-                        tx_update_cache_ns_udp_copy,
-                        tx_update_cache_ns_tcp_copy,
-                        tx_update_slist_tcp,
-                    );
-
-                    // Initializes the query data struct
-                    internal_query.initialize(
-                        qname,
-                        1,
-                        1,
-                        0,
-                        false,
-                        resolver_query_to_update.get_sbelt(),
-                        resolver_query_to_update.get_cache(),
-                        resolver_query_to_update.get_ns_data(),
-                        socket_copy.local_addr().unwrap().to_string(),
-                        id,
-                    );
-
-                    internal_query.set_internal_query(true, queries_left - 1);
-                    internal_query
-                        .set_query_id_update_slist(resolver_query_to_update.get_main_query_id());
-
-                    tx_update_query_copy.send(internal_query.clone());
-
-                    internal_query.step_2();
-                    internal_query.step_3_udp(socket_copy);
-                }
-            });
-        }
+        self.send_internal_queries_for_slist_udp(self.get_slist(), socket.try_clone().unwrap());
 
         ///////////////////////////////////////////////
 
@@ -698,6 +793,10 @@ impl ResolverQuery {
         let msg_to_bytes = query_msg.to_bytes();
 
         println!("Server to ask {}", best_server_ip);
+        println!(
+            "Asking for: {}",
+            query_msg.get_question().get_qname().get_name()
+        );
 
         // Update the queries count before temporary error
         self.set_queries_before_temporary_error(queries_left - 1);
@@ -728,6 +827,7 @@ impl ResolverQuery {
         &mut self,
         msg_from_response: DnsMessage,
         socket: UdpSocket,
+        rx_update_self_slist: Receiver<Slist>,
     ) -> Option<DnsMessage> {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
@@ -745,7 +845,7 @@ impl ResolverQuery {
         // If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
             println!("Delegation response");
-            self.step_4b_udp(msg_from_response, socket);
+            self.step_4b_udp(msg_from_response, socket, rx_update_self_slist);
             return None;
         }
 
@@ -756,7 +856,7 @@ impl ResolverQuery {
             && answer[0].get_type_code() != self.get_stype()
         {
             println!("Step 4C");
-            return self.step_4c_udp(msg_from_response, socket);
+            return self.step_4c_udp(msg_from_response, socket, rx_update_self_slist);
         }
 
         let slist = self.get_slist();
@@ -765,10 +865,19 @@ impl ResolverQuery {
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
         // Step 4d
-        return self.step_4d_udp(best_server_hostname.to_string(), socket);
+        return self.step_4d_udp(
+            best_server_hostname.to_string(),
+            socket,
+            rx_update_self_slist,
+        );
     }
 
-    pub fn step_4b_udp(&mut self, msg: DnsMessage, socket: UdpSocket) {
+    pub fn step_4b_udp(
+        &mut self,
+        msg: DnsMessage,
+        socket: UdpSocket,
+        rx_update_self_slist: Receiver<Slist>,
+    ) {
         let mut authority = msg.get_authority();
         let mut additional = msg.get_additional();
 
@@ -817,11 +926,16 @@ impl ResolverQuery {
             }
         }
 
-        self.step_2();
-        self.step_3_udp(socket);
+        self.step_2_udp(socket.try_clone().unwrap());
+        self.step_3_udp(socket, rx_update_self_slist);
     }
 
-    pub fn step_4c_udp(&mut self, mut msg: DnsMessage, socket: UdpSocket) -> Option<DnsMessage> {
+    pub fn step_4c_udp(
+        &mut self,
+        mut msg: DnsMessage,
+        socket: UdpSocket,
+        rx_update_self_slist: Receiver<Slist>,
+    ) -> Option<DnsMessage> {
         let answers = msg.get_answer();
         let mut resource_record = answers[0].clone();
         let rdata = resource_record.get_rdata();
@@ -876,7 +990,7 @@ impl ResolverQuery {
 
         self.set_sname(cname.get_name());
 
-        match self.step_1_udp(socket) {
+        match self.step_1_udp(socket, rx_update_self_slist) {
             Some(val) => {
                 println!("Local info!");
 
@@ -905,6 +1019,7 @@ impl ResolverQuery {
         &mut self,
         host_name_asked: String,
         socket: UdpSocket,
+        rx_update_self_slist: Receiver<Slist>,
     ) -> Option<DnsMessage> {
         let mut slist = self.get_slist();
         slist.delete(host_name_asked.clone());
@@ -913,11 +1028,19 @@ impl ResolverQuery {
             match host_name_asked.find(".") {
                 Some(index) => {
                     let parent_host_name = &host_name_asked[index + 1..];
-                    self.initialize_slist(self.get_sbelt(), parent_host_name.to_string());
+                    self.initialize_slist_udp(
+                        self.get_sbelt(),
+                        parent_host_name.to_string(),
+                        socket.try_clone().unwrap(),
+                    );
                     self.set_index_to_choose(0);
                 }
                 None => {
-                    self.initialize_slist(self.get_sbelt(), ".".to_string());
+                    self.initialize_slist_udp(
+                        self.get_sbelt(),
+                        ".".to_string(),
+                        socket.try_clone().unwrap(),
+                    );
                     self.set_index_to_choose(0);
                 }
             }
@@ -930,8 +1053,97 @@ impl ResolverQuery {
         self.get_tx_update_query().send(self.clone());
         //
 
-        self.step_3_udp(socket);
+        self.step_3_udp(socket, rx_update_self_slist);
         return None;
+    }
+
+    fn send_internal_queries_for_slist_udp(&self, slist: Slist, socket: UdpSocket) {
+        println!("Entro a send_internal_queries");
+        let ns_list = slist.get_ns_list();
+
+        for ns in ns_list {
+            let resolver_query_to_update = self.clone();
+            let socket_copy = socket.try_clone().unwrap();
+            let queries_left = self.get_queries_before_temporary_error();
+
+            thread::spawn(move || {
+                let ip_addr = ns.get(&"ip_address".to_string()).unwrap().to_string();
+                let qname = ns.get(&"name".to_string()).unwrap().to_string();
+
+                if ip_addr == "".to_string() {
+                    println!("Internal Query para {}", qname.clone());
+                    let mut rng = thread_rng();
+                    let id: u16 = rng.gen();
+                    let dns_msg = DnsMessage::new_query_message(qname.clone(), 1, 1, 0, false, id);
+
+                    let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
+                    let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
+                    let tx_add_tcp_copy = resolver_query_to_update.get_add_channel_tcp();
+                    let tx_delete_tcp_copy = resolver_query_to_update.get_delete_channel_tcp();
+                    let tx_add_ns_udp_copy = resolver_query_to_update.get_add_channel_ns_udp();
+                    let tx_delete_ns_udp_copy =
+                        resolver_query_to_update.get_delete_channel_ns_udp();
+                    let tx_add_ns_tcp_copy = resolver_query_to_update.get_add_channel_ns_tcp();
+                    let tx_delete_ns_tcp_copy =
+                        resolver_query_to_update.get_delete_channel_ns_tcp();
+                    let tx_update_query_copy = resolver_query_to_update.get_tx_update_query();
+                    let tx_delete_query_copy = resolver_query_to_update.get_tx_delete_query();
+                    let tx_update_cache_udp_copy = resolver_query_to_update.get_update_cache_udp();
+                    let tx_update_cache_tcp_copy = resolver_query_to_update.get_update_cache_tcp();
+                    let tx_update_cache_ns_udp_copy =
+                        resolver_query_to_update.get_update_cache_ns_udp();
+                    let tx_update_cache_ns_tcp_copy =
+                        resolver_query_to_update.get_update_cache_ns_tcp();
+
+                    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+
+                    let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
+                    let mut internal_query = ResolverQuery::new(
+                        tx_add_udp_copy,
+                        tx_delete_udp_copy,
+                        tx_add_tcp_copy,
+                        tx_delete_tcp_copy,
+                        tx_add_ns_udp_copy,
+                        tx_delete_ns_udp_copy,
+                        tx_add_ns_tcp_copy,
+                        tx_delete_ns_tcp_copy,
+                        tx_update_query_copy.clone(),
+                        tx_delete_query_copy,
+                        dns_msg,
+                        tx_update_cache_udp_copy,
+                        tx_update_cache_tcp_copy,
+                        tx_update_cache_ns_udp_copy,
+                        tx_update_cache_ns_tcp_copy,
+                        tx_update_slist_tcp,
+                        tx_update_self_slist,
+                    );
+
+                    // Initializes the query data struct
+                    internal_query.initialize(
+                        qname,
+                        1,
+                        1,
+                        0,
+                        false,
+                        resolver_query_to_update.get_sbelt(),
+                        resolver_query_to_update.get_cache(),
+                        resolver_query_to_update.get_ns_data(),
+                        socket_copy.local_addr().unwrap().to_string(),
+                        id,
+                    );
+
+                    internal_query.set_internal_query(true, queries_left - 1);
+                    internal_query
+                        .set_query_id_update_slist(resolver_query_to_update.get_main_query_id());
+
+                    tx_update_query_copy.send(internal_query.clone());
+
+                    internal_query.step_2_udp(socket_copy.try_clone().unwrap());
+                    internal_query.step_3_udp(socket_copy, rx_update_self_slist);
+                }
+            });
+        }
     }
 }
 
@@ -1036,7 +1248,7 @@ impl ResolverQuery {
 
             return query_msg;
         } else {
-            self.step_2();
+            self.step_2_tcp();
             return self.step_3_tcp(update_slist_tcp_recv);
         }
     }
@@ -1052,57 +1264,75 @@ impl ResolverQuery {
             panic!("Temporary Error");
         }
 
-        // Update slist
-        let mut slists_to_update = update_slist_tcp_recv.try_iter();
-        let mut next_slist_to_update = slists_to_update.next();
-
-        while next_slist_to_update.is_none() == false {
-            let (host_name, answers) = next_slist_to_update.unwrap();
-
-            let mut slist_to_update = self.get_slist();
-            let mut ns_list_to_update = slist_to_update.get_ns_list();
-            let mut ns_index = 0;
-
-            for ns in ns_list_to_update.clone() {
-                let answers_copy = answers.clone();
-                let ns_name = ns.get(&"name".to_string()).unwrap().to_string();
-
-                if ns_name == host_name {
-                    ns_list_to_update.remove(ns_index);
-
-                    for answer in answers_copy {
-                        let ip = match answer.get_rdata() {
-                            Rdata::SomeARdata(val) => val.get_string_address(),
-                            _ => unreachable!(),
-                        };
-
-                        let mut new_ns_to_ask = HashMap::new();
-
-                        new_ns_to_ask.insert("name".to_string(), host_name.clone());
-                        new_ns_to_ask.insert("ip_address".to_string(), ip);
-                        new_ns_to_ask.insert("response_time".to_string(), "5000".to_string());
-
-                        ns_list_to_update.push(new_ns_to_ask);
-                    }
-                }
-                ns_index = ns_index + 1;
-            }
-
-            slist_to_update.set_ns_list(ns_list_to_update);
-
-            self.set_slist(slist_to_update);
-
-            next_slist_to_update = slists_to_update.next();
-        }
-        //
-
-        let slist = self.get_slist();
-        let index_to_choose = self.get_index_to_choose() % slist.len() as u16;
-        let best_server_to_ask = slist.get(index_to_choose);
+        let mut slist = self.get_slist();
+        let mut index_to_choose = self.get_index_to_choose() % slist.len() as u16;
+        let mut best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
             .unwrap()
             .clone();
+
+        let mut counter = 0;
+
+        while &best_server_ip == "" {
+            if counter > slist.len() {
+                // Update slist
+                let mut slists_to_update = update_slist_tcp_recv.try_iter();
+                let mut next_slist_to_update = slists_to_update.next();
+
+                while next_slist_to_update.is_none() == false {
+                    let (host_name, answers) = next_slist_to_update.unwrap();
+
+                    let mut slist_to_update = self.get_slist();
+                    let mut ns_list_to_update = slist_to_update.get_ns_list();
+                    let mut ns_index = 0;
+
+                    for ns in ns_list_to_update.clone() {
+                        let answers_copy = answers.clone();
+                        let ns_name = ns.get(&"name".to_string()).unwrap().to_string();
+
+                        if ns_name == host_name {
+                            ns_list_to_update.remove(ns_index);
+
+                            for answer in answers_copy {
+                                let ip = match answer.get_rdata() {
+                                    Rdata::SomeARdata(val) => val.get_string_address(),
+                                    _ => unreachable!(),
+                                };
+
+                                let mut new_ns_to_ask = HashMap::new();
+
+                                new_ns_to_ask.insert("name".to_string(), host_name.clone());
+                                new_ns_to_ask.insert("ip_address".to_string(), ip);
+                                new_ns_to_ask
+                                    .insert("response_time".to_string(), "5000".to_string());
+
+                                ns_list_to_update.push(new_ns_to_ask);
+                            }
+                        }
+                        ns_index = ns_index + 1;
+                    }
+
+                    slist_to_update.set_ns_list(ns_list_to_update);
+
+                    self.set_slist(slist_to_update);
+
+                    next_slist_to_update = slists_to_update.next();
+                }
+                //
+            }
+
+            slist = self.get_slist();
+            self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
+            index_to_choose = self.get_index_to_choose();
+
+            best_server_to_ask = slist.get(index_to_choose);
+            best_server_ip = best_server_to_ask
+                .get(&"ip_address".to_string())
+                .unwrap()
+                .clone();
+            counter = counter + 1;
+        }
 
         // Set query timeout
         let response_time = best_server_to_ask
@@ -1119,93 +1349,8 @@ impl ResolverQuery {
         self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
         //
 
-        // Implementar: se deben consultar las ips de los ns que no tienen ips
-
-        for ns in slist.get_ns_list() {
-            let resolver_query_to_update = self.clone();
-            let queries_left = self.get_queries_before_temporary_error();
-
-            thread::spawn(move || {
-                let ip_addr = ns.get(&"ip_address".to_string()).unwrap().to_string();
-                let qname = ns.get(&"name".to_string()).unwrap().to_string();
-
-                if ip_addr == "".to_string() {
-                    let mut rng = thread_rng();
-                    let id: u16 = rng.gen();
-                    let dns_msg = DnsMessage::new_query_message(qname.clone(), 1, 1, 0, false, id);
-
-                    let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
-                    let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
-                    let tx_add_tcp_copy = resolver_query_to_update.get_add_channel_tcp();
-                    let tx_delete_tcp_copy = resolver_query_to_update.get_delete_channel_tcp();
-                    let tx_add_ns_udp_copy = resolver_query_to_update.get_add_channel_ns_udp();
-                    let tx_delete_ns_udp_copy =
-                        resolver_query_to_update.get_delete_channel_ns_udp();
-                    let tx_add_ns_tcp_copy = resolver_query_to_update.get_add_channel_ns_tcp();
-                    let tx_delete_ns_tcp_copy =
-                        resolver_query_to_update.get_delete_channel_ns_tcp();
-                    let tx_update_query_copy = resolver_query_to_update.get_tx_update_query();
-                    let tx_delete_query_copy = resolver_query_to_update.get_tx_delete_query();
-                    let tx_update_cache_udp_copy = resolver_query_to_update.get_update_cache_udp();
-                    let tx_update_cache_tcp_copy = resolver_query_to_update.get_update_cache_tcp();
-                    let tx_update_cache_ns_udp_copy =
-                        resolver_query_to_update.get_update_cache_ns_udp();
-                    let tx_update_cache_ns_tcp_copy =
-                        resolver_query_to_update.get_update_cache_ns_tcp();
-
-                    let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-
-                    let mut internal_query = ResolverQuery::new(
-                        tx_add_udp_copy,
-                        tx_delete_udp_copy,
-                        tx_add_tcp_copy,
-                        tx_delete_tcp_copy,
-                        tx_add_ns_udp_copy,
-                        tx_delete_ns_udp_copy,
-                        tx_add_ns_tcp_copy,
-                        tx_delete_ns_tcp_copy,
-                        tx_update_query_copy,
-                        tx_delete_query_copy,
-                        dns_msg,
-                        tx_update_cache_udp_copy,
-                        tx_update_cache_tcp_copy,
-                        tx_update_cache_ns_udp_copy,
-                        tx_update_cache_ns_tcp_copy,
-                        update_slist_tcp_sender,
-                    );
-
-                    // Initializes the query data struct
-                    internal_query.initialize(
-                        qname,
-                        1,
-                        1,
-                        0,
-                        false,
-                        resolver_query_to_update.get_sbelt(),
-                        resolver_query_to_update.get_cache(),
-                        resolver_query_to_update.get_ns_data(),
-                        "".to_string(),
-                        id,
-                    );
-
-                    internal_query.set_internal_query(true, queries_left - 1);
-                    internal_query
-                        .set_query_id_update_slist(resolver_query_to_update.get_main_query_id());
-
-                    internal_query.step_2();
-                    let response_msg = internal_query.step_3_tcp(update_slist_tcp_recv);
-
-                    // Update resolver query
-
-                    let answers = response_msg.get_answer();
-                    let host_name = answers[0].clone().get_name().get_name();
-
-                    resolver_query_to_update
-                        .get_update_slist_tcp_sender()
-                        .send((host_name, answers));
-                }
-            });
-        }
+        // Get address for empty ns in slist
+        self.send_internal_queries_for_slist_tcp(self.get_slist());
         ///////////////////////////////////////////////
 
         let query_msg = self.create_query_message();
@@ -1326,7 +1471,7 @@ impl ResolverQuery {
             }
         }
 
-        self.step_2();
+        self.step_2_tcp();
         return self.step_3_tcp(update_slist_tcp_recv);
     }
 
@@ -1367,11 +1512,11 @@ impl ResolverQuery {
             match host_name_asked.find(".") {
                 Some(index) => {
                     let parent_host_name = &host_name_asked[index + 1..];
-                    self.initialize_slist(self.get_sbelt(), parent_host_name.to_string());
+                    self.initialize_slist_tcp(self.get_sbelt(), parent_host_name.to_string());
                     self.set_index_to_choose(0);
                 }
                 None => {
-                    self.initialize_slist(self.get_sbelt(), ".".to_string());
+                    self.initialize_slist_tcp(self.get_sbelt(), ".".to_string());
                     self.set_index_to_choose(0);
                 }
             }
@@ -1382,12 +1527,108 @@ impl ResolverQuery {
 
         return self.step_3_tcp(update_slist_tcp_recv);
     }
+
+    fn send_internal_queries_for_slist_tcp(&self, slist: Slist) {
+        let ns_list = slist.get_ns_list();
+
+        for ns in ns_list {
+            let resolver_query_to_update = self.clone();
+            let queries_left = self.get_queries_before_temporary_error();
+
+            thread::spawn(move || {
+                let ip_addr = ns.get(&"ip_address".to_string()).unwrap().to_string();
+                let qname = ns.get(&"name".to_string()).unwrap().to_string();
+
+                if ip_addr == "".to_string() {
+                    let mut rng = thread_rng();
+                    let id: u16 = rng.gen();
+                    let dns_msg = DnsMessage::new_query_message(qname.clone(), 1, 1, 0, false, id);
+
+                    let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
+                    let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
+                    let tx_add_tcp_copy = resolver_query_to_update.get_add_channel_tcp();
+                    let tx_delete_tcp_copy = resolver_query_to_update.get_delete_channel_tcp();
+                    let tx_add_ns_udp_copy = resolver_query_to_update.get_add_channel_ns_udp();
+                    let tx_delete_ns_udp_copy =
+                        resolver_query_to_update.get_delete_channel_ns_udp();
+                    let tx_add_ns_tcp_copy = resolver_query_to_update.get_add_channel_ns_tcp();
+                    let tx_delete_ns_tcp_copy =
+                        resolver_query_to_update.get_delete_channel_ns_tcp();
+                    let tx_update_query_copy = resolver_query_to_update.get_tx_update_query();
+                    let tx_delete_query_copy = resolver_query_to_update.get_tx_delete_query();
+                    let tx_update_cache_udp_copy = resolver_query_to_update.get_update_cache_udp();
+                    let tx_update_cache_tcp_copy = resolver_query_to_update.get_update_cache_tcp();
+                    let tx_update_cache_ns_udp_copy =
+                        resolver_query_to_update.get_update_cache_ns_udp();
+                    let tx_update_cache_ns_tcp_copy =
+                        resolver_query_to_update.get_update_cache_ns_tcp();
+
+                    let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+                    let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
+                    let mut internal_query = ResolverQuery::new(
+                        tx_add_udp_copy,
+                        tx_delete_udp_copy,
+                        tx_add_tcp_copy,
+                        tx_delete_tcp_copy,
+                        tx_add_ns_udp_copy,
+                        tx_delete_ns_udp_copy,
+                        tx_add_ns_tcp_copy,
+                        tx_delete_ns_tcp_copy,
+                        tx_update_query_copy,
+                        tx_delete_query_copy,
+                        dns_msg,
+                        tx_update_cache_udp_copy,
+                        tx_update_cache_tcp_copy,
+                        tx_update_cache_ns_udp_copy,
+                        tx_update_cache_ns_tcp_copy,
+                        update_slist_tcp_sender,
+                        tx_update_self_slist,
+                    );
+
+                    // Initializes the query data struct
+                    internal_query.initialize(
+                        qname,
+                        1,
+                        1,
+                        0,
+                        false,
+                        resolver_query_to_update.get_sbelt(),
+                        resolver_query_to_update.get_cache(),
+                        resolver_query_to_update.get_ns_data(),
+                        "".to_string(),
+                        id,
+                    );
+
+                    internal_query.set_internal_query(true, queries_left - 1);
+                    internal_query
+                        .set_query_id_update_slist(resolver_query_to_update.get_main_query_id());
+
+                    internal_query.step_2_tcp();
+                    let response_msg = internal_query.step_3_tcp(update_slist_tcp_recv);
+
+                    // Update resolver query
+
+                    let answers = response_msg.get_answer();
+                    let host_name = answers[0].clone().get_name().get_name();
+
+                    resolver_query_to_update
+                        .get_update_slist_tcp_sender()
+                        .send((host_name, answers));
+                }
+            });
+        }
+    }
 }
 
 // Others utils
 impl ResolverQuery {
     // Add a new element to cache
     pub fn add_to_cache(&mut self, domain_name: String, resource_record: ResourceRecord) {
+        println!(
+            "-------------- Adding to cache: {} ------------------------",
+            domain_name.clone()
+        );
         let mut cache = self.get_cache();
 
         self.get_add_channel_udp()
@@ -1667,6 +1908,10 @@ impl ResolverQuery {
     pub fn get_update_slist_tcp_sender(&self) -> Sender<(String, Vec<ResourceRecord>)> {
         self.update_slist_tcp_sender.clone()
     }
+
+    pub fn get_tx_update_self_slist(&self) -> Sender<Slist> {
+        self.tx_update_self_slist.clone()
+    }
 }
 
 // Setters
@@ -1770,6 +2015,10 @@ impl ResolverQuery {
     pub fn set_internal_query(&mut self, internal_query: bool, queries_left: u16) {
         self.internal_query = internal_query;
         self.queries_before_temporary_error = queries_left;
+    }
+
+    pub fn set_tx_update_self_slist(&mut self, tx_update_self_slist: Sender<Slist>) {
+        self.tx_update_self_slist = tx_update_self_slist;
     }
 }
 
@@ -2424,7 +2673,7 @@ mod resolver_query_tests {
         let mut sbelt = Slist::new();
         sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
 
-        resolver_query.initialize_slist(sbelt, resolver_query.get_sname());
+        resolver_query.initialize_slist_tcp(sbelt, resolver_query.get_sname());
 
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
 
@@ -2516,7 +2765,7 @@ mod resolver_query_tests {
         let mut sbelt = Slist::new();
         sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
 
-        resolver_query.initialize_slist(sbelt, resolver_query.get_sname());
+        resolver_query.initialize_slist_tcp(sbelt, resolver_query.get_sname());
 
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
         assert_eq!(

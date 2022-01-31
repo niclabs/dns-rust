@@ -337,9 +337,11 @@ impl Resolver {
 
                 println!("Query to {}", query.get_sname());
 
+                let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
                 if timestamp_ms > (timeout as u64 + last_query_timestamp) {
                     println!("Timeout!!!!!!!!");
-                    query.step_3_udp(socket.try_clone().unwrap());
+                    query.step_3_udp(socket.try_clone().unwrap(), rx_update_self_slist);
                 }
             }
 
@@ -384,6 +386,8 @@ impl Resolver {
 
                 let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+                let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
                 let mut resolver_query = ResolverQuery::new(
                     tx_add_udp_copy,
                     tx_delete_udp_copy,
@@ -401,6 +405,7 @@ impl Resolver {
                     tx_update_cache_ns_udp_copy.clone(),
                     tx_update_cache_ns_tcp_copy.clone(),
                     tx_update_slist_tcp,
+                    tx_update_self_slist,
                 );
 
                 // Initializes the query data struct
@@ -427,7 +432,8 @@ impl Resolver {
                 let tx_query_delete_clone = tx_delete_query_copy.clone();
 
                 thread::spawn(move || {
-                    let answer_local = resolver_query.step_1_udp(socket_copy.try_clone().unwrap());
+                    let answer_local = resolver_query
+                        .step_1_udp(socket_copy.try_clone().unwrap(), rx_update_self_slist);
 
                     match answer_local {
                         Some(val) => {
@@ -468,7 +474,10 @@ impl Resolver {
                 let queries_hash_by_id_copy = queries_hash_by_id.clone();
 
                 println!("Response ID: {}", answer_id);
-
+                println!(
+                    "qname: {}",
+                    dns_message.get_question().get_qname().get_name()
+                );
                 println!(
                     "AA: {}, NS: {}, AD: {}",
                     dns_message.get_answer().len(),
@@ -519,10 +528,16 @@ impl Resolver {
                         //
 
                         resolver_query.set_cache(resolver.get_cache());
-                        let response = match resolver_query
-                            .clone()
-                            .step_4_udp(dns_message, socket_copy.try_clone().unwrap())
-                        {
+
+                        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
+                        resolver_query.set_tx_update_self_slist(tx_update_self_slist);
+
+                        let response = match resolver_query.clone().step_4_udp(
+                            dns_message,
+                            socket_copy.try_clone().unwrap(),
+                            rx_update_self_slist,
+                        ) {
                             Some(val) => {
                                 let is_internal_query = resolver_query.get_internal_query();
 
@@ -554,52 +569,73 @@ impl Resolver {
                                     let resolver_query_id_to_update =
                                         resolver_query.get_query_id_update_slist();
 
-                                    let mut resolver_query_to_update = queries_hash_by_id_copy
-                                        .get(&resolver_query_id_to_update)
-                                        .unwrap()
-                                        .clone();
+                                    let mut resolver_query_to_update_result =
+                                        queries_hash_by_id_copy.get(&resolver_query_id_to_update);
 
-                                    let mut slist_to_update = resolver_query_to_update.get_slist();
-                                    let mut ns_list_to_update = slist_to_update.get_ns_list();
-                                    let mut ns_index = 0;
+                                    match resolver_query_to_update_result {
+                                        Some(val) => {
+                                            let mut resolver_query_to_update = val.clone();
+                                            let mut slist_to_update =
+                                                resolver_query_to_update.get_slist();
+                                            let mut ns_list_to_update =
+                                                slist_to_update.get_ns_list();
+                                            let mut ns_index = 0;
 
-                                    for ns in ns_list_to_update.clone() {
-                                        let answers_copy = answers.clone();
-                                        let ns_name =
-                                            ns.get(&"name".to_string()).unwrap().to_string();
+                                            for ns in ns_list_to_update.clone() {
+                                                let answers_copy = answers.clone();
+                                                let ns_name = ns
+                                                    .get(&"name".to_string())
+                                                    .unwrap()
+                                                    .to_string();
 
-                                        if ns_name == host_name {
-                                            ns_list_to_update.remove(ns_index);
-
-                                            for answer in answers_copy {
-                                                let ip = match answer.get_rdata() {
-                                                    Rdata::SomeARdata(val) => {
-                                                        val.get_string_address()
-                                                    }
-                                                    _ => unreachable!(),
-                                                };
-
-                                                let mut new_ns_to_ask = HashMap::new();
-
-                                                new_ns_to_ask
-                                                    .insert("name".to_string(), host_name.clone());
-                                                new_ns_to_ask.insert("ip_address".to_string(), ip);
-                                                new_ns_to_ask.insert(
-                                                    "response_time".to_string(),
-                                                    "5000".to_string(),
+                                                println!(
+                                                    "ns name: {} - host name: {}",
+                                                    ns_name.clone(),
+                                                    host_name.clone()
                                                 );
 
-                                                ns_list_to_update.push(new_ns_to_ask);
+                                                if ns_name == host_name {
+                                                    ns_list_to_update.remove(ns_index);
+
+                                                    for answer in answers_copy {
+                                                        let ip = match answer.get_rdata() {
+                                                            Rdata::SomeARdata(val) => {
+                                                                val.get_string_address()
+                                                            }
+                                                            _ => unreachable!(),
+                                                        };
+
+                                                        let mut new_ns_to_ask = HashMap::new();
+
+                                                        new_ns_to_ask.insert(
+                                                            "name".to_string(),
+                                                            host_name.clone(),
+                                                        );
+                                                        new_ns_to_ask
+                                                            .insert("ip_address".to_string(), ip);
+                                                        new_ns_to_ask.insert(
+                                                            "response_time".to_string(),
+                                                            "5000".to_string(),
+                                                        );
+
+                                                        ns_list_to_update.push(new_ns_to_ask);
+                                                    }
+                                                }
+                                                ns_index = ns_index + 1;
                                             }
+
+                                            slist_to_update.set_ns_list(ns_list_to_update);
+                                            resolver_query_to_update
+                                                .set_slist(slist_to_update.clone());
+
+                                            resolver_query_to_update
+                                                .get_tx_update_self_slist()
+                                                .send(slist_to_update);
+                                            tx_query_update_clone.send(resolver_query_to_update);
+                                            tx_query_delete_clone.send(resolver_query.clone());
                                         }
-                                        ns_index = ns_index + 1;
+                                        None => {}
                                     }
-
-                                    slist_to_update.set_ns_list(ns_list_to_update);
-                                    resolver_query_to_update.set_slist(slist_to_update);
-
-                                    tx_query_update_clone.send(resolver_query_to_update);
-                                    tx_query_delete_clone.send(resolver_query.clone());
                                 }
                             }
                             None => {}
@@ -798,6 +834,7 @@ impl Resolver {
                             let id = dns_message.get_query_id();
 
                             let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+                            let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
                             let mut resolver_query = ResolverQuery::new(
                                 tx_add_udp_copy,
@@ -816,6 +853,7 @@ impl Resolver {
                                 tx_update_cache_ns_udp_copy,
                                 tx_update_cache_ns_tcp_copy,
                                 tx_update_slist_tcp,
+                                tx_update_self_slist,
                             );
 
                             // Initializes the query data struct
@@ -867,23 +905,36 @@ impl Resolver {
             Err(e) => (0, "".to_string()),
         };
 
+        println!("msg len: {}", number_of_bytes_msg);
+
         if number_of_bytes_msg == 0 {
             return None;
         }
 
         let dns_msg_parsed_result = DnsMessage::from_bytes(&msg);
 
-        let dns_msg_parsed = match dns_msg_parsed_result {
+        match dns_msg_parsed_result {
             Ok(_) => {}
             Err(_) => {
                 return Some((DnsMessage::format_error_msg(), address));
             }
-        };
+        }
 
         let dns_msg_parsed = dns_msg_parsed_result.unwrap();
 
         let query_id = dns_msg_parsed.get_query_id();
-        let trunc = dns_msg_parsed.get_header().get_tc();
+        //let trunc = dns_msg_parsed.get_header().get_tc();
+
+        let trunc = false;
+
+        println!("Truncado: {}", trunc);
+
+        println!(
+            "AA: {} - NS: {} - AD: {}",
+            dns_msg_parsed.get_answer().len(),
+            dns_msg_parsed.get_authority().len(),
+            dns_msg_parsed.get_additional().len()
+        );
 
         match messages.get(&query_id) {
             Some(mut val) => {

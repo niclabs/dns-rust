@@ -253,6 +253,18 @@ impl DnsCache {
             }
         }
     }
+
+    pub fn print(&self) {
+        let cache = self.get_cache();
+
+        for (key, val) in cache.iter() {
+            println!("Type: {}", key);
+
+            for (key2, val2) in val.iter() {
+                println!("Host Name: {}", key2);
+            }
+        }
+    }
 }
 
 // Getters

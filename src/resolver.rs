@@ -1409,6 +1409,8 @@ mod test {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query_test = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -1426,6 +1428,7 @@ mod test {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query_test.get_ns_data().len(), 0);

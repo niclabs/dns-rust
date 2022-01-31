@@ -2060,6 +2060,8 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2077,6 +2079,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.sname, "".to_string());
@@ -2107,6 +2110,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2125,6 +2129,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         let now = Utc::now();
@@ -2157,6 +2162,9 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2174,6 +2182,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.sname, "".to_string());
@@ -2204,6 +2213,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2222,6 +2232,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.stype, 0);
@@ -2252,6 +2263,8 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+        
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2270,6 +2283,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.sclass, 0);
@@ -2301,6 +2315,8 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2318,6 +2334,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.op_code, 0);
@@ -2349,6 +2366,8 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2366,6 +2385,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.rd, false);
@@ -2396,6 +2416,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2414,6 +2435,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         let mut slist = Slist::new();
@@ -2448,6 +2470,8 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2465,6 +2489,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         let mut sbelt = Slist::new();
@@ -2499,6 +2524,8 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2516,6 +2543,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         let mut cache = DnsCache::new();
@@ -2560,6 +2588,8 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2577,6 +2607,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         resolver_query.set_sname("test.com".to_string());
@@ -2616,6 +2647,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2634,6 +2666,8 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
+            
         );
 
         resolver_query.set_sname("test.test2.com".to_string());
@@ -2708,6 +2742,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2726,6 +2761,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         resolver_query.set_sname("test6.test4.com".to_string());
@@ -2821,6 +2857,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query_test = ResolverQuery::new(
             add_sender_udp,
@@ -2839,6 +2876,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query_test.get_ns_data().len(), 0);
@@ -2869,6 +2907,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2887,6 +2926,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         resolver_query.set_main_query_id(0);
@@ -2915,6 +2955,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2933,6 +2974,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.get_old_id(), 0);
@@ -2964,6 +3006,8 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
 
+        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2981,6 +3025,7 @@ mod resolver_query_tests {
             tx_update_cache_ns_udp,
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
+            tx_update_self_slist,
         );
 
         assert_eq!(resolver_query.get_src_address(), "".to_string());

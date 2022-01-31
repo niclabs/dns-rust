@@ -95,12 +95,16 @@ impl NSZone {
         new_zone
     }
 
+
     pub fn exist_child(&self, name: String) -> bool {
+        // case insensitive
         let children = self.get_children();
+        let lower_case_name = name.to_ascii_lowercase();
 
         for child in children {
             println!("Child name: {}", child.get_name());
-            if child.get_name() == name {
+            let lower_case_child = child.get_name().to_ascii_lowercase();
+            if lower_case_child == lower_case_name{
                 return true;
             }
         }
@@ -109,14 +113,15 @@ impl NSZone {
     }
 
     pub fn get_child(&self, name: String) -> (NSZone, i32) {
+        // case insensitive
         let children = self.get_children();
-
         let mut child_ns = NSZone::new();
-
+        let lower_case_name = name.to_ascii_lowercase();
         let mut index = 0;
 
         for child in children {
-            if child.get_name() == name {
+            let lower_case_child = child.get_name().to_ascii_lowercase();
+            if lower_case_child == lower_case_name {
                 return (child.clone(), index);
             }
             index = index + 1;
@@ -290,17 +295,20 @@ impl NSZone {
 
     // Sets the children with a new value
     pub fn set_children(&mut self, mut children: Vec<NSZone>) {
-        // check if there is duplicates labels
+        // check if there is duplicates labels, case insensitive
         // checks from the vector's tail to keep the last added child
         let mut labels: Vec<String> = ([]).to_vec();
+        let mut lower_case_labels: Vec<String> = ([]).to_vec();
         let mut n = children.len();
         while n > 0 {
             let label = children[n - 1].get_name();
-            if labels.contains(&label.clone()) {
+            let lower_case_label = label.to_ascii_lowercase();
+            if lower_case_labels.contains(&lower_case_label.clone()) {
                 children.remove(n - 1);
                 //TODO: add warning
             } else {
                 labels.push(label.clone());
+                lower_case_labels.push(label.clone().to_ascii_lowercase());
             }
             n -= 1;
         }
@@ -473,14 +481,14 @@ mod test {
         let mut nszone = NSZone::new();
 
         let mut children: Vec<NSZone> = Vec::new();
-        let nszone_1 = NSZone::new();
+        let mut nszone_1 = NSZone::new();
         nszone_1.set_name(String::from("test1"));
         children.push(nszone_1);
-        let nszone_2 = NSZone::new();
+        let mut nszone_2 = NSZone::new();
         nszone_2.set_name(String::from("test2"));
         children.push(nszone_2);
-        let nszone_3 = NSZone::new();
-        nszone_3.set_name(String::from("test1"));
+        let mut nszone_3 = NSZone::new();
+        nszone_3.set_name(String::from("TEST1"));
         nszone_3.set_ip_address_for_refresh_zone(String::from("1.2.3"));
         children.push(nszone_3);
 
@@ -512,7 +520,7 @@ mod test {
         children.push(some_nszone);
         nszone.set_children(children);
         assert_eq!(nszone.exist_child(String::from("test2.com")), false);
-        assert_eq!(nszone.exist_child(String::from("test.com")), true)
+        assert_eq!(nszone.exist_child(String::from("tEsT.com")), true)
     }
 
     #[test]
@@ -529,7 +537,7 @@ mod test {
         nszone.set_children(children);
         assert_eq!(
             nszone
-                .get_child(String::from("other.test.com"))
+                .get_child(String::from("OTher.test.com"))
                 .0
                 .get_name(),
             String::from("other.test.com")

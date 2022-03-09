@@ -125,7 +125,7 @@ pub fn run_client() {
                     println!(
                         "Domain name: {} - Ch Ip address: {}",
                         val.get_domain_name().get_name(),
-                        val.get_ch_adress()
+                        val.get_ch_address()
                     )
                 }
                 Rdata::SomeNsRdata(val) => {
@@ -165,7 +165,7 @@ pub fn run_client() {
                     println!(
                         "Domain name: {} - Ch Ip address: {}",
                         val.get_domain_name().get_name(),
-                        val.get_ch_adress()
+                        val.get_ch_address()
                     )
                 }
                 Rdata::SomeNsRdata(val) => {
@@ -205,7 +205,7 @@ pub fn run_client() {
                     println!(
                         "Domain name: {} - Ch Ip address: {}",
                         val.get_domain_name().get_name(),
-                        val.get_ch_adress()
+                        val.get_ch_address()
                     )
                 }
                 Rdata::SomeNsRdata(val) => {

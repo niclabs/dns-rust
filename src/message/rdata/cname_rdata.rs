@@ -170,4 +170,9 @@ mod test {
 
         assert_eq!(cname_rdata.get_cname().get_name(), String::from("cname"));
     }
+
+    /*#[test]
+    fn rr_from_master_file_test(){
+
+    }*/
 }

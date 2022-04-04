@@ -41,11 +41,12 @@ impl FromBytes<Result<Self, &'static str>> for TxtRdata {
         let mut string = String::from("");
         let mut txt: Vec<String> = Vec::new();
         let mut i = 0;
+        let len = bytes.len(); 
 
-        while i < bytes.len() {
+        while i < len {
             let mut lenght_octet = bytes[i];
             i += 1;
-            if i==bytes.len(){
+            if i == len {
                 break; 
             }
             for _chars in 0..lenght_octet {
@@ -158,13 +159,21 @@ mod test {
 
     #[test]
     fn from_bytes_test() {
-        let bytes_test: [u8; 9] = [3, 100, 99, 99, 4, 116, 101, 115, 116];
+
+        let one_elem_test = [3, 100, 99, 99];
+        let two_elem_test = [3, 100, 99, 99, 4, 116, 101, 115, 116];
 
         // bytes is not the full msg, but in this case it will not use inside
-        let txt_rdata = TxtRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
+        let txt_rdata_one_elem = TxtRdata::from_bytes(&one_elem_test, &one_elem_test).unwrap();
+        let txt_rdata_two_elem = TxtRdata::from_bytes(&two_elem_test, &two_elem_test).unwrap();
 
         assert_eq!(
-            txt_rdata.get_text(),
+            txt_rdata_one_elem.get_text(),
+            vec!["dcc".to_string()]
+        );
+
+        assert_eq!(
+            txt_rdata_two_elem.get_text(),
             vec!["dcc".to_string(), "test".to_string()]
         );
     }

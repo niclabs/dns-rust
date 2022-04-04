@@ -492,6 +492,7 @@ impl ResourceRecord {
 mod test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::txt_rdata::TxtRdata;
+    use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
 
@@ -607,20 +608,15 @@ mod test {
 
     #[test]
     fn from_bytes_test() {
-        let bytes_msg: [u8; 24] = [
-            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104,
-            101, 108, 108, 111,
-        ];
 
-        let full_msg: [u8; 55] = [
-            0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0b01100100, 0b01100011, 0b01100011, 6,
-            0b01110101, 0b01100011, 0b01101000, 0b01101001, 0b01101100, 0b01100101, 2, 0b01100011,
-            0b01101100, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0,
-            0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
-        ];
+        let bytes_msg = [
+            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 4, 3, 100,
+            99, 99,
+        ]; 
 
+        // bytes is not the full msg, but in this case it will not use inside
         let (resource_record_test, _other_rr_bytes) =
-            ResourceRecord::from_bytes(&bytes_msg, &full_msg).unwrap();
+            ResourceRecord::from_bytes(&bytes_msg, &bytes_msg).unwrap();
 
         assert_eq!(
             resource_record_test.get_name().get_name(),
@@ -629,13 +625,36 @@ mod test {
         assert_eq!(resource_record_test.get_type_code(), 16);
         assert_eq!(resource_record_test.get_class(), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
-        assert_eq!(resource_record_test.get_rdlength(), 6);
+        assert_eq!(resource_record_test.get_rdlength(), 4);
+
         assert_eq!(
             match resource_record_test.get_rdata() {
                 Rdata::SomeTxtRdata(val) => val.get_text(),
-                _ => unreachable!(),
+                 _ => unreachable!(),
             },
-            vec!["hello".to_string()]
+            vec!["dcc".to_string()]
         );
+ 
+    }
+
+    #[test]
+    fn get_string_type_test() {
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        assert_eq!(resource_record.get_string_type(), String::from("A"));
+    }
+
+    #[test]
+    fn set_and_get_rdata_test(){
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let mut resource_record = ResourceRecord::new(txt_rdata);
+        let other_txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["uchile".to_string()]));
+        resource_record.set_rdata(other_txt_rdata);
+        let rdata = resource_record.get_rdata(); 
+        match rdata{
+            Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text()[0], "uchile".to_string()), 
+            _ => unreachable!(), 
+        }
     }
 }

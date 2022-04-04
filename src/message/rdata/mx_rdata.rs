@@ -220,4 +220,10 @@ mod test {
         assert_eq!(mx_rdata.get_preference(), 128);
         assert_eq!(mx_rdata.get_exchange().get_name(), String::from("test.com"));
     }
+
+    /*#[test]
+
+    fn rr_from_master_file_test(){
+
+    }*/
 }

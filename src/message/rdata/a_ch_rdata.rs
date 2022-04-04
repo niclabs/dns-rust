@@ -27,7 +27,7 @@ impl ToBytes for AChRdata {
         //
 
         // Add ch address to bytes
-        let ch_address = self.get_ch_adress();
+        let ch_address = self.get_ch_address();
 
         bytes.push((ch_address >> 8) as u8);
         bytes.push(ch_address as u8);
@@ -131,7 +131,7 @@ impl AChRdata {
         self.domain_name.clone()
     }
 
-    pub fn get_ch_adress(&self) -> u16 {
+    pub fn get_ch_address(&self) -> u16 {
         self.ch_address
     }
 }
@@ -145,4 +145,86 @@ impl AChRdata {
     pub fn set_ch_address(&mut self, ch_address: u16) {
         self.ch_address = ch_address;
     }
+}
+
+mod test {
+    use crate::domain_name::DomainName;
+    use crate::message::rdata::a_ch_rdata::AChRdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::ARdata;
+
+
+    #[test]
+    fn constructor_test() {
+        let a_rdata = AChRdata::new();
+        assert_eq!(a_rdata.domain_name.get_name(), String::from(""));
+        assert_eq!(a_rdata.ch_address, 0);
+    }
+
+    #[test]
+    fn set_and_get_ch_address_test() {
+        let mut ach_rdata = AChRdata::new();
+
+        assert_eq!(ach_rdata.get_ch_address(), 0);
+
+        ach_rdata.set_ch_address(1);
+
+        assert_eq!(ach_rdata.get_ch_address(), 1);
+    }
+
+    #[test]
+    fn to_bytes_test() {
+        let mut a_rdata = ARdata::new();
+
+        a_rdata.set_address([127, 0, 0, 1]);
+
+        let a_rdata_to_bytes = a_rdata.to_bytes();
+
+        assert_eq!(a_rdata_to_bytes[0], 127);
+        assert_eq!(a_rdata_to_bytes[1], 0);
+        assert_eq!(a_rdata_to_bytes[2], 0);
+        assert_eq!(a_rdata_to_bytes[3], 1);
+    }
+
+    #[test]
+    fn from_bytes_test() {
+        let bytes: [u8; 4] = [128, 0, 0, 1];
+        let a_rdata = ARdata::from_bytes(&bytes, &bytes).unwrap();
+
+        assert_eq!(a_rdata.get_address()[0], 128);
+        assert_eq!(a_rdata.get_address()[1], 0);
+        assert_eq!(a_rdata.get_address()[2], 0);
+        assert_eq!(a_rdata.get_address()[3], 1);
+    }
+
+    #[test]
+    fn set_and_get_domain_name_test(){
+        let mut ach_rdata = AChRdata::new();
+        let mut domain_name = DomainName::new();
+
+        assert_eq!(ach_rdata.get_domain_name().get_name(), domain_name.get_name());
+
+        domain_name.set_name(String::from("test.com"));
+        ach_rdata.set_domain_name(domain_name); 
+
+        assert_eq!(ach_rdata.get_domain_name().get_name(), String::from("test.com"));
+    }
+    
+    /*#[test]
+    fn rr_from_master_file_test() {
+        let ach_rr = AChRdata::rr_from_master_file("204.13.100.3".split_whitespace(), 0, 0,"admin.googleplex".to_string(), "edu".to_string());
+        
+        assert_eq!(ach_rr.get_class(), 3);
+        assert_eq!(ach_rr.get_name().get_name(), String::from("dcc.cl"));
+        assert_eq!(ach_rr.get_type_code(), 1);
+        assert_eq!(ach_rr.get_ttl(), 0);
+        assert_eq!(ach_rr.get_rdlength(), 4);
+
+        let mut ach_rdata = ach_rr.get_rdata();
+        match ach_rdata {
+            Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
+            _ => {}
+        }
+    }*/
 }

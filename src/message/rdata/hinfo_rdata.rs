@@ -207,4 +207,9 @@ mod test {
         assert_eq!(hinfo_rdata.get_cpu(), String::from("cpu"));
         assert_eq!(hinfo_rdata.get_os(), String::from("os"));
     }
+
+    /*#[test]
+    fn rr_from_master_file_test(){
+
+    }*/
 }

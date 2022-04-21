@@ -169,6 +169,57 @@ impl MasterFile {
         return line;
     }
 
+    fn replace_special_encoding(mut line: String) -> String {
+        
+        //let index = line.find("\\");
+        
+        /*let is_backslash = match find {
+            Some(val) => 1,
+            None => 0,
+        };*/
+
+        let index = match line.find("\\") {
+            Some(val) => val,
+            None => usize::MAX, 
+        };
+
+        /*if is_backslash == 0 {
+            return line;
+        }*/
+
+        if index == usize::MAX {
+            return line; 
+        }
+
+        let next_char_to_backslash = line.get(index + 1..index + 2).unwrap().to_string();
+
+
+        /*
+            \DDD where each D is a digit is the octet corresponding to
+            the decimal number described by DDD. The resulting
+            octet is assumed to be text and is not checked for
+            special meaning.
+        */
+        if next_char_to_backslash >= "0".to_string() &&  next_char_to_backslash <= "9".to_string(){
+            let oct_number_str = line.get(index + 1..index + 4).unwrap();
+            let oct_number = oct_number_str.parse::<u32>().unwrap();
+            let dec_str = oct_number.to_string();
+            line.replace_range(index..index+4, &dec_str);
+        }
+
+        /*
+            \X where X is any character other than a digit (0-9), is
+            used to quote that character so that its special meaning
+            does not apply. For example, "\." can be used to place
+            a dot character in a label.
+        */
+        else {
+            let x = next_char_to_backslash.to_string(); 
+            line.replace_range(index..index+2, &x);
+        }
+        return line;
+    }
+
     /// Gets the hostname of a line in a master file. If there is no hostname, takes the last hostnames used.
     fn get_line_host_name(&mut self, line: String) -> (String, String) {
         let first_char = line.get(0..1).unwrap();
@@ -235,7 +286,7 @@ impl MasterFile {
             }
         }
 
-        self.process_especific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name);
+        self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name);
     }
 
     /// Returns whether the type is class, rr_type or ttl
@@ -258,7 +309,7 @@ impl MasterFile {
     }
 
     /// Process an especific type of RR
-    fn process_especific_rr(
+    fn process_specific_rr(
         &mut self,
         items: SplitWhitespace,
         ttl: u32,
@@ -362,38 +413,161 @@ impl MasterFile {
         self.set_rrs(rrs);
     }
 
-    /*
-    For future implementations
-    fn process_backslashs(&mut self, line: String) {
-        // is there backslash?
-        let index = match line.find("\\") {
+    fn process_line_rr_validity(&mut self, line: String) -> (String, String) {
+        // Gets host name
+        let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
+
+        // Process next values
+        let mut next_line_items = line_left_to_process.split_whitespace();
+
+        // Default values for rr
+        let mut ttl = self.get_ttl_default();
+        let mut class = self.get_class_default();
+        let mut rr_type = "";
+
+        let mut value = match next_line_items.next() {
             Some(val) => val,
-            None => -1,
+            None => "",
         };
 
-        if index == -1 {
-            return line;
+        while value != "" {
+            let value_type = self.get_value_type(value.to_string());
+
+            println!("Name: {}, value: {}", host_name.clone(), value_type);
+
+            if value_type == 0 {
+                // TTL
+                ttl = value.parse::<u32>().unwrap();
+
+                value = match next_line_items.next() {
+                    Some(val) => val,
+                    None => "",
+                };
+            } else if value_type == 1 {
+                // Class
+                class = value.to_string();
+
+                value = match next_line_items.next() {
+                    Some(val) => val,
+                    None => "",
+                };
+            } else {
+                // RRType
+                rr_type = value;
+                break;
+            }
         }
-
-        let next_char_to_backslash = line.get(index + 1..index + 2);
-
-        let parse_to_numb = next_char_to_backslash.parse::<f64>();
-
-        let is_numb = match parse_to_numb {
-            Ok(ok) => 1,
-            Err(e) => 0,
-        };
-
-        if is_numb == 1 {
-            let oct_number_str = line.get(index + 1..index + 4);
-            let oct_number = oct_number_str.parse::<u32>().unwrap();
-        }
-
-        line.replace("\\", "");
-
-        return line;
+        return (class.to_string(), rr_type.to_string()); 
     }
-    */
+
+    fn process_include_validity(&mut self, file_name: String, domain_name: String) -> Result<bool, &'static str> {
+        let mut prev_class = "".to_string();
+        if domain_name != "" {
+            self.set_last_host(domain_name)
+        }
+
+        let file = File::open(file_name).expect("file not found!");
+        let reader = BufReader::new(file);
+
+        for line in reader.lines() {
+            let line = line.unwrap();
+            let (class, rr_type) = self.process_line_rr_validity(line);
+
+            if prev_class == "".to_string(){
+                prev_class = class;
+                if rr_type != "SOA".to_string(){
+                    return Err("Error: no SOA RR is present at the top of the zone."); 
+                }
+            }
+
+            else{
+                if class != prev_class{
+                    return Err("Error: not all rr have the same class.");
+                }
+                if rr_type == "SOA".to_string(){
+                    return Err("Error: more than one SOA per zone.");
+                }
+            }
+        }
+        return Ok(true);
+    }
+
+
+        //all rr should have same class
+        //Exactly one SOA RR should be present at the top of the zone
+
+
+        //If delegations are present and glue information is required,it should be present.
+        /*
+        Information present outside of the authoritative nodes in the
+        zone should be glue information, rather than the result of an
+        origin or similar error.
+        */
+    //------------------
+    fn validity_check_zone(&mut self) -> Result<bool, &'static str> {
+        let mut lines: Vec<String> = Vec::new();
+        let mut last_line = "".to_string();
+        
+        let mut prev_rr_class = "".to_string();
+
+        for line_with_comments in lines {
+
+            let mut line = MasterFile::remove_comments(line_with_comments.clone());
+
+            if line == "".to_string() {
+                continue;
+            }
+
+            if line.contains("$ORIGIN") {
+                let mut words = line.split_whitespace();
+                words.next();
+                let name = words.next().unwrap().to_string();
+                self.set_last_host(name.clone());
+                self.set_origin(name);
+                continue;
+            }
+
+            if line.contains("$INCLUDE") {
+                let mut words = line.split_whitespace();
+                words.next();
+
+                let file_name = words.next().unwrap();
+                let domain_name = words.next().unwrap_or("");
+                return self.process_include_validity(file_name.to_string(), domain_name.to_string());
+            }
+
+            let contains_non_especial_at_sign = line.contains("\\@");
+            
+            if contains_non_especial_at_sign == false {
+                let new_line = line.replace("@", &self.get_origin());
+            }
+
+            let new_line = line.replace("\\@", "@");
+            let line = new_line.replace("\\", "");
+
+            let (class, rr_type) = self.process_line_rr_validity(line);
+            
+            if prev_rr_class == "".to_string(){
+                prev_rr_class = class; 
+                if rr_type != "SOA".to_string(){
+                    return Err("Error: no SOA RR is present at the top of the zone.");
+                }
+            }
+            else{
+                if class != prev_rr_class{
+                    return Err("Error: not all rr have the same class.");
+                }
+                if rr_type == "SOA".to_string(){
+                    return Err("Error: more than one SOA per zone.");
+                }
+            }   
+        }
+        return Ok(true);
+    }
+
+    //fn validity_syntax(&self){
+        // para cualquier masterfile
+    //}
 }
 
 // Getters

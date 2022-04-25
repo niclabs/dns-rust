@@ -652,3 +652,45 @@ impl MasterFile {
         self.ttl_default = ttl;
     }
 }
+
+mod test{
+    use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, ns_rdata::NsRdata}, resource_record::ResourceRecord};
+
+    use super::MasterFile;
+
+    #[test]
+    fn cname_no_other_data() {
+        let mut master_file = MasterFile::new("uchile.cl".to_string());
+        let new_a1_record = ARdata::rr_from_master_file(
+            "204.13.100.3".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl.".to_string());
+        let new_cname1_record = CnameRdata::rr_from_master_file("test.googleplex.edu".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl".to_string(),
+            "test.uchile.cl".to_string());
+        let new_a2_record = ARdata::rr_from_master_file(
+            "204.13.100.3".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl.".to_string());
+        let new_cname2_record = CnameRdata::rr_from_master_file("test.googleplex.com".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl".to_string(),
+            "test.uchile.cl".to_string());
+
+        // Always have just 1 RR
+        master_file.add_rr("test".to_string(), new_a1_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+        master_file.add_rr("test".to_string(), new_cname1_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+        master_file.add_rr("test".to_string(), new_a2_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+        master_file.add_rr("test".to_string(), new_cname2_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+
+    }
+}

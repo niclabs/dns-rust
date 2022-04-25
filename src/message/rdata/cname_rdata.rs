@@ -123,6 +123,7 @@ impl CnameRdata {
 
 mod test {
     use crate::domain_name::DomainName;
+    use crate::message::rdata::Rdata;
     use crate::message::rdata::cname_rdata::CnameRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -171,8 +172,23 @@ mod test {
         assert_eq!(cname_rdata.get_cname().get_name(), String::from("cname"));
     }
 
-    /*#[test]
+    #[test]
     fn rr_from_master_file_test(){
+        let cname_rr = CnameRdata::rr_from_master_file("test.googleplex.edu".split_whitespace(), 0, 0,"admin1.googleplex.edu".to_string(),"admin1.googleplex.edu".to_string());
 
-    }*/
+        assert_eq!(cname_rr.get_class(), 0);
+        assert_eq!(cname_rr.get_name().get_name(), String::from("admin1.googleplex.edu"));
+        assert_eq!(cname_rr.get_type_code(), 5);
+        assert_eq!(cname_rr.get_ttl(), 0);
+        assert_eq!(cname_rr.get_rdlength(), 21);
+
+        // TODO: Implement getters for complete coverage
+        /*
+        let mut a_rdata = cname_rr.get_rdata();
+        match a_rdata {
+            Rdata::SomeCnameRdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
+            _ => {}
+        }
+        */
+    }
 }

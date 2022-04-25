@@ -1,3 +1,4 @@
+use crate::message::rdata::Rdata;
 use crate::message::rdata::a_ch_rdata::AChRdata;
 use crate::message::rdata::a_rdata::ARdata;
 use crate::message::rdata::cname_rdata::CnameRdata;
@@ -401,15 +402,41 @@ impl MasterFile {
     fn add_rr(&mut self, host_name: String, resource_record: ResourceRecord) {
         let mut rrs = self.get_rrs();
 
-        let mut rrs_vec = match rrs.get(&host_name) {
-            Some(val) => val.clone(),
-            None => Vec::<ResourceRecord>::new(),
-        };
+        let mut rrs_vec = Vec::<ResourceRecord>::new();
 
-        rrs_vec.push(resource_record);
+        match rrs.get(&host_name) {
+            Some(val) => {
+                // Boolean value if exists some CNAME record for the hostname
+                let mut rrs_host_name_cname = false;
+                for rr in val {
+                    match rr.get_rdata() {
+                        Rdata::SomeCnameRdata(_) => {
+                            rrs_host_name_cname = true;
+                        },
+                        _ => continue
+                    }
+                }
+
+                match resource_record.get_rdata() {
+                    // Adding a CNAME will flush older resource records
+                    Rdata::SomeCnameRdata(_) => {rrs_vec.push(resource_record); println!("aaaaaaa")},
+
+                    // If already exists a CNAME record, do nothing
+                    // otherwise, adds new record
+                    _ => {
+                        rrs_vec = val.clone();
+                        if !rrs_host_name_cname {
+                            rrs_vec.push(resource_record);
+                        }
+                    }
+                }
+            },
+            None => {
+                rrs_vec.push(resource_record);
+            }
+        }
 
         rrs.insert(host_name, rrs_vec.to_vec());
-
         self.set_rrs(rrs);
     }
 

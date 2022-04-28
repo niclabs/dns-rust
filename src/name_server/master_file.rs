@@ -8,6 +8,8 @@ use crate::message::rdata::ptr_rdata::PtrRdata;
 use crate::message::rdata::soa_rdata::SoaRdata;
 use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::resource_record::ResourceRecord;
+//refactor
+use crate::name_server::zone::NSZone;
 use core::num;
 use std::collections::HashMap;
 use std::fs::read_to_string;
@@ -24,6 +26,17 @@ pub struct MasterFile {
     rrs: HashMap<String, Vec<ResourceRecord>>,
     class_default: String,
     ttl_default: u32,
+}
+
+
+// validity checks should be performed insuring that the file is syntactically correct
+fn domain_validity_syntax(domain_name: String)-> Result<String, &'static str> {
+    for label in domain_name.split("."){
+        if ! NSZone::check_label_name(label.to_string()) {
+            return Err("Error: present domain name is not syntactically correct.");
+        }
+    }
+    return Ok(domain_name);
 }
 
 impl MasterFile {
@@ -85,74 +98,11 @@ impl MasterFile {
             }
         }
 
-        for line in lines {
-            master_file.process_line(line);
-        }
+        master_file.process_lines_and_validation();
 
         master_file
     }
-
-    /// Process a line from a master file
-    fn process_line(&mut self, line: String) {
-        // Empty case
-        if line == "".to_string() {
-            return;
-        }
-
-        // ORIGIN case
-        if line.contains("$ORIGIN") {
-            let mut words = line.split_whitespace();
-            words.next();
-            let name = words.next().unwrap().to_string();
-            self.set_last_host(name.clone());
-            self.set_origin(name);
-
-            return;
-        }
-
-        //Include case
-        if line.contains("$INCLUDE") {
-            let mut words = line.split_whitespace();
-            words.next();
-
-            let file_name = words.next().unwrap();
-            let domain_name = words.next().unwrap_or("");
-            self.process_include(file_name.to_string(), domain_name.to_string());
-
-            return;
-        }
-
-        // Replace @ for the origin domain
-        let contains_non_especial_at_sign = line.contains("\\@");
-
-        if contains_non_especial_at_sign == false {
-            let new_line = line.replace("@", &self.get_origin());
-        }
-
-        let new_line = line.replace("\\@", "@");
-
-        // Backslash replace
-        let line = new_line.replace("\\", "");
-
-        self.process_line_rr(line);
-    }
-
-    /// Process an INCLUDE line in a master file
-    fn process_include(&mut self, file_name: String, domain_name: String) {
-        if domain_name != "" {
-            self.set_last_host(domain_name)
-        }
-
-        let file = File::open(file_name).expect("file not found!");
-        let reader = BufReader::new(file);
-
-        for line in reader.lines() {
-            let line = line.unwrap();
-
-            self.process_line_rr(line);
-        }
-    }
-
+        
     /// Removes the comments from a line in a master file
     fn remove_comments(mut line: String) -> String {
         let index = line.find(";");
@@ -170,29 +120,17 @@ impl MasterFile {
     }
 
     fn replace_special_encoding(mut line: String) -> String {
-        
-        //let index = line.find("\\");
-        
-        /*let is_backslash = match find {
-            Some(val) => 1,
-            None => 0,
-        };*/
 
         let index = match line.find("\\") {
             Some(val) => val,
             None => usize::MAX, 
         };
 
-        /*if is_backslash == 0 {
-            return line;
-        }*/
-
         if index == usize::MAX {
             return line; 
         }
 
         let next_char_to_backslash = line.get(index + 1..index + 2).unwrap().to_string();
-
 
         /*
             \DDD where each D is a digit is the octet corresponding to
@@ -236,57 +174,8 @@ impl MasterFile {
             self.set_last_host(host_name.clone());
             line_left_to_process = line.get(line.find(" ").unwrap()..).unwrap().to_string();
         }
-
-        return (host_name, line_left_to_process);
-    }
-
-    // Process a line with rr data from a master file
-    fn process_line_rr(&mut self, line: String) {
-        // Gets host name
-        let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
-
-        // Process next values
-        let mut next_line_items = line_left_to_process.split_whitespace();
-
-        // Default values for rr
-        let mut ttl = self.get_ttl_default();
-        let mut class = self.get_class_default();
-        let mut rr_type = "";
-
-        let mut value = match next_line_items.next() {
-            Some(val) => val,
-            None => "",
-        };
-
-        while value != "" {
-            let value_type = self.get_value_type(value.to_string());
-
-            println!("Name: {}, value: {}", host_name.clone(), value_type);
-
-            if value_type == 0 {
-                // TTL
-                ttl = value.parse::<u32>().unwrap();
-
-                value = match next_line_items.next() {
-                    Some(val) => val,
-                    None => "",
-                };
-            } else if value_type == 1 {
-                // Class
-                class = value.to_string();
-
-                value = match next_line_items.next() {
-                    Some(val) => val,
-                    None => "",
-                };
-            } else {
-                // RRType
-                rr_type = value;
-                break;
-            }
-        }
-
-        self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name);
+        let valid_host_name = domain_validity_syntax(host_name).unwrap();
+        return (valid_host_name, line_left_to_process);
     }
 
     /// Returns whether the type is class, rr_type or ttl
@@ -317,10 +206,11 @@ impl MasterFile {
         rr_type: String,
         host_name: String,
     ) {
-        let origin = self.get_origin();
-        let mut full_host_name = host_name.clone();
+        let origin = domain_validity_syntax(self.get_origin()).unwrap();
+        let valid_host_name = domain_validity_syntax(host_name.clone()).unwrap();
+        let mut full_host_name = valid_host_name.clone();
 
-        if host_name.ends_with(".") == false {
+        if valid_host_name.ends_with(".") == false {
             full_host_name.push_str(".");
             full_host_name.push_str(&origin);
         }
@@ -394,28 +284,29 @@ impl MasterFile {
             _ => unreachable!(),
         };
 
-        self.add_rr(host_name, resource_record);
+        self.add_rr(valid_host_name, resource_record);
     }
 
     /// Adds a new rr to the master file parsings
     fn add_rr(&mut self, host_name: String, resource_record: ResourceRecord) {
         let mut rrs = self.get_rrs();
-
-        let mut rrs_vec = match rrs.get(&host_name) {
+        let valid_host_name = domain_validity_syntax(host_name).unwrap();
+        let mut rrs_vec = match rrs.get(&valid_host_name) {
             Some(val) => val.clone(),
             None => Vec::<ResourceRecord>::new(),
         };
 
         rrs_vec.push(resource_record);
 
-        rrs.insert(host_name, rrs_vec.to_vec());
+        rrs.insert(valid_host_name, rrs_vec.to_vec());
 
         self.set_rrs(rrs);
     }
 
-    fn process_line_rr_validity(&mut self, line: String) -> (String, String) {
+    fn process_line_rr(&mut self, line: String) -> (String, String) {
         // Gets host name
         let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
+        host_name = domain_validity_syntax(host_name).unwrap();
 
         // Process next values
         let mut next_line_items = line_left_to_process.split_whitespace();
@@ -457,13 +348,16 @@ impl MasterFile {
                 break;
             }
         }
-        return (class.to_string(), rr_type.to_string()); 
+        let (this_class, this_type) = (class.to_string(), rr_type.to_string());
+        self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name);
+        return (this_class, this_type);
     }
 
-    fn process_include_validity(&mut self, file_name: String, domain_name: String) -> Result<bool, &'static str> {
+    fn process_include(&mut self, file_name: String, mut domain_name: String) -> Result<bool, &'static str> {
         let mut prev_class = "".to_string();
+        domain_name = domain_validity_syntax(domain_name).unwrap();
         if domain_name != "" {
-            self.set_last_host(domain_name)
+            self.set_last_host(domain_name);
         }
 
         let file = File::open(file_name).expect("file not found!");
@@ -471,7 +365,7 @@ impl MasterFile {
 
         for line in reader.lines() {
             let line = line.unwrap();
-            let (class, rr_type) = self.process_line_rr_validity(line);
+            let (class, rr_type) = self.process_line_rr(line);
 
             if prev_class == "".to_string(){
                 prev_class = class;
@@ -491,12 +385,8 @@ impl MasterFile {
         }
         return Ok(true);
     }
-
-
         //all rr should have same class
         //Exactly one SOA RR should be present at the top of the zone
-
-
         //If delegations are present and glue information is required,it should be present.
         /*
         Information present outside of the authoritative nodes in the
@@ -504,7 +394,7 @@ impl MasterFile {
         origin or similar error.
         */
     //------------------
-    fn validity_check_zone(&mut self) -> Result<bool, &'static str> {
+    fn process_lines_and_validation(&mut self) -> Result<bool, &'static str> {
         let mut lines: Vec<String> = Vec::new();
         let mut last_line = "".to_string();
         
@@ -521,7 +411,9 @@ impl MasterFile {
             if line.contains("$ORIGIN") {
                 let mut words = line.split_whitespace();
                 words.next();
-                let name = words.next().unwrap().to_string();
+                let mut name = words.next().unwrap().to_string();
+                name = domain_validity_syntax(name).unwrap();
+
                 self.set_last_host(name.clone());
                 self.set_origin(name);
                 continue;
@@ -532,8 +424,9 @@ impl MasterFile {
                 words.next();
 
                 let file_name = words.next().unwrap();
-                let domain_name = words.next().unwrap_or("");
-                return self.process_include_validity(file_name.to_string(), domain_name.to_string());
+                let mut domain_name = words.next().unwrap_or("");
+                let valid_domain_name = domain_validity_syntax(domain_name.to_string()).unwrap();
+                return self.process_include(file_name.to_string(), valid_domain_name);
             }
 
             let contains_non_especial_at_sign = line.contains("\\@");
@@ -545,7 +438,7 @@ impl MasterFile {
             let new_line = line.replace("\\@", "@");
             let line = new_line.replace("\\", "");
 
-            let (class, rr_type) = self.process_line_rr_validity(line);
+            let (class, rr_type) = self.process_line_rr(line);
             
             if prev_rr_class == "".to_string(){
                 prev_rr_class = class; 
@@ -564,10 +457,6 @@ impl MasterFile {
         }
         return Ok(true);
     }
-
-    //fn validity_syntax(&self){
-        // para cualquier masterfile
-    //}
 }
 
 // Getters

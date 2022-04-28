@@ -19,6 +19,7 @@ use crate::config::MASTER_FILES;
 use crate::config::NAME_SERVER_IP;
 use crate::config::RESOLVER_IP_PORT;
 use crate::config::SBELT_ROOT_IPS;
+use crate::config::CHECK_MASTER_FILES;
 
 pub fn main() {
     // Users input
@@ -103,7 +104,7 @@ pub fn main() {
             );
 
             for master_file in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string());
+                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string(), CHECK_MASTER_FILES);
             }
 
             name_server.run_name_server(
@@ -165,7 +166,7 @@ pub fn main() {
             );
 
             for master_file in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string());
+                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string(), CHECK_MASTER_FILES);
             }
             //
 

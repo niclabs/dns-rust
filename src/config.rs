@@ -21,3 +21,4 @@ pub static NAME_SERVER_IP: &'static str = "192.168.1.89";
 pub static MASTER_FILES: [&str; 1] = ["test.txt"];
 pub static RECURSIVE_AVAILABLE: bool = true; // recursive name server available as default
                                              // ---------------------------------------------------
+pub static CHECK_MASTER_FILES: bool = true; // checks validity of master files as default

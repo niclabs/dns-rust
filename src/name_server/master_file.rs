@@ -54,8 +54,8 @@ impl MasterFile {
         master_file
     }
 
-    /// Creates a new master file from the parameter filename
-    pub fn from_file(filename: String) -> Self {
+    /// Creates a new master file from the parameter filename, not checking validity of master file
+    pub fn from_file_no_validation(filename: String) -> Self {
         let file = File::open(filename).expect("file not found!");
         let reader = BufReader::new(file);
 
@@ -68,8 +68,60 @@ impl MasterFile {
         for line in reader.lines() {
             let line = line.unwrap();
 
-            // Remove comments
-            let line_without_comments = MasterFile::remove_comments(line.clone());
+            // Remove comments and replace especial encoding
+            let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
+            
+            let open_parenthesis = match line_without_comments.clone().find("(") {
+                Some(x) => 1,
+                None => 0,
+            };
+
+            let closed_parenthesis = match line_without_comments.clone().find(")") {
+                Some(x) => 1,
+                None => 0,
+            };
+
+            if open_parenthesis == 1 && closed_parenthesis == 0 {
+                last_line.push_str(&line_without_comments);
+                continue;
+                //
+            } else if open_parenthesis == 0
+                && closed_parenthesis == 0
+                && last_line != "".to_string()
+            {
+                last_line.push_str(&line_without_comments);
+                continue;
+                //
+            } else {
+                last_line.push_str(&line_without_comments);
+                lines.push(last_line.replace("(", "").replace(")", ""));
+                last_line = "".to_string();
+            }
+        }
+
+        for line in lines {
+            master_file.process_line(line);
+        }
+
+        master_file
+    }
+
+    /// Creates a new master file from the parameter filename, checking validity of master file
+    pub fn from_file_with_validation(filename: String) -> Self {
+        let file = File::open(filename).expect("file not found!");
+        let reader = BufReader::new(file);
+
+        let mut master_file = MasterFile::new("".to_string());
+
+        let mut lines: Vec<String> = Vec::new();
+        let mut last_line = "".to_string();
+
+        // Link lines with parenthesis and remove comments
+        for line in reader.lines() {
+            let line = line.unwrap();
+
+            // Remove comments and replace especial encoding
+            let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
 
             let open_parenthesis = match line_without_comments.clone().find("(") {
                 Some(x) => 1,
@@ -102,6 +154,116 @@ impl MasterFile {
         master_file.process_lines_and_validation();
 
         master_file
+    }
+
+  /// Process a line from a master file
+    fn process_line(&mut self, line: String) {
+        // Empty case
+        if line == "".to_string() {
+            return;
+        }
+
+        // ORIGIN case
+        if line.contains("$ORIGIN") {
+            let mut words = line.split_whitespace();
+            words.next();
+            let name = words.next().unwrap().to_string();
+            self.set_last_host(name.clone());
+            self.set_origin(name);
+
+            return;
+        }
+
+        //Include case
+        if line.contains("$INCLUDE") {
+            let mut words = line.split_whitespace();
+            words.next();
+
+            let file_name = words.next().unwrap();
+            let domain_name = words.next().unwrap_or("");
+            self.process_include_no_validation(file_name.to_string(), domain_name.to_string());
+
+            return;
+        }
+
+        // Replace @ for the origin domain
+        let contains_non_especial_at_sign = line.contains("\\@");
+
+        if contains_non_especial_at_sign == false {
+            let new_line = line.replace("@", &self.get_origin());
+        }
+
+        let new_line = line.replace("\\@", "@");
+
+        // Backslash replace
+        let line = new_line.replace("\\", "");
+
+        self.process_line_rr_no_validation(line);
+    }
+
+    /// Process an INCLUDE line in a master file
+    fn process_include_no_validation(&mut self, file_name: String, domain_name: String) {
+        if domain_name != "" {
+            self.set_last_host(domain_name)
+        }
+    
+        let file = File::open(file_name).expect("file not found!");
+        let reader = BufReader::new(file);
+    
+        for line in reader.lines() {
+            let line = line.unwrap();
+    
+            self.process_line_rr_no_validation(line);
+        }
+    }
+
+    // Process a line with rr data from a master file
+    fn process_line_rr_no_validation(&mut self, line: String) {
+        // Gets host name
+        let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
+
+        // Process next values
+        let mut next_line_items = line_left_to_process.split_whitespace();
+
+        // Default values for rr
+        let mut ttl = self.get_ttl_default();
+        let mut class = self.get_class_default();
+        let mut rr_type = "";
+
+        let mut value = match next_line_items.next() {
+            Some(val) => val,
+            None => "",
+        };
+
+        while value != "" {
+            let value_type = self.get_value_type(value.to_string());
+
+            println!("Name: {}, value: {}", host_name.clone(), value_type);
+
+            if value_type == 0 {
+                // TTL
+                ttl = value.parse::<u32>().unwrap();
+
+                value = match next_line_items.next() {
+                    Some(val) => val,
+                    None => "",
+                };
+            } else if value_type == 1 {
+                // Class
+                class = value.to_string();
+
+                value = match next_line_items.next() {
+                    Some(val) => val,
+                    None => "",
+                };
+            } else {
+                // RRType
+                rr_type = value;
+                break;
+            }
+        }
+
+        self.process_especific_rr_no_validation(next_line_items, ttl, class, rr_type.to_string(), host_name);
     }
         
     /// Removes the comments from a line in a master file
@@ -196,6 +358,95 @@ impl MasterFile {
             "TXT" => 2,
             _ => 0,
         }
+    }
+
+        /// Process an especific type of RR
+    fn process_especific_rr_no_validation(
+        &mut self,
+        items: SplitWhitespace,
+        ttl: u32,
+        class: String,
+        rr_type: String,
+        host_name: String,
+    ) {
+        let origin = self.get_origin();
+        let mut full_host_name = host_name.clone();
+
+        if host_name.ends_with(".") == false {
+            full_host_name.push_str(".");
+            full_host_name.push_str(&origin);
+        }
+
+        let class_int = match class.as_str() {
+            "IN" => 1,
+            "CS" => 2,
+            "CH" => 3,
+            "HS" => 4,
+            _ => unreachable!(),
+        };
+
+        let resource_record = match rr_type.as_str() {
+            "A" => {
+                if class_int == 3 {
+                    AChRdata::rr_from_master_file(
+                        items,
+                        ttl,
+                        class_int,
+                        full_host_name.clone(),
+                        origin.clone(),
+                    )
+                } else {
+                    ARdata::rr_from_master_file(items, ttl, class_int, full_host_name.clone())
+                }
+            }
+            "NS" => NsRdata::rr_from_master_file(
+                items,
+                ttl,
+                class_int,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
+            "CNAME" => CnameRdata::rr_from_master_file(
+                items,
+                ttl,
+                class_int,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
+            "SOA" => {
+                self.set_class_default(class.clone());
+                let (rr, minimum) = SoaRdata::rr_from_master_file(
+                    items,
+                    ttl,
+                    class_int,
+                    full_host_name.clone(),
+                    origin.clone(),
+                );
+                self.set_ttl_default(minimum);
+                rr
+            }
+            "PTR" => PtrRdata::rr_from_master_file(
+                items,
+                ttl,
+                class_int,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
+            "HINFO" => {
+                HinfoRdata::rr_from_master_file(items, ttl, class_int, full_host_name.clone())
+            }
+            "MX" => MxRdata::rr_from_master_file(
+                items,
+                ttl,
+                class_int,
+                full_host_name.clone(),
+                origin.clone(),
+            ),
+            "TXT" => TxtRdata::rr_from_master_file(items, ttl, class_int, full_host_name.clone()),
+            _ => unreachable!(),
+        };
+
+        self.add_rr(host_name, resource_record);
     }
 
     /// Process an especific type of RR

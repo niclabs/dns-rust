@@ -326,7 +326,7 @@ impl MasterFile {
             }
         }
 
-        rrs.insert(valid_host_name, rrs_vec.to_vec());
+        rrs.insert(host_name, rrs_vec.to_vec());
 
         self.set_rrs(rrs);
     }

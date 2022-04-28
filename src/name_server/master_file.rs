@@ -1,3 +1,4 @@
+use crate::message::rdata::Rdata;
 use crate::message::rdata::a_ch_rdata::AChRdata;
 use crate::message::rdata::a_rdata::ARdata;
 use crate::message::rdata::cname_rdata::CnameRdata;
@@ -290,13 +291,40 @@ impl MasterFile {
     /// Adds a new rr to the master file parsings
     fn add_rr(&mut self, host_name: String, resource_record: ResourceRecord) {
         let mut rrs = self.get_rrs();
-        let valid_host_name = domain_validity_syntax(host_name).unwrap();
-        let mut rrs_vec = match rrs.get(&valid_host_name) {
-            Some(val) => val.clone(),
-            None => Vec::<ResourceRecord>::new(),
-        };
 
-        rrs_vec.push(resource_record);
+        let mut rrs_vec = Vec::<ResourceRecord>::new();
+
+        match rrs.get(&host_name) {
+            Some(val) => {
+                // Boolean value if exists some CNAME record for the hostname
+                let mut rrs_host_name_cname = false;
+                for rr in val {
+                    match rr.get_rdata() {
+                        Rdata::SomeCnameRdata(_) => {
+                            rrs_host_name_cname = true;
+                        },
+                        _ => continue
+                    }
+                }
+
+                match resource_record.get_rdata() {
+                    // Adding a CNAME will flush older resource records
+                    Rdata::SomeCnameRdata(_) => {rrs_vec.push(resource_record); println!("aaaaaaa")},
+
+                    // If already exists a CNAME record, do nothing
+                    // otherwise, adds new record
+                    _ => {
+                        rrs_vec = val.clone();
+                        if !rrs_host_name_cname {
+                            rrs_vec.push(resource_record);
+                        }
+                    }
+                }
+            },
+            None => {
+                rrs_vec.push(resource_record);
+            }
+        }
 
         rrs.insert(valid_host_name, rrs_vec.to_vec());
 
@@ -512,5 +540,47 @@ impl MasterFile {
     // Sets the default Ttl for RR's
     pub fn set_ttl_default(&mut self, ttl: u32) {
         self.ttl_default = ttl;
+    }
+}
+
+mod test{
+    use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, ns_rdata::NsRdata}, resource_record::ResourceRecord};
+
+    use super::MasterFile;
+
+    #[test]
+    fn cname_no_other_data() {
+        let mut master_file = MasterFile::new("uchile.cl".to_string());
+        let new_a1_record = ARdata::rr_from_master_file(
+            "204.13.100.3".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl.".to_string());
+        let new_cname1_record = CnameRdata::rr_from_master_file("test.googleplex.edu".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl".to_string(),
+            "test.uchile.cl".to_string());
+        let new_a2_record = ARdata::rr_from_master_file(
+            "204.13.100.3".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl.".to_string());
+        let new_cname2_record = CnameRdata::rr_from_master_file("test.googleplex.com".split_whitespace(),
+            0,
+            0,
+            "test.uchile.cl".to_string(),
+            "test.uchile.cl".to_string());
+
+        // Always have just 1 RR
+        master_file.add_rr("test".to_string(), new_a1_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+        master_file.add_rr("test".to_string(), new_cname1_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+        master_file.add_rr("test".to_string(), new_a2_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+        master_file.add_rr("test".to_string(), new_cname2_record);
+        assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
+
     }
 }

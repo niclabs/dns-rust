@@ -155,8 +155,9 @@ impl MasterFile {
         master_file.process_lines_and_validation();
 
         let origin = master_file.get_origin();
+        let rrs = master_file.get_rrs();
         // now validate presence of glue records when necessary
-
+        master_file.check_glue_subzone(origin, rrs);
 
         master_file
     }

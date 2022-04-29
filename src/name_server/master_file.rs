@@ -11,6 +11,7 @@ use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::resource_record::ResourceRecord;
 //refactor
 use crate::name_server::zone::NSZone;
+use crate::NameServer;
 use core::num;
 use std::collections::HashMap;
 use std::fs::read_to_string;
@@ -54,7 +55,7 @@ impl MasterFile {
         master_file
     }
 
-    /// Creates a new master file from the parameter filename, not checking validity of master file
+    /// Creates a new master file from the parameter filename, not checking validity of master file. For listing cache contents.
     pub fn from_file_no_validation(filename: String) -> Self {
         let file = File::open(filename).expect("file not found!");
         let reader = BufReader::new(file);
@@ -106,7 +107,7 @@ impl MasterFile {
         master_file
     }
 
-    /// Creates a new master file from the parameter filename, checking validity of master file
+    /// Creates a new master file from the parameter filename, checking validity of master file. For loading a zone. 
     pub fn from_file_with_validation(filename: String) -> Self {
         let file = File::open(filename).expect("file not found!");
         let reader = BufReader::new(file);
@@ -153,8 +154,64 @@ impl MasterFile {
 
         master_file.process_lines_and_validation();
 
+        let origin = master_file.get_origin();
+        // now validate presence of glue records when necessary
+
+
         master_file
     }
+
+    // Master file: Information present outside of the authoritative nodes in the zone should be glue information
+    //rather than the result of an origin or similar error
+    fn check_glue_subzone(&self, origin: String, 
+        rrs: HashMap<String, Vec<ResourceRecord>>) -> Result<bool, &'static str> {
+        
+        let origin_labels: Vec<&str> = origin.split(".").collect();
+        let origin_labels_num = origin_labels.len();
+
+        let mut origin_ns_rr: Vec<ResourceRecord> = match rrs.get(&origin) {
+            Some(origin_rrs) => {
+                NameServer::look_for_type_records(origin.clone(), origin_rrs.to_vec(), 2)
+            },
+            None => {
+                Vec::<ResourceRecord>::new()
+            },
+        };
+
+        for ns in origin_ns_rr {
+
+            let ns_name = match ns.get_rdata() {
+                Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
+                _ => "".to_string(),
+            };
+            
+            let ns_slice: &str = &ns_name;
+            let mut ns_labels: Vec<&str> = ns_slice.split(".").collect();
+
+            while ns_labels.len() >= origin_labels_num {
+                // subzone
+                if ns_labels == origin_labels {
+                    // find glue info for this 
+                    match rrs.get(ns_slice){
+                        Some(ns_rrs) => {
+                            let a_rr_glue = NameServer::look_for_type_records(ns_slice.to_string(), ns_rrs.to_vec(), 1);
+                            if a_rr_glue.len() == 0 {
+                                return Err("Error: Information outside authoritative node in the zone is not glue information.");
+                            }
+                        },
+                        None => {
+                            return Err("Error: Information outside authoritative node in the zone is not glue information.");
+                        },
+                    }
+                    continue; 
+                }
+                ns_labels.remove(0);
+            }
+        }
+        return Ok(true); 
+    }
+
+    
 
   /// Process a line from a master file
     fn process_line(&mut self, line: String) {

@@ -157,14 +157,13 @@ impl MasterFile {
         let origin = master_file.get_origin();
         let rrs = master_file.get_rrs();
         // now validate presence of glue records when necessary
-        master_file.check_glue_subzone(origin, rrs);
+        master_file.check_glue_delegations(origin, rrs);
 
         master_file
     }
 
-    // Master file: Information present outside of the authoritative nodes in the zone should be glue information
-    //rather than the result of an origin or similar error
-    fn check_glue_subzone(&self, origin: String, 
+    // Master file: If delegations are present and glue information is required,it should be present.
+    fn check_glue_delegations(&self, origin: String, 
         rrs: HashMap<String, Vec<ResourceRecord>>) -> Result<bool, &'static str> {
         
         let origin_labels: Vec<&str> = origin.split(".").collect();

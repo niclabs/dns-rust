@@ -564,9 +564,27 @@ mod test {
         assert_eq!(nszone.get_child(String::from("some.test.com")).1, -1);
     }
 
-    /*#[test]
-    fn add_node_test(){
-    }*/
+    #[test]
+    fn add_node_test(){       
+
+
+        let mut value: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        
+        
+        let mut nszone = NSZone::new();
+        nszone.set_name(String::from(""));
+        let children: Vec<NSZone> = Vec::new();
+        nszone.set_children(children);
+
+        assert_eq!(nszone.add_node(String::from("mil"), value.clone()), Ok(()));
+        assert_eq!(nszone.add_node(String::from("edu"), value.clone()), Ok(()));
+
+        assert_eq!(nszone.add_node(String::from(""), value.clone()), Err("Error: Child cannot have null label, reserved for root only."));
+
+        assert_eq!(nszone.get_children().len(), 2)
+    }
 
     /*#[test]
     fn add_node_test(){ using a wrong domain

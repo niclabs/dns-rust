@@ -24,6 +24,8 @@ use crate::config::CHECK_MASTER_FILES;
 pub fn main() {
     // Users input
     let mut input_line = String::new();
+    println!("Rustlang library for DNS");
+    println!("Name server compatible with RFC 1034 and RFC 1035 only.");
     println!("Enter program to run [C/R/N/NR]: ");
     std::io::stdin().read_line(&mut input_line).unwrap();
 

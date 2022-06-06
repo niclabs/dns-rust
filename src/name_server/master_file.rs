@@ -159,6 +159,9 @@ impl MasterFile {
         // now validate presence of glue records when necessary
         master_file.check_glue_delegations(origin, rrs);
 
+        // loop for cname loops 
+        master_file.check_cname_loop(master_file.get_rrs());
+
         master_file
     }
 
@@ -210,9 +213,7 @@ impl MasterFile {
         }
         return Ok(true); 
     }
-
     
-
   /// Process a line from a master file
     fn process_line(&mut self, line: String) {
         // Empty case
@@ -792,6 +793,57 @@ impl MasterFile {
             }   
         }
         return Ok(true);
+    }
+
+    // detect cname loops of type 1->2->1:
+    /* example of CNAME loop with two CNAMEs 1 -> 2 -> 1 -> 2 -> 1, etc.
+        alias1.example.org. 3600 CNAME alias2.example.org.
+        alias2.example.org. 3600 CNAME alias1.example.org.
+    */
+    fn check_cname_loop(&self, rrs: HashMap<String, Vec<ResourceRecord>>) -> Result<(), &'static str> {
+        
+        let mut cname_rrs = HashMap::<String, Vec<ResourceRecord>>::new();
+
+        // only cnames
+        for (hostname, host_rrs) in rrs {
+            let mut cname_by_host = Vec::<ResourceRecord>::new();
+            for host_rr in host_rrs {
+                if host_rr.get_type_code() == 5 {
+                    cname_by_host.push(host_rr);
+                }
+            }
+
+            if cname_by_host.len()>0 {
+                cname_rrs.insert(hostname.to_string(), cname_by_host);
+            }
+        }
+        
+        for (alias, canonical) in &cname_rrs {
+            let rdata = canonical[0].get_rdata(); 
+            let canonical_name = match rdata{
+                Rdata::SomeCnameRdata(val) => val.get_cname().get_name(), 
+                _ => unreachable!(), 
+            };
+            match cname_rrs.get(&canonical_name.to_string()) {
+                Some(val) => { 
+                    match val[0].get_rdata() {
+                        Rdata::SomeCnameRdata(crr) => { 
+                            if crr.get_cname().get_name().to_string() == alias.to_string() {
+                                return Err("Error: CNAME loop detected!"); 
+                            }
+                            continue;
+                        }
+                        _ => {
+                            continue;
+                        }
+                    }
+                }
+                None => { 
+                    continue;
+                }
+            }; 
+        }
+        return Ok(());
     }
 }
 

@@ -504,16 +504,16 @@ mod test {
     #[test]
     fn set_and_get_id_test() {
         let mut header = Header::new();
-
+        let mut id = header.get_id();
+        assert_eq!(id, 0);
         header.set_id(5);
-        let id = header.get_id();
+        id = header.get_id();
         assert_eq!(id, 5);
     }
 
     #[test]
     fn set_and_get_qr_test() {
         let mut header = Header::new();
-
         let mut qr = header.get_qr();
         assert_eq!(qr, false);
         header.set_qr(true);
@@ -524,7 +524,6 @@ mod test {
     #[test]
     fn set_and_get_op_code_test() {
         let mut header = Header::new();
-
         let mut op_code = header.get_op_code();
         assert_eq!(op_code, 0);
         header.set_op_code(145);
@@ -535,7 +534,6 @@ mod test {
     #[test]
     fn set_and_get_aa_test() {
         let mut header = Header::new();
-
         let mut aa = header.get_aa();
         assert_eq!(aa, false);
         header.set_aa(true);
@@ -546,7 +544,6 @@ mod test {
     #[test]
     fn set_and_get_tc_test() {
         let mut header = Header::new();
-
         let mut tc = header.get_tc();
         assert_eq!(tc, false);
         header.set_tc(true);
@@ -557,7 +554,6 @@ mod test {
     #[test]
     fn set_and_get_rd_test() {
         let mut header = Header::new();
-
         let mut rd = header.get_rd();
         assert_eq!(rd, false);
         header.set_rd(true);
@@ -568,7 +564,6 @@ mod test {
     #[test]
     fn set_and_get_ra_test() {
         let mut header = Header::new();
-
         let mut ra = header.get_ra();
         assert_eq!(ra, false);
         header.set_ra(true);
@@ -579,56 +574,51 @@ mod test {
     #[test]
     fn set_and_get_rcode_test() {
         let mut header = Header::new();
-
         let mut rcode = header.get_rcode();
         assert_eq!(rcode, 0);
-        header.set_rcode(127);
+        header.set_rcode(2);
         rcode = header.get_rcode();
-        assert_eq!(rcode, 127);
+        assert_eq!(rcode, 2);
     }
 
     #[test]
     fn set_and_get_qdcount_test() {
         let mut header = Header::new();
-
         let mut qdcount = header.get_qdcount();
         assert_eq!(qdcount, 0);
-        header.set_qdcount(567);
+        header.set_qdcount(1);
         qdcount = header.get_qdcount();
-        assert_eq!(qdcount, 567);
+        assert_eq!(qdcount, 1);
     }
 
     #[test]
     fn set_and_get_ancount_test() {
         let mut header = Header::new();
-
         let mut ancount = header.get_ancount();
         assert_eq!(ancount, 0);
-        header.set_ancount(532);
+        header.set_ancount(5);
         ancount = header.get_ancount();
-        assert_eq!(ancount, 532);
+        assert_eq!(ancount, 5);
     }
 
     #[test]
     fn set_and_get_nscount_test() {
         let mut header = Header::new();
-
         let mut nscount = header.get_nscount();
         assert_eq!(nscount, 0);
-        header.set_nscount(585);
+        header.set_nscount(4);
         nscount = header.get_nscount();
-        assert_eq!(nscount, 585);
+        assert_eq!(nscount, 4);
     }
 
     #[test]
     fn set_and_get_arcount_test() {
         let mut header = Header::new();
-
         let mut arcount = header.get_arcount();
         assert_eq!(arcount, 0);
-        header.set_arcount(745);
+        header.set_arcount(12);
         arcount = header.get_arcount();
-        assert_eq!(arcount, 745);
+        assert_eq!(arcount, 12);
     }
 
     #[test]
@@ -642,13 +632,13 @@ mod test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(5);
         header.set_ancount(0b0000101010100101);
 
         bytes[0] = 0b00100100;
         bytes[1] = 0b10010101;
         bytes[2] = 0b10010010;
-        bytes[3] = 0b00001000;
+        bytes[3] = 0b00000101;
         bytes[6] = 0b00001010;
         bytes[7] = 0b10100101;
 
@@ -662,7 +652,7 @@ mod test {
         bytes[0] = 0b00100100;
         bytes[1] = 0b10010101;
         bytes[2] = 0b10010010;
-        bytes[3] = 0b00001000;
+        bytes[3] = 0b00000101;
         bytes[6] = 0b00001010;
         bytes[7] = 0b10100101;
 
@@ -672,7 +662,7 @@ mod test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(5);
         header.set_ancount(0b0000101010100101);
 
         let header_from_bytes = Header::from_bytes(&bytes);
@@ -680,8 +670,14 @@ mod test {
         assert_eq!(header_from_bytes.get_id(), header.get_id());
         assert_eq!(header_from_bytes.get_qr(), header.get_qr());
         assert_eq!(header_from_bytes.get_op_code(), header.get_op_code());
+        assert_eq!(header_from_bytes.get_aa(), header.get_aa());
         assert_eq!(header_from_bytes.get_tc(), header.get_tc());
+        assert_eq!(header_from_bytes.get_rd(), header.get_rd());
+        assert_eq!(header_from_bytes.get_ra(), header.get_ra());
         assert_eq!(header_from_bytes.get_rcode(), header.get_rcode());
+        assert_eq!(header_from_bytes.get_qdcount(), header.get_qdcount());
         assert_eq!(header_from_bytes.get_ancount(), header.get_ancount());
+        assert_eq!(header_from_bytes.get_nscount(), header.get_nscount());
+        assert_eq!(header_from_bytes.get_arcount(), header.get_arcount());
     }
 }

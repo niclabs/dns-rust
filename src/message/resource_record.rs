@@ -491,13 +491,248 @@ impl ResourceRecord {
 // Tests
 mod test {
     use crate::domain_name::DomainName;
-    use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::a_ch_rdata::AChRdata;
+    use crate::message::rdata::ns_rdata::NsRdata;
+    use crate::message::rdata::cname_rdata::CnameRdata;
+    use crate::message::rdata::hinfo_rdata::HinfoRdata;
+    use crate::message::rdata::mx_rdata::MxRdata;
+    use crate::message::rdata::ptr_rdata::PtrRdata;
+    use crate::message::rdata::soa_rdata::SoaRdata;
+    use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
 
     #[test]
-    fn constructor_test() {
+    fn constructor_test_a() {
+        let  mut a_rdata = Rdata::SomeARdata(ARdata::new());
+        match a_rdata {
+            Rdata::SomeARdata(ref mut val) => val.set_address([127, 0, 0, 1]),
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 1);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeARdata(val) => val.get_address(),
+                _ => unreachable!(),
+            },
+            [127, 0, 0, 1]
+        );
+    }
+
+    #[test]
+    fn constructor_test_ns() {
+        let  mut ns_rdata = Rdata::SomeNsRdata(NsRdata::new());
+
+        let mut new_domain_name = DomainName::new();
+        new_domain_name.set_name(String::from("test.com"));
+
+        match ns_rdata {
+            Rdata::SomeNsRdata(ref mut val) => val.set_nsdname(new_domain_name),
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(ns_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 2);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
+                _ => unreachable!(),
+            },
+            String::from("test.com")
+        );
+    }
+
+    #[test]
+    fn constructor_test_cname() {
+        let  mut cname_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
+
+        let mut new_domain_name = DomainName::new();
+        new_domain_name.set_name(String::from("test.com"));
+
+        match cname_rdata {
+            Rdata::SomeCnameRdata(ref mut val) => val.set_cname(new_domain_name),
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(cname_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 5);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeCnameRdata(val) => val.get_cname().get_name(),
+                _ => unreachable!(),
+            },
+            String::from("test.com")
+        );
+    }
+
+    #[test]
+    fn constructor_test_soa() {
+        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+
+        let mut mname_domain_name = DomainName::new();
+        mname_domain_name.set_name(String::from("test.com"));
+
+        let mut rname_domain_name = DomainName::new();
+        rname_domain_name.set_name(String::from("admin.example.com"));
+
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {val.set_mname(mname_domain_name);
+                                                val.set_rname(rname_domain_name);
+                                                val.set_serial(1111111111 as u32)},
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(soa_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 6);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeSoaRdata(val) => val.get_mname().get_name(),
+                _ => unreachable!(),
+            },
+            String::from("test.com")
+        );
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeSoaRdata(val) => val.get_rname().get_name(),
+                _ => unreachable!(),
+            },
+            String::from("admin.example.com")
+        );
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeSoaRdata(val) => val.get_serial(),
+                _ => unreachable!(),
+            },
+            1111111111 as u32
+        );
+    }
+
+    #[test]
+    fn constructor_test_ptr() {
+        let  mut ptr_rdata = Rdata::SomePtrRdata(PtrRdata::new());
+
+        let mut new_domain_name = DomainName::new();
+        new_domain_name.set_name(String::from("test.com"));
+
+        match ptr_rdata {
+            Rdata::SomePtrRdata(ref mut val) => val.set_ptrdname(new_domain_name),
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(ptr_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 12);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomePtrRdata(val) => val.get_ptrdname().get_name(),
+                _ => unreachable!(),
+            },
+            String::from("test.com")
+        );
+    }
+
+    #[test]
+    fn constructor_test_hinfo() {
+        let  mut hinfo_rdata = Rdata::SomeHinfoRdata(HinfoRdata::new());
+
+        let cpu = String::from("INTEL-386");
+        let os = String::from("Windows");
+
+        match hinfo_rdata {
+            Rdata::SomeHinfoRdata(ref mut val) => { val.set_cpu(cpu);
+                                                    val.set_os(os) },
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(hinfo_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 13);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeHinfoRdata(val) => val.get_cpu(),
+                _ => unreachable!(),
+            },
+            String::from("INTEL-386")
+        );
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeHinfoRdata(val) => val.get_os(),
+                _ => unreachable!(),
+            },
+            String::from("Windows")
+        );
+    }
+
+    #[test]
+    fn constructor_test_mx() {
+        let  mut mx_rdata = Rdata::SomeMxRdata(MxRdata::new());
+
+        let preference = 10 as u16;
+        let mut exchange = DomainName::new();
+        exchange.set_name(String::from("admin.example.com"));
+
+        match mx_rdata {
+            Rdata::SomeMxRdata(ref mut val) => {val.set_preference(preference);
+                                                val.set_exchange(exchange) },
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(mx_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 15);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeMxRdata(val) => val.get_preference(),
+                _ => unreachable!(),
+            },
+            10 as u16
+        );
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeMxRdata(val) => val.get_exchange().get_name(),
+                _ => unreachable!(),
+            },
+            String::from("admin.example.com")
+        );
+    }
+
+    #[test]
+    fn constructor_test_txt() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let resource_record = ResourceRecord::new(txt_rdata);
 
@@ -512,6 +747,43 @@ mod test {
                 _ => unreachable!(),
             },
             vec!["dcc".to_string()]
+        );
+    }
+
+    #[test]
+    fn constructor_test_other_rdata() {
+        let  mut ach_rdata = Rdata::SomeAChRdata(AChRdata::new());
+
+        let ch_address = 1 as u16;
+        let mut new_domain_name = DomainName::new();
+        new_domain_name.set_name(String::from("test.com"));
+
+        match ach_rdata {
+            Rdata::SomeAChRdata(ref mut val) => {val.set_domain_name(new_domain_name);
+                                                val.set_ch_address(ch_address) },
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(ach_rdata);
+
+        assert_eq!(resource_record.name.get_name(), String::from(""));
+        assert_eq!(resource_record.type_code, 0);
+        assert_eq!(resource_record.class, 0);
+        assert_eq!(resource_record.ttl, 0);
+        assert_eq!(resource_record.rdlength, 0);
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeAChRdata(val) => val.get_ch_address(),
+                _ => unreachable!(),
+            },
+            1 as u16
+        );
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeAChRdata(val) => val.get_domain_name().get_name(),
+                _ => unreachable!(),
+            },
+            String::from("test.com")
         );
     }
 

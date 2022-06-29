@@ -504,7 +504,7 @@ mod test {
     use crate::message::resource_record::ResourceRecord;
 
     #[test]
-    fn constructor_test_a() {
+    fn constructor_a_test() {
         let  mut a_rdata = Rdata::SomeARdata(ARdata::new());
         match a_rdata {
             Rdata::SomeARdata(ref mut val) => val.set_address([127, 0, 0, 1]),
@@ -528,7 +528,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_ns() {
+    fn constructor_ns_test() {
         let  mut ns_rdata = Rdata::SomeNsRdata(NsRdata::new());
 
         let mut new_domain_name = DomainName::new();
@@ -556,7 +556,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_cname() {
+    fn constructor_cname_test() {
         let  mut cname_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
 
         let mut new_domain_name = DomainName::new();
@@ -584,7 +584,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_soa() {
+    fn constructor_soa_test() {
         let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
 
         let mut mname_domain_name = DomainName::new();
@@ -631,7 +631,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_ptr() {
+    fn constructor_ptr_test() {
         let  mut ptr_rdata = Rdata::SomePtrRdata(PtrRdata::new());
 
         let mut new_domain_name = DomainName::new();
@@ -659,7 +659,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_hinfo() {
+    fn constructor_hinfo_test() {
         let  mut hinfo_rdata = Rdata::SomeHinfoRdata(HinfoRdata::new());
 
         let cpu = String::from("INTEL-386");
@@ -695,7 +695,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_mx() {
+    fn constructor_mx_test() {
         let  mut mx_rdata = Rdata::SomeMxRdata(MxRdata::new());
 
         let preference = 10 as u16;
@@ -732,7 +732,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_txt() {
+    fn constructor_txt_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let resource_record = ResourceRecord::new(txt_rdata);
 
@@ -751,7 +751,7 @@ mod test {
     }
 
     #[test]
-    fn constructor_test_other_rdata() {
+    fn constructor_other_rdata_test() {
         let  mut ach_rdata = Rdata::SomeAChRdata(AChRdata::new());
 
         let ch_address = 1 as u16;
@@ -843,10 +843,34 @@ mod test {
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_rdlength(), 0);
 
-        resource_record.set_rdlength(59 as u16);
+        resource_record.set_rdlength(3 as u16);
 
         let rdlength = resource_record.get_rdlength();
-        assert_eq!(rdlength, 59 as u16);
+        assert_eq!(rdlength, 3 as u16);
+    }
+
+    #[test]
+    fn set_and_get_rdata_test() {
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let mut resource_record = ResourceRecord::new(txt_rdata);
+
+        match resource_record.get_rdata() {
+            Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text()[0], "dcc".to_string()), 
+            _ => unreachable!(), 
+        }
+
+
+        let  mut mx_rdata = Rdata::SomeMxRdata(MxRdata::new());
+        resource_record.set_rdata(mx_rdata);
+
+       
+        assert_eq!(
+            match resource_record.get_rdata() {
+                Rdata::SomeMxRdata(val) => val.get_preference(),
+                _ => unreachable!(),
+            },
+            0 as u16
+        );
     }
 
     #[test]
@@ -917,16 +941,4 @@ mod test {
         assert_eq!(resource_record.get_string_type(), String::from("A"));
     }
 
-    #[test]
-    fn set_and_get_rdata_test(){
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
-        let mut resource_record = ResourceRecord::new(txt_rdata);
-        let other_txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["uchile".to_string()]));
-        resource_record.set_rdata(other_txt_rdata);
-        let rdata = resource_record.get_rdata(); 
-        match rdata{
-            Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text()[0], "uchile".to_string()), 
-            _ => unreachable!(), 
-        }
-    }
 }

@@ -21,7 +21,7 @@ pub struct Header {
     // Id
     id: u16,
 
-    // Query/Response bit
+    // Query/Response bit. Maybe change to u8.
     qr: bool,
 
     // Operation code
@@ -488,8 +488,17 @@ mod test {
     fn constructor_test() {
         let header = Header::new();
         assert_eq!(header.id, 0);
+        assert_eq!(header.qr, false);
         assert_eq!(header.op_code, 0);
         assert_eq!(header.aa, false);
+        assert_eq!(header.tc, false);
+        assert_eq!(header.rd, false);
+        assert_eq!(header.ra, false);
+        assert_eq!(header.rcode, 0);
+        assert_eq!(header.qdcount, 0);
+        assert_eq!(header.ancount, 0);
+        assert_eq!(header.nscount, 0);
+        assert_eq!(header.arcount, 0);
     }
 
     #[test]

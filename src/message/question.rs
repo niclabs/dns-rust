@@ -223,9 +223,9 @@ mod test {
 
         question.set_qname(domain_name);
         question.set_qtype(5);
-        question.set_qclass(2);
+        question.set_qclass(1);
 
-        let bytes_to_test: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2];
+        let bytes_to_test: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 1];
         let question_to_bytes = question.to_bytes();
 
         for (index, value) in question_to_bytes.iter().enumerate() {
@@ -235,12 +235,12 @@ mod test {
 
     #[test]
     fn from_bytes_test() {
-        let bytes: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2];
+        let bytes: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 1];
 
         let (question, _others_msg_bytes) = Question::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
         assert_eq!(question.get_qtype(), 5);
-        assert_eq!(question.get_qclass(), 2);
+        assert_eq!(question.get_qclass(), 1);
     }
 }

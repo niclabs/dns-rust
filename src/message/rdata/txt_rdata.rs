@@ -44,9 +44,10 @@ impl FromBytes<Result<Self, &'static str>> for TxtRdata {
         let len = bytes.len(); 
 
         while i < len {
+            string = String::from("");
             let mut lenght_octet = bytes[i];
             i += 1;
-            if i == len {
+            if i >= len {
                 break; 
             }
             for _chars in 0..lenght_octet {
@@ -55,7 +56,6 @@ impl FromBytes<Result<Self, &'static str>> for TxtRdata {
                 i += 1;
             }
             txt.push(string);
-            string = String::from("");
         }
         let txt_rdata = TxtRdata::new(txt);
         Ok(txt_rdata)

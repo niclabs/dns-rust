@@ -905,13 +905,13 @@ mod test {
     #[test]
     fn from_bytes_test() {
 
-        let bytes_msg = [
+        let mut bytes_msg = [
             3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 4, 3, 100,
             99, 99
         ]; 
 
         // bytes is not the full msg, but in this case it will not use inside
-        let (resource_record_test, _other_rr_bytes) =
+        let (mut resource_record_test, mut _other_rr_bytes) =
             ResourceRecord::from_bytes(&bytes_msg, &bytes_msg).unwrap();
 
         assert_eq!(
@@ -929,6 +929,31 @@ mod test {
                  _ => unreachable!(),
             },
             vec!["dcc".to_string()]
+        );
+
+        bytes_msg = [
+            3, 100, 99, 99, 2, 99, 108, 0, 0, 1, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 4, 127, 0,
+            0, 1
+        ]; 
+
+        let (resource_record_test, _other_rr_bytes) =
+            ResourceRecord::from_bytes(&bytes_msg, &bytes_msg).unwrap();
+
+        assert_eq!(
+            resource_record_test.get_name().get_name(),
+            String::from("dcc.cl")
+        );
+        assert_eq!(resource_record_test.get_type_code(), 1);
+        assert_eq!(resource_record_test.get_class(), 1);
+        assert_eq!(resource_record_test.get_ttl(), 5642);
+        assert_eq!(resource_record_test.get_rdlength(), 4);
+
+        assert_eq!(
+            match resource_record_test.get_rdata() {
+                Rdata::SomeARdata(val) => val.get_string_address(),
+                 _ => unreachable!(),
+            },
+            String::from("127.0.0.1")
         );
  
     }

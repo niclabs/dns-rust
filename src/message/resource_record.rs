@@ -875,7 +875,7 @@ mod test {
 
     #[test]
     fn to_bytes_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string(), "uchile".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
 
         let mut domain_name = DomainName::new();
@@ -888,8 +888,8 @@ mod test {
         resource_record.set_rdlength(4);
 
         let bytes_msg = [
-            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 4, 3, 100,
-            99, 99,
+            3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 11, 3, 100,
+            99, 99, 6, 117, 99, 104, 105, 108, 101
         ];
 
         let rr_to_bytes = resource_record.to_bytes();
@@ -907,7 +907,7 @@ mod test {
 
         let bytes_msg = [
             3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 4, 3, 100,
-            99, 99,
+            99, 99
         ]; 
 
         // bytes is not the full msg, but in this case it will not use inside

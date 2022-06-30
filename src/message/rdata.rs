@@ -84,7 +84,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
             }
             2 => {
-                let rdata = NsRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = NsRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
                 match rdata {
                     Ok(_) => {}
@@ -96,7 +96,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomeNsRdata(rdata.unwrap()))
             }
             5 => {
-                let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
                 match rdata {
                     Ok(_) => {}
@@ -108,7 +108,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomeCnameRdata(rdata.unwrap()))
             }
             6 => {
-                let rdata = SoaRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = SoaRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
                 match rdata {
                     Ok(_) => {}
@@ -120,7 +120,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomeSoaRdata(rdata.unwrap()))
             }
             12 => {
-                let rdata = PtrRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = PtrRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
                 match rdata {
                     Ok(_) => {}
@@ -132,7 +132,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomePtrRdata(rdata.unwrap()))
             }
             13 => {
-                let rdata = HinfoRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = HinfoRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
                 match rdata {
                     Ok(_) => {}
@@ -144,7 +144,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomeHinfoRdata(rdata.unwrap()))
             }
             15 => {
-                let rdata = MxRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = MxRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
                 match rdata {
                     Ok(_) => {}
@@ -156,7 +156,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomeMxRdata(rdata.unwrap()))
             }
             16 => {
-                let rdata = TxtRdata::from_bytes(&bytes[..bytes.len() - 2], full_msg);
+                let rdata = TxtRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
                 match rdata {
                     Ok(_) => {}

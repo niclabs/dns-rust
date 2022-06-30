@@ -10,6 +10,7 @@ use crate::message::rdata::Rdata;
 
 use crate::domain_name::DomainName;
 use std::vec::Vec;
+use std::fmt;
 
 #[derive(Clone)]
 /// An struct that represents the resource record secction from a dns message
@@ -485,6 +486,17 @@ impl ResourceRecord {
     /// Gets the rdata attribute value
     pub fn get_rdata(&self) -> Rdata {
         self.rdata.clone()
+    }
+}
+
+impl fmt::Display for ResourceRecord {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        // We need to remove "-" from the number output.
+        let name = self.get_name();
+        let type_code = self.get_type_code();
+        let class = self.get_class();
+
+        formatter.write_fmt(format_args!("RR:{} - type:{} - class:{}", name, type_code, class))
     }
 }
 

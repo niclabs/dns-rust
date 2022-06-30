@@ -1,6 +1,7 @@
 use crate::name_server::zone::NSZone;
 
 use std::string::String;
+use std::fmt;
 
 #[derive(Clone, Default)]
 
@@ -189,6 +190,13 @@ impl DomainName {
     // Gets the name attribute from a DomainName struct
     pub fn get_name(&self) -> String {
         self.name.clone()
+    }
+}
+
+impl fmt::Display for DomainName {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let name = self.get_name();
+        formatter.write_str(&name)
     }
 }
 

@@ -943,4 +943,31 @@ mod test{
         assert_eq!(master_file.get_rrs().get("test").unwrap().len(), 1);
 
     }
+
+    #[test]
+    fn at_process_line_test() {
+        let at_line = "@             A       192.80.24.11".to_string();
+
+        let mut master_file = MasterFile::new("uchile.cl".to_string());
+        master_file.process_line(at_line);
+
+        let mut rrs = master_file.get_rrs();
+
+        println!("aaaaa");
+        println!("len:{}", rrs.len());
+
+
+        let att = "@".to_string();
+        let notorigin = rrs.remove(&att).unwrap();
+
+        for rr in notorigin {
+            println!("RR:{}", rr);
+        }
+
+        for (key, value) in rrs {
+            println!("Key:{}", key);
+            //println!("Value:{}", value);
+        }
+
+    }
 }

@@ -14,15 +14,15 @@ pub struct DomainName {
 
 // Methods
 impl DomainName {
-    /// Creates a new DomainName with default name
-    ///
-    /// # Examples
-    /// ```
-    /// let domain_name = DomainName::new();
-    ///
-    /// assert_eq!(domain_name.name, String::from(""));
-    /// ```
-    ///
+    // Creates a new DomainName with default name
+    //
+    // # Examples
+    // ```
+    // let domain_name = DomainName::new();
+    //
+    // assert_eq!(domain_name.name, String::from(""));
+    // ```
+    //
     pub fn new() -> Self {
         let domain_name: DomainName = DomainName {
             name: String::from(""),
@@ -30,7 +30,8 @@ impl DomainName {
         domain_name
     }
 
-    /// Given an array of bytes, creates a new DomainName and returns the unused bytes
+    // Given an array of bytes, creates a new DomainName and returns the unused bytes
+    // what happens if label is longer than 9 ? check this out
     pub fn from_bytes_no_offset(bytes: &[u8]) -> String {
         let mut name = String::from("");
         let mut index = 0;
@@ -138,7 +139,7 @@ impl DomainName {
         Ok((domain_name, no_domain_bytes))
     }
 
-    /// Returns an array of bytes that represents the domain name
+    // Returns an array of bytes that represents the domain name
     pub fn to_bytes(&self) -> Vec<u8> {
         let name = self.get_name();
         let mut bytes: Vec<u8> = Vec::new();
@@ -244,5 +245,41 @@ mod test {
         let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test).unwrap();
 
         assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
+    }
+
+    #[test]
+    fn from_bytes_no_offset_test(){
+        let bytes_test: Vec<u8> = vec![
+            4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
+        ];
+
+        let name = DomainName::from_bytes_no_offset(&bytes_test);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(name);
+        assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
+
+    }
+
+    #[test]
+    fn from_master_file_test() {
+        let mut name = String::from("poneria.ISI.EDU.");
+        let mut hostname = String::from("");
+
+        let mut domain_name = DomainName::from_master_file(name, hostname);
+        assert_eq!(domain_name.get_name(), String::from("poneria.ISI.EDU"));
+
+        name = String::from("XX");
+        hostname = String::from("LCS.MIT.EDU");
+
+        domain_name = DomainName::from_master_file(name, hostname);
+        assert_eq!(domain_name.get_name(), String::from("XX.LCS.MIT.EDU"));
+
+    }
+
+    #[test]
+    fn fmt_test(){
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("XX.LCS.MIT.EDU"));
+        assert_eq!(format!("The domain name is: {domain_name}"), "The domain name is: XX.LCS.MIT.EDU");
     }
 }

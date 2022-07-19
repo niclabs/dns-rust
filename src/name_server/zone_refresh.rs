@@ -158,3 +158,121 @@ impl ZoneRefresh {
         self.last_serial_check
     }
 }
+
+mod test {
+    
+    use super::ZoneRefresh;
+    use crate::message::rdata::soa_rdata::SoaRdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
+    use crate::name_server::zone::NSZone;
+    use crate::domain_name::DomainName;
+
+    use chrono::Utc;
+
+
+    #[test]
+    fn constructor_test() {
+        let mut ns_zone = NSZone::new();
+        let origin = String::from("example.com");
+        ns_zone.set_name(origin);
+        ns_zone.set_ip_address_for_refresh_zone(String::from("200.89.76.36"));
+
+        let mut value = Vec::<ResourceRecord>::new();
+
+        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        mname_domain_name.set_name(String::from("ns.primaryserver.com"));
+        let mut rname_domain_name = DomainName::new();
+        rname_domain_name.set_name(String::from("admin.example.com"));
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {val.set_mname(mname_domain_name);
+                                                val.set_rname(rname_domain_name);
+                                                val.set_serial(1111111111 as u32)},
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(soa_rdata);
+
+        value.push(resource_record);
+        ns_zone.set_value(value);
+
+        let zone_refresh = ZoneRefresh::new(ns_zone);
+
+        let some_timestamp = Utc::now().timestamp() as u32;
+
+        assert_eq!(zone_refresh.zone.get_name(), String::from("example.com"));
+        assert_eq!(zone_refresh.ip_address_for_refresh_zone, String::from("200.89.76.36"));
+        assert_eq!(zone_refresh.serial, 1111111111 as u32);
+        assert_eq!(zone_refresh.refresh, 0 as u32);
+        assert_eq!(zone_refresh.retry, 0 as u32);
+        assert_eq!(zone_refresh.expire, 0 as u32);
+        assert_eq!(zone_refresh.timestamp, some_timestamp);
+        assert_eq!(zone_refresh.last_fails, false);
+        assert_eq!(zone_refresh.last_serial_check, some_timestamp);
+    }
+
+    #[test]
+    fn set_and_get_zone_test(){
+        let mut ns_zone_1 = NSZone::new();
+        let mut ns_zone_2 = NSZone::new();
+
+        let origin = String::from("example.com");
+        ns_zone_1.set_name(origin);
+
+        let mut value = Vec::<ResourceRecord>::new();
+
+        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        mname_domain_name.set_name(String::from("ns.primaryserver.com"));
+        let mut rname_domain_name = DomainName::new();
+        rname_domain_name.set_name(String::from("admin.example.com"));
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {val.set_mname(mname_domain_name);
+                                                val.set_rname(rname_domain_name);
+                                                val.set_serial(1111111111 as u32)},
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(soa_rdata);
+
+        value.push(resource_record);
+        ns_zone_1.set_value(value.clone());
+        ns_zone_2.set_value(value.clone());
+
+        let mut zone_refresh = ZoneRefresh::new(ns_zone_1);
+        assert_eq!(zone_refresh.get_zone().get_name(), String::from("example.com"));
+
+        zone_refresh.set_zone(ns_zone_2);
+        assert_eq!(zone_refresh.get_zone().get_name(), String::from(""));
+    }
+
+    #[test]
+    fn set_and_get_ip_address_for_refresh_zone_test(){
+        let mut ns_zone = NSZone::new();
+
+        let mut value = Vec::<ResourceRecord>::new();
+
+        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        mname_domain_name.set_name(String::from("ns.primaryserver.com"));
+        let mut rname_domain_name = DomainName::new();
+        rname_domain_name.set_name(String::from("admin.example.com"));
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {val.set_mname(mname_domain_name);
+                                                val.set_rname(rname_domain_name);
+                                                val.set_serial(1111111111 as u32)},
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(soa_rdata);
+
+        value.push(resource_record);
+        ns_zone.set_value(value.clone());
+
+        let mut zone_refresh = ZoneRefresh::new(ns_zone);
+        assert_eq!(zone_refresh.get_ip_address_for_refresh_zone(), String::from(""));
+        zone_refresh.set_ip_address_for_refresh_zone(String::from("200.89.76.36"));
+        assert_eq!(zone_refresh.get_ip_address_for_refresh_zone(), String::from("200.89.76.36"));
+    }
+}

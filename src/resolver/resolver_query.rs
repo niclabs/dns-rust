@@ -26,7 +26,7 @@ use std::time::Duration;
 use std::vec::Vec;
 
 #[derive(Clone)]
-/// This struct represents a resolver query
+// This struct represents a resolver query
 pub struct ResolverQuery {
     timestamp: u32,
     sname: String,
@@ -92,19 +92,19 @@ pub struct ResolverQuery {
 }
 
 impl ResolverQuery {
-    /// Creates a new ResolverQuery struct with default values
-    ///
-    /// # Examples
-    /// '''
-    /// let resolver_query = ResolverQuery::new();
-    ///
-    /// assert_eq!(resolver_query.sname, "".to_string());
-    /// assert_eq!(resolver_query.stype, 0);
-    /// assert_eq!(resolver_query.sclass, 0);
-    /// assert_eq!(resolver_query.slist.len(), 0);
-    /// assert_eq!(resolver_query.cache.clone().len(), 0);
-    /// '''
-    ///
+    // Creates a new ResolverQuery struct with default values
+    //
+    // # Examples
+    // '''
+    // let resolver_query = ResolverQuery::new();
+    //
+    // assert_eq!(resolver_query.sname, "".to_string());
+    // assert_eq!(resolver_query.stype, 0);
+    // assert_eq!(resolver_query.sclass, 0);
+    // assert_eq!(resolver_query.slist.len(), 0);
+    // assert_eq!(resolver_query.cache.clone().len(), 0);
+    // '''
+    //
     pub fn new(
         add_channel_udp: Sender<(String, ResourceRecord)>,
         delete_channel_udp: Sender<(String, ResourceRecord)>,
@@ -787,7 +787,6 @@ impl ResolverQuery {
 
         self.send_internal_queries_for_slist_udp(self.get_slist(), socket.try_clone().unwrap());
 
-        ///////////////////////////////////////////////
 
         let query_msg = self.create_query_message();
         let msg_to_bytes = query_msg.to_bytes();
@@ -1351,7 +1350,6 @@ impl ResolverQuery {
 
         // Get address for empty ns in slist
         self.send_internal_queries_for_slist_tcp(self.get_slist());
-        ///////////////////////////////////////////////
 
         let query_msg = self.create_query_message();
         let msg_to_bytes = query_msg.to_bytes();
@@ -1735,172 +1733,172 @@ impl ResolverQuery {
 
 // Getters
 impl ResolverQuery {
-    /// Gets the timestamp
+    // Gets the timestamp
     pub fn get_timestamp(&self) -> u32 {
         self.timestamp.clone()
     }
 
-    /// Gets the sname
+    // Gets the sname
     pub fn get_sname(&self) -> String {
         self.sname.clone()
     }
 
-    /// Gets the stype
+    // Gets the stype
     pub fn get_stype(&self) -> u16 {
         self.stype
     }
 
-    /// Gets the sclass
+    // Gets the sclass
     pub fn get_sclass(&self) -> u16 {
         self.sclass
     }
 
-    /// Gets the op_code
+    // Gets the op_code
     pub fn get_op_code(&self) -> u8 {
         self.op_code
     }
 
-    /// Gets the recursion desired bit
+    // Gets the recursion desired bit
     pub fn get_rd(&self) -> bool {
         self.rd
     }
 
-    /// Gets the slist
+    // Gets the slist
     pub fn get_slist(&self) -> Slist {
         self.slist.clone()
     }
 
-    /// Gets the sbelt
+    // Gets the sbelt
     pub fn get_sbelt(&self) -> Slist {
         self.sbelt.clone()
     }
 
-    /// Gets the cache
+    // Gets the cache
     pub fn get_cache(&self) -> DnsCache {
         self.cache.clone()
     }
 
-    /// Gets the ns_data
+    // Gets the ns_data
     pub fn get_ns_data(&self) -> HashMap<u16, HashMap<String, NSZone>> {
         self.ns_data.clone()
     }
 
-    /// Gets the main_query_id
+    // Gets the main_query_id
     pub fn get_main_query_id(&self) -> u16 {
         self.main_query_id
     }
 
-    /// Gets the old id
+    // Gets the old id
     pub fn get_old_id(&self) -> u16 {
         self.old_id
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_src_address(&self) -> String {
         self.src_address.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_channel_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_channel_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_channel_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_channel_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_channel_ns_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_channel_ns_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_channel_ns_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_channel_ns_tcp.clone()
     }
 
-    /// Gets the queries before temporary error field
+    // Gets the queries before temporary error field
     pub fn get_queries_before_temporary_error(&self) -> u16 {
         self.queries_before_temporary_error
     }
 
-    /// Gets the sender to update the resolver query in the resolver
+    // Gets the sender to update the resolver query in the resolver
     pub fn get_tx_update_query(&self) -> Sender<ResolverQuery> {
         self.tx_update_query.clone()
     }
 
-    /// Gets the sender to delete the resolver query in the resolver
+    // Gets the sender to delete the resolver query in the resolver
     pub fn get_tx_delete_query(&self) -> Sender<ResolverQuery> {
         self.tx_delete_query.clone()
     }
 
-    /// Gets the index to choose from slist
+    // Gets the index to choose from slist
     pub fn get_index_to_choose(&self) -> u16 {
         self.index_to_choose
     }
 
-    /// Gets the last query timestamp
+    // Gets the last query timestamp
     pub fn get_last_query_timestamp(&self) -> u64 {
         self.last_query_timestamp
     }
 
-    /// Gets the timeout for the actual query to name server
+    // Gets the timeout for the actual query to name server
     pub fn get_timeout(&self) -> u32 {
         self.timeout
     }
 
-    ///Gets the last query hostname
+    // Gets the last query hostname
     pub fn get_last_query_hostname(&self) -> String {
         self.last_query_hostname.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_udp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_udp.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_tcp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_tcp.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_ns_udp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_ns_udp.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_ns_tcp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_ns_tcp.clone()
     }
 
-    /// Gets true if the query is an internal query
+    // Gets true if the query is an internal query
     pub fn get_internal_query(&self) -> bool {
         self.internal_query
     }
 
-    /// Gets the query id from the slist to update
+    // Gets the query id from the slist to update
     pub fn get_query_id_update_slist(&self) -> u16 {
         self.query_id_update_slist
     }
@@ -1916,102 +1914,102 @@ impl ResolverQuery {
 
 // Setters
 impl ResolverQuery {
-    /// Sets the timestamp attribute with a new value
+    // Sets the timestamp attribute with a new value
     pub fn set_timestamp(&mut self, timestamp: u32) {
         self.timestamp = timestamp;
     }
 
-    /// Sets the sname attribute with a new value
+    // Sets the sname attribute with a new value
     pub fn set_sname(&mut self, sname: String) {
         self.sname = sname;
     }
 
-    /// Sets the stype attribute with a new value
+    // Sets the stype attribute with a new value
     pub fn set_stype(&mut self, stype: u16) {
         self.stype = stype;
     }
 
-    /// Sets the sclass attribute with a new value
+    // Sets the sclass attribute with a new value
     pub fn set_sclass(&mut self, sclass: u16) {
         self.sclass = sclass;
     }
 
-    /// Sets the op_code attribute with a new value
+    // Sets the op_code attribute with a new value
     pub fn set_op_code(&mut self, op_code: u8) {
         self.op_code = op_code;
     }
 
-    /// Sets the rd attribute with a new value
+    // Sets the rd attribute with a new value
     pub fn set_rd(&mut self, rd: bool) {
         self.rd = rd;
     }
 
-    /// Sets the slist attribute with a new value
+    // Sets the slist attribute with a new value
     pub fn set_slist(&mut self, slist: Slist) {
         self.slist = slist;
     }
 
-    /// Sets the sbelt attribute with a new value
+    // Sets the sbelt attribute with a new value
     pub fn set_sbelt(&mut self, sbelt: Slist) {
         self.sbelt = sbelt;
     }
 
-    /// Sets the cache attribute with a new value
+    // Sets the cache attribute with a new value
     pub fn set_cache(&mut self, cache: DnsCache) {
         self.cache = cache;
     }
 
-    /// Sets the ns_data attribute with a new value
+    // Sets the ns_data attribute with a new value
     pub fn set_ns_data(&mut self, ns_data: HashMap<u16, HashMap<String, NSZone>>) {
         self.ns_data = ns_data;
     }
 
-    /// Sets the old id attribute with a new id
+    // Sets the old id attribute with a new id
     pub fn set_main_query_id(&mut self, query_id: u16) {
         self.main_query_id = query_id;
     }
 
-    /// Sets the old id attribute with a new id
+    // Sets the old id attribute with a new id
     pub fn set_old_id(&mut self, query_id: u16) {
         self.old_id = query_id;
     }
 
-    /// Sets the owner's query address
+    // Sets the owner's query address
     pub fn set_src_address(&mut self, address: String) {
         self.src_address = address;
     }
 
-    /// Sets the queries before temporary error field with a new value
+    // Sets the queries before temporary error field with a new value
     pub fn set_queries_before_temporary_error(&mut self, queries_before_temporary_error: u16) {
         self.queries_before_temporary_error = queries_before_temporary_error;
     }
 
-    /// Sets the index to choose from slist with a new value
+    // Sets the index to choose from slist with a new value
     pub fn set_index_to_choose(&mut self, index_to_choose: u16) {
         self.index_to_choose = index_to_choose;
     }
 
-    /// Sets the timestamp for the last query for the request
+    // Sets the timestamp for the last query for the request
     pub fn set_last_query_timestamp(&mut self, last_query_timestamp: u64) {
         self.last_query_timestamp = last_query_timestamp;
     }
 
-    /// Sets the timeout for a query to name server
+    // Sets the timeout for a query to name server
     pub fn set_timeout(&mut self, timeout: u32) {
         self.timeout = timeout;
     }
 
-    /// Sets the host name for the last query
+    // Sets the host name for the last query
     pub fn set_last_query_hostname(&mut self, last_query_hostname: String) {
         self.last_query_hostname = last_query_hostname;
     }
 
-    /// Sets the query id to update the slist
+    // Sets the query id to update the slist
     pub fn set_query_id_update_slist(&mut self, query_id_update_slist: u16) {
         self.query_id_update_slist = query_id_update_slist;
     }
 
-    /// Sets the value for the internal query
+    // Sets the value for the internal query
     pub fn set_internal_query(&mut self, internal_query: bool, queries_left: u16) {
         self.internal_query = internal_query;
         self.queries_before_temporary_error = queries_left;
@@ -2040,7 +2038,7 @@ mod resolver_query_tests {
 
     #[test]
     fn constructor_test() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2091,7 +2089,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_timestamp() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2142,7 +2140,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_sname() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2194,7 +2192,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_stype() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2244,7 +2242,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_sclass() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2295,7 +2293,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_op_code() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2346,7 +2344,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_rd() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2397,7 +2395,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_slist() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2450,7 +2448,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_sbelt() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2504,7 +2502,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_cache() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2568,7 +2566,7 @@ mod resolver_query_tests {
 
     #[test]
     fn create_query_message_test() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2628,7 +2626,7 @@ mod resolver_query_tests {
 
     #[test]
     fn initialize_slist_test() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2723,7 +2721,7 @@ mod resolver_query_tests {
 
     #[test]
     fn initialize_slist_empty_test() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2838,7 +2836,7 @@ mod resolver_query_tests {
 
         rr_type_hash.insert("NS".to_string(), host_names_hash);
 
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2888,7 +2886,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_main_query_id() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2936,7 +2934,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_old_id() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -2986,7 +2984,7 @@ mod resolver_query_tests {
 
     #[test]
     fn set_and_get_src_address() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();

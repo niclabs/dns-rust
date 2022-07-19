@@ -14,7 +14,7 @@ use rand::Rng;
 use std::vec::Vec;
 
 #[derive(Clone)]
-/// Structs that represents a dns message
+// Structs that represents a dns message
 pub struct DnsMessage {
     header: Header,
     question: Question,
@@ -24,22 +24,22 @@ pub struct DnsMessage {
 }
 
 impl DnsMessage {
-    /// Creates a new query message
-    ///
-    /// # Examples
-    /// '''
-    /// let dns_query_message =
-    /// DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
-    ///
-    /// assert_eq!(dns_query_message.header.get_rd(), false);
-    /// assert_eq!(dns_query_message.question.get_qtype(), 1);
-    /// assert_eq!(dns_query_message.question.get_qclass(), 1);
-    /// assert_eq!(
-    ///     dns_query_message.question.get_qname().get_name(),
-    ///     "test.com".to_string()
-    /// );
-    /// '''
-    ///
+    // Creates a new query message
+    //
+    // # Examples
+    // '''
+    // let dns_query_message =
+    // DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
+    //
+    // assert_eq!(dns_query_message.header.get_rd(), false);
+    // assert_eq!(dns_query_message.question.get_qtype(), 1);
+    // assert_eq!(dns_query_message.question.get_qclass(), 1);
+    // assert_eq!(
+    //     dns_query_message.question.get_qname().get_name(),
+    //     "test.com".to_string()
+    // );
+    // '''
+    //
     pub fn new_query_message(
         qname: String,
         qtype: u16,
@@ -342,32 +342,32 @@ impl DnsMessage {
 
 // Getters
 impl DnsMessage {
-    /// Gets the header field
+    // Gets the header field
     pub fn get_header(&self) -> Header {
         self.header.clone()
     }
 
-    /// Gets the question field
+    // Gets the question field
     pub fn get_question(&self) -> Question {
         self.question.clone()
     }
 
-    /// Gets the answer field
+    // Gets the answer field
     pub fn get_answer(&self) -> Vec<ResourceRecord> {
         self.answer.clone()
     }
 
-    /// Gets the authority field
+    // Gets the authority field
     pub fn get_authority(&self) -> Vec<ResourceRecord> {
         self.authority.clone()
     }
 
-    /// Gets the additional field
+    // Gets the additional field
     pub fn get_additional(&self) -> Vec<ResourceRecord> {
         self.additional.clone()
     }
 
-    /// Gets the id from the header
+    // Gets the id from the header
     pub fn get_query_id(&self) -> u16 {
         self.get_header().get_id()
     }
@@ -393,32 +393,32 @@ impl DnsMessage {
 
 // Setters
 impl DnsMessage {
-    /// Sets the header field with a new Header
+    // Sets the header field with a new Header
     pub fn set_header(&mut self, header: Header) {
         self.header = header;
     }
 
-    /// Sets the question field with a new Question
+    // Sets the question field with a new Question
     pub fn set_question(&mut self, question: Question) {
         self.question = question;
     }
 
-    /// Sets the answer field with a new Vec<ResourceRecord>
+    // Sets the answer field with a new Vec<ResourceRecord>
     pub fn set_answer(&mut self, answer: Vec<ResourceRecord>) {
         self.answer = answer;
     }
 
-    /// Sets the authority field with a new Vec<ResourceRecord>
+    // Sets the authority field with a new Vec<ResourceRecord>
     pub fn set_authority(&mut self, authority: Vec<ResourceRecord>) {
         self.authority = authority;
     }
 
-    /// Sets the additional field with a new Vec<ResourceRecord>
+    // Sets the additional field with a new Vec<ResourceRecord>
     pub fn set_additional(&mut self, additional: Vec<ResourceRecord>) {
         self.additional = additional;
     }
 
-    /// Sets the id from the header with new value
+    // Sets the id from the header with new value
     pub fn set_query_id(&mut self, id: u16) {
         let mut header = self.get_header();
         header.set_id(id);

@@ -23,7 +23,7 @@ pub mod resolver_query;
 pub mod slist;
 
 #[derive(Clone)]
-/// Struct that represents a dns resolver
+// Struct that represents a dns resolver
 pub struct Resolver {
     /// Ip address and port where the resolver will run
     ip_address: String,
@@ -60,7 +60,7 @@ pub struct Resolver {
 }
 
 impl Resolver {
-    /// Creates a new Resolver with default values
+    // Creates a new Resolver with default values
     pub fn new(
         add_sender_udp: Sender<(String, ResourceRecord)>,
         delete_sender_udp: Sender<(String, ResourceRecord)>,
@@ -344,8 +344,6 @@ impl Resolver {
                     query.step_3_udp(socket.try_clone().unwrap(), rx_update_self_slist);
                 }
             }
-
-            ////////////////////////////////////////////////////////////////////
 
             let mut resolver = self.clone();
 
@@ -771,8 +769,6 @@ impl Resolver {
 
                     self.set_cache(cache);
 
-                    ////////////////////////////////////////////////////////////////////
-
                     println!("New connection: {}", stream.peer_addr().unwrap());
 
                     // We receive the msg
@@ -1099,62 +1095,62 @@ impl Resolver {
         self.ns_data.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_sender_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_sender_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_sender_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_sender_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_sender_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_sender_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_sender_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_sender_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_tcp.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_udp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_udp.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_tcp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_tcp.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_ns_udp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_ns_udp.clone()
     }
 
-    /// Gets the sender for updating cache
+    // Gets the sender for updating cache
     pub fn get_update_cache_ns_tcp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_ns_tcp.clone()
     }
@@ -1200,7 +1196,7 @@ mod test {
 
     #[test]
     fn constructor_test() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -1237,7 +1233,7 @@ mod test {
 
     #[test]
     fn set_and_get_ip_address() {
-        /// Channels
+        //Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -1276,7 +1272,7 @@ mod test {
 
     #[test]
     fn set_and_get_sbelt() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -1316,7 +1312,7 @@ mod test {
 
     #[test]
     fn set_and_get_cache() {
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
@@ -1389,7 +1385,7 @@ mod test {
 
         rr_type_hash.insert("NS".to_string(), host_names_hash);
 
-        /// Channels
+        // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, add_recv_tcp) = mpsc::channel();

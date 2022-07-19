@@ -2,7 +2,7 @@ use crate::message::resource_record::ResourceRecord;
 use chrono::prelude::*;
 
 #[derive(Clone)]
-/// An structs that represents one element in the dns cache.
+// An structs that represents one element in the dns cache.
 pub struct RRCache {
     // Resource Records of the domain name
     resource_record: ResourceRecord,
@@ -13,16 +13,16 @@ pub struct RRCache {
 }
 
 impl RRCache {
-    /// Creates a new RRCache struct
-    ///
-    /// # Examples
-    /// '''
-    /// let rr_cache = RRCache::new();
-    ///
-    /// assert_eq!(rr_cache.resource_records.len(), 0);
-    /// assert_eq!(rr_cache.response_time, 5);
-    /// '''
-    ///
+    // Creates a new RRCache struct
+    //
+    // # Examples
+    // '''
+    // let rr_cache = RRCache::new();
+    //
+    // assert_eq!(rr_cache.resource_records.len(), 0);
+    // assert_eq!(rr_cache.response_time, 5);
+    // '''
+    //
     pub fn new(resource_record: ResourceRecord) -> Self {
         let rr_cache = RRCache {
             resource_record: resource_record,

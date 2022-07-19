@@ -6,7 +6,7 @@ use chrono::prelude::*;
 use std::collections::HashMap;
 
 #[derive(Clone)]
-/// Struct that represents a cache for dns
+// Struct that represents a cache for dns
 pub struct DnsCache {
     // first hash by type, then by hostname
     cache: HashMap<String, HashMap<String, Vec<RRCache>>>,
@@ -15,15 +15,15 @@ pub struct DnsCache {
 }
 
 impl DnsCache {
-    /// Creates a new DnsCache with default values
-    ///
-    /// # Examples
-    /// '''
-    /// let cache = DnsCache::new();
-    ///
-    /// assert_eq!(cache.cache.len(), 0);
-    /// '''
-    ///
+    // Creates a new DnsCache with default values
+    //
+    // # Examples
+    // '''
+    // let cache = DnsCache::new();
+    //
+    // assert_eq!(cache.cache.len(), 0);
+    // '''
+    //
     pub fn new() -> Self {
         let cache = DnsCache {
             cache: HashMap::<String, HashMap<String, Vec<RRCache>>>::new(),
@@ -34,7 +34,7 @@ impl DnsCache {
         cache
     }
 
-    /// Adds an element to cache
+    // Adds an element to cache
     pub fn add(&mut self, domain_name: String, resource_record: ResourceRecord) {
         let mut cache = self.get_cache();
         let rr_type = match resource_record.get_type_code() {
@@ -48,18 +48,18 @@ impl DnsCache {
             14 => "MINFO".to_string(),
             15 => "MX".to_string(),
             16 => "TXT".to_string(),
-            //////////////////////// Replace the next line when AAAA is implemented /////////////////
+            //  Replace the next line when AAAA is implemented 
             28 => "TXT".to_string(),
-            /////////////////////////////////////////////////////////////////////////////////////////
+            //
             _ => unreachable!(),
         };
 
-        // Vemos primero el tamaño del cache
+        // see cache size
         if self.max_size < 1 {
             return;
         }
 
-        // Vemos el espacio del cache
+        // see cache space
         if self.get_size() >= self.max_size {
             self.remove_oldest_used();
         }
@@ -96,7 +96,7 @@ impl DnsCache {
         self.set_size(self.get_size() + 1);
     }
 
-    /// Removes an element from cache
+    // Removes an element from cache
     pub fn remove(&mut self, domain_name: String, rr_type: String) {
         let mut cache = self.get_cache();
 
@@ -110,7 +110,7 @@ impl DnsCache {
         }
     }
 
-    /// Given a domain_name, gets an element from cache
+    // Given a domain_name, gets an element from cache
     pub fn get(&mut self, domain_name: String, rr_type: String) -> Vec<RRCache> {
         let mut cache = self.get_cache();
 
@@ -138,7 +138,7 @@ impl DnsCache {
         return Vec::<RRCache>::new();
     }
 
-    /// Removes the resource records from a domain name and type which were the oldest used
+    // Removes the resource records from a domain name and type which were the oldest used
     pub fn remove_oldest_used(&mut self) {
         let cache = self.get_cache();
         let mut used_in = Utc::now();
@@ -161,7 +161,7 @@ impl DnsCache {
         self.remove(oldest_used_domain_name, oldest_used_type);
     }
 
-    /// Gets the response time from a domain name and type resource record
+    // Gets the response time from a domain name and type resource record
     pub fn get_response_time(
         &mut self,
         domain_name: String,
@@ -201,7 +201,7 @@ impl DnsCache {
         return 5000;
     }
 
-    /// Gets the response time from a domain name and type resource record
+    // Gets the response time from a domain name and type resource record
     pub fn update_response_time(
         &mut self,
         domain_name: String,
@@ -269,12 +269,12 @@ impl DnsCache {
 
 // Getters
 impl DnsCache {
-    /// Gets the cache from the struct
+    // Gets the cache from the struct
     pub fn get_cache(&self) -> HashMap<String, HashMap<String, Vec<RRCache>>> {
         self.cache.clone()
     }
 
-    /// Gets the size of the cache
+    // Gets the size of the cache
     pub fn get_size(&self) -> u32 {
         self.size
     }
@@ -282,17 +282,17 @@ impl DnsCache {
 
 // Setters
 impl DnsCache {
-    /// Sets the cache
+    // Sets the cache
     pub fn set_cache(&mut self, cache: HashMap<String, HashMap<String, Vec<RRCache>>>) {
         self.cache = cache
     }
 
-    /// Sets the max size of the cache
+    // Sets the max size of the cache
     pub fn set_max_size(&mut self, max_size: u32) {
         self.max_size = max_size
     }
 
-    /// Sets the size of the cache
+    // Sets the size of the cache
     pub fn set_size(&mut self, size: u32) {
         self.size = size
     }

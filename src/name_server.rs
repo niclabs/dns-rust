@@ -31,7 +31,7 @@ pub mod zone;
 pub mod zone_refresh;
 
 #[derive(Clone)]
-/// Structs that represents a name server
+// Structs that represents a name server
 pub struct NameServer {
     zones: HashMap<u16, HashMap<String, NSZone>>,
     cache: DnsCache,
@@ -65,7 +65,7 @@ pub struct NameServer {
 }
 
 impl NameServer {
-    /// Creates a new name server
+    // Creates a new name server
     pub fn new(
         primary_server: bool,
         delete_channel_udp: Sender<(String, ResourceRecord)>,
@@ -417,8 +417,6 @@ impl NameServer {
             }
 
             self.set_cache(cache);
-
-            ////////////////////////////////////////////////////////////////////
 
             // Update queries ids
 
@@ -842,8 +840,6 @@ impl NameServer {
                     }
 
                     self.set_cache(cache);
-
-                    ////////////////////////////////////////////////////////////////////
 
                     // Msg parsed
                     let dns_message_parse_result = DnsMessage::from_bytes(&received_msg);
@@ -1905,7 +1901,7 @@ impl NameServer {
         return NameServer::step_6(msg, cache, zones);
     }
 
-    /// Adds addittional information to response
+    // Adds addittional information to response
     fn step_6(
         mut msg: DnsMessage,
         mut cache: DnsCache,
@@ -2295,52 +2291,52 @@ impl NameServer {
         self.refresh_zones_data.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_add_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_tcp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_udp.clone()
     }
 
-    /// Get the owner's query address
+    // Get the owner's query address
     pub fn get_delete_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_tcp.clone()
     }
 
-    /// Gets the sender to update a refresh zone in name server udp
+    // Gets the sender to update a refresh zone in name server udp
     pub fn get_update_refresh_zone_tcp(&self) -> Sender<ZoneRefresh> {
         self.update_refresh_zone_tcp.clone()
     }
 
-    /// Gets the sender to update a refresh zone in name server tcp
+    // Gets the sender to update a refresh zone in name server tcp
     pub fn get_update_refresh_zone_udp(&self) -> Sender<ZoneRefresh> {
         self.update_refresh_zone_udp.clone()
     }
 
-    /// Gets the sender to update a zone in the udp resolver
+    // Gets the sender to update a zone in the udp resolver
     pub fn get_update_zone_udp_resolver(&self) -> Sender<NSZone> {
         self.update_zone_udp_resolver.clone()
     }
 
-    /// Gets the sender to update a zone in the tcp resolver
+    // Gets the sender to update a zone in the tcp resolver
     pub fn get_update_zone_tcp_resolver(&self) -> Sender<NSZone> {
         self.update_zone_tcp_resolver.clone()
     }

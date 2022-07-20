@@ -368,7 +368,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let  soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
@@ -379,5 +379,60 @@ mod test {
         assert_eq!(zone_refresh.get_last_serial_check(), some_timestamp);
         zone_refresh.set_last_serial_check(some_timestamp-1);
         assert_eq!(zone_refresh.get_last_serial_check(), some_timestamp-1);
+    }
+
+    #[test]
+    fn new_serial_greater_than_old_test(){
+        let mut ns_zone = NSZone::new();
+        let mut value = Vec::<ResourceRecord>::new();
+        let  soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let resource_record = ResourceRecord::new(soa_rdata);
+        value.push(resource_record);
+        ns_zone.set_value(value.clone());
+
+        let mut zone_refresh = ZoneRefresh::new(ns_zone);
+        zone_refresh.set_serial(111111111 as u32);
+        assert_eq!(zone_refresh.new_serial_greater_than_old(4294967295 as u32), false);
+        assert_eq!(zone_refresh.new_serial_greater_than_old(111111112 as u32), true);
+        assert_eq!(zone_refresh.new_serial_greater_than_old(111111110 as u32), false);
+        zone_refresh.set_serial(4294967295 as u32);
+        assert_eq!(zone_refresh.new_serial_greater_than_old(111111111 as u32), true);
+    }
+
+    #[test]
+    fn update_zone_test(){
+        let mut ns_zone = NSZone::new();
+
+        let mut value_1 = Vec::<ResourceRecord>::new();
+        let mut value_2 = Vec::<ResourceRecord>::new();
+
+        let  soa_rdata_1 = Rdata::SomeSoaRdata(SoaRdata::new());
+        let resource_record_1 = ResourceRecord::new(soa_rdata_1);
+
+        let mut soa_rdata_2 = Rdata::SomeSoaRdata(SoaRdata::new());
+        match soa_rdata_2 {
+            Rdata::SomeSoaRdata(ref mut val) => {val.set_expire(4000000 as u32);
+                                                val.set_retry(7200 as u32);
+                                                val.set_serial(1111111111 as u32)},
+            _ => unreachable!(),
+        }
+
+        let resource_record_2 = ResourceRecord::new(soa_rdata_2);
+
+        value_1.push(resource_record_1);
+        value_2.push(resource_record_2);
+
+        ns_zone.set_value(value_1.clone());
+        let mut zone_refresh = ZoneRefresh::new(ns_zone.clone());
+        assert_eq!(zone_refresh.get_serial(), 0 as u32);
+        assert_eq!(zone_refresh.get_retry(), 0 as u32);
+        assert_eq!(zone_refresh.get_expire(), 0 as u32);
+
+        ns_zone.set_value(value_2.clone());
+        zone_refresh.update_zone(ns_zone.clone());
+        assert_eq!(zone_refresh.get_serial(), 1111111111 as u32);
+        assert_eq!(zone_refresh.get_retry(), 7200 as u32);
+        assert_eq!(zone_refresh.get_expire(), 4000000 as u32);
+
     }
 }

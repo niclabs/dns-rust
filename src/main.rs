@@ -11,6 +11,7 @@ pub mod rr_cache;
 use crate::name_server::NameServer;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
+use crate::name_server::master_file::MasterFile;
 
 use std::sync::mpsc;
 use std::thread;
@@ -26,12 +27,20 @@ pub fn main() {
     let mut input_line = String::new();
     println!("Rustlang library for DNS");
     println!("Name server compatible with RFC 1034 and RFC 1035 only.");
-    println!("Enter program to run [C/R/N/NR]: ");
+    println!("To only check the validity of a Master file, enter MF.");
+    println!("For other services, enter program to run [C/R/N/NR]: ");
     std::io::stdin().read_line(&mut input_line).unwrap();
 
     let trim_input_line = input_line.trim();
 
-    if trim_input_line == "C" {
+    if trim_input_line == "MF" {
+        for master_file in MASTER_FILES {
+            let validated_mf = MasterFile::from_file_with_validation(master_file.to_string());
+        }
+        println!("All Master Files validated successfully.");
+    }
+
+    else if trim_input_line == "C" {
         client::run_client();
     } else {
         // Channels

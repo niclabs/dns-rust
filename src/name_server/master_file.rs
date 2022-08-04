@@ -33,8 +33,20 @@ pub struct MasterFile {
 
 // validity checks should be performed insuring that the file is syntactically correct
 fn domain_validity_syntax(domain_name: String)-> Result<String, &'static str> {
+    if domain_name.eq("@") {
+        return Ok(domain_name);
+    }
+    let mut empty_label = false;
     for label in domain_name.split("."){
+        if empty_label {
+            return Err("Error: Empty label is only allowed at the end os a hostname.")
+        }
+        if label.is_empty() {
+            empty_label = true;
+            continue;
+        }
         if ! NSZone::check_label_name(label.to_string()) {
+            println!("L: {}", label);
             return Err("Error: present domain name is not syntactically correct.");
         }
     }
@@ -152,7 +164,7 @@ impl MasterFile {
             }
         }
 
-        master_file.process_lines_and_validation();
+        master_file.process_lines_and_validation(lines);
 
         let origin = master_file.get_origin();
         let rrs = master_file.get_rrs();
@@ -245,18 +257,22 @@ impl MasterFile {
         }
 
         // Replace @ for the origin domain
-        let contains_non_especial_at_sign = line.contains("\\@");
+        let contains_non_especial_at_sign = line.contains("@");
 
-        if contains_non_especial_at_sign == false {
-            let new_line = line.replace("@", &self.get_origin());
+        let mut new_line = line.clone();
+        if contains_non_especial_at_sign {
+            let mut full_origin = self.get_origin();
+            full_origin.push_str(".");
+            new_line = line.replace("@", &full_origin);
         }
 
-        let new_line = line.replace("\\@", "@");
+
+        //let new_line = line.replace("\\@", "@");
 
         // Backslash replace
-        let line = new_line.replace("\\", "");
+        //let line = new_line.replace("\\", "");
 
-        self.process_line_rr_no_validation(line);
+        self.process_line_rr_no_validation(new_line);
     }
 
     /// Process an INCLUDE line in a master file
@@ -433,6 +449,8 @@ impl MasterFile {
         if host_name.ends_with(".") == false {
             full_host_name.push_str(".");
             full_host_name.push_str(&origin);
+        } else {
+            full_host_name.pop();
         }
 
         let class_int = match class.as_str() {
@@ -504,7 +522,7 @@ impl MasterFile {
             _ => unreachable!(),
         };
 
-        self.add_rr(host_name, resource_record);
+        self.add_rr(full_host_name, resource_record);
     }
 
     /// Process an especific type of RR
@@ -731,8 +749,8 @@ impl MasterFile {
         origin or similar error.
         */
     //------------------
-    fn process_lines_and_validation(&mut self) -> Result<bool, &'static str> {
-        let mut lines: Vec<String> = Vec::new();
+    fn process_lines_and_validation(&mut self, lines: Vec<String>) -> Result<bool, &'static str> {
+        //let mut lines: Vec<String> = lines.clone();
         let mut last_line = "".to_string();
         
         let mut prev_rr_class = "".to_string();
@@ -945,28 +963,47 @@ mod test{
     }
 
     #[test]
-    fn at_process_line_test() {
-        let at_line = "@             A       192.80.24.11".to_string();
+    fn process_line_test() {
+        let line = "a             A       192.80.24.11".to_string();
+        let origin = "uchile.cl".to_string();
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.process_line(at_line);
+        let mut master_file = MasterFile::new(origin.clone());
+        master_file.process_line(line);
 
         let mut rrs = master_file.get_rrs();
 
-        println!("aaaaa");
-        println!("len:{}", rrs.len());
+        let a = "a.uchile.cl".to_string();
+        let origin_rr = rrs.remove(&a.clone()).unwrap();
 
+        for rr in origin_rr {
+            assert_eq!(rr.get_name().get_name(), "a.uchile.cl");
 
-        let att = "@".to_string();
-        let notorigin = rrs.remove(&att).unwrap();
-
-        for rr in notorigin {
-            println!("RR:{}", rr);
         }
+    }
 
-        for (key, value) in rrs {
-            println!("Key:{}", key);
-            //println!("Value:{}", value);
+
+    #[test]
+    fn at_process_line_test() {
+        let at_line = "@             A       192.80.24.11".to_string();
+        let origin = "uchile.cl".to_string();
+
+        let mut master_file = MasterFile::new(origin.clone());
+        master_file.process_line(at_line);
+
+        let mut rrs = master_file.get_rrs();
+        /*
+        for (key, value) in rrs.clone() {
+            println!("W: {}", key);
+            for rr in value {
+                println!("WW: {}", rr);
+            }
+        }
+        */
+
+        let origin_rr = rrs.remove(&origin.clone()).unwrap();
+
+        for rr in origin_rr {
+            assert_eq!(rr.get_name().get_name(), "uchile.cl");
         }
 
     }

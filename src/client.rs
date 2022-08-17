@@ -41,12 +41,18 @@ pub fn run_client() {
         let socket = UdpSocket::bind(CLIENT_IP_PORT).expect("No connection");
         let msg_to_bytes = query_msg.to_bytes();
 
-        socket.send_to(&msg_to_bytes, RESOLVER_IP_PORT);
+        match socket.send_to(&msg_to_bytes, RESOLVER_IP_PORT){
+            Err(_) => panic!("Error sending query"),
+            Ok(_) => (),
+        }
 
         // Hashmap to save incomplete messages
         let messages = HashMap::<u16, DnsMessage>::new();
 
-        socket.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000)));
+        match socket.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000))){
+            Err(_) => panic!("Error setting read timeout for socket"),
+            Ok(_) => (),
+        }
 
         loop {
             let response_result =
@@ -81,9 +87,15 @@ pub fn run_client() {
 
         let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
 
-        stream.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000)));
+        match stream.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000))){
+            Err(_) => panic!("Error setting read timeout for socket"),
+            Ok(_) => (),
+        }
 
-        stream.write(&full_msg);
+        match stream.write(&full_msg){
+            Err(_) => panic!("Error: could not write to stream"),
+            Ok(_) => (),
+        }
 
         match Resolver::receive_tcp_msg(stream) {
             Some(val) => {

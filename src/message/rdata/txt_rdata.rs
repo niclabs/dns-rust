@@ -45,7 +45,7 @@ impl FromBytes<Result<Self, &'static str>> for TxtRdata {
 
         while i < len {
             string = String::from("");
-            let mut lenght_octet = bytes[i];
+            let lenght_octet = bytes[i];
             i += 1;
             if i >= len {
                 break; 

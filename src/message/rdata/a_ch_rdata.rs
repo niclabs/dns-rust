@@ -100,7 +100,7 @@ impl AChRdata {
         let mut a_ch_rdata = AChRdata::new();
 
         let name = values.next().unwrap();
-        let mut domain_name = DomainName::from_master_file(name.to_string(), origin);
+        let domain_name = DomainName::from_master_file(name.to_string(), origin);
 
         a_ch_rdata.set_domain_name(domain_name);
 

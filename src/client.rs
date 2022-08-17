@@ -44,7 +44,7 @@ pub fn run_client() {
         socket.send_to(&msg_to_bytes, RESOLVER_IP_PORT);
 
         // Hashmap to save incomplete messages
-        let mut messages = HashMap::<u16, DnsMessage>::new();
+        let messages = HashMap::<u16, DnsMessage>::new();
 
         socket.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000)));
 

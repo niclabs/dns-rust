@@ -218,7 +218,7 @@ impl SoaRdata {
 
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
-        mut ttl: u32,
+        ttl: u32,
         class: u16,
         host_name: String,
         origin: String,
@@ -233,8 +233,8 @@ impl SoaRdata {
         let expire = values.next().unwrap().parse::<u32>().unwrap();
         let minimum = values.next().unwrap().parse::<u32>().unwrap();
 
-        let mut m_name = DomainName::from_master_file(m_name_str.to_string(), origin.clone());
-        let mut r_name = DomainName::from_master_file(r_name_str.to_string(), origin);
+        let m_name = DomainName::from_master_file(m_name_str.to_string(), origin.clone());
+        let r_name = DomainName::from_master_file(r_name_str.to_string(), origin);
 
         soa_rdata.set_mname(m_name);
         soa_rdata.set_rname(r_name);

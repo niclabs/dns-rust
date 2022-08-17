@@ -914,7 +914,7 @@ mod test {
         ]; 
 
         // bytes is not the full msg, but in this case it will not use inside
-        let (mut resource_record_test, mut _other_rr_bytes) =
+        let (resource_record_test, mut _other_rr_bytes) =
             ResourceRecord::from_bytes(&bytes_msg, &bytes_msg).unwrap();
 
         assert_eq!(

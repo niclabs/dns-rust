@@ -311,6 +311,7 @@ impl ResourceRecord {
     }
 
     /// Returns a byte that represents the first byte from rdlength in the dns message.
+    #[allow(dead_code)]
     fn get_first_rdlength_byte(&self) -> u8 {
         let rdlength = self.get_rdlength();
         let first_byte = (rdlength >> 8) as u8;
@@ -319,6 +320,7 @@ impl ResourceRecord {
     }
 
     /// Returns a byte that represents the second byte from rdlength in the dns message.
+    #[allow(dead_code)]
     fn get_second_rdlength_byte(&self) -> u8 {
         let rdlength = self.get_rdlength();
         let second_byte = rdlength as u8;

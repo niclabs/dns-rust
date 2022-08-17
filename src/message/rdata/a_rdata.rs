@@ -206,7 +206,7 @@ mod test {
         assert_eq!(a_rr.get_ttl(), 0);
         assert_eq!(a_rr.get_rdlength(), 4);
 
-        let mut a_rdata = a_rr.get_rdata();
+        let a_rdata = a_rr.get_rdata();
         match a_rdata {
             Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
             _ => {}

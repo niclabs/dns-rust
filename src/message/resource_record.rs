@@ -863,7 +863,7 @@ mod test {
         }
 
 
-        let  mut mx_rdata = Rdata::SomeMxRdata(MxRdata::new());
+        let  mx_rdata = Rdata::SomeMxRdata(MxRdata::new());
         resource_record.set_rdata(mx_rdata);
 
        

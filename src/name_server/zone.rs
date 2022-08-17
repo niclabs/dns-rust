@@ -566,7 +566,7 @@ mod test {
     fn add_node_test(){       
 
 
-        let mut value: Vec<ResourceRecord> = Vec::new();
+        let value: Vec<ResourceRecord> = Vec::new();
         
         
         let mut nszone = NSZone::new();
@@ -588,7 +588,7 @@ mod test {
 
     #[test]
     fn check_rrs_only_ns_test() {
-        let mut nszone = NSZone::new();
+        let nszone = NSZone::new();
         let mut rr: Vec<ResourceRecord> = Vec::new();
 
         let ns_rdata = Rdata::SomeNsRdata(NsRdata::new());

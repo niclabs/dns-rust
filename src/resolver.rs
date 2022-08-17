@@ -1210,7 +1210,7 @@ mod test {
         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
 
-        let mut resolver = Resolver::new(
+        let resolver = Resolver::new(
             add_sender_udp,
             delete_sender_udp,
             add_sender_tcp,
@@ -1406,7 +1406,7 @@ mod test {
 
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
 
-        let mut resolver_query_test = ResolverQuery::new(
+        let resolver_query_test = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
             add_sender_tcp,

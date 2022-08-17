@@ -221,7 +221,7 @@ mod test {
         ns_zone_1.set_name(origin);
 
         let mut value = Vec::<ResourceRecord>::new();
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
         value.push(resource_record);
         ns_zone_1.set_value(value.clone());
@@ -240,7 +240,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         
         let resource_record = ResourceRecord::new(soa_rdata);
 
@@ -259,7 +259,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
@@ -277,7 +277,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
@@ -295,7 +295,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
@@ -313,7 +313,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
@@ -331,7 +331,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
@@ -350,7 +350,7 @@ mod test {
 
         let mut value = Vec::<ResourceRecord>::new();
 
-        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);

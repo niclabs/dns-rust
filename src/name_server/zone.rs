@@ -410,8 +410,6 @@ impl NSZone {
 }
 
 mod test {
-    use crate::name_server::master_file::MasterFile;
-
     use super::NSZone;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::ns_rdata::NsRdata;

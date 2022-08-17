@@ -11,7 +11,6 @@ use crate::config::QUERIES_FOR_CLIENT_REQUEST;
 use crate::config::USE_CACHE;
 
 use chrono::Utc;
-use rand::seq::index;
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;

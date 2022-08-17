@@ -123,7 +123,6 @@ impl CnameRdata {
 
 mod test {
     use crate::domain_name::DomainName;
-    use crate::message::rdata::Rdata;
     use crate::message::rdata::cname_rdata::CnameRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 

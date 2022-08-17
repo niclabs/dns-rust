@@ -260,7 +260,7 @@ impl DnsCache {
         for (key, val) in cache.iter() {
             println!("Type: {}", key);
 
-            for (key2, val2) in val.iter() {
+            for (key2, _val2) in val.iter() {
                 println!("Host Name: {}", key2);
             }
         }

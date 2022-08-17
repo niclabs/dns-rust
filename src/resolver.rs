@@ -6,8 +6,7 @@ use crate::name_server::zone::NSZone;
 use crate::resolver::resolver_query::ResolverQuery;
 use crate::resolver::slist::Slist;
 
-use chrono::{DateTime, Utc};
-use core::num;
+use chrono::{Utc};
 use std::collections::HashMap;
 use std::io::Read;
 use std::io::Write;
@@ -327,7 +326,7 @@ impl Resolver {
 
             // Check queries for timeout
 
-            for (key, val) in queries_hash_by_id.clone() {
+            for (_key, val) in queries_hash_by_id.clone() {
                 let mut query = val.clone();
 
                 let timeout = query.get_timeout();
@@ -337,7 +336,7 @@ impl Resolver {
 
                 println!("Query to {}", query.get_sname());
 
-                let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+                let (_tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
                 if timestamp_ms > (timeout as u64 + last_query_timestamp) {
                     println!("Timeout!!!!!!!!");
@@ -382,7 +381,7 @@ impl Resolver {
                 let rd = dns_message.get_header().get_rd();
                 let id = dns_message.get_query_id();
 
-                let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+                let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
 
                 let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
 
@@ -531,7 +530,7 @@ impl Resolver {
 
                         resolver_query.set_tx_update_self_slist(tx_update_self_slist);
 
-                        let response = match resolver_query.clone().step_4_udp(
+                        let _response = match resolver_query.clone().step_4_udp(
                             dns_message,
                             socket_copy.try_clone().unwrap(),
                             rx_update_self_slist,
@@ -653,7 +652,7 @@ impl Resolver {
         rx_update_zone_tcp: Receiver<NSZone>,
     ) {
         // Vector to save the queries in process
-        let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+        // let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
 
         // Channels to send data between threads, resolvers and name server
         let tx_add_udp = self.get_add_sender_udp();
@@ -670,10 +669,10 @@ impl Resolver {
         let tx_update_cache_ns_tcp = self.get_update_cache_ns_tcp();
 
         // Channel to delete queries ids from queries already response
-        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
 
         // Channel to update resolver queries from queries in progress
-        let (tx_update_query, rx_update_query) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
 
         // Gets ip and port str
         let mut host_address_and_port = self.get_ip_address();
@@ -830,7 +829,7 @@ impl Resolver {
                             let id = dns_message.get_query_id();
 
                             let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
-                            let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+                            let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
 
                             let mut resolver_query = ResolverQuery::new(
                                 tx_add_udp_copy,
@@ -898,7 +897,7 @@ impl Resolver {
         let mut msg = [0; 512];
         let (number_of_bytes_msg, address) = match socket.recv_from(&mut msg) {
             Ok((bytes, addr)) => (bytes, addr.to_string()),
-            Err(e) => (0, "".to_string()),
+            Err(_) => (0, "".to_string()),
         };
 
         println!("msg len: {}", number_of_bytes_msg);
@@ -1011,7 +1010,7 @@ impl Resolver {
             new_header.set_tc(true);
             first_tc_msg.set_header(new_header);
 
-            for i in 1..ceil_half_rrs + 1 {
+            for _i in 1..ceil_half_rrs + 1 {
                 if answer.len() > 0 {
                     let rr = answer.remove(0);
                     first_tc_msg.add_answers(vec![rr]);
@@ -1038,7 +1037,7 @@ impl Resolver {
             let mut new_header = response.get_header();
             second_tc_msg.set_header(new_header);
 
-            for i in 1..ceil_half_rrs + 1 {
+            for _i in 1..ceil_half_rrs + 1 {
                 if answer.len() > 0 {
                     let rr = answer.remove(0);
                     second_tc_msg.add_answers(vec![rr]);
@@ -1060,7 +1059,7 @@ impl Resolver {
     }
 
     // Sends the response to the address by tcp
-    fn send_answer_by_tcp(response: DnsMessage, src_address: String, mut stream: TcpStream) {
+    fn send_answer_by_tcp(response: DnsMessage, _src_address: String, mut stream: TcpStream) {
         let bytes = response.to_bytes();
 
         let msg_length: u16 = bytes.len() as u16;

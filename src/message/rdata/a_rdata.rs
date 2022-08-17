@@ -132,7 +132,6 @@ impl ARdata {
 }
 
 mod test {
-    use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

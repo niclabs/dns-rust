@@ -12,9 +12,7 @@ use crate::message::resource_record::ResourceRecord;
 //refactor
 use crate::name_server::zone::NSZone;
 use crate::NameServer;
-use core::num;
 use std::collections::HashMap;
-use std::fs::read_to_string;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -85,12 +83,12 @@ impl MasterFile {
             let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
             
             let open_parenthesis = match line_without_comments.clone().find("(") {
-                Some(x) => 1,
+                Some(_) => 1,
                 None => 0,
             };
 
             let closed_parenthesis = match line_without_comments.clone().find(")") {
-                Some(x) => 1,
+                Some(_) => 1,
                 None => 0,
             };
 
@@ -137,12 +135,12 @@ impl MasterFile {
             let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
 
             let open_parenthesis = match line_without_comments.clone().find("(") {
-                Some(x) => 1,
+                Some(_) => 1,
                 None => 0,
             };
 
             let closed_parenthesis = match line_without_comments.clone().find(")") {
-                Some(x) => 1,
+                Some(_) => 1,
                 None => 0,
             };
 
@@ -169,7 +167,7 @@ impl MasterFile {
         let origin = master_file.get_origin();
         let rrs = master_file.get_rrs();
         // now validate presence of glue records when necessary
-        master_file.check_glue_delegations(origin, rrs);
+        master_file.check_glue_delegations();
 
         // loop for cname loops 
         master_file.check_cname_loop(master_file.get_rrs());
@@ -178,9 +176,11 @@ impl MasterFile {
     }
 
     // Master file: If delegations are present and glue information is required,it should be present.
-    fn check_glue_delegations(&self, origin: String, 
-        rrs: HashMap<String, Vec<ResourceRecord>>) -> Result<bool, &'static str> {
+    fn check_glue_delegations(&self) -> Result<bool, &'static str> {
         
+        let origin = self.get_origin();
+        let rrs = self.get_rrs();
+
         let origin_labels: Vec<&str> = origin.split(".").collect();
         let origin_labels_num = origin_labels.len();
 
@@ -922,7 +922,7 @@ impl MasterFile {
 }
 
 mod test{
-    use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, ns_rdata::NsRdata}, resource_record::ResourceRecord};
+    use crate::message::rdata::{a_rdata::ARdata, cname_rdata::CnameRdata};
 
     use super::MasterFile;
 

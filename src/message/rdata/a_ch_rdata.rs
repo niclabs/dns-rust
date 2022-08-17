@@ -150,7 +150,6 @@ impl AChRdata {
 mod test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_ch_rdata::AChRdata;
-    use crate::message::rdata::Rdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
     use crate::message::rdata::ARdata;
 

@@ -1,11 +1,3 @@
-use crate::message::rdata::a_rdata::ARdata;
-use crate::message::rdata::cname_rdata::CnameRdata;
-use crate::message::rdata::hinfo_rdata::HinfoRdata;
-use crate::message::rdata::mx_rdata::MxRdata;
-use crate::message::rdata::ns_rdata::NsRdata;
-use crate::message::rdata::ptr_rdata::PtrRdata;
-use crate::message::rdata::soa_rdata::SoaRdata;
-use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::rdata::Rdata;
 
 use crate::domain_name::DomainName;
@@ -197,7 +189,6 @@ impl ResourceRecord {
         bytes: &'a [u8],
         full_msg: &'a [u8],
     ) -> Result<(ResourceRecord, &'a [u8]), &'static str> {
-        let bytes_len = bytes.len();
 
         let domain_name_result = DomainName::from_bytes(bytes, full_msg.clone());
 

@@ -1,6 +1,5 @@
 use crate::config::RECURSIVE_AVAILABLE;
 use crate::dns_cache::DnsCache;
-use crate::message::rdata::cname_rdata::CnameRdata;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
@@ -8,18 +7,14 @@ use crate::name_server::zone::NSZone;
 use crate::name_server::zone_refresh::ZoneRefresh;
 use crate::resolver::Resolver;
 
-use chrono::{DateTime, Utc};
-use core::time;
+use chrono::{Utc};
 use rand::{thread_rng, Rng};
 use std::cmp;
-use std::cmp::min;
 use std::collections::HashMap;
 use std::io::Read;
 use std::io::Write;
 use std::net::UdpSocket;
 use std::net::{TcpListener, TcpStream};
-use std::primitive;
-use std::slice::SliceIndex;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
@@ -179,7 +174,7 @@ impl NameServer {
         if primary_server == false {
             let zones = self.get_zones();
 
-            for (key, val) in zones.iter() {
+            for (_key, val) in zones.iter() {
                 for (second_key, second_val) in val.iter() {
                     let mut zone_data = ZoneRefresh::new(second_val.clone());
                     let zone_refresh = zone_data.get_refresh();
@@ -711,7 +706,7 @@ impl NameServer {
         if primary_server == false {
             let zones = self.get_zones();
 
-            for (key, val) in zones.iter() {
+            for (_key, val) in zones.iter() {
                 for (second_key, second_val) in val.iter() {
                     let mut zone_data = ZoneRefresh::new(second_val.clone());
                     let zone_refresh = zone_data.get_refresh();
@@ -846,7 +841,7 @@ impl NameServer {
 
                     match dns_message_parse_result {
                         Ok(_) => {}
-                        Err(e) => {
+                        Err(_) => {
                             let dns_msg_format_error = DnsMessage::format_error_msg();
 
                             NameServer::send_response_by_tcp(
@@ -949,7 +944,7 @@ impl NameServer {
                         });
                     }
                 }
-                Err(e) => {
+                Err(_) => {
                     // Checking refresh queries
                     let mut queries_id_for_soa_rr = self.get_queries_id_for_soa_rr();
                     let mut refresh_zone_data = self.get_refresh_zones_data();
@@ -1364,7 +1359,7 @@ impl NameServer {
         let zones_by_class_option = zones.get(&qclass);
 
         match zones_by_class_option {
-            Some(val) => {}
+            Some(_) => {}
             None => return (NSZone::new(), false),
         }
         //
@@ -1483,7 +1478,7 @@ impl NameServer {
             let mut all_answers = Vec::new();
 
             // Gets all answers for all classes
-            for (class, hashzones) in zones.iter() {
+            for (class, _hashzones) in zones.iter() {
                 let (zone, available) = NameServer::search_nearest_ancestor_zone(
                     zones.clone(),
                     qname.clone(),
@@ -1779,8 +1774,7 @@ impl NameServer {
             let mut header = msg.get_header();
             let rr = zone.get_value()[0].clone();
             let qname = msg.get_question().get_qname(); 
-            let qtype = msg.get_question().get_qtype();
-
+        
             let canonical_name = match rr.get_rdata() {
                     Rdata::SomeCnameRdata(val) => val.get_cname(),
                     _ => unreachable!(),
@@ -2035,7 +2029,7 @@ impl NameServer {
             new_header.set_tc(true);
             first_tc_msg.set_header(new_header);
 
-            for i in 1..ceil_half_rrs + 1 {
+            for _i in 1..ceil_half_rrs + 1 {
                 if answer.len() > 0 {
                     let rr = answer.remove(0);
                     first_tc_msg.add_answers(vec![rr]);
@@ -2062,7 +2056,7 @@ impl NameServer {
             let mut new_header = response.get_header();
             second_tc_msg.set_header(new_header);
 
-            for i in 1..ceil_half_rrs + 1 {
+            for _i in 1..ceil_half_rrs + 1 {
                 if answer.len() > 0 {
                     let rr = answer.remove(0);
                     second_tc_msg.add_answers(vec![rr]);
@@ -2092,7 +2086,7 @@ impl NameServer {
         cache: DnsCache,
         zones: HashMap<u16, HashMap<String, NSZone>>,
     ) -> DnsMessage {
-        let old_id = msg.get_query_id();
+
         let mut rng = thread_rng();
         let new_id: u16 = rng.gen();
 
@@ -2118,7 +2112,7 @@ impl NameServer {
 
         match dns_response_result {
             Ok(_) => {}
-            Err(e) => {
+            Err(_) => {
                 return DnsMessage::format_error_msg();
             }
         }
@@ -2128,7 +2122,7 @@ impl NameServer {
         return NameServer::step_6(dns_response, cache, zones);
     }
 
-    fn send_response_by_tcp(mut msg: DnsMessage, address: String, mut stream: TcpStream) {
+    fn send_response_by_tcp(mut msg: DnsMessage, _address: String, mut stream: TcpStream) {
         msg.update_header_counters();
 
         let bytes = msg.to_bytes();

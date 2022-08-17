@@ -1196,19 +1196,19 @@ mod test {
     #[test]
     fn constructor_test() {
         // Channels
-        let (add_sender_udp, add_recv_udp) = mpsc::channel();
-        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
-        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
-        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
-        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
-        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
-        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
 
-        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
-        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
-        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
-        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1233,19 +1233,19 @@ mod test {
     #[test]
     fn set_and_get_ip_address() {
         //Channels
-        let (add_sender_udp, add_recv_udp) = mpsc::channel();
-        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
-        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
-        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
-        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
-        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
-        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
 
-        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
-        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
-        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
-        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1272,19 +1272,19 @@ mod test {
     #[test]
     fn set_and_get_sbelt() {
         // Channels
-        let (add_sender_udp, add_recv_udp) = mpsc::channel();
-        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
-        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
-        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
-        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
-        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
-        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
 
-        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
-        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
-        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
-        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1312,19 +1312,19 @@ mod test {
     #[test]
     fn set_and_get_cache() {
         // Channels
-        let (add_sender_udp, add_recv_udp) = mpsc::channel();
-        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
-        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
-        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
-        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
-        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
-        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
 
-        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
-        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
-        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
-        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1385,26 +1385,26 @@ mod test {
         rr_type_hash.insert("NS".to_string(), host_names_hash);
 
         // Channels
-        let (add_sender_udp, add_recv_udp) = mpsc::channel();
-        let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
-        let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
-        let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-        let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
-        let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
-        let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
-        let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
 
-        let (tx_update_query, rx_update_query) = mpsc::channel();
-        let (tx_delete_query, rx_delete_query) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
 
-        let (tx_update_cache_udp, rx_update_cache_udp) = mpsc::channel();
-        let (tx_update_cache_tcp, rx_update_cache_tcp) = mpsc::channel();
-        let (tx_update_cache_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
-        let (tx_update_cache_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
 
-        let (tx_update_slist_tcp, rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
 
-        let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query_test = ResolverQuery::new(
             add_sender_udp,

@@ -26,7 +26,7 @@ impl ToBytes for ARdata {
 
 impl FromBytes<Result<Self, &'static str>> for ARdata {
     /// Creates a new ARdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
         if bytes_len < 4 {

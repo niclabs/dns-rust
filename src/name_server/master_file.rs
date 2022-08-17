@@ -164,8 +164,7 @@ impl MasterFile {
 
         master_file.process_lines_and_validation(lines);
 
-        let origin = master_file.get_origin();
-        let rrs = master_file.get_rrs();
+    
         // now validate presence of glue records when necessary
         master_file.check_glue_delegations();
 
@@ -345,7 +344,7 @@ impl MasterFile {
         let index = line.find(";");
 
         let there_are_comments = match index {
-            Some(x) => 1,
+            Some(_) => 1,
             None => 0,
         };
 
@@ -751,7 +750,7 @@ impl MasterFile {
     //------------------
     fn process_lines_and_validation(&mut self, lines: Vec<String>) -> Result<bool, &'static str> {
         //let mut lines: Vec<String> = lines.clone();
-        let mut last_line = "".to_string();
+        //let mut last_line = "".to_string();
         
         let mut prev_rr_class = "".to_string();
 

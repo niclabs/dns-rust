@@ -37,7 +37,7 @@ impl ToBytes for TxtRdata {
 
 impl FromBytes<Result<Self, &'static str>> for TxtRdata {
     /// Creates a new TxtRdata from an array of bytes
-    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut string = String::from("");
         let mut txt: Vec<String> = Vec::new();
         let mut i = 0;

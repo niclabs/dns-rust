@@ -427,7 +427,7 @@ impl ResolverQuery {
         if s_class == 255 {
             let mut all_answers = Vec::new();
 
-            for (class, hashzone) in self.get_ns_data().iter() {
+            for (class, _hashzone) in self.get_ns_data().iter() {
                 let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
                     self.get_ns_data(),
                     s_name.clone(),
@@ -1175,7 +1175,7 @@ impl ResolverQuery {
 
                 match dns_response_result {
                     Ok(_) => {}
-                    Err(e) => {
+                    Err(_) => {
                         return DnsMessage::format_error_msg();
                     }
                 }
@@ -1390,7 +1390,7 @@ impl ResolverQuery {
         }
 
         let authority = msg_from_response.get_authority();
-        let additional = msg_from_response.get_additional();
+        //let additional = msg_from_response.get_additional();
 
         // Step 4b
         // If there is authority and it is NS type
@@ -1561,7 +1561,7 @@ impl ResolverQuery {
                         resolver_query_to_update.get_update_cache_ns_tcp();
 
                     let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-                    let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+                    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
 
                     let mut internal_query = ResolverQuery::new(
                         tx_add_udp_copy,

@@ -567,8 +567,6 @@ mod test {
 
 
         let mut value: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
         
         
         let mut nszone = NSZone::new();

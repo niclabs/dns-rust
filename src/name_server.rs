@@ -98,7 +98,7 @@ impl NameServer {
 
     pub fn run_name_server(
         &mut self,
-        mut name_server_ip_address: String,
+        name_server_ip_address: String,
         local_resolver_ip_and_port: String,
         rx_add_ns_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_ns_udp: Receiver<(String, ResourceRecord)>,
@@ -144,7 +144,7 @@ impl NameServer {
         rx_update_refresh_zone_udp: Receiver<ZoneRefresh>,
     ) {
         // Hashmap to save incomplete messages
-        let mut messages = HashMap::<u16, DnsMessage>::new();
+        let messages = HashMap::<u16, DnsMessage>::new();
 
         // Add port 53 to ip address
         name_server_ip_address.push_str(":53");
@@ -176,7 +176,7 @@ impl NameServer {
 
             for (_key, val) in zones.iter() {
                 for (second_key, second_val) in val.iter() {
-                    let mut zone_data = ZoneRefresh::new(second_val.clone());
+                    let zone_data = ZoneRefresh::new(second_val.clone());
                     let zone_refresh = zone_data.get_refresh();
 
                     if zone_refresh < minimum_refresh {
@@ -341,7 +341,7 @@ impl NameServer {
             println!("{}", "Waiting msg");
 
             // We receive the msg
-            let mut dns_message_option =
+            let dns_message_option =
                 Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
 
             let (mut dns_message, mut src_address) = (DnsMessage::new(), "".to_string());
@@ -609,7 +609,7 @@ impl NameServer {
 
                                                 // Receive response from name server and parse the msg
 
-                                                let mut received_msg = Resolver::receive_tcp_msg(
+                                                let received_msg = Resolver::receive_tcp_msg(
                                                     stream.try_clone().unwrap(),
                                                 )
                                                 .unwrap();
@@ -708,7 +708,7 @@ impl NameServer {
 
             for (_key, val) in zones.iter() {
                 for (second_key, second_val) in val.iter() {
-                    let mut zone_data = ZoneRefresh::new(second_val.clone());
+                    let zone_data = ZoneRefresh::new(second_val.clone());
                     let zone_refresh = zone_data.get_refresh();
 
                     if zone_refresh < minimum_refresh {
@@ -738,11 +738,11 @@ impl NameServer {
             println!("{}", "Waiting msg");
 
             match listener.accept() {
-                Ok((mut stream, src_address)) => {
+                Ok((stream, src_address)) => {
                     println!("New connection: {}", stream.peer_addr().unwrap());
 
                     // We receive the msg
-                    let mut received_msg =
+                    let received_msg =
                         Resolver::receive_tcp_msg(stream.try_clone().unwrap()).unwrap();
 
                     println!("{}", "Message recv");
@@ -854,7 +854,7 @@ impl NameServer {
                         }
                     }
 
-                    let mut dns_message = dns_message_parse_result.unwrap();
+                    let dns_message = dns_message_parse_result.unwrap();
 
                     println!("{}", "Message parsed");
 
@@ -1110,7 +1110,7 @@ impl NameServer {
 
                                                             // Receive response from name server and parse the msg
 
-                                                            let mut received_msg =
+                                                            let received_msg =
                                                                 Resolver::receive_tcp_msg(
                                                                     stream.try_clone().unwrap(),
                                                                 )
@@ -1275,7 +1275,7 @@ impl NameServer {
 
                                                             // Receive response from name server and parse the msg
 
-                                                            let mut received_msg =
+                                                            let received_msg =
                                                                 Resolver::receive_tcp_msg(
                                                                     stream.try_clone().unwrap(),
                                                                 )
@@ -1351,7 +1351,7 @@ impl NameServer {
 impl NameServer {
     // Step 2 from RFC 1034
     pub fn search_nearest_ancestor_zone(
-        mut zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones: HashMap<u16, HashMap<String, NSZone>>,
         mut qname: String,
         qclass: u16,
     ) -> (NSZone, bool) {
@@ -1366,7 +1366,7 @@ impl NameServer {
 
         let zones_by_class = zones_by_class_option.unwrap();
 
-        let (mut zone, mut available) = match zones_by_class.get(&qname) {
+        let (zone, available) = match zones_by_class.get(&qname) {
             Some(val) => (val.clone(), true),
             None => (NSZone::new(), false),
         };
@@ -1677,7 +1677,7 @@ impl NameServer {
         let mut additional = Vec::<ResourceRecord>::new();
 
         for ns_rr in ns_rrs {
-            let mut name_ns = match ns_rr.get_rdata() {
+            let name_ns = match ns_rr.get_rdata() {
                 Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
                 _ => unreachable!(),
             };
@@ -1870,7 +1870,7 @@ impl NameServer {
             let mut authority = Vec::<ResourceRecord>::new();
 
             while domain_name != "".to_string() {
-                let mut rrs = cache.get(domain_name.clone(), "NS".to_string());
+                let rrs = cache.get(domain_name.clone(), "NS".to_string());
 
                 if rrs.len() > 0 {
                     for rr in rrs {
@@ -2053,7 +2053,7 @@ impl NameServer {
             );
 
             let mut second_tc_msg = DnsMessage::new();
-            let mut new_header = response.get_header();
+            let new_header = response.get_header();
             second_tc_msg.set_header(new_header);
 
             for _i in 1..ceil_half_rrs + 1 {
@@ -2106,7 +2106,7 @@ impl NameServer {
         let mut stream = TcpStream::connect(resolver_ip_and_port).unwrap();
         stream.write(&full_msg);
 
-        let mut received_msg = Resolver::receive_tcp_msg(stream).unwrap();
+        let received_msg = Resolver::receive_tcp_msg(stream).unwrap();
 
         let dns_response_result = DnsMessage::from_bytes(&received_msg);
 

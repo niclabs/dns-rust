@@ -35,7 +35,7 @@ impl NSZone {
     }
 
     pub fn from_file(file_name: String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
-        let mut master_file_parsed;
+        let master_file_parsed;
         if validity_check {
             master_file_parsed = MasterFile::from_file_with_validation(file_name);
         }
@@ -121,7 +121,7 @@ impl NSZone {
     pub fn get_child(&self, name: String) -> (NSZone, i32) {
         // case insensitive
         let children = self.get_children();
-        let mut child_ns = NSZone::new();
+        let child_ns = NSZone::new();
         let lower_case_name = name.to_ascii_lowercase();
         let mut index = 0;
 

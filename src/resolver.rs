@@ -140,7 +140,7 @@ impl Resolver {
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
 
         // Hashmap to save incomplete messages
-        let mut messages = HashMap::<u16, DnsMessage>::new();
+        let messages = HashMap::<u16, DnsMessage>::new();
 
         // Channels to send cache data between threads, resolvers and name server
         let tx_add_udp = self.get_add_sender_udp();
@@ -176,7 +176,7 @@ impl Resolver {
             println!("{}", "Waiting msg");
 
             // We receive the msg
-            let mut dns_message_option =
+            let dns_message_option =
                 Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
 
             let (mut dns_message, mut src_address) = (DnsMessage::new(), "".to_string());
@@ -344,7 +344,7 @@ impl Resolver {
                 }
             }
 
-            let mut resolver = self.clone();
+            let resolver = self.clone();
 
             println!("{}", "Message parsed");
 
@@ -560,13 +560,13 @@ impl Resolver {
                                         &socket_copy,
                                     );
                                 } else {
-                                    let mut msg = val.clone();
+                                    let msg = val.clone();
                                     let answers = msg.get_answer();
                                     let host_name = answers[0].clone().get_name().get_name();
                                     let resolver_query_id_to_update =
                                         resolver_query.get_query_id_update_slist();
 
-                                    let mut resolver_query_to_update_result =
+                                    let resolver_query_to_update_result =
                                         queries_hash_by_id_copy.get(&resolver_query_id_to_update);
 
                                     match resolver_query_to_update_result {
@@ -675,7 +675,7 @@ impl Resolver {
         let (tx_update_query, _rx_update_query) = mpsc::channel();
 
         // Gets ip and port str
-        let mut host_address_and_port = self.get_ip_address();
+        let host_address_and_port = self.get_ip_address();
 
         // Creates a TCP Listener
         let listener = TcpListener::bind(&host_address_and_port).expect("Could not bind");
@@ -686,7 +686,7 @@ impl Resolver {
             println!("{}", "Waiting msg");
 
             match listener.accept() {
-                Ok((mut stream, src_address)) => {
+                Ok((stream, src_address)) => {
                     // Updates zones
                     let mut received_update_refresh_zone = rx_update_zone_tcp.try_iter();
 
@@ -891,7 +891,7 @@ impl Resolver {
 // Utils
 impl Resolver {
     pub fn receive_udp_msg(
-        mut socket: UdpSocket,
+        socket: UdpSocket,
         mut messages: HashMap<u16, DnsMessage>,
     ) -> Option<(DnsMessage, String)> {
         let mut msg = [0; 512];
@@ -932,7 +932,7 @@ impl Resolver {
         );
 
         match messages.get(&query_id) {
-            Some(mut val) => {
+            Some(val) => {
                 let mut msg = val.clone();
                 msg.add_answers(dns_msg_parsed.get_answer());
                 msg.add_authorities(dns_msg_parsed.get_authority());
@@ -1034,7 +1034,7 @@ impl Resolver {
             );
 
             let mut second_tc_msg = DnsMessage::new();
-            let mut new_header = response.get_header();
+            let new_header = response.get_header();
             second_tc_msg.set_header(new_header);
 
             for _i in 1..ceil_half_rrs + 1 {

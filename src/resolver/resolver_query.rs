@@ -727,7 +727,7 @@ impl ResolverQuery {
         }
 
         let mut slist = self.get_slist();
-        let mut slist_len = slist.len();
+        let slist_len = slist.len();
 
         let mut index_to_choose = self.get_index_to_choose() % slist_len as u16;
 
@@ -1474,7 +1474,7 @@ impl ResolverQuery {
 
     pub fn step_4c_tcp(
         &mut self,
-        mut msg: DnsMessage,
+        msg: DnsMessage,
         update_slist_tcp_recv: Receiver<(String, Vec<ResourceRecord>)>,
     ) -> DnsMessage {
         let answer = msg.get_answer();

@@ -183,7 +183,7 @@ impl MasterFile {
         let origin_labels: Vec<&str> = origin.split(".").collect();
         let origin_labels_num = origin_labels.len();
 
-        let mut origin_ns_rr: Vec<ResourceRecord> = match rrs.get(&origin) {
+        let origin_ns_rr: Vec<ResourceRecord> = match rrs.get(&origin) {
             Some(origin_rrs) => {
                 NameServer::look_for_type_records(origin.clone(), origin_rrs.to_vec(), 2)
             },
@@ -293,7 +293,7 @@ impl MasterFile {
     // Process a line with rr data from a master file
     fn process_line_rr_no_validation(&mut self, line: String) {
         // Gets host name
-        let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
+        let (host_name, line_left_to_process) = self.get_line_host_name(line.clone());
 
         // Process next values
         let mut next_line_items = line_left_to_process.split_whitespace();
@@ -756,7 +756,7 @@ impl MasterFile {
 
         for line_with_comments in lines {
 
-            let mut line = MasterFile::remove_comments(line_with_comments.clone());
+            let line = MasterFile::remove_comments(line_with_comments.clone());
 
             if line == "".to_string() {
                 continue;
@@ -778,7 +778,7 @@ impl MasterFile {
                 words.next();
 
                 let file_name = words.next().unwrap();
-                let mut domain_name = words.next().unwrap_or("");
+                let domain_name = words.next().unwrap_or("");
                 let valid_domain_name = domain_validity_syntax(domain_name.to_string()).unwrap();
                 return self.process_include(file_name.to_string(), valid_domain_name);
             }

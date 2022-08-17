@@ -79,7 +79,7 @@ impl TxtRdata {
     }
 
     pub fn rr_from_master_file(
-        mut values: SplitWhitespace,
+        values: SplitWhitespace,
         ttl: u32,
         class: u16,
         host_name: String,
@@ -90,7 +90,7 @@ impl TxtRdata {
         }
 
         let rd_lenght = text.len();
-        let mut txt_rdata = TxtRdata::new(text);
+        let txt_rdata = TxtRdata::new(text);
 
         let rdata = Rdata::SomeTxtRdata(txt_rdata);
 

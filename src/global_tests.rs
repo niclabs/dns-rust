@@ -1,5 +1,5 @@
 mod global_tests {
-    use crate::message::rdata::a_rdata::ARdata;
+    /*use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
@@ -24,7 +24,7 @@ mod global_tests {
 
     use crate::client::config::CLIENT_IP_PORT;
     use crate::config::NAME_SERVER_IP;
-    use crate::config::RESOLVER_IP_PORT;
+    use crate::config::RESOLVER_IP_PORT;*/
 
     /*
     #[test]

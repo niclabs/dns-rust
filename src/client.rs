@@ -14,7 +14,7 @@ use crate::resolver::Resolver;
 
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
-use std::io::{Read, Write};
+use std::io::{Write};
 use std::net::TcpStream;
 use std::net::UdpSocket;
 use std::time::{Duration, Instant};

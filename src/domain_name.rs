@@ -1,7 +1,8 @@
-use crate::name_server::zone::NSZone;
-
 use std::string::String;
 use std::fmt;
+
+//utils
+use crate::utils::check_label_name;
 
 #[derive(Clone, Default)]
 
@@ -101,7 +102,7 @@ impl DomainName {
                     DomainName::from_bytes_no_offset(&no_domain_bytes[..(first_byte + 1) as usize]);
 
                 // Checks label restrictions
-                let check_label = NSZone::check_label_name(label_string.clone());
+                let check_label = check_label_name(label_string.clone());
 
                 if check_label == false {
                     return Err("Format Error");

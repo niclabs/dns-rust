@@ -2,6 +2,9 @@ use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::name_server::master_file::MasterFile;
 
+//utils
+use crate::utils::check_label_name;
+
 #[derive(Clone)]
 /// Structs that represents data from a zone
 pub struct NSZone {
@@ -181,7 +184,7 @@ impl NSZone {
                     children.remove(index as usize);
                     children.push(child);
                     self.set_children(children);
-                } else if NSZone::check_label_name(label.to_string()) {
+                } else if check_label_name(label.to_string()) {
                     let mut new_ns_zone = NSZone::new();
                     new_ns_zone.set_name(label.to_string());
 
@@ -274,24 +277,6 @@ impl NSZone {
         }
 
         rrs
-    }
-
-    pub fn check_label_name(name: String) -> bool {
-        if name.len() > 63 || name.len() == 0 {
-            return false;
-        }
-
-        for (i, c) in name.chars().enumerate() {
-            if i == 0 && !c.is_ascii_alphabetic() {
-                return false;
-            } else if i == name.len() - 1 && !c.is_ascii_alphanumeric() {
-                return false;
-            } else if !(c.is_ascii_alphanumeric() || c == '-') {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
 

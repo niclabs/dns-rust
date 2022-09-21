@@ -10,13 +10,15 @@ use crate::message::rdata::soa_rdata::SoaRdata;
 use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::resource_record::ResourceRecord;
 //refactor
-use crate::name_server::zone::NSZone;
 use crate::NameServer;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::str::SplitWhitespace;
+
+//utils
+use crate::utils::domain_validity_syntax;
 
 #[derive(Clone)]
 /// Structs that represents data from a master file
@@ -26,29 +28,6 @@ pub struct MasterFile {
     rrs: HashMap<String, Vec<ResourceRecord>>,
     class_default: String,
     ttl_default: u32,
-}
-
-
-// validity checks should be performed insuring that the file is syntactically correct
-fn domain_validity_syntax(domain_name: String)-> Result<String, &'static str> {
-    if domain_name.eq("@") {
-        return Ok(domain_name);
-    }
-    let mut empty_label = false;
-    for label in domain_name.split("."){
-        if empty_label {
-            return Err("Error: Empty label is only allowed at the end os a hostname.")
-        }
-        if label.is_empty() {
-            empty_label = true;
-            continue;
-        }
-        if ! NSZone::check_label_name(label.to_string()) {
-            println!("L: {}", label);
-            return Err("Error: present domain name is not syntactically correct.");
-        }
-    }
-    return Ok(domain_name);
 }
 
 impl MasterFile {

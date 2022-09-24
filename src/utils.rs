@@ -39,9 +39,10 @@ pub fn domain_validity_syntax(domain_name: String)-> Result<String, &'static str
 }
 
 mod test {
-    use crate::utils::check_label_name;
+    use super::check_label_name;
+    use super::domain_validity_syntax;
 
-    // check_label_name tests
+    // check_label_name Tests
     #[test]
     fn check_empty_label_test() {
         assert_eq!(check_label_name(String::from("")), false);
@@ -73,5 +74,30 @@ mod test {
     #[test]
     fn check_valid_label_test() {
         assert_eq!(check_label_name(String::from("label0test")), true);
+    }
+
+    // domain_validity_syntax Tests
+    #[test]
+    fn check_empty_domain_test() {
+        assert_eq!(domain_validity_syntax(String::from("")), Ok(String::from("")));
+        assert_eq!(domain_validity_syntax(String::from("label1..label2")), Err("Error: Empty label is only allowed at the end os a hostname."));
+        assert_eq!(domain_validity_syntax(String::from(".label")), Err("Error: Empty label is only allowed at the end os a hostname."));
+        assert_eq!(domain_validity_syntax(String::from("label1.label2.")), Ok(String::from("label1.label2.")));
+    }
+
+    #[test]
+    fn at_domain_name_validity_test() {
+        assert_eq!(domain_validity_syntax(String::from("@")), Ok(String::from("@")));
+    }
+    
+    #[test]
+    fn syntactically_incorrect_domain_name_test() {
+        assert_eq!(domain_validity_syntax(String::from("label1.2badlabel.test")), Err("Error: present domain name is not syntactically correct."));
+    }
+
+    #[test]
+    fn syntactically_correct_domain_name_test() {
+        assert_eq!(domain_validity_syntax(String::from("label1.label2.test")), Ok(String::from("label1.label2.test")));
+        assert_eq!(domain_validity_syntax(String::from("label1.label2.test.")), Ok(String::from("label1.label2.test.")));
     }
 }

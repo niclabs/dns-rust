@@ -204,14 +204,10 @@ impl MasterFile {
 
        
     fn process_lines_and_validation(&mut self, lines: Vec<String>) -> Result<(), &'static str> {
-        //let mut lines: Vec<String> = lines.clone();
-        //let mut last_line = "".to_string();
         
         let mut prev_rr_class = "".to_string();
 
-        for line_with_comments in lines {
-
-            let line = MasterFile::remove_comments(line_with_comments.clone());
+        for line in lines {
 
             if line == "".to_string() {
                 continue;
@@ -238,6 +234,7 @@ impl MasterFile {
                 return self.process_include(file_name.to_string(), valid_domain_name, true);
             }
 
+            /*
             let contains_non_especial_at_sign = line.contains("\\@");
             
             if contains_non_especial_at_sign == false {
@@ -246,8 +243,19 @@ impl MasterFile {
 
             let new_line = line.replace("\\@", "@");
             let line = new_line.replace("\\", "");
+            */
+            
+            // Replace @ for the origin domain
+            let contains_non_especial_at_sign = line.contains("@");
 
-            let (class, rr_type) = self.process_line_rr(line, true);
+            let mut new_line = line.clone();
+            if contains_non_especial_at_sign {
+                let mut full_origin = self.get_origin();
+                full_origin.push_str(".");
+                new_line = line.replace("@", &full_origin);
+            }
+
+            let (class, rr_type) = self.process_line_rr(new_line, true);
             
             if prev_rr_class == "".to_string(){
                 prev_rr_class = class; 
@@ -345,11 +353,11 @@ impl MasterFile {
             full_host_name.push_str(&origin);
         }
 
+        // remove last "." from hostname 
         else {
-            if !validity {
-                full_host_name.pop();
-            }
+            full_host_name.pop();
         }
+        
 
         let class_int = match class.as_str() {
             "IN" => 1,
@@ -440,41 +448,43 @@ impl MasterFile {
     }
 
     fn replace_special_encoding(mut line: String) -> String {
-
-        let index = match line.find("\\") {
-            Some(val) => val,
-            None => usize::MAX, 
+        
+        let mut ocurrences: Vec<_> = line.match_indices("\\").map(|(i, _)|i).collect();
+        match ocurrences.len() {
+            0 => return line,
+            _ => {}, 
         };
 
-        if index == usize::MAX {
-            return line; 
+        for index in ocurrences {
+
+            let next_char_to_backslash = line.get(index + 1..index + 2).unwrap().to_string();
+
+            /*
+                \DDD where each D is a digit is the octet corresponding to
+                the decimal number described by DDD. The resulting
+                octet is assumed to be text and is not checked for
+                special meaning.
+            */
+            if next_char_to_backslash >= "0".to_string() &&  next_char_to_backslash <= "9".to_string(){
+                let oct_number_str = line.get(index + 1..index + 4).unwrap();
+                let oct_number = oct_number_str.parse::<u32>().unwrap();
+                let dec_str = oct_number.to_string();
+                line.replace_range(index..index+4, &dec_str);
+            }
+
+            /*
+                \X where X is any character other than a digit (0-9), is
+                used to quote that character so that its special meaning
+                does not apply. For example, "\." can be used to place
+                a dot character in a label.
+            */
+            else {
+                let x = next_char_to_backslash.to_string(); 
+                line.replace_range(index..index+2, &x);
+            }
+
         }
 
-        let next_char_to_backslash = line.get(index + 1..index + 2).unwrap().to_string();
-
-        /*
-            \DDD where each D is a digit is the octet corresponding to
-            the decimal number described by DDD. The resulting
-            octet is assumed to be text and is not checked for
-            special meaning.
-        */
-        if next_char_to_backslash >= "0".to_string() &&  next_char_to_backslash <= "9".to_string(){
-            let oct_number_str = line.get(index + 1..index + 4).unwrap();
-            let oct_number = oct_number_str.parse::<u32>().unwrap();
-            let dec_str = oct_number.to_string();
-            line.replace_range(index..index+4, &dec_str);
-        }
-
-        /*
-            \X where X is any character other than a digit (0-9), is
-            used to quote that character so that its special meaning
-            does not apply. For example, "\." can be used to place
-            a dot character in a label.
-        */
-        else {
-            let x = next_char_to_backslash.to_string(); 
-            line.replace_range(index..index+2, &x);
-        }
         return line;
     }
 
@@ -867,8 +877,8 @@ mod test{
         masterFile.set_ttl_default(33);
         masterFile.set_class_default("IN".to_string());
 
-        let (host,rest_line) = masterFile.process_line_rr(line_ns);
-        let (host_default,rest_line_default) = masterFile.process_line_rr(line_ns_default);
+        let (host,rest_line) = masterFile.process_line_rr(line_ns,false);
+        let (host_default,rest_line_default) = masterFile.process_line_rr(line_ns_default,false);
 
         let rrs = masterFile.get_rrs();
         let vec_test2_rr = rrs.get("dcc").unwrap();
@@ -905,10 +915,10 @@ mod test{
         masterFile.set_ttl_default(33);
         masterFile.set_class_default("IN".to_string());
 
-        masterFile.process_line_rr_no_validation(line_ns);
-        masterFile.process_line_rr_no_validation(line_ns_default);
-        masterFile.process_line_rr_no_validation(line_a);
-        masterFile.process_line_rr_no_validation(line_mx);
+        masterFile.process_line_rr_no_validation(line_ns,true);
+        masterFile.process_line_rr_no_validation(line_ns_default,true);
+        masterFile.process_line_rr_no_validation(line_a,true);
+        masterFile.process_line_rr_no_validation(line_mx,true);
 
         let rrs = masterFile.get_rrs();
         let vec_test2_rr = rrs.get("dcc.uchile.cl").unwrap();
@@ -950,7 +960,8 @@ mod test{
             0,
             "IN".to_string(),
             "MX".to_string(),
-            "test2".to_string());
+            "test2".to_string(),
+            true);
         
         //A
         masterFile.process_specific_rr(
@@ -958,7 +969,8 @@ mod test{
             0,
             "IN".to_string(),
             "A".to_string(),
-            "test2".to_string());    
+            "test2".to_string(),
+            true);    
 
         
         //SOA
@@ -967,7 +979,8 @@ mod test{
             0,
             "IN".to_string(),
             "SOA".to_string(),
-            "test2".to_string());
+            "test2".to_string(),
+            true);
 
         //ns
         masterFile.process_specific_rr(
@@ -975,7 +988,8 @@ mod test{
             0,
             "IN".to_string(),
             "NS".to_string(),
-            "test2".to_string());
+            "test2".to_string(),
+            true);
             
         let rrs = masterFile.get_rrs();
         let vec_test2_rr = rrs.get("test2").unwrap();
@@ -1007,12 +1021,13 @@ mod test{
         masterFile.set_origin("uchile.cl".to_string());
         
         //MX
-        masterFile.process_especific_rr_no_validation(
+        masterFile.process_especific_rr(
             values_mx,
             0,
             "IN".to_string(),
             "MX".to_string(),
-            "test2".to_string());
+            "test2".to_string(),
+            false);
         
         //A
         masterFile.process_especific_rr_no_validation(
@@ -1020,7 +1035,8 @@ mod test{
             0,
             "IN".to_string(),
             "A".to_string(),
-            "test2".to_string());    
+            "test2".to_string(),
+            false);    
 
         
         //SOA
@@ -1029,7 +1045,8 @@ mod test{
             0,
             "IN".to_string(),
             "SOA".to_string(),
-            "test2".to_string());
+            "test2".to_string(),
+            false);
 
         //ns
         masterFile.process_especific_rr_no_validation(
@@ -1037,7 +1054,8 @@ mod test{
             0,
             "IN".to_string(),
             "NS".to_string(),
-            "test2".to_string());
+            "test2".to_string(),
+            false);
 
         //process_especific_rr_no_validation create RR and saves it  with full host name
         let rrs = masterFile.get_rrs();
@@ -1064,7 +1082,7 @@ mod test{
 
     
     #[test]
-    fn process_line_and_validation_test(){
+    fn process_lines_and_validation_test(){
         
         let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
         let line_a = "a             A       192.80.24.11".to_string();

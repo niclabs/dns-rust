@@ -1080,10 +1080,10 @@ mod test{
         //let origin_rr = rrs.remove(&origin.clone()).unwrap();
 
         //is not replacing @!!!
-        let vect_1 =rrs.get("@").unwrap(); //no deberia pasar 
+        let vect_1 =rrs.get("uchile.cl").unwrap(); //no deberia pasar 
         //assert_eq!(vect_1.first().unwrap().get_name().get_name(),"uchile.cl");
        
-        let vect_2 = rrs.get("a").unwrap();
+        let vect_2 = rrs.get("a.uchile.cl").unwrap();
 
         let true_rdata = vec!["192.80.24.11","a.uchile.cl"];
 

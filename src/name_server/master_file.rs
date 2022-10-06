@@ -111,7 +111,7 @@ impl MasterFile {
         master_file
     }
 
-  // Process a single line from a master file
+  // Process a single line from a master file or include file 
     fn process_line(&mut self, line: String) {
         // Empty case
         if line == "".to_string() {
@@ -569,51 +569,41 @@ impl MasterFile {
         self.set_rrs(rrs);
     }
 
-    // Processes and included file in the master file. 
+    // Processes an included file in the master file. 
     fn process_include(&mut self, file_name: String, mut domain_name: String, validity: bool){
         
         let mut prev_class = "".to_string();
-
+        // remeber the parent origin, for now the origin used is going to change
+        let parent_origin = self.get_origin();
+        
         if validity{
-            domain_name = domain_validity_syntax(domain_name).unwrap();
+            domain_name = domain_validity_syntax(domain_name.clone()).unwrap();
         }
         
         if domain_name != "" {
-            self.set_last_host(domain_name);
+            self.set_last_host(domain_name.clone());
         }
+
+        // changing origin to relative domain name of the include
+        self.set_origin(domain_name.clone());
 
         let file = File::open(file_name.clone()).expect("file not found!");
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
             let line = line.unwrap();
-
-            if validity {
-                let (class, rr_type) = self.process_line_rr(line, true);
-
-                //Exactly one SOA RR should be present at the top of the zone
-                if prev_class == "".to_string(){
-                    prev_class = class;
-                    if rr_type != "SOA".to_string(){
-                        panic!("No SOA RR is present at the top of the zone in included file {}", file_name.clone()); 
-                    }
-                }
-    
-                else{
-                    // all rr should have same class
-                    if class != prev_class{
-                        panic!("Not all rr have the same class in included file {}", file_name.clone());
-                    }
-                    if rr_type == "SOA".to_string(){
-                        panic!("More than one SOA per zone in included file {}", file_name.clone());
-                    }
-                }
-            }
-
-            else {
-                self.process_line_rr(line, false);
-            }
+            let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
+            self.process_line(line);
         }
+
+        if validity {
+            self.check_glue_delegations();
+            self.check_cname_loop();
+        }
+        
+        //sets the origin of the parent master file
+        self.set_origin(parent_origin);
+        
     }
 
     // Master file: If delegations are present and glue information is required,it should be present.
@@ -1174,6 +1164,20 @@ mod test{
 
             }
         }
+
+    #[test]
+    fn check_glue_delegations_test(){
+        let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
+        let line_glue = "ns.uchiel.cl A 111.222.333.444".to_string();
+
+        let mut master_file = Master::new("uchile.cl".to_string());
+
+        let vect_lines = vec![line_ns];
+        //case 1: we have RR NS without the glue RR
+        Master_file.process_lines_and_validation(vec_lines);
+    }
+
+    
         
    
     

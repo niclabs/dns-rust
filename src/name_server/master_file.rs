@@ -971,7 +971,7 @@ mod test{
             true);
             
         let rrs = masterFile.get_rrs();
-        let vec_test2_rr = rrs.get("test2").unwrap();
+        let vec_test2_rr = rrs.get("test2.uchile.cl").unwrap();
 
         let vect_true_val = vec![(15,1),(1,1),(6,1),(2,1)];
         let mut i = 0 ;

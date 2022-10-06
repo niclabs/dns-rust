@@ -1077,10 +1077,7 @@ mod test{
         let  rrs = master_file.get_rrs();
         assert_eq!(rrs.len(),2);
 
-        //let origin_rr = rrs.remove(&origin.clone()).unwrap();
-
-        //is not replacing @!!!
-        let vect_1 =rrs.get("uchile.cl").unwrap(); //no deberia pasar 
+        let vect_1 =rrs.get("uchile.cl").unwrap(); 
         //assert_eq!(vect_1.first().unwrap().get_name().get_name(),"uchile.cl");
        
         let vect_2 = rrs.get("a.uchile.cl").unwrap();
@@ -1164,9 +1161,10 @@ mod test{
 
             }
         }
+    }
 
     #[test]
-    #[should_panic]
+    #[should_panic (expected = "Information outside authoritative node in the zone is not glue information.")]
     fn check_glue_delegations_test_fail(){
         let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
 
@@ -1177,8 +1175,10 @@ mod test{
         master_file.process_lines_and_validation(vec_lines);
 
         master_file.check_glue_delegations();
+           
 
     }
+    
     #[test]
     fn check_glue_delegations_test(){
         let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
@@ -1194,9 +1194,4 @@ mod test{
 
     }
 
-    
-        
-   
-    
-    }
 }

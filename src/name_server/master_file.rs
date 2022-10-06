@@ -894,10 +894,10 @@ mod test{
         masterFile.set_ttl_default(33);
         masterFile.set_class_default("IN".to_string());
 
-        masterFile.process_line_rr_no_validation(line_ns,true);
-        masterFile.process_line_rr_no_validation(line_ns_default,true);
-        masterFile.process_line_rr_no_validation(line_a,true);
-        masterFile.process_line_rr_no_validation(line_mx,true);
+        masterFile.process_line_rr(line_ns,false);
+        masterFile.process_line_rr(line_ns_default,false);
+        masterFile.process_line_rr(line_a, false);
+        masterFile.process_line_rr(line_mx,false);
 
         let rrs = masterFile.get_rrs();
         let vec_test2_rr = rrs.get("dcc.uchile.cl").unwrap();
@@ -1000,7 +1000,7 @@ mod test{
         masterFile.set_origin("uchile.cl".to_string());
         
         //MX
-        masterFile.process_especific_rr(
+        masterFile.process_specific_rr(
             values_mx,
             0,
             "IN".to_string(),
@@ -1009,7 +1009,7 @@ mod test{
             false);
         
         //A
-        masterFile.process_especific_rr_no_validation(
+        masterFile.process_specific_rr(
             values_a,
             0,
             "IN".to_string(),
@@ -1019,7 +1019,7 @@ mod test{
 
         
         //SOA
-        masterFile.process_especific_rr_no_validation(
+        masterFile.process_specific_rr(
             values_soa,
             0,
             "IN".to_string(),
@@ -1028,7 +1028,7 @@ mod test{
             false);
 
         //ns
-        masterFile.process_especific_rr_no_validation(
+        masterFile.process_specific_rr(
             values_ns,
             0,
             "IN".to_string(),
@@ -1166,15 +1166,33 @@ mod test{
         }
 
     #[test]
+    #[should_panic]
+    fn check_glue_delegations_test_fail(){
+        let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
+
+        let mut master_file = MasterFile::new("uchile.cl".to_string());
+
+        let vec_lines = vec![line_ns];
+        //case 1: we have RR NS without the glue RR
+        master_file.process_lines_and_validation(vec_lines);
+
+        master_file.check_glue_delegations();
+
+    }
+    #[test]
+    #[should_panic]
     fn check_glue_delegations_test(){
         let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
         let line_glue = "ns.uchiel.cl A 111.222.333.444".to_string();
 
-        let mut master_file = Master::new("uchile.cl".to_string());
+        let mut master_file = MasterFile::new("uchile.cl".to_string());
 
-        let vect_lines = vec![line_ns];
+        let vec_lines = vec![line_ns,line_glue];
         //case 1: we have RR NS without the glue RR
-        Master_file.process_lines_and_validation(vec_lines);
+        master_file.process_lines_and_validation(vec_lines);
+
+        master_file.check_glue_delegations();
+
     }
 
     

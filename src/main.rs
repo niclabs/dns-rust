@@ -7,6 +7,7 @@ pub mod message;
 pub mod name_server;
 pub mod resolver;
 pub mod rr_cache;
+pub mod utils;
 
 use crate::name_server::NameServer;
 use crate::resolver::slist::Slist;

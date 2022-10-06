@@ -91,15 +91,18 @@ impl MasterFile {
         }
 
         if validation {
+            println!("Creating new Masterfile with validation.");
+            println!("Starting validation...");
             master_file.process_lines_and_validation(lines);
             // validate presence of glue records when necessary
             master_file.check_glue_delegations();
             // look for cname loops 
             master_file.check_cname_loop();
-            println!("Masterfile validated correctly.")
+            println!("Masterfile validated correctly.");
         }
 
         else {
+            println!("Creating new Masterfile with no validation.");
             for line in lines {
                 master_file.process_line(line);
             }

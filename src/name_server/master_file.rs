@@ -856,11 +856,11 @@ mod test{
         masterFile.set_ttl_default(33);
         masterFile.set_class_default("IN".to_string());
 
-        let (host,rest_line) = masterFile.process_line_rr(line_ns,false);
-        let (host_default,rest_line_default) = masterFile.process_line_rr(line_ns_default,false);
+        let (host,rest_line) = masterFile.process_line_rr(line_ns,true);
+        let (host_default,rest_line_default) = masterFile.process_line_rr(line_ns_default,true);
 
         let rrs = masterFile.get_rrs();
-        let vec_test2_rr = rrs.get("dcc").unwrap();
+        let vec_test2_rr = rrs.get("dcc.uchile.cl").unwrap();
 
         for rr in vec_test2_rr.iter() {
             let type_rr = rr.get_type_code();
@@ -1180,7 +1180,6 @@ mod test{
 
     }
     #[test]
-    #[should_panic]
     fn check_glue_delegations_test(){
         let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
         let line_glue = "ns.uchiel.cl A 111.222.333.444".to_string();

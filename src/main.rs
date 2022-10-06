@@ -35,7 +35,7 @@ pub fn main() {
 
     if trim_input_line == "MF" {
         for master_file in MASTER_FILES {
-            let _validated_mf = MasterFile::from_file_with_validation(master_file.to_string());
+            let _validated_mf = MasterFile::from_file(master_file.to_string(), true);
         }
         println!("All Master Files validated successfully.");
     }

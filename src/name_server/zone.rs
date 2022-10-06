@@ -36,12 +36,7 @@ impl NSZone {
 
     pub fn from_file(file_name: String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
         let master_file_parsed;
-        if validity_check {
-            master_file_parsed = MasterFile::from_file_with_validation(file_name);
-        }
-        else {
-            master_file_parsed = MasterFile::from_file_no_validation(file_name);
-        }
+        master_file_parsed = MasterFile::from_file(file_name, validity_check);
         let origin = master_file_parsed.get_origin();
         let mut rrs = master_file_parsed.get_rrs();
 

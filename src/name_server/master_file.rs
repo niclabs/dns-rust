@@ -96,6 +96,7 @@ impl MasterFile {
             master_file.check_glue_delegations();
             // look for cname loops 
             master_file.check_cname_loop();
+            println!("Masterfile validated correctly.")
         }
 
         else {
@@ -107,7 +108,7 @@ impl MasterFile {
         master_file
     }
 
-  /// Process a line from a master file
+  // Process a single line from a master file
     fn process_line(&mut self, line: String) {
         // Empty case
         if line == "".to_string() {
@@ -202,8 +203,15 @@ impl MasterFile {
         return (this_class, this_type);
     }
 
-       
-    fn process_lines_and_validation(&mut self, lines: Vec<String>) -> Result<(), &'static str> {
+    /*  Checks all the lines in the masterfile.    
+        Looks for $ORIGIN control entries, changing the current origin for relative
+        domain names to the stated name.
+        Looks for $INCLUDE control entries, inserting the named file into
+        the current file.
+        Ensures there is only one SOA rr, and that it is the first rr in the masterfile.
+        Ensures the remaining rr in the masterfile belongs to the same class (not SOA).
+    */
+    fn process_lines_and_validation(&mut self, lines: Vec<String>){
         
         let mut prev_rr_class = "".to_string();
 
@@ -233,19 +241,7 @@ impl MasterFile {
                 let valid_domain_name = domain_validity_syntax(domain_name.to_string()).unwrap();
                 return self.process_include(file_name.to_string(), valid_domain_name, true);
             }
-
-            /*
-            let contains_non_especial_at_sign = line.contains("\\@");
             
-            if contains_non_especial_at_sign == false {
-                let new_line = line.replace("@", &self.get_origin());
-            }
-
-            let new_line = line.replace("\\@", "@");
-            let line = new_line.replace("\\", "");
-            */
-            
-            // Replace @ for the origin domain
             let contains_non_especial_at_sign = line.contains("@");
 
             let mut new_line = line.clone();
@@ -260,19 +256,18 @@ impl MasterFile {
             if prev_rr_class == "".to_string(){
                 prev_rr_class = class; 
                 if rr_type != "SOA".to_string(){
-                    return Err("Error: no SOA RR is present at the top of the zone.");
+                    panic!("No SOA RR is present at the top of the zone.");
                 }
             }
             else{
                 if class != prev_rr_class{
-                    return Err("Error: not all rr have the same class.");
+                    panic!("Not all rr have the same class.");
                 }
                 if rr_type == "SOA".to_string(){
-                    return Err("Error: more than one SOA per zone.");
+                    panic!("More than one SOA per zone.");
                 }
             }   
         }
-        return Ok(());
     }
 
     // detect cname loops of type 1->2->1:
@@ -280,7 +275,7 @@ impl MasterFile {
         alias1.example.org. 3600 CNAME alias2.example.org.
         alias2.example.org. 3600 CNAME alias1.example.org.
     */
-    fn check_cname_loop(&self) -> Result<(), &'static str> {
+    fn check_cname_loop(&self){
         
         let rrs = self.get_rrs();
         let mut cname_rrs = HashMap::<String, Vec<ResourceRecord>>::new();
@@ -310,7 +305,7 @@ impl MasterFile {
                     match val[0].get_rdata() {
                         Rdata::SomeCnameRdata(crr) => { 
                             if crr.get_cname().get_name().to_string() == alias.to_string() {
-                                return Err("Error: CNAME loop detected!"); 
+                                panic!("CNAME loop detected!"); 
                             }
                             continue;
                         }
@@ -324,7 +319,6 @@ impl MasterFile {
                 }
             }; 
         }
-        return Ok(());
     }
     
     /// Process an specific type of RR
@@ -431,7 +425,7 @@ impl MasterFile {
         self.add_rr(full_host_name, resource_record);
     }
 
-    /// Removes the comments from a line in a master file
+    // Removes the comments from a line in a master file
     fn remove_comments(mut line: String) -> String {
         let index = line.find(";");
 
@@ -447,6 +441,7 @@ impl MasterFile {
         return line;
     }
 
+    // Removes the "\" that precedes specific chars that are special encoding
     fn replace_special_encoding(mut line: String) -> String {
         
         let mut ocurrences: Vec<_> = line.match_indices("\\").map(|(i, _)|i).collect();
@@ -571,7 +566,8 @@ impl MasterFile {
         self.set_rrs(rrs);
     }
 
-    fn process_include(&mut self, file_name: String, mut domain_name: String, validity: bool) -> Result<(), &'static str> {
+    // Processes and included file in the master file. 
+    fn process_include(&mut self, file_name: String, mut domain_name: String, validity: bool){
         
         let mut prev_class = "".to_string();
 
@@ -583,7 +579,7 @@ impl MasterFile {
             self.set_last_host(domain_name);
         }
 
-        let file = File::open(file_name).expect("file not found!");
+        let file = File::open(file_name.clone()).expect("file not found!");
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
@@ -592,19 +588,21 @@ impl MasterFile {
             if validity {
                 let (class, rr_type) = self.process_line_rr(line, true);
 
+                //Exactly one SOA RR should be present at the top of the zone
                 if prev_class == "".to_string(){
                     prev_class = class;
                     if rr_type != "SOA".to_string(){
-                        return Err("Error: no SOA RR is present at the top of the zone."); 
+                        panic!("No SOA RR is present at the top of the zone in included file {}", file_name.clone()); 
                     }
                 }
     
                 else{
+                    // all rr should have same class
                     if class != prev_class{
-                        return Err("Error: not all rr have the same class.");
+                        panic!("Not all rr have the same class in included file {}", file_name.clone());
                     }
                     if rr_type == "SOA".to_string(){
-                        return Err("Error: more than one SOA per zone.");
+                        panic!("More than one SOA per zone in included file {}", file_name.clone());
                     }
                 }
             }
@@ -613,21 +611,10 @@ impl MasterFile {
                 self.process_line_rr(line, false);
             }
         }
-
-        return Ok(());
     }
-        //all rr should have same class
-        //Exactly one SOA RR should be present at the top of the zone
-        //If delegations are present and glue information is required,it should be present.
-        /*
-        Information present outside of the authoritative nodes in the
-        zone should be glue information, rather than the result of an
-        origin or similar error.
-        */
-    //------------------
 
     // Master file: If delegations are present and glue information is required,it should be present.
-    fn check_glue_delegations(&self) -> Result<(), &'static str> {
+    fn check_glue_delegations(&self) {
         
         let origin = self.get_origin();
         let rrs = self.get_rrs();
@@ -662,11 +649,11 @@ impl MasterFile {
                         Some(ns_rrs) => {
                             let a_rr_glue = NameServer::look_for_type_records(ns_slice.to_string(), ns_rrs.to_vec(), 1);
                             if a_rr_glue.len() == 0 {
-                                return Err("Error: Information outside authoritative node in the zone is not glue information.");
+                                panic!("Information outside authoritative node in the zone is not glue information.");
                             }
                         },
                         None => {
-                            return Err("Error: Information outside authoritative node in the zone is not glue information.");
+                            panic!("Information outside authoritative node in the zone is not glue information.");
                         },
                     }
                     continue; 
@@ -674,7 +661,6 @@ impl MasterFile {
                 ns_labels.remove(0);
             }
         }
-        return Ok(()); 
     }
 }
 
@@ -1185,6 +1171,7 @@ mod test{
 
             }
         }
+        
    
     
     }

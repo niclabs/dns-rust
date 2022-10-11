@@ -266,6 +266,7 @@ impl MasterFile {
                 if class != prev_rr_class{
                     panic!("Not all rr have the same class.");
                 }
+                
                 if rr_type == "SOA".to_string(){
                     panic!("More than one SOA per zone.");
                 }
@@ -608,7 +609,6 @@ impl MasterFile {
 
     // Master file: If delegations are present and glue information is required,it should be present.
     fn check_glue_delegations(&self) {
-        
         let origin = self.get_origin();
         let rrs = self.get_rrs();
 
@@ -623,6 +623,7 @@ impl MasterFile {
                 Vec::<ResourceRecord>::new()
             },
         };
+
 
         for ns in origin_ns_rr {
 
@@ -1062,13 +1063,24 @@ mod test{
     
     #[test]
     fn process_lines_and_validation_test(){
-        
-        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
+
+        //basic line
         let line_a = "a             A       192.80.24.11".to_string();
+        
+        //at line
+        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
+        
+        //without host line
         let line_no_host = " NS  a".to_string();
-        //not let line_no_host = " NS  a.uchile.cl".to_string();
+        
+        //subzone line
+        let line_sub_zone = "a.b     A       111.222.333.444".to_string();
+
+        //* line
+        let line_special = "*.dcc    A       111.222.333.555".to_string();
 
         let vec_lines = vec![line_soa,line_a,line_no_host];
+        //let vec_lines = vec![line_soa,line_a,line_no_host,line_sub_zone,];
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
         
@@ -1091,7 +1103,7 @@ mod test{
                 Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
                 _=>"none".to_string(),
             };
-            println!("***{}",rdata);
+            //println!("***{}",rdata);
             assert_eq!(rdata, true_rdata[i]);
             i +=1;
         }
@@ -1112,12 +1124,20 @@ mod test{
         let at_line_case2 = "www   IN   MX 20  @".to_string();
         //let at_line_case3 = "@   IN   CNAME   @.dom".to_string();
 
+        //subzone line
+        let line_sub_zone = "a.b     A       111.222.333.444".to_string();
+
+        //* line
+        let line_special = "*.dcc    A       111.222.333.555".to_string();
+
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
         master_file.process_line(line_normal);
         master_file.process_line(line_whithout_host);
         master_file.process_line(at_line_case1);
         master_file.process_line(at_line_case2);
+        //master_file.process_line(line_sub_zone); 
+        //master_file.process_line(line_special); 
 
 
         let mut rrs = master_file.get_rrs();
@@ -1166,32 +1186,39 @@ mod test{
     #[test]
     #[should_panic (expected = "Information outside authoritative node in the zone is not glue information.")]
     fn check_glue_delegations_test_fail(){
-        let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
-
+        
+        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
+        let line_ns = "@  NS ns".to_string();
+        let vec_lines = vec![line_soa,line_ns];
+        
         let mut master_file = MasterFile::new("uchile.cl".to_string());
-
-        let vec_lines = vec![line_ns];
-        //case 1: we have RR NS without the glue RR
+                
         master_file.process_lines_and_validation(vec_lines);
 
-        master_file.check_glue_delegations();
-           
-
+        let rrs = master_file.get_rrs();
+        /*
+        for keys in rrs.keys() {
+            println!("nombre de host -> {}", keys);
+        } */
+       master_file.check_glue_delegations(); 
     }
     
     #[test]
     fn check_glue_delegations_test(){
-        let line_ns = "uchile.cl  NS ns.uchile.cl".to_string();
-        let line_glue = "ns.uchiel.cl A 111.222.333.444".to_string();
-
+        //QUEDA EN UN LOOP INFINITO 
+        
+        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
+        let line_ns = "@  NS ns".to_string(); //doest acept if is -> "uchile.cl  NS ns"
+        let line_a = "ns  A  192.80.24.11".to_string();
+        
+        let vec_lines = vec![line_soa,line_ns,line_a];
+        
         let mut master_file = MasterFile::new("uchile.cl".to_string());
-
-        let vec_lines = vec![line_ns,line_glue];
-        //case 1: we have RR NS without the glue RR
+                
         master_file.process_lines_and_validation(vec_lines);
 
-        master_file.check_glue_delegations();
-
+        let rrs = master_file.get_rrs();
+        master_file.check_glue_delegations();    
     }
 
 }

@@ -2019,6 +2019,7 @@ impl ResolverQuery {
     }
 }
 
+#[cfg(test)]
 mod resolver_query_tests {
     use crate::dns_cache::DnsCache;
     use crate::domain_name::DomainName;

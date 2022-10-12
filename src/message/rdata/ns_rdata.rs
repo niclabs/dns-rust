@@ -121,7 +121,8 @@ impl NsRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod ns_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

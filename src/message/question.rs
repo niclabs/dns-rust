@@ -162,8 +162,8 @@ impl Question {
     }
 }
 
-// Tests
-mod test {
+#[cfg(test)]
+mod question_test {
     use super::Question;
     use crate::domain_name::DomainName;
 

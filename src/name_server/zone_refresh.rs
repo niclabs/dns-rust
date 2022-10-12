@@ -159,7 +159,8 @@ impl ZoneRefresh {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod zone_refresh_test {
     
     use super::ZoneRefresh;
     use crate::message::rdata::soa_rdata::SoaRdata;

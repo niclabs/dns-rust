@@ -1178,7 +1178,8 @@ impl Resolver {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod resolver_test {
     use crate::dns_cache::DnsCache;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;

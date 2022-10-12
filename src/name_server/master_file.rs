@@ -713,7 +713,8 @@ impl MasterFile {
     }
 }
 
-mod test{
+#[cfg(test)]
+mod master_file_test{
     use std::collections::btree_map::Iter;
 
     use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata}, resource_record::ResourceRecord};

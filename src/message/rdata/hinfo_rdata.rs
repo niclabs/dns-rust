@@ -149,7 +149,8 @@ impl HinfoRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod hinfo_rdata_test {
     use crate::message::rdata::hinfo_rdata::HinfoRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 

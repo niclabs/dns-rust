@@ -649,8 +649,7 @@ impl MasterFile {
                         None => {
                             panic!("Information outside authoritative node in the zone is not glue information.");
                         },
-                    }
-                    continue; 
+                    } 
                 }
                 ns_labels.remove(0);
             }

@@ -29,7 +29,7 @@ pub fn main() {
     println!("Rustlang library for DNS");
     println!("Name server compatible with RFC 1034 and RFC 1035 only.");
     println!("To only check the validity of a Master file, enter MF.");
-    println!("For other services, enter program to run [C/R/N/NR]: ");
+    println!("For other services, enter program to run: \n[C] Client\n[R] Resolver\n[N] Nameserver\n[NR] Nameserver and Resolver");
     std::io::stdin().read_line(&mut input_line).unwrap();
 
     let trim_input_line = input_line.trim();

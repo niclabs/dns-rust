@@ -1204,7 +1204,6 @@ mod test{
     
     #[test]
     fn check_glue_delegations_test(){
-        //QUEDA EN UN LOOP INFINITO 
         
         let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
         let line_ns = "@  NS ns".to_string(); //doest acept if is -> "uchile.cl  NS ns"

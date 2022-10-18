@@ -131,9 +131,9 @@ impl MasterFile {
 
         //Include case
         if line.contains("$INCLUDE") {
-            let mut words = line.split_whitespace();
+            let line_without_coment = MasterFile::remove_comments(line);
+            let mut words = line_without_coment.split_whitespace();
             words.next();
-
             let file_name = words.next().unwrap();
             let domain_name = words.next().unwrap_or("");
             self.process_include(file_name.to_string(), domain_name.to_string(), false);
@@ -582,18 +582,21 @@ impl MasterFile {
         
         if domain_name != "" {
             self.set_last_host(domain_name.clone());
+            // changing origin to relative domain name of the include
+            self.set_origin(domain_name.clone());
         }
 
-        // changing origin to relative domain name of the include
-        self.set_origin(domain_name.clone());
+        
 
         let file = File::open(file_name.clone()).expect("file not found!");
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
+                        
             let line = line.unwrap();
             let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
-            self.process_line(line);
+            self.process_line(line_without_comments);
+            
         }
 
         if validity {
@@ -1313,6 +1316,25 @@ mod master_file_test{
         master_file.process_line(line3);
 
         master_file.check_cname_loop();
+    }
+
+    #[test]
+    fn include_test(){
+        let line = "@ A 12 IN A 192.168.55.12".to_string();
+        let line_include = "$INCLUDE include.txt ;comment".to_string();
+        //                         "$INCLUDE include.txt examaple.com"  work the same way 
+    
+        let mut master_file = MasterFile::new("uchile.cl".to_string());
+        master_file.process_line(line);
+        master_file.process_line(line_include);
+
+        let rrs = master_file.get_rrs();
+        let vect_origin_include_rr = rrs.get("example.com").unwrap();
+        let vect_origin_rr = rrs.get("uchile.cl").unwrap();
+
+        assert_eq!(rrs.len(),7);
+        assert_eq!(vect_origin_include_rr.len(),3);
+        assert_eq!(vect_origin_rr.len(),1);
 
     }
 

@@ -156,10 +156,31 @@ impl MasterFile {
 
     fn process_line_rr(&mut self, line: String, validity: bool) -> (String, String) {
         // Gets host name
+        
         let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
         
+        
         if validity {
-            host_name = domain_validity_syntax(host_name).unwrap();
+            
+
+            match host_name.split_once('.') {
+                Some((firs_label, rest_hostname)) => {
+                    if firs_label.to_string() == "*" {
+                        let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
+                        host_name = firs_label.to_owned() + "." + &rest_domainame ;
+                    }else{
+                        host_name = domain_validity_syntax(host_name).unwrap();
+                    }
+                }
+                _ => {
+                    if host_name.to_string() != "*" {
+                        host_name = domain_validity_syntax(host_name).unwrap();
+                    }
+                }
+                
+            }
+            
+            
         }
         // Process next values
         let mut next_line_items = line_left_to_process.split_whitespace();
@@ -203,7 +224,9 @@ impl MasterFile {
         }
         let (this_class, this_type) = (class.to_string(), rr_type.to_string());
         self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name, validity);
+        
         return (this_class, this_type);
+    
     }
 
     /*  Checks all the lines in the masterfile.    
@@ -215,6 +238,7 @@ impl MasterFile {
         Ensures the remaining rr in the masterfile belongs to the same class (not SOA).
     */
     fn process_lines_and_validation(&mut self, lines: Vec<String>){
+        
         
         let mut prev_rr_class = "".to_string();
 
@@ -253,14 +277,16 @@ impl MasterFile {
                 full_origin.push_str(".");
                 new_line = line.replace("@", &full_origin);
             }
-
-            let (class, rr_type) = self.process_line_rr(new_line, true);
             
+            let (class, rr_type) = self.process_line_rr(new_line, true);
+        
             if prev_rr_class == "".to_string(){
                 prev_rr_class = class; 
                 if rr_type != "SOA".to_string(){
+                    
                     panic!("No SOA RR is present at the top of the zone.");
                 }
+                
             }
             else{
                 if class != prev_rr_class{
@@ -336,13 +362,29 @@ impl MasterFile {
         validity: bool,
     ) {
 
+        
+
+
         let mut origin = self.get_origin();
         let mut full_host_name = host_name.clone();
 
         if validity{
-            origin = domain_validity_syntax(self.get_origin()).unwrap();
-            let valid_host_name = domain_validity_syntax(host_name.clone()).unwrap();
-            full_host_name = valid_host_name.clone();
+            match full_host_name.split_once('.') {
+                Some((firs_label, rest_hostname)) => {
+                    if firs_label.to_string() == "*" {
+                        let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
+                        full_host_name = firs_label.to_owned() + &rest_domainame ;
+                    }else{
+                        full_host_name = domain_validity_syntax(full_host_name).unwrap();
+                    }
+                }
+                _ => {
+                    if host_name.to_string() != "*" {
+                        full_host_name = domain_validity_syntax(full_host_name).unwrap();
+                    }
+                }
+            }
+            full_host_name = host_name.clone();
         }
         
 
@@ -354,6 +396,7 @@ impl MasterFile {
         else {
             full_host_name.pop();
         }
+
         
 
         let class_int = match class.as_str() {
@@ -363,6 +406,7 @@ impl MasterFile {
             "HS" => 4,
             _ => unreachable!(),
         };
+
 
         let resource_record = match rr_type.as_str() {
             "A" => {
@@ -503,8 +547,24 @@ impl MasterFile {
             line_left_to_process = line.get(line.find(" ").unwrap()..).unwrap().to_string();
         }
 
-        let valid_host_name = domain_validity_syntax(host_name).unwrap();
-        return (valid_host_name, line_left_to_process);
+        match host_name.split_once('.') {
+            Some((firs_label, rest_hostname)) => {
+                if firs_label.to_string() == "*" {
+                    let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
+                    host_name = firs_label.to_owned() +"."+ &rest_domainame ;
+                }else{
+                    host_name = domain_validity_syntax(host_name).unwrap();
+                }
+            }
+            _ => {
+                if host_name.to_string() != "*" {
+                    host_name = domain_validity_syntax(host_name).unwrap();
+                }
+            }
+        }
+        
+
+        return (host_name, line_left_to_process);
     }
 
     // Returns whether the type is class, rr_type or ttl
@@ -529,6 +589,7 @@ impl MasterFile {
 
     /// Adds a new rr to the master file parsings
     fn add_rr(&mut self, host_name: String, resource_record: ResourceRecord) {
+        
         let mut rrs = self.get_rrs();
         
         let mut rrs_vec = Vec::<ResourceRecord>::new();
@@ -722,6 +783,8 @@ mod master_file_test{
     use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}, resource_record::ResourceRecord};
 
     use super::MasterFile;
+    //utils
+    use crate::utils::domain_validity_syntax;
 
     #[test]
     fn remove_comments_test(){
@@ -763,6 +826,7 @@ mod master_file_test{
         let line_5 = "  A   192.168.1.1".to_string(); 
         let line_6 = "a.b A 192.168.23.2".to_string();              //subdomin in a zone
         let line_7 = "*.b A 192.168.44.6".to_string();              //wildcard
+        let line_8 = "*   A 192.168.44.6".to_string();              //wildcard
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
         master_file.set_last_host("test.uchile.cl".to_string());
@@ -773,16 +837,20 @@ mod master_file_test{
         let case4 = master_file.get_line_host_name(line_4) ;
         let case5 = master_file.get_line_host_name(line_5);
         let case6 = master_file.get_line_host_name(line_6);
-        //let case7 = master_file.get_line_host_name(line_7);
+        let case7 = master_file.get_line_host_name(line_7);
+    
+        let case8 = master_file.get_line_host_name(line_8);
         
         
-        
+       
         assert_eq!(case1.0, "test.uchile.cl".to_string());
         assert_eq!(case2.0,"a".to_string() );
         assert_eq!(case3.0, "a".to_string());
         assert_eq!(case4.0, "b.uchile.cl".to_string());
         assert_eq!(case5.0, "b.uchile.cl".to_string());
         assert_eq!(case6.0, "a.b".to_string());
+        assert_eq!(case7.0, "*.b".to_string());
+        assert_eq!(case8.0, "*".to_string());
  
     }
 
@@ -887,18 +955,20 @@ mod master_file_test{
     fn process_line_rr_test(){
         //gets ttl, clas, type 
         let line_ns = "dcc 33 IN NS ns".to_string();
+        let line_ns_full_host = "dcc.uchile.cl. 33 IN NS ns".to_string();
         let line_ns_default = " NS ns2".to_string();
-        let line_ns_subdomain ="a.b A  111.222.111.222".to_string();
+        let line_a_subdomain ="a.b A  192.168.21.2".to_string();
+        let line_a_wildcard ="*.b A  192.168.222.44".to_string();
+        
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.set_last_host("test".to_string());
-        master_file.set_origin("uchile.cl".to_string());
         master_file.set_ttl_default(33);
         master_file.set_class_default("IN".to_string());
 
         let (host_ns,rest_line_ns) = master_file.process_line_rr(line_ns,true);
         let (host_default,rest_line_default) = master_file.process_line_rr(line_ns_default,true);
-        let (host,rest_line) = master_file.process_line_rr(line_ns_subdomain,true);
+        let (host,rest_line) = master_file.process_line_rr(line_a_subdomain,true);
+        //let m = master_file.process_line_rr(line_a_wildcard,true);
         
 
         let rrs = master_file.get_rrs();
@@ -931,7 +1001,7 @@ mod master_file_test{
             assert_eq!(name_rr,"a.b.uchile.cl".to_string());
             
         }
-        
+         
 
          
 
@@ -962,7 +1032,13 @@ mod master_file_test{
         let rrs = master_file.get_rrs();
         let vec_test2_rr = rrs.get("dcc.uchile.cl").unwrap();
 
-        let true_val = vec![(2,1,33),(2,1,33),(1,1,33),(15,1,24)];
+        let true_val = vec![
+        //  type class ttl
+            (2,   1,  33), //  -> NS, IN, TTL
+            (2,   1,  33), //  -> NS, IN, TTL
+            (1,   1,  33), //  -> A , IN, TTL
+            (15,  1,  24)  //  -> MX, IN, TTL
+        ];
         let mut i =0;
         for rr in vec_test2_rr.iter() {
             let type_rr = rr.get_type_code();
@@ -999,7 +1075,7 @@ mod master_file_test{
             0,
             "IN".to_string(),
             "MX".to_string(),
-            "a.b".to_string(),
+            "test.uchile.cl.".to_string(),
             true);
         
         //A
@@ -1008,7 +1084,7 @@ mod master_file_test{
             0,
             "IN".to_string(),
             "A".to_string(),
-            "a.b".to_string(),
+            "test".to_string(),
             true);    
 
         
@@ -1018,7 +1094,7 @@ mod master_file_test{
             0,
             "IN".to_string(),
             "SOA".to_string(),
-            "a.b".to_string(),
+            "test.uchile.cl.".to_string(),
             true);
 
         //ns
@@ -1027,11 +1103,11 @@ mod master_file_test{
             0,
             "IN".to_string(),
             "NS".to_string(),
-            "a.b".to_string(),
+            "test".to_string(),
             true);
         
         let rrs = master_file.get_rrs();
-        let vec_test_rr = rrs.get("a.b.uchile.cl").unwrap();
+        let vec_test_rr = rrs.get("test.uchile.cl").unwrap();
         
         let vect_true_val = vec![
             (15,1), // - > MX  , IN
@@ -1055,6 +1131,7 @@ mod master_file_test{
 
     #[test]
     fn process_especific_rr_no_validation_test(){
+        //pueden recibir hosts uchile.cl.  algo.uchile.cl. 
         //identifies class, type create RR
         let values_soa = "VENERA      Action.domains	20	7200	600	3600000	60".split_whitespace();
         let values_mx = "20      VAXA".split_whitespace();
@@ -1070,7 +1147,7 @@ mod master_file_test{
             0,
             "IN".to_string(),
             "MX".to_string(),
-            "test".to_string(),
+            "test.uchile.cl.".to_string(),
             false);
         
         //A
@@ -1089,7 +1166,7 @@ mod master_file_test{
             0,
             "IN".to_string(),
             "SOA".to_string(),
-            "test".to_string(),
+            "test.uchile.cl.".to_string(),
             false);
 
         //ns
@@ -1135,57 +1212,72 @@ mod master_file_test{
     #[test]
     fn process_lines_and_validation_test(){
 
-        //basic line
-        let line_a = "a             A       192.80.24.11".to_string();
-        
-        //at line
-        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
-        
-        //without host line
-        let line_no_host = " NS  a".to_string();
-        
-        //subzone line
-        let line_subdomain = "a.b     A       111.222.333.444".to_string();
+        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();  //at line
+        let line_a = "a             A       192.80.24.11".to_string();                          //basic line        
+        let line_no_host = " NS  a".to_string();                                                //without host line
+        let line_subdomain = "a.b     A       192.168.2.134".to_string();                       //subzone line        
+        let line_wildcard1 = "*.dcc    A       192.168.2.3".to_string();                          //* line
+        let line_wildcard2 = "*.dcc.uchile.cl.    A       192.168.2.1".to_string();                     
 
-        //* line
-        let line_special = "*.dcc    A       111.222.333.555".to_string();
-
-        let vec_lines = vec![line_soa,line_a,line_no_host];
-        //let vec_lines = vec![line_soa,line_a,line_no_host,line_sub_zone,];
+        //let vec_lines = vec![line_soa,line_a,line_no_host];
+        let vec_lines = vec![line_soa,line_a,line_no_host,line_subdomain,line_wildcard1,line_wildcard2];
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
         
         master_file.process_lines_and_validation(vec_lines);
 
         let  rrs = master_file.get_rrs();
-        assert_eq!(rrs.len(),2);
-
-        let vect_1 =rrs.get("uchile.cl").unwrap(); 
-        //assert_eq!(vect_1.first().unwrap().get_name().get_name(),"uchile.cl");
-       
+        
+        assert_eq!(rrs.len(),4);
+        
+        let vect_1 =rrs.get("uchile.cl").unwrap();   
+        assert_eq!(vect_1.len(),1);     
         let vect_2 = rrs.get("a.uchile.cl").unwrap();
+        assert_eq!(vect_2.len(),2);
+        let vect_3 = rrs.get("*.dcc.uchile.cl").unwrap();
+        assert_eq!(vect_2.len(),2);
 
-        let true_rdata = vec!["192.80.24.11","a.uchile.cl"];
 
-        let mut  i =0;
-        for val in vect_2{
-            let rdata  = match val.get_rdata(){ 
-                Rdata::SomeARdata(v) => v.get_string_address(),
-                Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
-                _=>"none".to_string(),
-            };
-            //println!("***{}",rdata);
-            assert_eq!(rdata, true_rdata[i]);
-            i +=1;
+
+
+        let mut i = 0;
+        for (host, vect) in rrs{
+
+            for rr in vect{
+                let somedata  = match rr.get_rdata(){ 
+                    Rdata::SomeARdata(v) => v.get_string_address(),
+                    Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
+                    Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
+                    Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
+                    _=>"none".to_string(),
+                };
+
+                if host =="a.uchile.cl" {
+                    //Rdata of A RR
+                    assert!( somedata =="192.80.24.11".to_string() || somedata == "a.uchile.cl".to_string());                    
+                }
+                else if host == "a.b.uchile.cl"{
+                    //Rdata of subdomaiini in zone
+                    assert_eq!(somedata,"192.168.2.134".to_string());
+                }
+                else if host.contains("*.dcc.uchile.cl"){ 
+                    assert!(somedata == "192.168.2.1".to_string() || somedata == "192.168.2.3".to_string());
+                }
+                
+                i +=1;
+
+            }
         }
 
+ 
     }
 
 
     #[test]
     fn process_line_test() {
         //dafault values
-        let line_normal = "a             A       192.80.24.11".to_string();
+        let line_normal1 = "a             A       192.80.24.11".to_string();
+        let line_normal2 = "a.uchile.cl.   A       192.80.24.11".to_string();
 
         //without host name
         let line_whithout_host: String = "  A 192.168.100.115".to_string();
@@ -1199,16 +1291,19 @@ mod master_file_test{
         let line_subdomain = "a.b     A       192.168.22.12".to_string();
 
         //* line
-        let line_special = "*.dcc    A       192.168.65.9".to_string();
+        let line_wildcard1 = "*.dcc    A       192.168.65.12".to_string();
+        let line_wildcard2 = "*    A       192.168.65.13".to_string();
 
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.process_line(line_normal);
+        master_file.process_line(line_normal1);
+        master_file.process_line(line_normal2);
         master_file.process_line(line_whithout_host);
         master_file.process_line(at_line_case1);
         master_file.process_line(at_line_case2);
         master_file.process_line(line_subdomain); 
-        //master_file.process_line(line_special); 
+        master_file.process_line(line_wildcard1); 
+        master_file.process_line(line_wildcard2); 
 
 
         let mut rrs = master_file.get_rrs();
@@ -1219,7 +1314,7 @@ mod master_file_test{
         
         let last_host = master_file.get_last_host();
         assert_eq!(vect_origin.len(),1);
-        assert_eq!(vect_a.len(),2);
+        assert_eq!(vect_a.len(),3);
         assert_eq!(vect_www.len(),1);
 
         let mut i = 0;
@@ -1246,6 +1341,9 @@ mod master_file_test{
                     //Rdata of subdomaiini in zone
                     assert_eq!(somedata,"192.168.22.12".to_string());
                 }
+                else if host.contains("*"){ 
+                    assert!(somedata == "192.168.65.12".to_string() || somedata == "192.168.65.13".to_string());
+                }
                 else {//host a
                     //Rdata of RR A without host and normal 
                     assert!(somedata == "192.168.100.115".to_string() || somedata == "192.80.24.11".to_string());
@@ -1254,6 +1352,8 @@ mod master_file_test{
 
             }
         }
+
+     
     }
 
     #[test]
@@ -1335,7 +1435,8 @@ mod master_file_test{
         assert_eq!(rrs.len(),7);
         assert_eq!(vect_origin_include_rr.len(),3);
         assert_eq!(vect_origin_rr.len(),1);
-
+    }
+    
     }
 
-}
+

@@ -15,14 +15,21 @@ $ORIGIN uchile.cl
 dcc           A       192.80.24.11
 
 *.dcc         A       192.80.24.10
-              NS      test.com
+              NS      test.com.
 
 test          A       192.80.24.10
-              CNAME   no-test.com
-              NS      ns.test.cl
-              CNAME   test.com
+              CNAME   no-test.com.
+              NS      ns.test.cl.
+              CNAME   test.com.
 
-delegation    NS  ns.delegation.uchile.cl
-              NS  ns2.test.com
+delegation    NS  ns.delegation.uchile.cl.
+              NS  ns2.test.com.
+
+;glue information
 
 ns.delegation A 127.0.0.1
+VENERA        A  192.168.99.12
+VAXA          A  192.168.99.13
+
+;inclutede
+$INCLUDE include.txt examaple.com  

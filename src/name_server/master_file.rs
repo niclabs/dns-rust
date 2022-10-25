@@ -365,7 +365,7 @@ impl MasterFile {
         
 
 
-        let mut origin = self.get_origin();
+        let origin = self.get_origin();
         let mut full_host_name = host_name.clone();
 
         if validity{
@@ -491,7 +491,7 @@ impl MasterFile {
     // Removes the "\" that precedes specific chars that are special encoding
     fn replace_special_encoding(mut line: String) -> String {
         
-        let mut ocurrences: Vec<_> = line.match_indices("\\").map(|(i, _)|i).collect();
+        let  ocurrences: Vec<_> = line.match_indices("\\").map(|(i, _)|i).collect();
         match ocurrences.len() {
             0 => return line,
             _ => {}, 
@@ -633,7 +633,7 @@ impl MasterFile {
     // Processes an included file in the master file. 
     fn process_include(&mut self, file_name: String, mut domain_name: String, validity: bool){
         
-        let mut prev_class = "".to_string();
+        let prev_class = "".to_string();
         // remeber the parent origin, for now the origin used is going to change
         let parent_origin = self.get_origin();
         
@@ -706,10 +706,13 @@ impl MasterFile {
                         Some(ns_rrs) => {
                             let a_rr_glue = NameServer::look_for_type_records(ns_slice.to_string(), ns_rrs.to_vec(), 1);
                             if a_rr_glue.len() == 0 {
+                                println!("------- {}",ns_slice);
                                 panic!("Information outside authoritative node in the zone is not glue information.");
                             }
                         },
                         None => {
+                            println!("------- {}",ns_slice);
+
                             panic!("Information outside authoritative node in the zone is not glue information.");
                         },
                     } 
@@ -1306,7 +1309,7 @@ mod master_file_test{
         master_file.process_line(line_wildcard2); 
 
 
-        let mut rrs = master_file.get_rrs();
+        let rrs = master_file.get_rrs();
 
         let vect_origin = rrs.get("uchile.cl").unwrap();
         let vect_a = rrs.get("a.uchile.cl").unwrap();
@@ -1323,7 +1326,6 @@ mod master_file_test{
             for rr in vect{
                 let somedata  = match rr.get_rdata(){ 
                     Rdata::SomeARdata(v) => v.get_string_address(),
-                    Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
                     Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
                     Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
                     _=>"none".to_string(),
@@ -1436,7 +1438,39 @@ mod master_file_test{
         assert_eq!(vect_origin_include_rr.len(),3);
         assert_eq!(vect_origin_rr.len(),1);
     }
-    
+    #[test]
+    fn from_file_test(){
+
+        let master_file = MasterFile::from_file("test.txt".to_string(), false);
+
+        let rrs = master_file.get_rrs();
+        assert_eq!(rrs.len(),14);
+
+        let vec_rr_origin = rrs.get("uchile.cl").unwrap();
+        let vec_rr_delegation = rrs.get("delegation.uchile.cl").unwrap();
+        let vec_rr_example_include = rrs.get("example.com").unwrap();
+        
+        assert_eq!(vec_rr_origin.len(),6);
+        assert_eq!(vec_rr_origin.len(),6);
+        assert_eq!(vec_rr_example_include.len(),3);
+
     }
 
+    #[test]
+    fn from_file_validation_test(){
 
+        let master_file = MasterFile::from_file("test.txt".to_string(), true);
+
+        let rrs = master_file.get_rrs();
+        assert_eq!(rrs.len(),14);
+
+        let vec_rr_origin = rrs.get("uchile.cl").unwrap();
+        let vec_rr_delegation = rrs.get("delegation.uchile.cl").unwrap();
+        let vec_rr_example_include = rrs.get("example.com").unwrap();
+        
+        assert_eq!(vec_rr_origin.len(),6);
+        assert_eq!(vec_rr_origin.len(),6);
+        assert_eq!(vec_rr_example_include.len(),3);
+   
+    }
+}

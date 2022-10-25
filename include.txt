@@ -2,8 +2,8 @@
 $ORIGIN example.com
 
 @             A       199.198.11.1
-              NS      test.host.com
-              MX      10  m.uchile.cl
+              NS      test.host.com.
+              MX      10  m.uchile.cl.
 
 www    IN     NS @
 ftp    IN     NS @

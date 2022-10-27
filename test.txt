@@ -31,5 +31,5 @@ ns.delegation A 127.0.0.1
 VENERA        A  192.168.99.12
 VAXA          A  192.168.99.13
 
-;inclutede
+;include
 $INCLUDE include.txt examaple.com  

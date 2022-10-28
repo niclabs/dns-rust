@@ -202,7 +202,8 @@ impl fmt::Display for DomainName {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod domain_name_test {
     use super::DomainName;
 
     #[test]

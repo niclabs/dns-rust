@@ -526,7 +526,8 @@ impl SoaRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod soa_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

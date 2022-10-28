@@ -426,7 +426,8 @@ impl DnsMessage {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod message_test {
     use crate::domain_name::DomainName;
     use crate::message::header::Header;
     use crate::message::question::Question;

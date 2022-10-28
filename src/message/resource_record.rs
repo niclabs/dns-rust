@@ -493,8 +493,8 @@ impl fmt::Display for ResourceRecord {
     }
 }
 
-// Tests
-mod test {
+#[cfg(test)]
+mod resource_record_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::a_ch_rdata::AChRdata;

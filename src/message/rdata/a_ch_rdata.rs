@@ -147,7 +147,8 @@ impl AChRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod a_ch_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_ch_rdata::AChRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

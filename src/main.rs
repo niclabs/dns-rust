@@ -19,6 +19,7 @@ use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 use crate::name_server::master_file::MasterFile;
 
+
 use std::collections::HashMap;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
@@ -38,7 +39,7 @@ pub fn main() {
     println!("Rustlang library for DNS");
     println!("Name server compatible with RFC 1034 and RFC 1035 only.");
     println!("To only check the validity of a Master file, enter MF.");
-    println!("For other services, enter program to run [C/R/N/NR]: ");
+    println!("For other services, enter program to run: \n[C] Client\n[R] Resolver\n[N] Nameserver\n[NR] Nameserver and Resolver");
     std::io::stdin().read_line(&mut input_line).unwrap();
 
     let trim_input_line = input_line.trim();
@@ -72,7 +73,8 @@ pub fn main() {
 
         if trim_input_line == "R" {
             resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
-        } else if trim_input_line == "N" {
+        } 
+        else if trim_input_line == "N" {
             let (update_refresh_zone_udp, rx_update_refresh_zone_udp) = mpsc::channel();
             let (update_refresh_zone_tcp, rx_update_refresh_zone_tcp) = mpsc::channel();
 

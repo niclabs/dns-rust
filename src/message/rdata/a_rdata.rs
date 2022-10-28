@@ -131,7 +131,8 @@ impl ARdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod a_rdata_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

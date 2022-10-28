@@ -297,8 +297,8 @@ impl DnsCache {
         self.size = size
     }
 }
-
-mod test {
+#[cfg(test)]
+mod dns_cache_test {
     use crate::dns_cache::DnsCache;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;

@@ -481,7 +481,8 @@ impl Header {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod header_test {
     use super::Header;
 
     #[test]

@@ -155,7 +155,8 @@ impl MxRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod mx_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::mx_rdata::MxRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

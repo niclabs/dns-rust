@@ -122,7 +122,8 @@ impl PtrRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod ptr_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::ptr_rdata::PtrRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

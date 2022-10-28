@@ -38,7 +38,8 @@ pub fn domain_validity_syntax(domain_name: String)-> Result<String, &'static str
     return Ok(domain_name);
 }
 
-mod test {
+#[cfg(test)]
+mod utils_test {
     use super::check_label_name;
     use super::domain_validity_syntax;
 

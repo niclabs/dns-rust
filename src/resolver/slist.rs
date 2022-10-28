@@ -228,7 +228,8 @@ impl Slist {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod slist_test {
     use crate::resolver::slist::Slist;
     use std::collections::HashMap;
     use std::vec::Vec;

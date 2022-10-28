@@ -389,7 +389,8 @@ impl NSZone {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod zone_test {
     use super::NSZone;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::ns_rdata::NsRdata;

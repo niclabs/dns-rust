@@ -124,7 +124,8 @@ impl TxtRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod txt_rdata_test {
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 

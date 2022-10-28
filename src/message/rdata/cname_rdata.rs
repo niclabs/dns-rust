@@ -121,7 +121,8 @@ impl CnameRdata {
     }
 }
 
-mod test {
+#[cfg(test)]
+mod cname_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::cname_rdata::CnameRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

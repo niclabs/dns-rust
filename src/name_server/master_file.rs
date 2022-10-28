@@ -10,7 +10,7 @@ use crate::message::rdata::soa_rdata::SoaRdata;
 use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::resource_record::ResourceRecord;
 //refactor
-use crate::NameServer;
+use crate::name_server::NameServer;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;

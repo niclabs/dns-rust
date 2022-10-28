@@ -9,12 +9,20 @@ pub mod resolver;
 pub mod rr_cache;
 pub mod utils;
 
+use dns_rust::client::config::TRANSPORT;
+use message::resource_record::ResourceRecord;
+use name_server::zone::NSZone;
+
+use crate::client::config::HOST_NAME;
 use crate::name_server::NameServer;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 use crate::name_server::master_file::MasterFile;
 
+use std::collections::HashMap;
 use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
 use std::thread;
 
 use crate::config::MASTER_FILES;
@@ -22,6 +30,7 @@ use crate::config::NAME_SERVER_IP;
 use crate::config::RESOLVER_IP_PORT;
 use crate::config::SBELT_ROOT_IPS;
 use crate::config::CHECK_MASTER_FILES;
+
 
 pub fn main() {
     // Users input
@@ -42,7 +51,7 @@ pub fn main() {
     }
 
     else if trim_input_line == "C" {
-        client::run_client();
+        client::run_client(HOST_NAME, TRANSPORT);
     } else {
         // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();
@@ -62,41 +71,7 @@ pub fn main() {
         let (update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
 
         if trim_input_line == "R" {
-            let mut resolver = Resolver::new(
-                add_sender_udp.clone(),
-                delete_sender_udp.clone(),
-                add_sender_tcp.clone(),
-                delete_sender_tcp.clone(),
-                add_sender_ns_udp.clone(),
-                delete_sender_ns_udp.clone(),
-                add_sender_ns_tcp.clone(),
-                delete_sender_ns_tcp.clone(),
-                update_cache_sender_udp.clone(),
-                update_cache_sender_tcp.clone(),
-                update_cache_sender_ns_udp.clone(),
-                update_cache_sender_ns_tcp.clone(),
-            );
-
-            resolver.set_ip_address(RESOLVER_IP_PORT.to_string());
-
-            let mut sbelt = Slist::new();
-
-            for ip in SBELT_ROOT_IPS {
-                sbelt.insert(".".to_string(), ip.to_string(), 5000);
-            }
-
-            resolver.set_sbelt(sbelt);
-
-            resolver.run_resolver(
-                add_recv_udp,
-                delete_recv_udp,
-                add_recv_tcp,
-                delete_recv_tcp,
-                rx_update_cache_udp,
-                rx_update_cache_tcp,
-                rx_update_zone_udp,
-                rx_update_zone_tcp,
-            );
+            resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
         } else if trim_input_line == "N" {
             let (update_refresh_zone_udp, rx_update_refresh_zone_udp) = mpsc::channel();
             let (update_refresh_zone_tcp, rx_update_refresh_zone_tcp) = mpsc::channel();

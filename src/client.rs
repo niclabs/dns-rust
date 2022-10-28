@@ -1,12 +1,10 @@
 pub mod config;
 
 use crate::client::config::CLIENT_IP_PORT;
-use crate::client::config::HOST_NAME;
 use crate::client::config::QCLASS;
 use crate::client::config::QTYPE;
 use crate::client::config::RESOLVER_IP_PORT;
 use crate::client::config::TIMEOUT;
-use crate::client::config::TRANSPORT;
 
 use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;
@@ -19,7 +17,7 @@ use std::net::TcpStream;
 use std::net::UdpSocket;
 use std::time::{Duration, Instant};
 
-pub fn run_client() {
+pub fn run_client(host_name: &str, transport: &str) {
     //Start timestamp
     let now = Instant::now();
 
@@ -31,13 +29,13 @@ pub fn run_client() {
 
     // Create query msg
     let query_msg =
-        DnsMessage::new_query_message(HOST_NAME.to_string(), QTYPE, QCLASS, 0, false, query_id);
+        DnsMessage::new_query_message(host_name.to_string(), QTYPE, QCLASS, 0, false, query_id);
 
     // Create response buffer
     let mut dns_message = DnsMessage::new();
 
     // Send query by UDP
-    if TRANSPORT == "UDP" {
+    if transport == "UDP" {
         let socket = UdpSocket::bind(CLIENT_IP_PORT).expect("No connection");
         let msg_to_bytes = query_msg.to_bytes();
 
@@ -76,7 +74,7 @@ pub fn run_client() {
     }
 
     // Send query by TCP
-    if TRANSPORT == "TCP" {
+    if transport == "TCP" {
         let mut stream = TcpStream::connect(RESOLVER_IP_PORT).expect("No connection");
 
         let bytes = query_msg.to_bytes();

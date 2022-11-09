@@ -35,7 +35,6 @@ impl DomainName {
     // what happens if label is longer than 9 ? check this out
     pub fn from_bytes_no_offset(bytes: &[u8]) -> String {
         let mut name = String::from("");
-        let mut index = 0;
 
         for byte in bytes {
             if *byte <= 9 && *byte >= 1 {
@@ -45,7 +44,6 @@ impl DomainName {
             } else {
                 name.push(*byte as char);
             }
-            index += 1;
         }
 
         name.remove(0);

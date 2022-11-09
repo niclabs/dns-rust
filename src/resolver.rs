@@ -179,7 +179,8 @@ impl Resolver {
             let dns_message_option =
                 Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
 
-            let (mut dns_message, mut src_address) = (DnsMessage::new(), "".to_string());
+            let dns_message;
+            let src_address;
 
             println!("{}", "Message recv");
 
@@ -189,7 +190,7 @@ impl Resolver {
                     src_address = val.1;
                 }
                 None => {
-                    continue;
+                    (dns_message, src_address) = (DnsMessage::new(), "".to_string());
                 }
             }
 

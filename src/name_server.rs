@@ -344,7 +344,8 @@ impl NameServer {
             let dns_message_option =
                 Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
 
-            let (mut dns_message, mut src_address) = (DnsMessage::new(), "".to_string());
+            let mut dns_message;
+            let src_address;
 
             println!("{}", "Message recv");
 
@@ -355,7 +356,7 @@ impl NameServer {
                 }
                 // If no msg
                 None => {
-                    continue;
+                    (dns_message, src_address) = (DnsMessage::new(), "".to_string());
                 }
             }
             //
@@ -1695,7 +1696,7 @@ impl NameServer {
                     Some(index) => {
                         let new_ns_name = name_ns[..index - 1].to_string();
                         let labels: Vec<&str> = new_ns_name.split(".").collect();
-                        let mut a_glue_rrs = Vec::<ResourceRecord>::new();
+                        let mut a_glue_rrs;
                         let mut glue_zone = zone.clone();
 
                         // Goes down for the tree looking for the zone with glue rrs

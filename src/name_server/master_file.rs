@@ -779,15 +779,12 @@ impl MasterFile {
     }
 }
 
+
 #[cfg(test)]
-mod master_file_test{
-    use std::collections::btree_map::Iter;
-
-    use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}, resource_record::ResourceRecord};
-
+mod master_file_test {
     use super::MasterFile;
-    //utils
-    use crate::utils::domain_validity_syntax;
+    use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}};
+       
 
     #[test]
     fn remove_comments_test(){
@@ -958,19 +955,19 @@ mod master_file_test{
     fn process_line_rr_test(){
         //gets ttl, clas, type 
         let line_ns = "dcc 33 IN NS ns".to_string();
-        let line_ns_full_host = "dcc.uchile.cl. 33 IN NS ns".to_string();
+        let _line_ns_full_host = "dcc.uchile.cl. 33 IN NS ns".to_string();
         let line_ns_default = " NS ns2".to_string();
         let line_a_subdomain ="a.b A  192.168.21.2".to_string();
-        let line_a_wildcard ="*.b A  192.168.222.44".to_string();
+        let _line_a_wildcard ="*.b A  192.168.222.44".to_string();
         
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
         master_file.set_ttl_default(33);
         master_file.set_class_default("IN".to_string());
 
-        let (host_ns,rest_line_ns) = master_file.process_line_rr(line_ns,true);
-        let (host_default,rest_line_default) = master_file.process_line_rr(line_ns_default,true);
-        let (host,rest_line) = master_file.process_line_rr(line_a_subdomain,true);
+        let (_host_ns,_rest_line_ns) = master_file.process_line_rr(line_ns,true);
+        let (_host_default,_rest_line_default) = master_file.process_line_rr(line_ns_default,true);
+        let (_host,_rest_line) = master_file.process_line_rr(line_a_subdomain,true);
         //let m = master_file.process_line_rr(line_a_wildcard,true);
         
 
@@ -1189,7 +1186,6 @@ mod master_file_test{
         let vec_test2_rr = rrs.get("test.uchile.cl").unwrap();
         
 
-        let a = "test2.uchile.cl".to_string();
         let vect_true_val = vec![
             (15,1), // -> MX  , IN
             (1,1),  // -> A   , IN 
@@ -1238,18 +1234,16 @@ mod master_file_test{
         let vect_2 = rrs.get("a.uchile.cl").unwrap();
         assert_eq!(vect_2.len(),2);
         let vect_3 = rrs.get("*.dcc.uchile.cl").unwrap();
-        assert_eq!(vect_2.len(),2);
+        assert_eq!(vect_3.len(),2);
 
 
 
 
-        let mut i = 0;
         for (host, vect) in rrs{
 
             for rr in vect{
                 let somedata  = match rr.get_rdata(){ 
                     Rdata::SomeARdata(v) => v.get_string_address(),
-                    Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
                     Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
                     Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
                     _=>"none".to_string(),
@@ -1266,8 +1260,6 @@ mod master_file_test{
                 else if host.contains("*.dcc.uchile.cl"){ 
                     assert!(somedata == "192.168.2.1".to_string() || somedata == "192.168.2.3".to_string());
                 }
-                
-                i +=1;
 
             }
         }
@@ -1315,12 +1307,10 @@ mod master_file_test{
         let vect_a = rrs.get("a.uchile.cl").unwrap();
         let vect_www = rrs.get("www.uchile.cl").unwrap();
         
-        let last_host = master_file.get_last_host();
         assert_eq!(vect_origin.len(),1);
         assert_eq!(vect_a.len(),3);
         assert_eq!(vect_www.len(),1);
 
-        let mut i = 0;
         for (host, vect) in rrs{
 
             for rr in vect{
@@ -1350,7 +1340,6 @@ mod master_file_test{
                     //Rdata of RR A without host and normal 
                     assert!(somedata == "192.168.100.115".to_string() || somedata == "192.80.24.11".to_string());
                 }
-                i +=1;
 
             }
         }
@@ -1370,7 +1359,7 @@ mod master_file_test{
                 
         master_file.process_lines_and_validation(vec_lines);
 
-        let rrs = master_file.get_rrs();
+        let _rrs = master_file.get_rrs();
         /*
         for keys in rrs.keys() {
             println!("nombre de host -> {}", keys);
@@ -1390,7 +1379,7 @@ mod master_file_test{
         master_file.process_line(line_ns);
         master_file.process_line(line_a);
 
-        let rrs = master_file.get_rrs();
+        let _rrs = master_file.get_rrs();
         master_file.check_glue_delegations();    
     }
 
@@ -1451,7 +1440,7 @@ mod master_file_test{
         let vec_rr_example_include = rrs.get("example.com").unwrap();
         
         assert_eq!(vec_rr_origin.len(),6);
-        assert_eq!(vec_rr_origin.len(),6);
+        assert_eq!(vec_rr_delegation.len(),2);
         assert_eq!(vec_rr_example_include.len(),3);
 
     }
@@ -1469,7 +1458,7 @@ mod master_file_test{
         let vec_rr_example_include = rrs.get("example.com").unwrap();
         
         assert_eq!(vec_rr_origin.len(),6);
-        assert_eq!(vec_rr_origin.len(),6);
+        assert_eq!(vec_rr_delegation.len(),2);
         assert_eq!(vec_rr_example_include.len(),3);
    
     }

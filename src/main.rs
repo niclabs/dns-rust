@@ -1,37 +1,15 @@
-pub mod client;
-pub mod config;
-pub mod dns_cache;
-pub mod domain_name;
-pub mod global_tests;
-pub mod message;
-pub mod name_server;
-pub mod resolver;
-pub mod rr_cache;
-pub mod utils;
-
-use dns_rust::client::config::TRANSPORT;
-use message::resource_record::ResourceRecord;
-use name_server::zone::NSZone;
-
-use crate::client::config::HOST_NAME;
-use crate::name_server::NameServer;
-use crate::resolver::slist::Slist;
-use crate::resolver::Resolver;
-use crate::name_server::master_file::MasterFile;
-
-
 use std::collections::HashMap;
 use std::sync::mpsc;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
 use std::thread;
 
-use crate::config::MASTER_FILES;
-use crate::config::NAME_SERVER_IP;
-use crate::config::RESOLVER_IP_PORT;
-use crate::config::SBELT_ROOT_IPS;
-use crate::config::CHECK_MASTER_FILES;
-
+use dns_rust::name_server::NameServer;
+use dns_rust::name_server::zone::NSZone;
+use dns_rust::resolver::Resolver;
+use dns_rust::resolver::slist::Slist;
+use dns_rust::{self, client, resolver};
+use dns_rust::client::config::{HOST_NAME, TRANSPORT};
+use dns_rust::config::{MASTER_FILES, RESOLVER_IP_PORT, SBELT_ROOT_IPS, CHECK_MASTER_FILES, NAME_SERVER_IP};
+use dns_rust::name_server::master_file::MasterFile;
 
 pub fn main() {
     // Users input

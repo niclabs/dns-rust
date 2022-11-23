@@ -157,30 +157,11 @@ impl MasterFile {
     fn process_line_rr(&mut self, line: String, validity: bool) -> (String, String) {
         // Gets host name
         
-        let (mut host_name, line_left_to_process) = self.get_line_host_name(line.clone());
+        let ( host_name, line_left_to_process) = self.get_line_host_name(line.clone());
         
         
         if validity {
-            
-
-            match host_name.split_once('.') {
-                Some((firs_label, rest_hostname)) => {
-                    if firs_label.to_string() == "*" {
-                        let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
-                        host_name = firs_label.to_owned() + "." + &rest_domainame ;
-                    }else{
-                        host_name = domain_validity_syntax(host_name).unwrap();
-                    }
-                }
-                _ => {
-                    if host_name.to_string() != "*" {
-                        host_name = domain_validity_syntax(host_name).unwrap();
-                    }
-                }
-                
-            }
-            
-            
+            self.host_name_master_file_validation(host_name.clone());   
         }
         // Process next values
         let mut next_line_items = line_left_to_process.split_whitespace();
@@ -198,7 +179,7 @@ impl MasterFile {
         while value != "" {
             let value_type = self.get_value_type(value.to_string());
 
-            println!("Name: {}, value: {}", host_name.clone(), value_type);
+             println!("Name: {}, value: {}", host_name.clone(), value_type);
 
             if value_type == 0 {
                 // TTL
@@ -536,32 +517,43 @@ impl MasterFile {
         let mut host_name = "".to_string();
         let mut line_left_to_process = "".to_string();
 
+        let mut iter = line.split_whitespace();
+        
         if first_char == " ".to_string() {
             host_name = self.get_last_host();
-            line_left_to_process = line.clone();
+            // line_left_to_process = line.clone();
         } else {
-            let mut iter = line.split_whitespace();
-            host_name = iter.next().unwrap().to_string();
-
+            
+            host_name = iter.clone().next().unwrap().to_string();
             self.set_last_host(host_name.clone());
-            line_left_to_process = line.get(line.find(" ").unwrap()..).unwrap().to_string();
-        }
+            iter.next();
 
-        match host_name.split_once('.') {
-            Some((firs_label, rest_hostname)) => {
-                if firs_label.to_string() == "*" {
-                    let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
-                    host_name = firs_label.to_owned() +"."+ &rest_domainame ;
-                }else{
-                    host_name = domain_validity_syntax(host_name).unwrap();
-                }
-            }
-            _ => {
-                if host_name.to_string() != "*" {
-                    host_name = domain_validity_syntax(host_name).unwrap();
-                }
-            }
         }
+        
+        
+
+        for value in iter{
+            line_left_to_process.push_str(value);
+            line_left_to_process.push(' ');
+        }
+        
+        // println!("--> {}",line_left_to_process);
+        self.host_name_master_file_validation(host_name.clone());
+        // match host_name.split_once('.') {
+        //     Some((firs_label, rest_hostname)) => {
+        //         if firs_label.to_string() == "*" {
+        //             let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
+        //             host_name = firs_label.to_owned() +"."+ &rest_domainame ;
+        //         }else{
+        //             host_name = domain_validity_syntax(host_name).unwrap();
+        //         }
+        //     }
+        //     _ => {
+        //         if host_name.to_string() != "*" {
+        //             host_name = domain_validity_syntax(host_name).unwrap();
+        //         }
+        //     }
+        // }
         
 
         return (host_name, line_left_to_process);
@@ -721,6 +713,29 @@ impl MasterFile {
             }
         }
     }
+
+    //check validity of a host in a master file
+    fn host_name_master_file_validation( &self,host_name: String){
+
+        match host_name.split_once('.') {
+            Some((firs_label, rest_hostname)) => {
+                if firs_label.to_string() == "*" {
+                    domain_validity_syntax(rest_hostname.to_string()).unwrap();
+                    // let host_name_validated = firs_label.to_owned() + "." + &rest_domainame ;
+                }else{
+                    domain_validity_syntax(host_name).unwrap();
+                }
+            }
+            _ => {
+                if host_name.to_string() != "*" {
+                    domain_validity_syntax(host_name).unwrap();
+                }
+            }
+            
+        }
+    }
+
+
 }
 
 // Getters
@@ -1267,7 +1282,7 @@ mod master_file_test {
  
     }
 
-
+    
     #[test]
     fn process_line_test() {
         //dafault values
@@ -1462,4 +1477,5 @@ mod master_file_test {
         assert_eq!(vec_rr_example_include.len(),3);
    
     }
+
 }

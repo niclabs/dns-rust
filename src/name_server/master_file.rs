@@ -161,7 +161,8 @@ impl MasterFile {
         
         
         if validity {
-            self.host_name_master_file_validation(host_name.clone());   
+
+            self.host_name_master_file_validation(host_name.clone()).unwrap();   
         }
         // Process next values
         let mut next_line_items = line_left_to_process.split_whitespace();
@@ -343,29 +344,13 @@ impl MasterFile {
         validity: bool,
     ) {
 
-        
-
 
         let origin = self.get_origin();
         let mut full_host_name = host_name.clone();
 
+        
         if validity{
-            match full_host_name.split_once('.') {
-                Some((firs_label, rest_hostname)) => {
-                    if firs_label.to_string() == "*" {
-                        let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
-                        full_host_name = firs_label.to_owned() + &rest_domainame ;
-                    }else{
-                        full_host_name = domain_validity_syntax(full_host_name).unwrap();
-                    }
-                }
-                _ => {
-                    if host_name.to_string() != "*" {
-                        full_host_name = domain_validity_syntax(full_host_name).unwrap();
-                    }
-                }
-            }
-            full_host_name = host_name.clone();
+            self.host_name_master_file_validation(full_host_name.clone()).unwrap();    
         }
         
 
@@ -514,7 +499,7 @@ impl MasterFile {
     // Gets the hostname of a line in a master file. If there is no hostname, takes the last hostnames used.
     fn get_line_host_name(&mut self, line: String) -> (String, String) {
         let first_char = line.get(0..1).unwrap();
-        let mut host_name = "".to_string();
+        let  host_name ;
         let mut line_left_to_process = "".to_string();
 
         let mut iter = line.split_whitespace();
@@ -537,24 +522,7 @@ impl MasterFile {
             line_left_to_process.push(' ');
         }
         
-        // println!("--> {}",line_left_to_process);
-        self.host_name_master_file_validation(host_name.clone());
-        // match host_name.split_once('.') {
-        //     Some((firs_label, rest_hostname)) => {
-        //         if firs_label.to_string() == "*" {
-        //             let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
-        //             host_name = firs_label.to_owned() +"."+ &rest_domainame ;
-        //         }else{
-        //             host_name = domain_validity_syntax(host_name).unwrap();
-        //         }
-        //     }
-        //     _ => {
-        //         if host_name.to_string() != "*" {
-        //             host_name = domain_validity_syntax(host_name).unwrap();
-        //         }
-        //     }
-        // }
-        
+                
 
         return (host_name, line_left_to_process);
     }
@@ -625,7 +593,7 @@ impl MasterFile {
     // Processes an included file in the master file. 
     fn process_include(&mut self, file_name: String, mut domain_name: String, validity: bool){
         
-        let prev_class = "".to_string();
+        // let prev_class = "".to_string();
         // remeber the parent origin, for now the origin used is going to change
         let parent_origin = self.get_origin();
         
@@ -698,13 +666,10 @@ impl MasterFile {
                         Some(ns_rrs) => {
                             let a_rr_glue = NameServer::look_for_type_records(ns_slice.to_string(), ns_rrs.to_vec(), 1);
                             if a_rr_glue.len() == 0 {
-                                println!("------- {}",ns_slice);
                                 panic!("Information outside authoritative node in the zone is not glue information.");
                             }
                         },
                         None => {
-                            println!("------- {}",ns_slice);
-
                             panic!("Information outside authoritative node in the zone is not glue information.");
                         },
                     } 
@@ -714,27 +679,56 @@ impl MasterFile {
         }
     }
 
-    //check validity of a host in a master file
-    fn host_name_master_file_validation( &self,host_name: String){
-
+    //check validity of a host in a master file cases:
+    //      - wildcard
+    //      - inverse query 
+    fn host_name_master_file_validation( &self,host_name: String)-> Result<String, &'static str> {
+        
+        //wildcard validation
         match host_name.split_once('.') {
             Some((firs_label, rest_hostname)) => {
                 if firs_label.to_string() == "*" {
-                    domain_validity_syntax(rest_hostname.to_string()).unwrap();
-                    // let host_name_validated = firs_label.to_owned() + "." + &rest_domainame ;
-                }else{
-                    domain_validity_syntax(host_name).unwrap();
+                    //is wildcard
+                    return domain_validity_syntax(rest_hostname.to_string());
                 }
             }
             _ => {
+                //normal host name
                 if host_name.to_string() != "*" {
-                    domain_validity_syntax(host_name).unwrap();
+                    return domain_validity_syntax(host_name.clone());
                 }
             }
             
         }
-    }
 
+        //inverse query
+        let mut length_ip = 4;
+
+        let mut host_to_validate = host_name.clone(); 
+        while length_ip >0 {
+            let (label, labels) = host_to_validate.split_once('.').unwrap();
+            
+            let label_num = label.parse::<i32>();
+            match label_num {
+                Ok(_ok) => length_ip-=1 ,
+                _ => break,
+            }  
+            host_to_validate = labels.to_string();
+        }
+    
+        if length_ip == 0 {
+            return domain_validity_syntax(host_to_validate);            
+        }else if host_name != ".".to_string(){
+            return domain_validity_syntax(host_name);
+        }
+        return Ok(host_name);
+       
+        
+
+
+
+    
+    }
 
 }
 
@@ -828,6 +822,42 @@ mod master_file_test {
         assert_eq!(line_without_special_enc1, "a  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60");
         assert_eq!(line_without_special_enc2, "a  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60");
         assert_eq!(line_without_special_enc3, "@  IN  A 123.123.123.123");
+    }
+
+    #[test]
+    fn host_name_master_file_validation_test(){
+        let host_name = "anakena.dcc".to_string(); 
+        let host_root = '.'.to_string(); 
+        let host_wildcard = "*.dcc".to_string();
+        let host_reverse = "1.2.168.192.IN-ADDR.ARPA".to_string();
+
+
+        let vect_host_names = vec![host_name,
+                                                host_root,
+                                                host_wildcard,
+                                                host_reverse];
+
+        let  master_file = MasterFile::new("uchile.cl".to_string());
+        
+
+        for host in vect_host_names{
+            let result = master_file.host_name_master_file_validation(host.clone());
+
+            if "*.dcc".to_string() == host {
+                assert_eq!(Ok("dcc".to_string()),result);
+
+            }else if "1.2.168.192.IN-ADDR.ARPA".to_string() == host{
+                assert_eq!(Ok("IN-ADDR.ARPA".to_string()),result);
+
+            }else{
+                assert_eq!(Ok(host),result);
+            }
+
+        }
+
+
+
+        
     }
 
     #[test]
@@ -1304,6 +1334,9 @@ mod master_file_test {
         let line_wildcard1 = "*.dcc    A       192.168.65.12".to_string();
         let line_wildcard2 = "*    A       192.168.65.13".to_string();
 
+        //inverse query
+        let line_inverse_query = "2.1.168.192.IN-ADDR-ARPA.  PTR     A.ISI.EDU.".to_string();
+
 
         let mut master_file = MasterFile::new("uchile.cl".to_string());
         master_file.process_line(line_normal1);
@@ -1314,6 +1347,7 @@ mod master_file_test {
         master_file.process_line(line_subdomain); 
         master_file.process_line(line_wildcard1); 
         master_file.process_line(line_wildcard2); 
+        master_file.process_line(line_inverse_query);
 
 
         let rrs = master_file.get_rrs();
@@ -1321,10 +1355,13 @@ mod master_file_test {
         let vect_origin = rrs.get("uchile.cl").unwrap();
         let vect_a = rrs.get("a.uchile.cl").unwrap();
         let vect_www = rrs.get("www.uchile.cl").unwrap();
+        let vect_inv_query = rrs.get("2.1.168.192.IN-ADDR-ARPA").unwrap();
+    
         
         assert_eq!(vect_origin.len(),1);
         assert_eq!(vect_a.len(),3);
         assert_eq!(vect_www.len(),1);
+        assert_eq!(vect_inv_query.len(),1);
 
         for (host, vect) in rrs{
 
@@ -1333,6 +1370,7 @@ mod master_file_test {
                     Rdata::SomeARdata(v) => v.get_string_address(),
                     Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
                     Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
+                    Rdata::SomePtrRdata(v) => v.get_ptrdname().get_name(),
                     _=>"none".to_string(),
                 };
 
@@ -1350,6 +1388,9 @@ mod master_file_test {
                 }
                 else if host.contains("*"){ 
                     assert!(somedata == "192.168.65.12".to_string() || somedata == "192.168.65.13".to_string());
+                }
+                else if host.contains("IN-ADDR-ARPA"){
+                    assert!(somedata == "A.ISI.EDU".to_string());
                 }
                 else {//host a
                     //Rdata of RR A without host and normal 

@@ -243,7 +243,7 @@ impl MasterFile {
         let mut prev_rr_class = "".to_string();
 
         for line in lines {
-
+            println!("line: {}", line);
             if line == "".to_string() {
                 continue;
             }
@@ -553,6 +553,7 @@ impl MasterFile {
                     let rest_domainame = domain_validity_syntax(rest_hostname.to_string()).unwrap();
                     host_name = firs_label.to_owned() +"."+ &rest_domainame ;
                 }else{
+                    println!("adsada {}", host_name);
                     host_name = domain_validity_syntax(host_name).unwrap();
                 }
             }

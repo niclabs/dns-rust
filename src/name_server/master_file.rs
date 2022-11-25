@@ -11,6 +11,7 @@ use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::resource_record::ResourceRecord;
 //refactor
 use crate::name_server::NameServer;
+use core::panic;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
@@ -353,16 +354,20 @@ impl MasterFile {
             self.host_name_master_file_validation(full_host_name.clone()).unwrap();    
         }
         
-
         if host_name.ends_with(".") == false {
-            full_host_name.push_str(".");
-            full_host_name.push_str(&origin);
+            if  origin != "" {
+                full_host_name.push_str(".");
+                full_host_name.push_str(&origin);
+            }
+            else {
+                panic!("Error: no origin for relative hostname ");
+            }
+            
         }
         // remove last "." from hostname 
         else {
             full_host_name.pop();
         }
-
         
 
         let class_int = match class.as_str() {

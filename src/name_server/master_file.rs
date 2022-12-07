@@ -154,7 +154,10 @@ impl MasterFile {
 
         self.process_line_rr(new_line, false);
     }
-
+    
+    /*
+    Obtains the host name and values for creting a RR
+     */
     fn process_line_rr(&mut self, line: String, validity: bool) -> (String, String) {
         // Gets host name
         
@@ -334,7 +337,9 @@ impl MasterFile {
         }
     }
     
-    /// Process an specific type of RR
+    /*
+     Process information of an specific type of RR and creates it
+     */
     fn process_specific_rr(
         &mut self,
         items: SplitWhitespace,
@@ -359,9 +364,9 @@ impl MasterFile {
                 full_host_name.push_str(".");
                 full_host_name.push_str(&origin);
             }
-            else {
-                panic!("Error: no origin for relative hostname ");
-            }
+            // else {
+            //     panic!("Error: no origin for relative hostname ");
+            // }
             
         }
         // remove last "." from hostname 
@@ -684,7 +689,7 @@ impl MasterFile {
         }
     }
 
-    //check validity of a host in a master file cases:
+    //checks validity of a host in a master file cases:
     //      - wildcard
     //      - inverse query 
     fn host_name_master_file_validation( &self,host_name: String)-> Result<String, &'static str> {

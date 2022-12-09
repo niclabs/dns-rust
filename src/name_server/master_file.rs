@@ -16,10 +16,12 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
+
 use std::str::SplitWhitespace;
 
 //utils
 use crate::utils::domain_validity_syntax;
+use crate::utils::is_reverse_query;
 
 #[derive(Clone)]
 /// Structs that represents data from a master file
@@ -208,8 +210,18 @@ impl MasterFile {
                 break;
             }
         }
+
         let (this_class, this_type) = (class.to_string(), rr_type.to_string());
-        self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name, validity);
+        
+        // If line is a reverse query it will ignore it 
+        let is_reverse_query = is_reverse_query(host_name.clone());
+        if is_reverse_query{
+            println!("RR for Inverse querys");
+        }
+        else{
+            self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name, validity);
+
+        }
         
         return (this_class, this_type);
     
@@ -689,6 +701,7 @@ impl MasterFile {
         }
     }
 
+
     //checks validity of a host in a master file cases:
     //      - wildcard
     //      - inverse query 
@@ -732,12 +745,7 @@ impl MasterFile {
             return domain_validity_syntax(host_name);
         }
         return Ok(host_name);
-       
-        
-
-
-
-    
+           
     }
 
 }
@@ -1365,13 +1373,14 @@ mod master_file_test {
         let vect_origin = rrs.get("uchile.cl").unwrap();
         let vect_a = rrs.get("a.uchile.cl").unwrap();
         let vect_www = rrs.get("www.uchile.cl").unwrap();
-        let vect_inv_query = rrs.get("2.1.168.192.IN-ADDR-ARPA").unwrap();
-    
+
+        // for (host ,vec) in rrs.iter(){
+        //     println!("host -> {}",host)
+        // }
         
         assert_eq!(vect_origin.len(),1);
         assert_eq!(vect_a.len(),3);
         assert_eq!(vect_www.len(),1);
-        assert_eq!(vect_inv_query.len(),1);
 
         for (host, vect) in rrs{
 
@@ -1398,9 +1407,6 @@ mod master_file_test {
                 }
                 else if host.contains("*"){ 
                     assert!(somedata == "192.168.65.12".to_string() || somedata == "192.168.65.13".to_string());
-                }
-                else if host.contains("IN-ADDR-ARPA"){
-                    assert!(somedata == "A.ISI.EDU".to_string());
                 }
                 else {//host a
                     //Rdata of RR A without host and normal 
@@ -1528,5 +1534,6 @@ mod master_file_test {
         assert_eq!(vec_rr_example_include.len(),3);
    
     }
+
 
 }

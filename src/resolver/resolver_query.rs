@@ -502,9 +502,10 @@ impl ResolverQuery {
                 return all_answers;
             }
         } else {
+            let qname = s_name.clone();
             let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
                 self.get_ns_data(),
-                s_name.clone(),
+                qname,
                 s_class,
             );
 

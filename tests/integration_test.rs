@@ -3,6 +3,7 @@ use std::{fs, thread, collections::HashMap};
 use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
 
 
+
 /// Read a zone file and extract the host name to a vector.
 fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
         
@@ -40,7 +41,7 @@ fn validate_master_files() {
 
 /// Test run_client() from client
 #[test]
-fn run_client_test() {
+fn test_500000_cl_domains() {
 
     // Run resolver.
     thread::spawn(move || {

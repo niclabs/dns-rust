@@ -38,6 +38,37 @@ pub fn domain_validity_syntax(domain_name: String)-> Result<String, &'static str
     return Ok(domain_name);
 }
 
+    // checks if host_name is writtena as an reverse query
+pub fn is_reverse_query(host_name:String)-> bool {
+        let mut length_ip = 4;
+        let mut is_reverse_query:bool = false;
+        let labels = host_name.split(".");
+
+        for label in labels {
+            let label_char = label.chars();
+
+            //if it's reverse query should be a number
+            if length_ip > 0 {
+                for char  in label_char {
+                    //verified if it's a number
+                    is_reverse_query =  char.is_ascii_digit();
+                    
+                    //if not a number is not a reverse query
+                    if is_reverse_query == false{
+                        return is_reverse_query;
+                    }
+                    
+                }
+            }
+
+            length_ip = length_ip -1;            
+            
+        }       
+        return is_reverse_query;
+
+}
+
+
 #[cfg(test)]
 mod utils_test {
     use super::check_label_name;

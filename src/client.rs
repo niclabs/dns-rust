@@ -26,7 +26,7 @@ pub fn run_client(host_name: &str, transport: &str) {
 
     // Create query id
     let query_id: u16 = rng.gen();
-
+    
     // Create query msg
     let query_msg =
         DnsMessage::new_query_message(host_name.to_string(), QTYPE, QCLASS, 0, false, query_id);

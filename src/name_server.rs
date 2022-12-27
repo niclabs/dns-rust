@@ -736,7 +736,7 @@ impl NameServer {
         println!("{}", "TcpListener Created");
 
         loop {
-            println!("{}", "Waiting msg");
+            //println!("{}", "Waiting msg");
 
             match listener.accept() {
                 Ok((stream, src_address)) => {

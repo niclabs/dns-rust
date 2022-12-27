@@ -56,7 +56,7 @@ impl NSZone {
             ns_zone.add_node(key.clone(), value.clone());
         }
 
-        ns_zone
+        return ns_zone
     }
 
     pub fn from_axfr_msg(msg: DnsMessage) -> Self {

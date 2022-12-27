@@ -1,3 +1,4 @@
 /target
-zonesTest.zone
-log.txt
+CL-test.zone
+test_domains_names.txt
+.vscode

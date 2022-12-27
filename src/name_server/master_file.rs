@@ -254,7 +254,7 @@ impl MasterFile {
         // let mut prev_rr_class = "".to_string();
 
         for line in lines {
-
+            println!("line: {}", line);
             if line == "".to_string() {
                 continue;
             }

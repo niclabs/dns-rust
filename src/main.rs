@@ -87,6 +87,7 @@ pub fn main() {
                 rx_update_refresh_zone_tcp,
             );
         } else if trim_input_line == "NR" {
+
             // Resolver Initialize
             let mut resolver = Resolver::new(
                 add_sender_udp.clone(),

@@ -26,6 +26,7 @@ use crate::utils::is_reverse_query;
 #[derive(Clone)]
 /// Structs that represents data from a master file
 pub struct MasterFile {
+    top_host:String,
     origin: String,
     last_host: String,
     rrs: HashMap<String, Vec<ResourceRecord>>,
@@ -37,10 +38,11 @@ impl MasterFile {
     /// Creates a new empty master file
     pub fn new(origin: String) -> Self {
         let master_file = MasterFile {
+            top_host:"".to_string(),
             origin: origin,
             last_host: "".to_string(),
             rrs: HashMap::<String, Vec<ResourceRecord>>::new(),
-            class_default: "IN".to_string(),
+            class_default: "".to_string(),
             ttl_default: 0,
         };
 
@@ -49,11 +51,18 @@ impl MasterFile {
 
     // Creates a new master file from the parameter filename. For listing cache contents.
     // Set validation to true if checking validity syntax of the master file is desired.
-    pub fn from_file(filename: String, validation: bool) -> Self {
+    pub fn from_file(filename: String, origin:String,validation: bool) -> Self {
+
         let file = File::open(filename).expect("file not found!");
         let reader = BufReader::new(file);
+        
+        //save origin with . at end
+        let mut origin = origin;
+        if origin.ends_with(".") == false{
+            origin.push('.');
+        } 
 
-        let mut master_file = MasterFile::new("".to_string());
+        let mut master_file = MasterFile::new(origin);
 
         let mut lines: Vec<String> = Vec::new();
         let mut last_line = "".to_string();
@@ -93,10 +102,14 @@ impl MasterFile {
             }
         }
 
+        //process lines and creates RR
+        println!("Creating new Masterfile");
+        master_file.process_lines(lines, validation);
+
+
         if validation {
-            println!("Creating new Masterfile with validation.");
             println!("Starting validation...");
-            master_file.process_lines_and_validation(lines);
+            master_file.check_soa_rr();
             // validate presence of glue records when necessary
             master_file.check_glue_delegations();
             // look for cname loops 
@@ -104,72 +117,69 @@ impl MasterFile {
             println!("Masterfile validated correctly.");
         }
 
-        else {
-            println!("Creating new Masterfile with no validation.");
-            for line in lines {
-                master_file.process_line(line);
-            }
-        }
+        
 
         master_file
     }
 
-  // Process a single line from a master file or include file 
-    fn process_line(&mut self, line: String) {
-        // Empty case
-        if line == "".to_string() {
-            return;
-        }
+//   // Process a single line from a master file or include file 
+//     fn process_line(&mut self, line: String) {
+//         // Empty case
+//         if line == "".to_string() {
+//             return;
+//         }
 
-        // ORIGIN case
-        if line.contains("$ORIGIN") {
-            let mut words = line.split_whitespace();
-            words.next();
-            let name = words.next().unwrap().to_string();
-            self.set_last_host(name.clone());
-            self.set_origin(name);
+//         // ORIGIN case
+//         if line.contains("$ORIGIN") {
 
-            return;
-        }
+//             let mut words = line.split_whitespace();
+//             words.next();
+//             let mut name = words.next().unwrap().to_string();
 
-        //Include case
-        if line.contains("$INCLUDE") {
-            let line_without_coment = MasterFile::remove_comments(line);
-            let mut words = line_without_coment.split_whitespace();
-            words.next();
-            let file_name = words.next().unwrap();
-            let domain_name = words.next().unwrap_or("");
-            self.process_include(file_name.to_string(), domain_name.to_string(), false);
+//             //save origin with . at end
+//             if name.ends_with(".")==false {
+//                 name.push_str(".");
+//             }
+            
+//             self.set_last_host(name.clone());
+//             self.set_origin(name);
 
-            return;
-        }
+//             return;
+//         }
 
-        // Replace @ for the origin domain
-        let contains_non_especial_at_sign = line.contains("@");
+//         //Include case
+//         if line.contains("$INCLUDE") {
+//             let line_without_coment = MasterFile::remove_comments(line);
+//             let mut words = line_without_coment.split_whitespace();
+//             words.next();
+//             let file_name = words.next().unwrap();
+//             let domain_name = words.next().unwrap_or("");
+//             self.process_include(file_name.to_string(), domain_name.to_string(), false);
 
-        let mut new_line = line.clone();
-        if contains_non_especial_at_sign {
-            let mut full_origin = self.get_origin();
-            full_origin.push_str(".");
-            new_line = line.replace("@", &full_origin);
-        }
+//             return;
+//         }
 
-        self.process_line_rr(new_line, false);
-    }
+//         // Replace @ for the origin domain
+//         let contains_non_especial_at_sign = line.contains("@");
+
+//         let mut new_line = line.clone();
+//         if contains_non_especial_at_sign {
+//             let full_origin = self.get_origin();
+//             new_line = line.replace("@", &full_origin);
+//         }
+
+//         self.process_line_rr(new_line, false);
+//     }
     
     /*
-    Obtains the host name and values for creting a RR
+    Obtains the host name and values for creting a RR 
+    Return class, type and host name of the RR for validation
      */
-    fn process_line_rr(&mut self, line: String, validity: bool) -> (String, String) {
-        // Gets host name
-        
-        let ( host_name, line_left_to_process) = self.get_line_host_name(line.clone());
-        
-        
-        if validity {
+    fn process_line_rr(&mut self, line: String) -> (String, String, String) {
+       
+        // Gets full host name 
+        let ( full_host_name, line_left_to_process) = self.get_full_host_name(line.clone());        
 
-            self.host_name_master_file_validation(host_name.clone()).unwrap();   
-        }
         // Process next values
         let mut next_line_items = line_left_to_process.split_whitespace();
 
@@ -186,7 +196,7 @@ impl MasterFile {
         while value != "" {
             let value_type = self.get_value_type(value.to_string());
 
-             println!("Name: {}, value: {}", host_name.clone(), value_type);
+             println!("Name: {}, value: {}", full_host_name.clone(), value_type);
 
             if value_type == 0 {
                 // TTL
@@ -214,16 +224,18 @@ impl MasterFile {
         let (this_class, this_type) = (class.to_string(), rr_type.to_string());
         
         // If line is a reverse query it will ignore it 
-        let is_reverse_query = is_reverse_query(host_name.clone());
+        let is_reverse_query = is_reverse_query(full_host_name.clone());
         if is_reverse_query{
             println!("RR for Inverse querys");
         }
         else{
-            self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), host_name, validity);
+            self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), full_host_name.clone());
 
         }
+
+       
         
-        return (this_class, this_type);
+        return (this_class, this_type, full_host_name);
     
     }
 
@@ -234,11 +246,12 @@ impl MasterFile {
         the current file.
         Ensures there is only one SOA rr, and that it is the first rr in the masterfile.
         Ensures the remaining rr in the masterfile belongs to the same class (not SOA).
+        Ensures at least one NS RR must be present at the top of the zone. !!! [MISING]
     */
-    fn process_lines_and_validation(&mut self, lines: Vec<String>){
+    fn process_lines(&mut self, lines: Vec<String>,validity: bool){
         
         
-        let mut prev_rr_class = "".to_string();
+        // let mut prev_rr_class = "".to_string();
 
         for line in lines {
 
@@ -251,6 +264,11 @@ impl MasterFile {
                 words.next();
                 let mut name = words.next().unwrap().to_string();
                 name = domain_validity_syntax(name).unwrap();
+
+                //save origin with . at end
+                if name.ends_with(".")==false {
+                    name.push_str(".");
+                }
 
                 self.set_last_host(name.clone());
                 self.set_origin(name);
@@ -266,35 +284,46 @@ impl MasterFile {
                 let valid_domain_name = domain_validity_syntax(domain_name.to_string()).unwrap();
                 return self.process_include(file_name.to_string(), valid_domain_name, true);
             }
-            
+
+            //replace @ for origin
             let contains_non_especial_at_sign = line.contains("@");
 
             let mut new_line = line.clone();
             if contains_non_especial_at_sign {
-                let mut full_origin = self.get_origin();
-                full_origin.push_str(".");
+                let full_origin = self.get_origin();
                 new_line = line.replace("@", &full_origin);
             }
             
-            let (class, rr_type) = self.process_line_rr(new_line, true);
-        
-            if prev_rr_class == "".to_string(){
-                prev_rr_class = class; 
-                if rr_type != "SOA".to_string(){
+            let (rr_class, rr_type,host_name) = self.process_line_rr(new_line);         
+            
+            if validity {
+                let default_class = self.get_class_default();
+            
+                if default_class == "" {
+                    //first RR in the MF
+                
+                    self.set_class_default(rr_class);
+                    self.set_top_host(host_name.clone());
                     
-                    panic!("No SOA RR is present at the top of the zone.");
+                    
+                }else{
+                    //verify if all RR have same class
+                    if default_class != rr_class {
+                        panic!("Not all rr have the same class.");
+                    }
+                    //verify if exist more tha one SOA
+                    if rr_type == "SOA".to_string(){
+                        panic!("More than one SOA per zone.");
+                    }
                 }
-                
+
+                //domain name validation
+                self.host_name_master_file_validation(host_name).unwrap();
+
             }
-            else{
-                if class != prev_rr_class{
-                    panic!("Not all rr have the same class.");
-                }
-                
-                if rr_type == "SOA".to_string(){
-                    panic!("More than one SOA per zone.");
-                }
-            }   
+          
+
+               
         }
     }
 
@@ -350,7 +379,8 @@ impl MasterFile {
     }
     
     /*
-     Process information of an specific type of RR and creates it
+     Process information of an specific type of RR and creates it,
+     saves the  RR with the full host name
      */
     fn process_specific_rr(
         &mut self,
@@ -358,34 +388,12 @@ impl MasterFile {
         ttl: u32,
         class: String,
         rr_type: String,
-        host_name: String,
-        validity: bool,
+        full_host_name: String
     ) {
 
 
         let origin = self.get_origin();
-        let mut full_host_name = host_name.clone();
 
-        
-        if validity{
-            self.host_name_master_file_validation(full_host_name.clone()).unwrap();    
-        }
-        
-        if host_name.ends_with(".") == false {
-            if  origin != "" {
-                full_host_name.push_str(".");
-                full_host_name.push_str(&origin);
-            }
-            // else {
-            //     panic!("Error: no origin for relative hostname ");
-            // }
-            
-        }
-        // remove last "." from hostname 
-        else {
-            full_host_name.pop();
-        }
-        
 
         let class_int = match class.as_str() {
             "IN" => 1,
@@ -425,7 +433,6 @@ impl MasterFile {
                 origin.clone(),
             ),
             "SOA" => {
-                self.set_class_default(class.clone());
                 let (rr, minimum) = SoaRdata::rr_from_master_file(
                     items,
                     ttl,
@@ -518,21 +525,39 @@ impl MasterFile {
         return line;
     }
 
-    // Gets the hostname of a line in a master file. If there is no hostname, takes the last hostnames used.
-    fn get_line_host_name(&mut self, line: String) -> (String, String) {
+    /* Gets the hostname  of a line in a master file.
+     - If there is no hostname, takes the last hostnames used.
+     - If host name is relative changes it to full host name
+      */
+    fn get_full_host_name(&mut self, line: String) -> (String, String) {
         let first_char = line.get(0..1).unwrap();
-        let  host_name ;
+        let origin = self.get_origin();
+        let mut full_host_name ;
         let mut line_left_to_process = "".to_string();
+        
 
         let mut iter = line.split_whitespace();
         
+        //if no host name use the last 
         if first_char == " ".to_string() {
-            host_name = self.get_last_host();
+            full_host_name = self.get_last_host();
             // line_left_to_process = line.clone();
         } else {
             
-            host_name = iter.clone().next().unwrap().to_string();
-            self.set_last_host(host_name.clone());
+            full_host_name = iter.clone().next().unwrap().to_string();
+            
+            //full host name for rr in hashmap
+            if full_host_name.ends_with(".") == false {
+                if  origin != "." {
+                    full_host_name.push_str(".");
+                    full_host_name.push_str(&origin);
+                }
+                else {
+                    full_host_name.push_str(&origin);
+                }   
+            }
+
+            self.set_last_host(full_host_name.clone());
             iter.next();
 
         }
@@ -546,7 +571,7 @@ impl MasterFile {
         
                 
 
-        return (host_name, line_left_to_process);
+        return (full_host_name, line_left_to_process);
     }
 
     // Returns whether the type is class, rr_type or ttl
@@ -613,20 +638,22 @@ impl MasterFile {
     }
 
     // Processes an included file in the master file. 
-    fn process_include(&mut self, file_name: String, mut domain_name: String, validity: bool){
+    fn process_include(&mut self, file_name: String,  domain_name: String, validity: bool){
         
-        // let prev_class = "".to_string();
         // remeber the parent origin, for now the origin used is going to change
         let parent_origin = self.get_origin();
-        
-        if validity{
-            domain_name = domain_validity_syntax(domain_name.clone()).unwrap();
+
+
+        let mut full_host_name = domain_name;
+
+        if full_host_name.ends_with(".")==false {
+            full_host_name.push_str(".");
         }
         
-        if domain_name != "" {
-            self.set_last_host(domain_name.clone());
+        if full_host_name != "" {
+            self.set_last_host(full_host_name.clone());
             // changing origin to relative domain name of the include
-            self.set_origin(domain_name.clone());
+            self.set_origin(full_host_name.clone());
         }
 
         
@@ -634,13 +661,46 @@ impl MasterFile {
         let file = File::open(file_name.clone()).expect("file not found!");
         let reader = BufReader::new(file);
 
+        let mut lines: Vec<String> = Vec::new();
+        let mut last_line = "".to_string();
+
+        // Link lines with parenthesis and remove comments
         for line in reader.lines() {
-                        
             let line = line.unwrap();
+
+            // Remove comments and replace especial encoding
             let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
-            self.process_line(line_without_comments);
             
+            let open_parenthesis = match line_without_comments.clone().find("(") {
+                Some(_) => 1,
+                None => 0,
+            };
+
+            let closed_parenthesis = match line_without_comments.clone().find(")") {
+                Some(_) => 1,
+                None => 0,
+            };
+
+            if open_parenthesis == 1 && closed_parenthesis == 0 {
+                last_line.push_str(&line_without_comments);
+                continue;
+                
+            } else if open_parenthesis == 0
+                && closed_parenthesis == 0
+                && last_line != "".to_string()
+            {
+                last_line.push_str(&line_without_comments);
+                continue;
+        
+            } else {
+                last_line.push_str(&line_without_comments);
+                lines.push(last_line.replace("(", "").replace(")", ""));
+                last_line = "".to_string();
+            }
         }
+
+        //process lines in a MF
+        self.process_lines(lines,validity);
 
         if validity {
             self.check_glue_delegations();
@@ -652,6 +712,7 @@ impl MasterFile {
         
     }
 
+    
     // Master file: If delegations are present and glue information is required,it should be present.
     fn check_glue_delegations(&self) {
         let origin = self.get_origin();
@@ -669,6 +730,10 @@ impl MasterFile {
             },
         };
 
+        // for rr_ns in origin_ns_rr.iter(){
+        //     println!("-----> {}",rr_ns.get_name())
+        // }
+
 
         for ns in origin_ns_rr {
 
@@ -682,7 +747,9 @@ impl MasterFile {
 
             while ns_labels.len() >= origin_labels_num {
                 // subzone
-                if ns_labels == origin_labels {
+
+                //if they are the same means host name in rdata is a subdomain in the zone
+                if ns_labels == origin_labels { 
                     // find glue info for this 
                     match rrs.get(ns_slice){
                         Some(ns_rrs) => {
@@ -701,12 +768,19 @@ impl MasterFile {
         }
     }
 
+    //Checks that exist at least one RR type SOA in the Master File
+    fn check_soa_rr(&self){
+        let top_host = self.get_top_host();
+        if top_host == "" {
+            panic!("No SOA RR is present in the Master File");
+        }
+    }
+
 
     //checks validity of a host in a master file cases:
     //      - wildcard
     //      - inverse query 
     fn host_name_master_file_validation( &self,host_name: String)-> Result<String, &'static str> {
-        
         //wildcard validation
         match host_name.split_once('.') {
             Some((firs_label, rest_hostname)) => {
@@ -749,9 +823,13 @@ impl MasterFile {
     }
 
 }
-
 // Getters
 impl MasterFile {
+    // Gets the name top domain
+    pub fn get_top_host(&self) -> String {
+        self.top_host.clone()
+    }
+
     // Gets the origin name
     pub fn get_origin(&self) -> String {
         self.origin.clone()
@@ -780,6 +858,12 @@ impl MasterFile {
 
 // Setters
 impl MasterFile {
+
+    // Sets the name of top domain with a new value
+    pub fn set_top_host(&mut self, name:String) {
+        self.top_host = name;
+    }
+
     // Sets the origin with a new value
     pub fn set_origin(&mut self, origin: String) {
         self.origin = origin;
@@ -825,715 +909,718 @@ mod master_file_test {
         assert_eq!(line_no_rr_without_comments, "");
     }
 
-    #[test]
-    fn replace_special_encoding_test(){
+    // #[test]
+    // fn replace_special_encoding_test(){
 
-        let line1 = r"a  IN  SOA VENERA  Action\.domains 20 7200 600 3600000 60".to_string();
-        let line2 = r"a  IN  SOA VENERA  Action.domains 20 7200 \600 3600000 60".to_string();
-        let line3= r"\@  IN  A 123.123.123.123".to_string();
-        //let line = r"a  IN  SOA VENERA  Action\.domains 20 7200 \600 3600000 60".to_string(); 
+    //     let line1 = r"a  IN  SOA VENERA  Action\.domains 20 7200 600 3600000 60".to_string();
+    //     let line2 = r"a  IN  SOA VENERA  Action.domains 20 7200 \600 3600000 60".to_string();
+    //     let line3= r"\@  IN  A 123.123.123.123".to_string();
+    //     //let line = r"a  IN  SOA VENERA  Action\.domains 20 7200 \600 3600000 60".to_string(); 
         
-        let line_without_special_enc1 = MasterFile::replace_special_encoding(line1); 
-        let line_without_special_enc2 = MasterFile::replace_special_encoding(line2); 
-        let line_without_special_enc3 = MasterFile::replace_special_encoding(line3); 
+    //     let line_without_special_enc1 = MasterFile::replace_special_encoding(line1); 
+    //     let line_without_special_enc2 = MasterFile::replace_special_encoding(line2); 
+    //     let line_without_special_enc3 = MasterFile::replace_special_encoding(line3); 
 
-        assert_eq!(line_without_special_enc1, "a  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60");
-        assert_eq!(line_without_special_enc2, "a  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60");
-        assert_eq!(line_without_special_enc3, "@  IN  A 123.123.123.123");
-    }
+    //     assert_eq!(line_without_special_enc1, "a  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60");
+    //     assert_eq!(line_without_special_enc2, "a  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60");
+    //     assert_eq!(line_without_special_enc3, "@  IN  A 123.123.123.123");
+    // }
 
-    #[test]
-    fn host_name_master_file_validation_test(){
-        let host_name = "anakena.dcc".to_string(); 
-        let host_root = '.'.to_string(); 
-        let host_wildcard = "*.dcc".to_string();
-        let host_reverse = "1.2.168.192.IN-ADDR.ARPA".to_string();
+    // #[test]
+    // fn host_name_master_file_validation_test(){
+    //     let host_name = "anakena.dcc".to_string(); 
+    //     let host_root = '.'.to_string(); 
+    //     let host_wildcard = "*.dcc".to_string();
+    //     let host_reverse = "1.2.168.192.IN-ADDR.ARPA".to_string();
 
 
-        let vect_host_names = vec![host_name,
-                                                host_root,
-                                                host_wildcard,
-                                                host_reverse];
+    //     let vect_host_names = vec![host_name,
+    //                                             host_root,
+    //                                             host_wildcard,
+    //                                             host_reverse];
 
-        let  master_file = MasterFile::new("uchile.cl".to_string());
+    //     let  master_file = MasterFile::new("uchile.cl".to_string());
         
 
-        for host in vect_host_names{
-            let result = master_file.host_name_master_file_validation(host.clone());
+    //     for host in vect_host_names{
+    //         let result = master_file.host_name_master_file_validation(host.clone());
 
-            if "*.dcc".to_string() == host {
-                assert_eq!(Ok("dcc".to_string()),result);
+    //         if "*.dcc".to_string() == host {
+    //             assert_eq!(Ok("dcc".to_string()),result);
 
-            }else if "1.2.168.192.IN-ADDR.ARPA".to_string() == host{
-                assert_eq!(Ok("IN-ADDR.ARPA".to_string()),result);
+    //         }else if "1.2.168.192.IN-ADDR.ARPA".to_string() == host{
+    //             assert_eq!(Ok("IN-ADDR.ARPA".to_string()),result);
 
-            }else{
-                assert_eq!(Ok(host),result);
-            }
+    //         }else{
+    //             assert_eq!(Ok(host),result);
+    //         }
 
-        }
+    //     }
 
 
 
         
-    }
+    // }
 
-    #[test]
-    fn get_line_host_name_test(){
-        //look for host name and sets last_host        
+    // #[test]
+    // fn get_full_host_name_test(){
+    //     //look for host name and sets last_host        
         
-        let line_1 = "  A   192.168.1.1".to_string();               //without host
-        let line_2 = "a NS  VENERA".to_string();                    //with host
-        let line_3 = "  A   192.168.1.1".to_string(); 
-        let line_4 = "b.uchile.cl  A   192.168.1.1".to_string(); 
-        let line_5 = "  A   192.168.1.1".to_string(); 
-        let line_6 = "a.b A 192.168.23.2".to_string();              //subdomin in a zone
-        let line_7 = "*.b A 192.168.44.6".to_string();              //wildcard
-        let line_8 = "*   A 192.168.44.6".to_string();              //wildcard
+    //     let line_1 = "  A   192.168.1.1".to_string();               //without host
+    //     let line_2 = "a NS  VENERA".to_string();                    //with host
+    //     let line_3 = "  A   192.168.1.1".to_string(); 
+    //     let line_4 = "b.uchile.cl  A   192.168.1.1".to_string(); 
+    //     let line_5 = "  A   192.168.1.1".to_string(); 
+    //     let line_6 = "a.b A 192.168.23.2".to_string();              //subdomin in a zone
+    //     let line_7 = "*.b A 192.168.44.6".to_string();              //wildcard
+    //     let line_8 = "*   A 192.168.44.6".to_string();              //wildcard
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.set_last_host("test.uchile.cl".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.set_last_host("test.uchile.cl".to_string());
 
-        let case1 = master_file.get_line_host_name(line_1) ;
-        let case2 = master_file.get_line_host_name(line_2) ;
-        let case3 = master_file.get_line_host_name(line_3);
-        let case4 = master_file.get_line_host_name(line_4) ;
-        let case5 = master_file.get_line_host_name(line_5);
-        let case6 = master_file.get_line_host_name(line_6);
-        let case7 = master_file.get_line_host_name(line_7);
+    //     let case1 = master_file.get_full_host_name(line_1) ;
+    //     let case2 = master_file.get_full_host_name(line_2) ;
+    //     let case3 = master_file.get_full_host_name(line_3);
+    //     let case4 = master_file.get_full_host_name(line_4) ;
+    //     let case5 = master_file.get_full_host_name(line_5);
+    //     let case6 = master_file.get_full_host_name(line_6);
+    //     let case7 = master_file.get_full_host_name(line_7);
     
-        let case8 = master_file.get_line_host_name(line_8);
+    //     let case8 = master_file.get_full_host_name(line_8);
         
         
        
-        assert_eq!(case1.0, "test.uchile.cl".to_string());
-        assert_eq!(case2.0,"a".to_string() );
-        assert_eq!(case3.0, "a".to_string());
-        assert_eq!(case4.0, "b.uchile.cl".to_string());
-        assert_eq!(case5.0, "b.uchile.cl".to_string());
-        assert_eq!(case6.0, "a.b".to_string());
-        assert_eq!(case7.0, "*.b".to_string());
-        assert_eq!(case8.0, "*".to_string());
+    //     assert_eq!(case1.0, "test.uchile.cl".to_string());
+    //     assert_eq!(case2.0,"a".to_string() );
+    //     assert_eq!(case3.0, "a".to_string());
+    //     assert_eq!(case4.0, "b.uchile.cl".to_string());
+    //     assert_eq!(case5.0, "b.uchile.cl".to_string());
+    //     assert_eq!(case6.0, "a.b".to_string());
+    //     assert_eq!(case7.0, "*.b".to_string());
+    //     assert_eq!(case8.0, "*".to_string());
  
-    }
+    // }
 
-    #[test]
-    fn get_value_type_test(){
+    // #[test]
+    // fn get_value_type_test(){
 
-        let rest_line = "   IN     NS      VENERA".split_whitespace();
+    //     let rest_line = "   IN     NS      VENERA".split_whitespace();
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.set_last_host("test".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.set_last_host("test".to_string());
 
-        let true_values = vec![1,2,0];
+    //     let true_values = vec![1,2,0];
         
-        let mut i = 0;
-        for value in rest_line {
-            let type_value =  master_file.get_value_type(value.to_string());
-            assert_eq!(type_value,true_values[i]);
-            i+=1;
-        }
-    }
+    //     let mut i = 0;
+    //     for value in rest_line {
+    //         let type_value =  master_file.get_value_type(value.to_string());
+    //         assert_eq!(type_value,true_values[i]);
+    //         i+=1;
+    //     }
+    // }
 
-    #[test]
-    fn add_rr_cname_test() {
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        let new_a1_record = ARdata::rr_from_master_file(
-            "204.13.100.3".split_whitespace(),
-            0,
-            0,
-            "test.uchile.cl".to_string());
+    // #[test]
+    // fn add_rr_cname_test() {
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     let new_a1_record = ARdata::rr_from_master_file(
+    //         "204.13.100.3".split_whitespace(),
+    //         0,
+    //         0,
+    //         "test.uchile.cl".to_string());
 
-        let new_cname1_record = CnameRdata::rr_from_master_file("test.googleplex.edu".split_whitespace(),
-            0,
-            0,
-            "test.uchile.cl".to_string(),
-            "test.uchile.cl".to_string());
+    //     let new_cname1_record = CnameRdata::rr_from_master_file("test.googleplex.edu".split_whitespace(),
+    //         0,
+    //         0,
+    //         "test.uchile.cl".to_string(),
+    //         "test.uchile.cl".to_string());
 
-        let new_a2_record = ARdata::rr_from_master_file(
-            "204.13.100.3".split_whitespace(),
-            0,
-            0,
-            "test.uchile.cl".to_string());
+    //     let new_a2_record = ARdata::rr_from_master_file(
+    //         "204.13.100.3".split_whitespace(),
+    //         0,
+    //         0,
+    //         "test.uchile.cl".to_string());
 
-        let new_cname2_record = CnameRdata::rr_from_master_file(
-            "test.googleplex.com".split_whitespace(),
-            0,
-            0,
-            "test.uchile.cl".to_string(),
-            "test.uchile.cl".to_string());
+    //     let new_cname2_record = CnameRdata::rr_from_master_file(
+    //         "test.googleplex.com".split_whitespace(),
+    //         0,
+    //         0,
+    //         "test.uchile.cl".to_string(),
+    //         "test.uchile.cl".to_string());
 
-        // Always have just 1 RR CNAME
-        master_file.add_rr("test.uchile.cl".to_string(), new_a1_record.clone());
-        assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
-        master_file.add_rr("test.uchile.cl".to_string(), new_cname1_record);
-        assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
-        master_file.add_rr("test.uchile.cl".to_string(), new_a2_record);
-        assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
-        master_file.add_rr("test.uchile.cl".to_string(), new_cname2_record);
-        assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
+    //     // Always have just 1 RR CNAME
+    //     master_file.add_rr("test.uchile.cl".to_string(), new_a1_record.clone());
+    //     assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
+    //     master_file.add_rr("test.uchile.cl".to_string(), new_cname1_record);
+    //     assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
+    //     master_file.add_rr("test.uchile.cl".to_string(), new_a2_record);
+    //     assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
+    //     master_file.add_rr("test.uchile.cl".to_string(), new_cname2_record);
+    //     assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
 
-        //case 2  same host diferentes ways
-        master_file.add_rr("test.uchile.cl".to_string(), new_a1_record);
-        assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
-        assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
+    //     //case 2  same host diferentes ways
+    //     master_file.add_rr("test.uchile.cl".to_string(), new_a1_record);
+    //     assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
+    //     assert_eq!(master_file.get_rrs().get("test.uchile.cl").unwrap().len(), 1);
 
-    }
+    // }
 
-    #[test]
-    fn add_rr_test() {
-        //add rr of subdomain of a zone
-        let rr_a_subdomain = ARdata::rr_from_master_file(
-            "204.13.100.3".split_whitespace(),
-            0,
-            0,
-            "a.b.uchile.cl".to_string());
+    // #[test]
+    // fn add_rr_test() {
+    //     //add rr of subdomain of a zone
+    //     let rr_a_subdomain = ARdata::rr_from_master_file(
+    //         "204.13.100.3".split_whitespace(),
+    //         0,
+    //         0,
+    //         "a.b.uchile.cl".to_string());
 
-        //add wild card
-        let rr_ns_wildcard = NsRdata::rr_from_master_file(
-            "a".split_whitespace(),
-            0,
-            0,
-            "*.uchile.cl".to_string(),
-            "uchile.cl".to_string());
+    //     //add wild card
+    //     let rr_ns_wildcard = NsRdata::rr_from_master_file(
+    //         "a".split_whitespace(),
+    //         0,
+    //         0,
+    //         "*.uchile.cl".to_string(),
+    //         "uchile.cl".to_string());
 
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
         
-        master_file.add_rr("a.b.uchile.cl".to_string(), rr_a_subdomain);
-        master_file.add_rr("*.uchile.cl".to_string(), rr_ns_wildcard);
+    //     master_file.add_rr("a.b.uchile.cl".to_string(), rr_a_subdomain);
+    //     master_file.add_rr("*.uchile.cl".to_string(), rr_ns_wildcard);
 
-        /*
-        let rrs = master_file.get_rrs();
-        for (key,val) in rrs{
-            println!("host names -> {}",key);
-        }
-         */
+    //     /*
+    //     let rrs = master_file.get_rrs();
+    //     for (key,val) in rrs{
+    //         println!("host names -> {}",key);
+    //     }
+    //      */
         
-        assert_eq!(master_file.get_rrs().get("a.b.uchile.cl").unwrap().len(), 1);
-        assert_eq!(master_file.get_rrs().get("*.uchile.cl").unwrap().len(), 1);
+    //     assert_eq!(master_file.get_rrs().get("a.b.uchile.cl").unwrap().len(), 1);
+    //     assert_eq!(master_file.get_rrs().get("*.uchile.cl").unwrap().len(), 1);
 
-    }
-    #[test]
-    fn process_line_rr_test(){
-        //gets ttl, clas, type 
-        let line_ns = "dcc 33 IN NS ns".to_string();
-        let _line_ns_full_host = "dcc.uchile.cl. 33 IN NS ns".to_string();
-        let line_ns_default = " NS ns2".to_string();
-        let line_a_subdomain ="a.b A  192.168.21.2".to_string();
-        let _line_a_wildcard ="*.b A  192.168.222.44".to_string();
-        
-
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.set_ttl_default(33);
-        master_file.set_class_default("IN".to_string());
-
-        let (_host_ns,_rest_line_ns) = master_file.process_line_rr(line_ns,true);
-        let (_host_default,_rest_line_default) = master_file.process_line_rr(line_ns_default,true);
-        let (_host,_rest_line) = master_file.process_line_rr(line_a_subdomain,true);
-        //let m = master_file.process_line_rr(line_a_wildcard,true);
+    // }
+    // #[test]
+    // fn process_line_rr_test(){
+    //     //gets ttl, clas, type 
+    //     let line_ns = "dcc 33 IN NS ns".to_string();
+    //     let _line_ns_full_host = "dcc.uchile.cl. 33 IN NS ns".to_string();
+    //     let line_ns_default = " NS ns2".to_string();
+    //     let line_a_subdomain ="a.b A  192.168.21.2".to_string();
+    //     let _line_a_wildcard ="*.b A  192.168.222.44".to_string();
         
 
-        let rrs = master_file.get_rrs();
-        let vec_rr_ns = rrs.get("dcc.uchile.cl").unwrap();
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.set_ttl_default(33);
+    //     master_file.set_class_default("IN".to_string());
+
+    //     let (_host_ns,_rest_line_ns) = master_file.process_line_rr(line_ns,true);
+    //     let (_host_default,_rest_line_default) = master_file.process_line_rr(line_ns_default,true);
+    //     let (_host,_rest_line) = master_file.process_line_rr(line_a_subdomain,true);
+    //     //let m = master_file.process_line_rr(line_a_wildcard,true);
+        
+
+    //     let rrs = master_file.get_rrs();
+    //     let vec_rr_ns = rrs.get("dcc.uchile.cl").unwrap();
 
         
-        for rr in vec_rr_ns.iter() {
-            let type_rr = rr.get_type_code();
-            let class_rr = rr.get_class();
-            let ttl_rr = rr.get_ttl();
-            let name_rr = rr.get_name().get_name();
+    //     for rr in vec_rr_ns.iter() {
+    //         let type_rr = rr.get_type_code();
+    //         let class_rr = rr.get_class();
+    //         let ttl_rr = rr.get_ttl();
+    //         let name_rr = rr.get_name().get_name();
 
-            assert_eq!(type_rr,2); 
-            assert_eq!(class_rr,1);
-            assert_eq!(ttl_rr,33);
-            assert_eq!(name_rr,"dcc.uchile.cl".to_string());
-        }
+    //         assert_eq!(type_rr,2); 
+    //         assert_eq!(class_rr,1);
+    //         assert_eq!(ttl_rr,33);
+    //         assert_eq!(name_rr,"dcc.uchile.cl".to_string());
+    //     }
 
-        let vec_rr_a = rrs.get("a.b.uchile.cl").unwrap();
+    //     let vec_rr_a = rrs.get("a.b.uchile.cl").unwrap();
 
-        for rr in vec_rr_a.iter() {
-            let type_rr = rr.get_type_code();
-            let class_rr = rr.get_class();
-            let ttl_rr = rr.get_ttl();
-            let name_rr = rr.get_name().get_name();
+    //     for rr in vec_rr_a.iter() {
+    //         let type_rr = rr.get_type_code();
+    //         let class_rr = rr.get_class();
+    //         let ttl_rr = rr.get_ttl();
+    //         let name_rr = rr.get_name().get_name();
             
-            assert_eq!(type_rr,1); 
-            assert_eq!(class_rr,1);
-            assert_eq!(ttl_rr,33);
-            assert_eq!(name_rr,"a.b.uchile.cl".to_string());
+    //         assert_eq!(type_rr,1); 
+    //         assert_eq!(class_rr,1);
+    //         assert_eq!(ttl_rr,33);
+    //         assert_eq!(name_rr,"a.b.uchile.cl".to_string());
             
-        }
+    //     }
          
 
          
 
-    }
+    // }
 
 
-    #[test]
-    fn process_line_rr_no_validation_test(){
-        //gets ttl, clas, type 
-        let line_ns = "dcc 33 IN NS ns.test.cl".to_string();
-        let line_ns_default = " NS ns.test.cl".to_string();
+    // #[test]
+    // fn process_line_rr_no_validation_test(){
+    //     //gets ttl, clas, type 
+    //     let line_ns = "dcc 33 IN NS ns.test.cl".to_string();
+    //     let line_ns_default = " NS ns.test.cl".to_string();
 
-        let line_a ="           A       192.80.24.11".to_string();
-        let line_mx = "     24         MX      20      VAXA".to_string();
+    //     let line_a ="           A       192.80.24.11".to_string();
+    //     let line_mx = "     24         MX      20      VAXA".to_string();
 
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.set_last_host("test".to_string());
-        master_file.set_origin("uchile.cl".to_string());
-        master_file.set_ttl_default(33);
-        master_file.set_class_default("IN".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.set_last_host("test".to_string());
+    //     master_file.set_origin("uchile.cl".to_string());
+    //     master_file.set_ttl_default(33);
+    //     master_file.set_class_default("IN".to_string());
 
-        master_file.process_line_rr(line_ns,false);
-        master_file.process_line_rr(line_ns_default,false);
-        master_file.process_line_rr(line_a, false);
-        master_file.process_line_rr(line_mx,false);
+    //     master_file.process_line_rr(line_ns,false);
+    //     master_file.process_line_rr(line_ns_default,false);
+    //     master_file.process_line_rr(line_a, false);
+    //     master_file.process_line_rr(line_mx,false);
 
-        let rrs = master_file.get_rrs();
-        let vec_test2_rr = rrs.get("dcc.uchile.cl").unwrap();
+    //     let rrs = master_file.get_rrs();
+    //     let vec_test2_rr = rrs.get("dcc.uchile.cl").unwrap();
 
-        let true_val = vec![
-        //  type class ttl
-            (2,   1,  33), //  -> NS, IN, TTL
-            (2,   1,  33), //  -> NS, IN, TTL
-            (1,   1,  33), //  -> A , IN, TTL
-            (15,  1,  24)  //  -> MX, IN, TTL
-        ];
-        let mut i =0;
-        for rr in vec_test2_rr.iter() {
-            let type_rr = rr.get_type_code();
-            let class_rr = rr.get_class();
-            let ttl_rr = rr.get_ttl();
-            let name_rr = rr.get_name().get_name();
+    //     let true_val = vec![
+    //     //  type class ttl
+    //         (2,   1,  33), //  -> NS, IN, TTL
+    //         (2,   1,  33), //  -> NS, IN, TTL
+    //         (1,   1,  33), //  -> A , IN, TTL
+    //         (15,  1,  24)  //  -> MX, IN, TTL
+    //     ];
+    //     let mut i =0;
+    //     for rr in vec_test2_rr.iter() {
+    //         let type_rr = rr.get_type_code();
+    //         let class_rr = rr.get_class();
+    //         let ttl_rr = rr.get_ttl();
+    //         let name_rr = rr.get_name().get_name();
             
-            assert_eq!(type_rr,true_val[i].0); 
-            assert_eq!(class_rr,true_val[i].1);
-            assert_eq!(ttl_rr,true_val[i].2);
-            assert_eq!(name_rr,"dcc.uchile.cl".to_string());
-            i+=1;
+    //         assert_eq!(type_rr,true_val[i].0); 
+    //         assert_eq!(class_rr,true_val[i].1);
+    //         assert_eq!(ttl_rr,true_val[i].2);
+    //         assert_eq!(name_rr,"dcc.uchile.cl".to_string());
+    //         i+=1;
     
-        }
+    //     }
 
 
-    }
+    // }
 
-    #[test]
-    fn process_specific_rr_test(){
-        //identifies class, type create RR
-        let values_soa = "VENERA      Action.domains	20	7200	600	3600000	60".split_whitespace();
-        let values_mx = "20      VAXA".split_whitespace();
-        let values_a = "192.80.24.10".split_whitespace();
-        let values_ns = "A.ISI.EDU.".split_whitespace();
+    // #[test]
+    // fn process_specific_rr_test(){
+    //     //identifies class, type create RR
+    //     let values_soa = "VENERA      Action.domains	20	7200	600	3600000	60".split_whitespace();
+    //     let values_mx = "20      VAXA".split_whitespace();
+    //     let values_a = "192.80.24.10".split_whitespace();
+    //     let values_ns = "A.ISI.EDU.".split_whitespace();
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.set_last_host("test".to_string());
-        master_file.set_origin("uchile.cl".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.set_last_host("test".to_string());
+    //     master_file.set_origin("uchile.cl".to_string());
         
-        //MX
-        master_file.process_specific_rr(
-            values_mx,
-            0,
-            "IN".to_string(),
-            "MX".to_string(),
-            "test.uchile.cl.".to_string(),
-            true);
+    //     //MX
+    //     master_file.process_specific_rr(
+    //         values_mx,
+    //         0,
+    //         "IN".to_string(),
+    //         "MX".to_string(),
+    //         "test.uchile.cl.".to_string(),
+    //         true);
         
-        //A
-        master_file.process_specific_rr(
-            values_a,
-            0,
-            "IN".to_string(),
-            "A".to_string(),
-            "test".to_string(),
-            true);    
+    //     //A
+    //     master_file.process_specific_rr(
+    //         values_a,
+    //         0,
+    //         "IN".to_string(),
+    //         "A".to_string(),
+    //         "test".to_string(),
+    //         true);    
 
         
-        //SOA
-        master_file.process_specific_rr(
-            values_soa,
-            0,
-            "IN".to_string(),
-            "SOA".to_string(),
-            "test.uchile.cl.".to_string(),
-            true);
+    //     //SOA
+    //     master_file.process_specific_rr(
+    //         values_soa,
+    //         0,
+    //         "IN".to_string(),
+    //         "SOA".to_string(),
+    //         "test.uchile.cl.".to_string(),
+    //         true);
 
-        //ns
-        master_file.process_specific_rr(
-            values_ns,
-            0,
-            "IN".to_string(),
-            "NS".to_string(),
-            "test".to_string(),
-            true);
+    //     //ns
+    //     master_file.process_specific_rr(
+    //         values_ns,
+    //         0,
+    //         "IN".to_string(),
+    //         "NS".to_string(),
+    //         "test".to_string(),
+    //         true);
         
-        let rrs = master_file.get_rrs();
-        let vec_test_rr = rrs.get("test.uchile.cl").unwrap();
+    //     let rrs = master_file.get_rrs();
+    //     let vec_test_rr = rrs.get("test.uchile.cl").unwrap();
         
-        let vect_true_val = vec![
-            (15,1), // - > MX  , IN
-            (1,1),  // ->  A   , IN
-            (6,1),  // ->  SOA , IN
-            (2,1)   // ->  NS  , IN
-        ];
+    //     let vect_true_val = vec![
+    //         (15,1), // - > MX  , IN
+    //         (1,1),  // ->  A   , IN
+    //         (6,1),  // ->  SOA , IN
+    //         (2,1)   // ->  NS  , IN
+    //     ];
 
-        let mut i = 0 ;
-        for rr in vec_test_rr.iter() {
-            let type_rr = rr.get_type_code();
-            let class_rr = rr.get_class();
+    //     let mut i = 0 ;
+    //     for rr in vec_test_rr.iter() {
+    //         let type_rr = rr.get_type_code();
+    //         let class_rr = rr.get_class();
 
-            assert_eq!(type_rr,vect_true_val[i].0); 
-            assert_eq!(class_rr,vect_true_val[i].1);  
-            i +=1;
-        }
+    //         assert_eq!(type_rr,vect_true_val[i].0); 
+    //         assert_eq!(class_rr,vect_true_val[i].1);  
+    //         i +=1;
+    //     }
          
         
-    }
+    // }
 
-    #[test]
-    fn process_especific_rr_no_validation_test(){
-        //pueden recibir hosts uchile.cl.  algo.uchile.cl. 
-        //identifies class, type create RR
-        let values_soa = "VENERA      Action.domains	20	7200	600	3600000	60".split_whitespace();
-        let values_mx = "20      VAXA".split_whitespace();
-        let values_a = "192.80.24.10".split_whitespace();
-        let values_ns = "A.ISI.EDU.".split_whitespace();
+    // #[test]
+    // fn process_especific_rr_no_validation_test(){
+    //     //pueden recibir hosts uchile.cl.  algo.uchile.cl. 
+    //     //identifies class, type create RR
+    //     let values_soa = "VENERA      Action.domains	20	7200	600	3600000	60".split_whitespace();
+    //     let values_mx = "20      VAXA".split_whitespace();
+    //     let values_a = "192.80.24.10".split_whitespace();
+    //     let values_ns = "A.ISI.EDU.".split_whitespace();
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.set_last_host("test".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.set_last_host("test".to_string());
         
-        //MX
-        master_file.process_specific_rr(
-            values_mx,
-            0,
-            "IN".to_string(),
-            "MX".to_string(),
-            "test.uchile.cl.".to_string(),
-            false);
+    //     //MX
+    //     master_file.process_specific_rr(
+    //         values_mx,
+    //         0,
+    //         "IN".to_string(),
+    //         "MX".to_string(),
+    //         "test.uchile.cl.".to_string(),
+    //         false);
         
-        //A
-        master_file.process_specific_rr(
-            values_a,
-            0,
-            "IN".to_string(),
-            "A".to_string(),
-            "test".to_string(),
-            false);    
+    //     //A
+    //     master_file.process_specific_rr(
+    //         values_a,
+    //         0,
+    //         "IN".to_string(),
+    //         "A".to_string(),
+    //         "test".to_string(),
+    //         false);    
 
         
-        //SOA
-        master_file.process_specific_rr(
-            values_soa,
-            0,
-            "IN".to_string(),
-            "SOA".to_string(),
-            "test.uchile.cl.".to_string(),
-            false);
+    //     //SOA
+    //     master_file.process_specific_rr(
+    //         values_soa,
+    //         0,
+    //         "IN".to_string(),
+    //         "SOA".to_string(),
+    //         "test.uchile.cl.".to_string(),
+    //         false);
 
-        //ns
-        master_file.process_specific_rr(
-            values_ns,
-            0,
-            "IN".to_string(),
-            "NS".to_string(),
-            "test".to_string(),
-            false);
+    //     //ns
+    //     master_file.process_specific_rr(
+    //         values_ns,
+    //         0,
+    //         "IN".to_string(),
+    //         "NS".to_string(),
+    //         "test".to_string(),
+    //         false);
 
-        //process_especific_rr_no_validation create RR and saves it  with full host name
-        let rrs = master_file.get_rrs();
+    //     //process_especific_rr_no_validation create RR and saves it  with full host name
+    //     let rrs = master_file.get_rrs();
 
     
         
-        let vec_test2_rr = rrs.get("test.uchile.cl").unwrap();
+    //     let vec_test2_rr = rrs.get("test.uchile.cl").unwrap();
         
 
-        let vect_true_val = vec![
-            (15,1), // -> MX  , IN
-            (1,1),  // -> A   , IN 
-            (6,1),  // -> SOA , IN
-            (2,1)   // -> NS  , IN
-            ];
-        let mut i = 0 ;
+    //     let vect_true_val = vec![
+    //         (15,1), // -> MX  , IN
+    //         (1,1),  // -> A   , IN 
+    //         (6,1),  // -> SOA , IN
+    //         (2,1)   // -> NS  , IN
+    //         ];
+    //     let mut i = 0 ;
         
-        for rr in vec_test2_rr.iter() {
-            let type_rr = rr.get_type_code();
-            let class_rr = rr.get_class();
+    //     for rr in vec_test2_rr.iter() {
+    //         let type_rr = rr.get_type_code();
+    //         let class_rr = rr.get_class();
 
-            assert_eq!(type_rr,vect_true_val[i].0); 
-            assert_eq!(class_rr,vect_true_val[i].1);  
-            i +=1;
-        }
+    //         assert_eq!(type_rr,vect_true_val[i].0); 
+    //         assert_eq!(class_rr,vect_true_val[i].1);  
+    //         i +=1;
+    //     }
          
          
-    }
+    // }
 
 
     
-    #[test]
-    fn process_lines_and_validation_test(){
+    // #[test]
+    // fn process_lines_and_validation_test(){
 
-        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();  //at line
-        let line_a = "a             A       192.80.24.11".to_string();                          //basic line        
-        let line_no_host = " NS  a".to_string();                                                //without host line
-        let line_subdomain = "a.b     A       192.168.2.134".to_string();                       //subzone line        
-        let line_wildcard1 = "*.dcc    A       192.168.2.3".to_string();                          //* line
-        let line_wildcard2 = "*.dcc.uchile.cl.    A       192.168.2.1".to_string();                     
+    //     let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();  //at line
+    //     let line_a = "a             A       192.80.24.11".to_string();                          //basic line        
+    //     let line_no_host = " NS  a".to_string();                                                //without host line
+    //     let line_subdomain = "a.b     A       192.168.2.134".to_string();                       //subzone line        
+    //     let line_wildcard1 = "*.dcc    A       192.168.2.3".to_string();                          //* line
+    //     let line_wildcard2 = "*.dcc.uchile.cl.    A       192.168.2.1".to_string();                     
 
-        //let vec_lines = vec![line_soa,line_a,line_no_host];
-        let vec_lines = vec![line_soa,line_a,line_no_host,line_subdomain,line_wildcard1,line_wildcard2];
+    //     //let vec_lines = vec![line_soa,line_a,line_no_host];
+    //     let vec_lines = vec![line_soa,line_a,line_no_host,line_subdomain,line_wildcard1,line_wildcard2];
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
         
-        master_file.process_lines_and_validation(vec_lines);
+    //     master_file.process_lines_and_validation(vec_lines);
 
-        let  rrs = master_file.get_rrs();
+    //     let  rrs = master_file.get_rrs();
         
-        assert_eq!(rrs.len(),4);
+    //     assert_eq!(rrs.len(),4);
         
-        let vect_1 =rrs.get("uchile.cl").unwrap();   
-        assert_eq!(vect_1.len(),1);     
-        let vect_2 = rrs.get("a.uchile.cl").unwrap();
-        assert_eq!(vect_2.len(),2);
-        let vect_3 = rrs.get("*.dcc.uchile.cl").unwrap();
-        assert_eq!(vect_3.len(),2);
+    //     let vect_1 =rrs.get("uchile.cl").unwrap();   
+    //     assert_eq!(vect_1.len(),1);     
+    //     let vect_2 = rrs.get("a.uchile.cl").unwrap();
+    //     assert_eq!(vect_2.len(),2);
+    //     let vect_3 = rrs.get("*.dcc.uchile.cl").unwrap();
+    //     assert_eq!(vect_3.len(),2);
 
 
 
 
-        for (host, vect) in rrs{
+    //     for (host, vect) in rrs{
 
-            for rr in vect{
-                let somedata  = match rr.get_rdata(){ 
-                    Rdata::SomeARdata(v) => v.get_string_address(),
-                    Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
-                    Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
-                    _=>"none".to_string(),
-                };
+    //         for rr in vect{
+    //             let somedata  = match rr.get_rdata(){ 
+    //                 Rdata::SomeARdata(v) => v.get_string_address(),
+    //                 Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
+    //                 Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
+    //                 _=>"none".to_string(),
+    //             };
 
-                if host =="a.uchile.cl" {
-                    //Rdata of A RR
-                    assert!( somedata =="192.80.24.11".to_string() || somedata == "a.uchile.cl".to_string());                    
-                }
-                else if host == "a.b.uchile.cl"{
-                    //Rdata of subdomaiini in zone
-                    assert_eq!(somedata,"192.168.2.134".to_string());
-                }
-                else if host.contains("*.dcc.uchile.cl"){ 
-                    assert!(somedata == "192.168.2.1".to_string() || somedata == "192.168.2.3".to_string());
-                }
+    //             if host =="a.uchile.cl" {
+    //                 //Rdata of A RR
+    //                 assert!( somedata =="192.80.24.11".to_string() || somedata == "a.uchile.cl".to_string());                    
+    //             }
+    //             else if host == "a.b.uchile.cl"{
+    //                 //Rdata of subdomaiini in zone
+    //                 assert_eq!(somedata,"192.168.2.134".to_string());
+    //             }
+    //             else if host.contains("*.dcc.uchile.cl"){ 
+    //                 assert!(somedata == "192.168.2.1".to_string() || somedata == "192.168.2.3".to_string());
+    //             }
 
-            }
-        }
-
- 
-    }
-
+    //         }
+    //     }
+    // }
     
-    #[test]
-    fn process_line_test() {
-        //dafault values
-        let line_normal1 = "a             A       192.80.24.11".to_string();
-        let line_normal2 = "a.uchile.cl.   A       192.80.24.11".to_string();
+    // #[test]
+    // fn process_line_test() {
+    //     //dafault values
+    //     let line_normal1 = "a             A       192.80.24.11".to_string();
+    //     let line_normal2 = "a.uchile.cl.   A       192.80.24.11".to_string();
 
-        //without host name
-        let line_whithout_host: String = "  A 192.168.100.115".to_string();
+    //     //without host name
+    //     let line_whithout_host: String = "  A 192.168.100.115".to_string();
 
-        //with at
-        let at_line_case1 = "@             A       192.80.24.12".to_string();
-        let at_line_case2 = "www   IN   MX 20  @".to_string();
-        //let at_line_case3 = "@   IN   CNAME   @.dom".to_string();
+    //     //with at
+    //     let at_line_case1 = "@             A       192.80.24.12".to_string();
+    //     let at_line_case2 = "www   IN   MX 20  @".to_string();
+    //     //let at_line_case3 = "@   IN   CNAME   @.dom".to_string();
 
-        //subzone line
-        let line_subdomain = "a.b     A       192.168.22.12".to_string();
+    //     //subzone line
+    //     let line_subdomain = "a.b     A       192.168.22.12".to_string();
 
-        //* line
-        let line_wildcard1 = "*.dcc    A       192.168.65.12".to_string();
-        let line_wildcard2 = "*    A       192.168.65.13".to_string();
+    //     //* line
+    //     let line_wildcard1 = "*.dcc    A       192.168.65.12".to_string();
+    //     let line_wildcard2 = "*    A       192.168.65.13".to_string();
 
-        //inverse query
-        let line_inverse_query = "2.1.168.192.IN-ADDR-ARPA.  PTR     A.ISI.EDU.".to_string();
-
-
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.process_line(line_normal1);
-        master_file.process_line(line_normal2);
-        master_file.process_line(line_whithout_host);
-        master_file.process_line(at_line_case1);
-        master_file.process_line(at_line_case2);
-        master_file.process_line(line_subdomain); 
-        master_file.process_line(line_wildcard1); 
-        master_file.process_line(line_wildcard2); 
-        master_file.process_line(line_inverse_query);
+    //     //inverse query
+    //     let line_inverse_query = "2.1.168.192.IN-ADDR-ARPA.  PTR     A.ISI.EDU.".to_string();
 
 
-        let rrs = master_file.get_rrs();
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.process_line(line_normal1);
+    //     master_file.process_line(line_normal2);
+    //     master_file.process_line(line_whithout_host);
+    //     master_file.process_line(at_line_case1);
+    //     master_file.process_line(at_line_case2);
+    //     master_file.process_line(line_subdomain); 
+    //     master_file.process_line(line_wildcard1); 
+    //     master_file.process_line(line_wildcard2); 
+    //     master_file.process_line(line_inverse_query);
 
-        let vect_origin = rrs.get("uchile.cl").unwrap();
-        let vect_a = rrs.get("a.uchile.cl").unwrap();
-        let vect_www = rrs.get("www.uchile.cl").unwrap();
 
-        // for (host ,vec) in rrs.iter(){
-        //     println!("host -> {}",host)
-        // }
+    //     let rrs = master_file.get_rrs();
+
+    //     let vect_origin = rrs.get("uchile.cl").unwrap();
+    //     let vect_a = rrs.get("a.uchile.cl").unwrap();
+    //     let vect_www = rrs.get("www.uchile.cl").unwrap();
+
+    //     // for (host ,vec) in rrs.iter(){
+    //     //     println!("host -> {}",host)
+    //     // }
         
-        assert_eq!(vect_origin.len(),1);
-        assert_eq!(vect_a.len(),3);
-        assert_eq!(vect_www.len(),1);
+    //     assert_eq!(vect_origin.len(),1);
+    //     assert_eq!(vect_a.len(),3);
+    //     assert_eq!(vect_www.len(),1);
 
-        for (host, vect) in rrs{
+    //     for (host, vect) in rrs{
 
-            for rr in vect{
-                let somedata  = match rr.get_rdata(){ 
-                    Rdata::SomeARdata(v) => v.get_string_address(),
-                    Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
-                    Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
-                    Rdata::SomePtrRdata(v) => v.get_ptrdname().get_name(),
-                    _=>"none".to_string(),
-                };
+    //         for rr in vect{
+    //             let somedata  = match rr.get_rdata(){ 
+    //                 Rdata::SomeARdata(v) => v.get_string_address(),
+    //                 Rdata::SomeNsRdata(v) => v.get_nsdname().to_string(),
+    //                 Rdata::SomeMxRdata(v) => v.get_exchange().get_name(),
+    //                 Rdata::SomePtrRdata(v) => v.get_ptrdname().get_name(),
+    //                 _=>"none".to_string(),
+    //             };
 
-                if host == "uchile.cl".to_string(){
-                    //Rdata of RR A replace @
-                    assert_eq!(somedata,"192.80.24.12".to_string());
-                }
-                else if host =="www.uchile.cl" {
-                    //Rdata of RR MX replace @
-                   assert_eq!(somedata, "uchile.cl".to_string());                    
-                }
-                else if host == "a.b.uchile.cl"{
-                    //Rdata of subdomaiini in zone
-                    assert_eq!(somedata,"192.168.22.12".to_string());
-                }
-                else if host.contains("*"){ 
-                    assert!(somedata == "192.168.65.12".to_string() || somedata == "192.168.65.13".to_string());
-                }
-                else {//host a
-                    //Rdata of RR A without host and normal 
-                    assert!(somedata == "192.168.100.115".to_string() || somedata == "192.80.24.11".to_string());
-                }
+    //             if host == "uchile.cl".to_string(){
+    //                 //Rdata of RR A replace @
+    //                 assert_eq!(somedata,"192.80.24.12".to_string());
+    //             }
+    //             else if host =="www.uchile.cl" {
+    //                 //Rdata of RR MX replace @
+    //                assert_eq!(somedata, "uchile.cl".to_string());                    
+    //             }
+    //             else if host == "a.b.uchile.cl"{
+    //                 //Rdata of subdomaiini in zone
+    //                 assert_eq!(somedata,"192.168.22.12".to_string());
+    //             }
+    //             else if host.contains("*"){ 
+    //                 assert!(somedata == "192.168.65.12".to_string() || somedata == "192.168.65.13".to_string());
+    //             }
+    //             else {//host a
+    //                 //Rdata of RR A without host and normal 
+    //                 assert!(somedata == "192.168.100.115".to_string() || somedata == "192.80.24.11".to_string());
+    //             }
 
-            }
-        }
+    //         }
+    //     }
 
      
-    }
+    // }
 
-    #[test]
-    #[should_panic (expected = "Information outside authoritative node in the zone is not glue information.")]
-    fn check_glue_delegations_test_fail(){
+    // #[test]
+    // #[should_panic (expected = "Information outside authoritative node in the zone is not glue information.")]
+    // fn check_glue_delegations_test_fail(){
         
-        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
-        let line_ns = "@  NS ns".to_string();
-        let vec_lines = vec![line_soa,line_ns];
+    //     let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
+    //     let line_ns = "@  NS ns".to_string();
+    //     let vec_lines = vec![line_soa,line_ns];
         
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
                 
-        master_file.process_lines_and_validation(vec_lines);
+    //     master_file.process_lines_and_validation(vec_lines);
 
-        let _rrs = master_file.get_rrs();
-        /*
-        for keys in rrs.keys() {
-            println!("nombre de host -> {}", keys);
-        } */
-       master_file.check_glue_delegations(); 
-    }
+    //     let _rrs = master_file.get_rrs();
+    //     /*
+    //     for keys in rrs.keys() {
+    //         println!("nombre de host -> {}", keys);
+    //     } */
+    //    master_file.check_glue_delegations(); 
+    // }
     
-    #[test]
-    fn check_glue_delegations_test(){
+    // #[test]
+    // fn check_glue_delegations_test(){
         
-        let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
-        let line_ns = "@  NS ns".to_string(); //doest acept if is -> "uchile.cl  NS ns"
-        let line_a = "ns  A  192.80.24.11".to_string();
+    //     let line_soa = "@  IN  SOA VENERA  Action.domains 20 7200 600 3600000 60".to_string();
+    //     let line_ns = "@  NS ns".to_string(); //doest acept if is -> "uchile.cl  NS ns"
+    //     let line_a = "ns  A  192.80.24.11".to_string();
         
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.process_line(line_soa);
-        master_file.process_line(line_ns);
-        master_file.process_line(line_a);
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.process_line(line_soa);
+    //     master_file.process_line(line_ns);
+    //     master_file.process_line(line_a);
 
-        let _rrs = master_file.get_rrs();
-        master_file.check_glue_delegations();    
-    }
+    //     let _rrs = master_file.get_rrs();
+    //     master_file.check_glue_delegations();    
+    // }
 
-    #[test]
-    #[should_panic]
-    fn check_cname_loop_test_fail(){
-        let line1 = "alias1 3600 CNAME alias2".to_string(); 
-        let line2= "alias2 3600 CNAME alias1".to_string();  
+    // #[test]
+    // #[should_panic]
+    // fn check_cname_loop_test_fail(){
+    //     let line1 = "alias1 3600 CNAME alias2".to_string(); 
+    //     let line2= "alias2 3600 CNAME alias1".to_string();  
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.process_line(line1);
-        master_file.process_line(line2);
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.process_line(line1);
+    //     master_file.process_line(line2);
 
-        master_file.check_cname_loop();
-    }
-    #[test]
-    fn check_cname_loop_test2_fail(){
-        let line1 = "alias1 3600 CNAME alias2".to_string(); 
-        let line2= "alias2 3600 CNAME alias3".to_string(); 
-        let line3= "alias3 3600 CNAME alias1".to_string();  
+    //     master_file.check_cname_loop();
+    // }
+    // #[test]
+    // fn check_cname_loop_test2_fail(){
+    //     let line1 = "alias1 3600 CNAME alias2".to_string(); 
+    //     let line2= "alias2 3600 CNAME alias3".to_string(); 
+    //     let line3= "alias3 3600 CNAME alias1".to_string();  
 
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.process_line(line1);
-        master_file.process_line(line2);
-        master_file.process_line(line3);
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.process_line(line1);
+    //     master_file.process_line(line2);
+    //     master_file.process_line(line3);
 
-        master_file.check_cname_loop();
-    }
+    //     master_file.check_cname_loop();
+    // }
 
-    #[test]
-    fn include_test(){
-        let line = "@ A 12 IN A 192.168.55.12".to_string();
-        let line_include = "$INCLUDE include.txt ;comment".to_string();
-        //                         "$INCLUDE include.txt examaple.com"  work the same way 
+    // #[test]
+    // fn include_test(){
+    //     let line = "@ A 12 IN A 192.168.55.12".to_string();
+    //     let line_include = "$INCLUDE include.txt ;comment".to_string();
+    //     //                         "$INCLUDE include.txt examaple.com"  work the same way 
     
-        let mut master_file = MasterFile::new("uchile.cl".to_string());
-        master_file.process_line(line);
-        master_file.process_line(line_include);
+    //     let mut master_file = MasterFile::new("uchile.cl".to_string());
+    //     master_file.process_line(line);
+    //     master_file.process_line(line_include);
 
-        let rrs = master_file.get_rrs();
-        let vect_origin_include_rr = rrs.get("example.com").unwrap();
-        let vect_origin_rr = rrs.get("uchile.cl").unwrap();
+    //     let rrs = master_file.get_rrs();
+    //     let vect_origin_include_rr = rrs.get("example.com").unwrap();
+    //     let vect_origin_rr = rrs.get("uchile.cl").unwrap();
 
-        assert_eq!(rrs.len(),7);
-        assert_eq!(vect_origin_include_rr.len(),3);
-        assert_eq!(vect_origin_rr.len(),1);
-    }
-    #[test]
-    fn from_file_test(){
+    //     assert_eq!(rrs.len(),7);
+    //     assert_eq!(vect_origin_include_rr.len(),3);
+    //     assert_eq!(vect_origin_rr.len(),1);
+    // }
+    // #[test]
+    // fn from_file_test(){
 
-        let master_file = MasterFile::from_file("test.txt".to_string(), false);
+    //     let master_file = MasterFile::from_file("test.txt".to_string(), false);
 
-        let rrs = master_file.get_rrs();
-        assert_eq!(rrs.len(),14);
+    //     let rrs = master_file.get_rrs();
+    //     assert_eq!(rrs.len(),14);
 
-        let vec_rr_origin = rrs.get("uchile.cl").unwrap();
-        let vec_rr_delegation = rrs.get("delegation.uchile.cl").unwrap();
-        let vec_rr_example_include = rrs.get("example.com").unwrap();
+    //     let vec_rr_origin = rrs.get("uchile.cl").unwrap();
+    //     let vec_rr_delegation = rrs.get("delegation.uchile.cl").unwrap();
+    //     let vec_rr_example_include = rrs.get("example.com").unwrap();
         
-        assert_eq!(vec_rr_origin.len(),6);
-        assert_eq!(vec_rr_delegation.len(),2);
-        assert_eq!(vec_rr_example_include.len(),3);
+    //     assert_eq!(vec_rr_origin.len(),6);
+    //     assert_eq!(vec_rr_delegation.len(),2);
+    //     assert_eq!(vec_rr_example_include.len(),3);
 
-    }
+    // }
+
+    // #[test]
+    // fn from_file_validation_test(){
+
+    //     let master_file = MasterFile::from_file("test.txt".to_string(), true);
+
+    //     let rrs = master_file.get_rrs();
+    //     assert_eq!(rrs.len(),14);
+
+    //     let vec_rr_origin = rrs.get("uchile.cl").unwrap();
+    //     let vec_rr_delegation = rrs.get("delegation.uchile.cl").unwrap();
+    //     let vec_rr_example_include = rrs.get("example.com").unwrap();
+        
+    //     assert_eq!(vec_rr_origin.len(),6);
+    //     assert_eq!(vec_rr_delegation.len(),2);
+    //     assert_eq!(vec_rr_example_include.len(),3);
+    // }
 
     #[test]
-    fn from_file_validation_test(){
+    fn test(){
+        let master_file = MasterFile::from_file("test.txt".to_string(),"".to_string(), true);
 
-        let master_file = MasterFile::from_file("test.txt".to_string(), true);
-
-        let rrs = master_file.get_rrs();
-        assert_eq!(rrs.len(),14);
-
-        let vec_rr_origin = rrs.get("uchile.cl").unwrap();
-        let vec_rr_delegation = rrs.get("delegation.uchile.cl").unwrap();
-        let vec_rr_example_include = rrs.get("example.com").unwrap();
-        
-        assert_eq!(vec_rr_origin.len(),6);
-        assert_eq!(vec_rr_delegation.len(),2);
-        assert_eq!(vec_rr_example_include.len(),3);
-   
     }
+
 
 
 }

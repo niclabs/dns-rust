@@ -1,5 +1,5 @@
 use crate::message::rdata::Rdata;
-use crate::name_server::zone::NSZone;
+use crate::name_server::zone_node::NSNode;
 
 use chrono::Utc;
 
@@ -166,7 +166,7 @@ mod zone_refresh_test {
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::name_server::zone::NSZone;
+    use crate::name_server::zone_node::NSZone;
     use crate::domain_name::DomainName;
 
     use chrono::Utc;

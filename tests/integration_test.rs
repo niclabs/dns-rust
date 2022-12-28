@@ -1,7 +1,6 @@
 use std::{fs, thread, collections::HashMap};
 
-use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
-
+use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone_node::NSZone, master_file::MasterFile}};
 
 
 /// Read a zone file and extract the host name to a vector.

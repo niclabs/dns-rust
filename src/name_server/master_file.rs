@@ -121,59 +121,11 @@ impl MasterFile {
 
         master_file
     }
-
-//   // Process a single line from a master file or include file 
-//     fn process_line(&mut self, line: String) {
-//         // Empty case
-//         if line == "".to_string() {
-//             return;
-//         }
-
-//         // ORIGIN case
-//         if line.contains("$ORIGIN") {
-
-//             let mut words = line.split_whitespace();
-//             words.next();
-//             let mut name = words.next().unwrap().to_string();
-
-//             //save origin with . at end
-//             if name.ends_with(".")==false {
-//                 name.push_str(".");
-//             }
-            
-//             self.set_last_host(name.clone());
-//             self.set_origin(name);
-
-//             return;
-//         }
-
-//         //Include case
-//         if line.contains("$INCLUDE") {
-//             let line_without_coment = MasterFile::remove_comments(line);
-//             let mut words = line_without_coment.split_whitespace();
-//             words.next();
-//             let file_name = words.next().unwrap();
-//             let domain_name = words.next().unwrap_or("");
-//             self.process_include(file_name.to_string(), domain_name.to_string(), false);
-
-//             return;
-//         }
-
-//         // Replace @ for the origin domain
-//         let contains_non_especial_at_sign = line.contains("@");
-
-//         let mut new_line = line.clone();
-//         if contains_non_especial_at_sign {
-//             let full_origin = self.get_origin();
-//             new_line = line.replace("@", &full_origin);
-//         }
-
-//         self.process_line_rr(new_line, false);
-//     }
     
     /*
     Obtains the host name and values for creting a RR 
-    Return class, type and host name of the RR for validation
+    Return class, type, full host name and ttl  of the RR for validation and saves values in Master
+    File struct
      */
     fn process_line_rr(&mut self, line: String) -> (String, String, String) {
        
@@ -229,7 +181,7 @@ impl MasterFile {
             println!("RR for Inverse querys");
         }
         else{
-            self.process_specific_rr(next_line_items, ttl, class, rr_type.to_string(), full_host_name.clone());
+            self.process_specific_rr(next_line_items, ttl.clone(), class, rr_type.to_string(), full_host_name.clone());
 
         }
 
@@ -251,8 +203,7 @@ impl MasterFile {
     fn process_lines(&mut self, lines: Vec<String>,validity: bool){
         
         
-        // let mut prev_rr_class = "".to_string();
-
+        let mut prev_rr_class = "".to_string();
         for line in lines {
             println!("line: {}", line);
             if line == "".to_string() {
@@ -297,31 +248,49 @@ impl MasterFile {
             let (rr_class, rr_type,host_name) = self.process_line_rr(new_line);         
             
             if validity {
-                let default_class = self.get_class_default();
-            
-                if default_class == "" {
-                    //first RR in the MF
-                
-                    self.set_class_default(rr_class);
-                    self.set_top_host(host_name.clone());
+
+
+
+                if prev_rr_class == "" {
+                    //first RR must be SOA
+                    if rr_type != "SOA".to_string(){
+                        panic!("No SOA RR is present at the top of the zone.");
+                    }
                     
-                    
-                }else{
-                    //verify if all RR have same class
-                    if default_class != rr_class {
+                    prev_rr_class = rr_class;
+                }
+                else {
+                    if rr_class != prev_rr_class{
                         panic!("Not all rr have the same class.");
                     }
-                    //verify if exist more tha one SOA
                     if rr_type == "SOA".to_string(){
                         panic!("More than one SOA per zone.");
                     }
+                    
                 }
+                // let default_class = self.get_class_default();
 
-                //domain name validation
-                self.host_name_master_file_validation(host_name).unwrap();
+            
+                // if default_class == "" {
+                //     //first RR in the MF
+                
+    
+                // }else{
+                //     //verify if all RR have same class
+                //     if default_class != rr_class {
+                //         panic!("Not all rr have the same class.");
+                //     }
+                //     //verify if exist more tha one SOA
+                //     if rr_type == "SOA".to_string(){
+                //         panic!("More than one SOA per zone.");
+                //     }
+                // }
+
+                // //domain name validation
+                // self.host_name_master_file_validation(host_name).unwrap();
 
             }
-          
+
 
                
         }
@@ -395,7 +364,7 @@ impl MasterFile {
         let origin = self.get_origin();
 
 
-        let class_int = match class.as_str() {
+        let class_int = match class.clone().as_str() {
             "IN" => 1,
             "CS" => 2,
             "CH" => 3,
@@ -441,8 +410,11 @@ impl MasterFile {
                     origin.clone(),
                 );
                 self.set_ttl_default(minimum);
+                self.set_class_default(class);
+                self.set_top_host(full_host_name.clone());
                 rr
-            }
+                
+            },
             "PTR" => PtrRdata::rr_from_master_file(
                 items,
                 ttl,
@@ -700,7 +672,7 @@ impl MasterFile {
         }
 
         //process lines in a MF
-        self.process_lines(lines,validity);
+        self.process_lines(lines,false);
 
         if validity {
             self.check_glue_delegations();
@@ -1617,8 +1589,7 @@ mod master_file_test {
 
     #[test]
     fn test(){
-        let master_file = MasterFile::from_file("test.txt".to_string(),"".to_string(), true);
-
+        let master_file = MasterFile::from_file("test.txt".to_string(),"".to_string(),true);
     }
 
 

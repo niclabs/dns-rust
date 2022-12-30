@@ -20,7 +20,7 @@ use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
 
 #[derive(Clone)]
-/// This enum, enumerates the differents types of rdata struct
+// This enum, enumerates the differents types of rdata struct
 pub enum Rdata {
     SomeARdata(ARdata),
     SomeAChRdata(AChRdata),
@@ -31,11 +31,11 @@ pub enum Rdata {
     SomeTxtRdata(TxtRdata),
     SomeCnameRdata(CnameRdata),
     SomeHinfoRdata(HinfoRdata),
-    //////// Define here more rdata types ////////
+    ////// Define here more rdata types //////
 }
 
 impl ToBytes for Rdata {
-    /// Converts an Rdata to bytes
+    // Converts an Rdata to bytes
     fn to_bytes(&self) -> Vec<u8> {
         match self {
             Rdata::SomeARdata(val) => val.to_bytes(),
@@ -52,7 +52,7 @@ impl ToBytes for Rdata {
 }
 
 impl FromBytes<Result<Rdata, &'static str>> for Rdata {
-    /// Given an array of bytes and a type code, returns a new Rdata
+    // Given an array of bytes and a type code, returns a new Rdata
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Rdata, &'static str> {
         let type_code = (bytes[bytes.len() - 4] as u16) << 8 | bytes[bytes.len() - 3] as u16;
         let class = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
@@ -167,13 +167,13 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::SomeTxtRdata(rdata.unwrap()))
             }
-            //////////////////////// Replace the next line when AAAA is implemented /////////////////
+            //////////////// Replace the next line when AAAA is implemented ////////////
             28 => {
                 let rdata = TxtRdata::new(vec!["AAAA".to_string()]);
 
                 Ok(Rdata::SomeTxtRdata(rdata))
             }
-            //////////////////////////////////////////////////////////////////////////////////////////
+            ////////////////////////////////////////////////////////////
             _ => Err("Format Error"),
         };
 

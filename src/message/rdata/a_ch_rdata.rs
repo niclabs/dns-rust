@@ -5,16 +5,16 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone)]
-/// An struct that represents the rdata for a type in CH class
-/// For the CH class, a domain name followed
-/// by a 16 bit octal Chaos address.
+// An struct that represents the rdata for a type in CH class
+// For the CH class, a domain name followed
+// by a 16 bit octal Chaos address.
 pub struct AChRdata {
     domain_name: DomainName,
     ch_address: u16,
 }
 
 impl ToBytes for AChRdata {
-    /// Return a vec of bytes that represents the a rdata
+    // Return a vec of bytes that represents the a rdata
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
@@ -38,7 +38,7 @@ impl ToBytes for AChRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for AChRdata {
-    /// Creates a new A ch class from an array of bytes
+    // Creates a new A ch class from an array of bytes
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 

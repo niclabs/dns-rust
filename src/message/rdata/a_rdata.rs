@@ -5,18 +5,18 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone)]
-/// An struct that represents the rdata for a type
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    ADDRESS                    |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+// An struct that represents the rdata for a type
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                    ADDRESS                    |
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
 pub struct ARdata {
     // A 32 bit Internet address.
     address: [u8; 4],
 }
 
 impl ToBytes for ARdata {
-    /// Return a vec of bytes that represents the a rdata
+    // Return a vec of bytes that represents the a rdata
     fn to_bytes(&self) -> Vec<u8> {
         let bytes: Vec<u8> = self.get_address().to_vec();
 
@@ -25,7 +25,7 @@ impl ToBytes for ARdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for ARdata {
-    /// Creates a new ARdata from an array of bytes
+    // Creates a new ARdata from an array of bytes
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -44,17 +44,17 @@ impl FromBytes<Result<Self, &'static str>> for ARdata {
 }
 
 impl ARdata {
-    /// Creates a new ARdata with default values.
-    ///
-    /// # Examples
-    /// ```
-    /// let a_rdata = ARdata::new();
-    /// assert_eq!(a_rdata.address[0], 0);
-    /// assert_eq!(a_rdata.address[1], 0);
-    /// assert_eq!(a_rdata.address[2], 0);
-    /// assert_eq!(a_rdata.address[3], 0);
-    /// ```
-    ///
+    // Creates a new ARdata with default values.
+    //
+    // # Examples
+    // ```
+    // let a_rdata = ARdata::new();
+    // assert_eq!(a_rdata.address[0], 0);
+    // assert_eq!(a_rdata.address[1], 0);
+    // assert_eq!(a_rdata.address[2], 0);
+    // assert_eq!(a_rdata.address[3], 0);
+    // ```
+    //
     pub fn new() -> Self {
         let a_rdata = ARdata {
             address: [0 as u8, 0 as u8, 0 as u8, 0 as u8],

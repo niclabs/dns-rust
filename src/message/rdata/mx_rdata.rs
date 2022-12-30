@@ -4,14 +4,14 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone)]
-/// An struct that represents the rdata for mx type
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                  PREFERENCE                   |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// /                   EXCHANGE                    /
-/// /                                               /
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+// An struct that represents the rdata for mx type
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                  PREFERENCE                   |
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// /                   EXCHANGE                    /
+// /                                               /
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
 pub struct MxRdata {
     preference: u16,
     // A domain name
@@ -19,7 +19,7 @@ pub struct MxRdata {
 }
 
 impl ToBytes for MxRdata {
-    /// Return a vec of bytes that represents the mx rdata
+    // Return a vec of bytes that represents the mx rdata
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
@@ -40,7 +40,7 @@ impl ToBytes for MxRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for MxRdata {
-    /// Creates a new MxRdata from an array of bytes
+    // Creates a new MxRdata from an array of bytes
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -71,15 +71,15 @@ impl FromBytes<Result<Self, &'static str>> for MxRdata {
 }
 
 impl MxRdata {
-    /// Creates a new MxRdata with default values.
-    ///
-    /// # Examples
-    /// ```
-    /// let mx_rdata = MxRdata::new();
-    /// assert_eq!(mx_rdata.preference, 0);
-    /// assert_eq!(mx_rdata.exchange, String::from(""));
-    /// ```
-    ///
+    // Creates a new MxRdata with default values.
+    //
+    // # Examples
+    // ```
+    // let mx_rdata = MxRdata::new();
+    // assert_eq!(mx_rdata.preference, 0);
+    // assert_eq!(mx_rdata.exchange, String::from(""));
+    // ```
+    //
     pub fn new() -> Self {
         let mx_rdata: MxRdata = MxRdata {
             preference: 0 as u16,

@@ -1,22 +1,21 @@
 #[derive(Default, Clone)]
-/// An struct that represents a header secction from a dns message
-///
-///                                1  1  1  1  1  1
-///  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                      ID                       |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    QDCOUNT                    |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    ANCOUNT                    |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    NSCOUNT                    |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    ARCOUNT                    |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+/* An struct that represents a header secction from a dns message
+                                1  1  1  1  1  1
+  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+ |                      ID                       |
+ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+ |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
+ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+ |                    QDCOUNT                    |
+ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+ |                    ANCOUNT                    |
+ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+ |                    NSCOUNT                    |
+ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+ |                    ARCOUNT                    |
+ +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+*/
 pub struct Header {
     // Id
     id: u16,
@@ -49,52 +48,52 @@ pub struct Header {
 
 // Methods
 impl Header {
-    /// Creates a new Header with default values.
-    ///
-    /// # Examples
-    /// ```
-    /// use header::Header;
-    ///
-    /// let mut header = Header::new();
-    /// ```
-    ///
+    // Creates a new Header with default values.
+    //
+    // # Examples
+    // ```
+    // use header::Header;
+    //
+    // let mut header = Header::new();
+    // ```
+    //
     pub fn new() -> Self {
         let header: Header = Default::default();
         header
     }
 
-    /// Returns a Header object from a byte array representation of a dns message header.
-    ///
-    /// # Examples
-    /// ```
-    /// let mut bytes: [u8; 12] = [0; 12];
-    ///
-    /// bytes[0] = 0b00100100;
-    /// bytes[1] = 0b10010101;
-    /// bytes[2] = 0b10010010;
-    /// bytes[3] = 0b00001000;
-    /// bytes[6] = 0b00001010;
-    /// bytes[7] = 0b10100101;
-    ///
-    /// let mut header = Header::new();
-    ///
-    /// header.set_id(0b0010010010010101);
-    /// header.set_qr(true);
-    /// header.set_op_code(2);
-    /// header.set_tc(true);
-    /// header.set_rcode(8);
-    /// header.set_ancount(0b0000101010100101);
-    ///
-    /// let header_from_bytes = Header::from_bytes(&bytes);
-    ///
-    /// assert_eq!(header_from_bytes.get_id(), header.get_id());
-    /// assert_eq!(header_from_bytes.get_qr(), header.get_qr());
-    /// assert_eq!(header_from_bytes.get_op_code(), header.get_op_code());
-    /// assert_eq!(header_from_bytes.get_tc(), header.get_tc());
-    /// assert_eq!(header_from_bytes.get_rcode(), header.get_rcode());
-    /// assert_eq!(header_from_bytes.get_ancount(), header.get_ancount());
-    /// ```
-    ///
+    // Returns a Header object from a byte array representation of a dns message header.
+    //
+    // # Examples
+    // ```
+    // let mut bytes: [u8; 12] = [0; 12];
+    //
+    // bytes[0] = 0b00100100;
+    // bytes[1] = 0b10010101;
+    // bytes[2] = 0b10010010;
+    // bytes[3] = 0b00001000;
+    // bytes[6] = 0b00001010;
+    // bytes[7] = 0b10100101;
+    //
+    // let mut header = Header::new();
+    //
+    // header.set_id(0b0010010010010101);
+    // header.set_qr(true);
+    // header.set_op_code(2);
+    // header.set_tc(true);
+    // header.set_rcode(8);
+    // header.set_ancount(0b0000101010100101);
+    //
+    // let header_from_bytes = Header::from_bytes(&bytes);
+    //
+    // assert_eq!(header_from_bytes.get_id(), header.get_id());
+    // assert_eq!(header_from_bytes.get_qr(), header.get_qr());
+    // assert_eq!(header_from_bytes.get_op_code(), header.get_op_code());
+    // assert_eq!(header_from_bytes.get_tc(), header.get_tc());
+    // assert_eq!(header_from_bytes.get_rcode(), header.get_rcode());
+    // assert_eq!(header_from_bytes.get_ancount(), header.get_ancount());
+    // ```
+    //
     pub fn from_bytes(bytes: &[u8]) -> Header {
         let id = ((bytes[0] as u16) << 8) | bytes[1] as u16;
         let qr = bytes[2] >> 7;
@@ -126,7 +125,7 @@ impl Header {
         header
     }
 
-    /// Gets the first byte from the id attribute.
+    // Gets the first byte from the id attribute.
     fn get_first_id_byte(&self) -> u8 {
         let header_id = self.get_id();
         let first_byte = (header_id >> 8) as u8;
@@ -134,7 +133,7 @@ impl Header {
         first_byte
     }
 
-    /// Gets the second byte from the id attribute.
+    // Gets the second byte from the id attribute.
     fn get_second_id_byte(&self) -> u8 {
         let header_id = self.get_id();
         let second_byte = header_id as u8;
@@ -142,19 +141,19 @@ impl Header {
         second_byte
     }
 
-    /// Returns a byte that represents the field in the dns message.
-    ///
-    /// See the dns message structure in struct documentation for more info.
-    ///
-    /// # Examples
-    /// ```
-    /// let mut header =  Header::new();
-    /// header.set_qr(true);
-    ///
-    /// let qr_byte = header.qr_to_byte();
-    /// assert_eq!(qr_byte, 0b10000000);
-    /// ```
-    ///
+    // Returns a byte that represents the field in the dns message.
+    //
+    // See the dns message structure in struct documentation for more info.
+    //
+    // # Examples
+    // ```
+    // let mut header =  Header::new();
+    // header.set_qr(true);
+    //
+    // let qr_byte = header.qr_to_byte();
+    // assert_eq!(qr_byte, 0b10000000);
+    // ```
+    //
     fn qr_to_byte(&self) -> u8 {
         let qr = self.get_qr();
         let mut qr_to_byte: u8 = 0;
@@ -166,9 +165,9 @@ impl Header {
         qr_to_byte
     }
 
-    /// Returns a byte that represents the field in the dns message.
-    ///
-    /// See the dns message structure in struct documentation for more info.
+    // Returns a byte that represents the field in the dns message.
+    //
+    // See the dns message structure in struct documentation for more info.
     fn aa_to_byte(&self) -> u8 {
         let aa = self.get_aa();
         let mut aa_to_byte: u8 = 0;
@@ -180,9 +179,9 @@ impl Header {
         aa_to_byte
     }
 
-    /// Returns a byte that represents the field in the dns message.
-    ///
-    /// See the dns message structure in struct documentation for more info.
+    // Returns a byte that represents the field in the dns message.
+    //
+    // See the dns message structure in struct documentation for more info.
     fn tc_to_byte(&self) -> u8 {
         let tc = self.get_tc();
         let mut tc_to_byte: u8 = 0;
@@ -194,9 +193,9 @@ impl Header {
         tc_to_byte
     }
 
-    /// Returns a byte that represents the field in the dns message.
-    ///
-    /// See the dns message structure in struct documentation for more info.
+    // Returns a byte that represents the field in the dns message.
+    //
+    // See the dns message structure in struct documentation for more info.
     fn rd_to_byte(&self) -> u8 {
         let rd = self.get_rd();
         let mut rd_to_byte: u8 = 0;
@@ -208,9 +207,9 @@ impl Header {
         rd_to_byte
     }
 
-    /// Returns a byte that represents the field in the dns message.
-    ///
-    /// See the dns message structure in struct documentation for more info.
+    // Returns a byte that represents the field in the dns message.
+    //
+    // See the dns message structure in struct documentation for more info.
     fn ra_to_byte(&self) -> u8 {
         let ra = self.get_ra();
         let mut ra_to_byte: u8 = 0;
@@ -222,7 +221,7 @@ impl Header {
         ra_to_byte
     }
 
-    /// Gets the first byte from the qdcount attribute.
+    // Gets the first byte from the qdcount attribute.
     fn get_first_qdcount_byte(&self) -> u8 {
         let header_qdcount = self.get_qdcount();
         let first_byte = (header_qdcount >> 8) as u8;
@@ -230,7 +229,7 @@ impl Header {
         first_byte
     }
 
-    /// Gets the second byte from the qdcount attribute.
+    // Gets the second byte from the qdcount attribute.
     fn get_second_qdcount_byte(&self) -> u8 {
         let header_qdcount = self.get_qdcount();
         let second_byte = header_qdcount as u8;
@@ -238,7 +237,7 @@ impl Header {
         second_byte
     }
 
-    /// Gets the first byte from the ancount attribute.
+    // Gets the first byte from the ancount attribute.
     fn get_first_ancount_byte(&self) -> u8 {
         let header_ancount = self.get_ancount();
         let first_byte = (header_ancount >> 8) as u8;
@@ -246,7 +245,7 @@ impl Header {
         first_byte
     }
 
-    /// Gets the second byte from the ancount attribute.
+    // Gets the second byte from the ancount attribute.
     fn get_second_ancount_byte(&self) -> u8 {
         let header_ancount = self.get_ancount();
         let second_byte = header_ancount as u8;
@@ -254,7 +253,7 @@ impl Header {
         second_byte
     }
 
-    /// Gets the first byte from the nscount attribute.
+    // Gets the first byte from the nscount attribute.
     fn get_first_nscount_byte(&self) -> u8 {
         let header_nscount = self.get_nscount();
         let first_byte = (header_nscount >> 8) as u8;
@@ -262,7 +261,7 @@ impl Header {
         first_byte
     }
 
-    /// Gets the second byte from the nscount attribute.
+    // Gets the second byte from the nscount attribute.
     fn get_second_nscount_byte(&self) -> u8 {
         let header_nscount = self.get_nscount();
         let second_byte = header_nscount as u8;
@@ -270,7 +269,7 @@ impl Header {
         second_byte
     }
 
-    /// Gets the first byte from the arcount attribute.
+    // Gets the first byte from the arcount attribute.
     fn get_first_arcount_byte(&self) -> u8 {
         let header_arcount = self.get_arcount();
         let first_byte = (header_arcount >> 8) as u8;
@@ -278,7 +277,7 @@ impl Header {
         first_byte
     }
 
-    /// Gets the second byte from the arcount attribute.
+    // Gets the second byte from the arcount attribute.
     fn get_second_arcount_byte(&self) -> u8 {
         let header_arcount = self.get_arcount();
         let second_byte = header_arcount as u8;
@@ -286,7 +285,7 @@ impl Header {
         second_byte
     }
 
-    /// Gets a byte that represents the first byte of flags section.
+    // Gets a byte that represents the first byte of flags section.
     fn get_first_flags_byte(&self) -> u8 {
         let qr_byte = self.qr_to_byte();
         let op_code_byte = self.get_op_code() << 3;
@@ -299,7 +298,7 @@ impl Header {
         first_byte
     }
 
-    /// Gets a byte that represents the second byte of flags section.
+    // Gets a byte that represents the second byte of flags section.
     fn get_second_flags_byte(&self) -> u8 {
         let ra_byte = self.ra_to_byte();
         let rcode_byte = self.get_rcode();
@@ -309,32 +308,32 @@ impl Header {
         second_byte
     }
 
-    /// Returns a bytes array that represents the header section of a dns message.
-    ///
-    /// # Examples
-    /// ```
-    /// let mut header = Header::new();
-    /// let mut bytes: [u8; 12] = [0; 12];
-    ///
-    /// assert_eq!(header.to_bytes(), bytes);
-    ///
-    /// header.set_id(0b0010010010010101);
-    /// header.set_qr(true);
-    /// header.set_op_code(2);
-    /// header.set_tc(true);
-    /// header.set_rcode(8);
-    /// header.set_ancount(0b0000101010100101);
-    ///
-    /// bytes[0] = 0b00100100;
-    /// bytes[1] = 0b10010101;
-    /// bytes[2] = 0b10010010;
-    /// bytes[3] = 0b00001000;
-    /// bytes[6] = 0b00001010;
-    /// bytes[7] = 0b10100101;
-    ///
-    /// assert_eq!(header.to_bytes(), bytes);
-    /// ```
-    ///
+    // Returns a bytes array that represents the header section of a dns message.
+    //
+    // # Examples
+    // ```
+    // let mut header = Header::new();
+    // let mut bytes: [u8; 12] = [0; 12];
+    //
+    // assert_eq!(header.to_bytes(), bytes);
+    //
+    // header.set_id(0b0010010010010101);
+    // header.set_qr(true);
+    // header.set_op_code(2);
+    // header.set_tc(true);
+    // header.set_rcode(8);
+    // header.set_ancount(0b0000101010100101);
+    //
+    // bytes[0] = 0b00100100;
+    // bytes[1] = 0b10010101;
+    // bytes[2] = 0b10010010;
+    // bytes[3] = 0b00001000;
+    // bytes[6] = 0b00001010;
+    // bytes[7] = 0b10100101;
+    //
+    // assert_eq!(header.to_bytes(), bytes);
+    // ```
+    //
     pub fn to_bytes(&self) -> [u8; 12] {
         let mut header_bytes: [u8; 12] = [0; 12];
 
@@ -357,62 +356,62 @@ impl Header {
 
 // Setters
 impl Header {
-    /// Sets the id attribute with a value
+    // Sets the id attribute with a value
     pub fn set_id(&mut self, id: u16) {
         self.id = id;
     }
 
-    /// Sets the qr attribute with a value
+    // Sets the qr attribute with a value
     pub fn set_qr(&mut self, qr: bool) {
         self.qr = qr;
     }
 
-    /// Sets the op_code attribute with a value
+    // Sets the op_code attribute with a value
     pub fn set_op_code(&mut self, op_code: u8) {
         self.op_code = op_code;
     }
 
-    /// Sets the aa attribute with a value
+    // Sets the aa attribute with a value
     pub fn set_aa(&mut self, aa: bool) {
         self.aa = aa;
     }
 
-    /// Sets the tc attribute with a value
+    // Sets the tc attribute with a value
     pub fn set_tc(&mut self, tc: bool) {
         self.tc = tc;
     }
 
-    /// Sets the rd attribute with a value
+    // Sets the rd attribute with a value
     pub fn set_rd(&mut self, rd: bool) {
         self.rd = rd;
     }
 
-    /// Sets the ra attribute with a value
+    // Sets the ra attribute with a value
     pub fn set_ra(&mut self, ra: bool) {
         self.ra = ra;
     }
 
-    /// Sets the rcode attribute with a value
+    // Sets the rcode attribute with a value
     pub fn set_rcode(&mut self, rcode: u8) {
         self.rcode = rcode;
     }
 
-    /// Sets the qdcount attribute with a value
+    // Sets the qdcount attribute with a value
     pub fn set_qdcount(&mut self, qdcount: u16) {
         self.qdcount = qdcount;
     }
 
-    /// Sets the ancount attribute with a value
+    // Sets the ancount attribute with a value
     pub fn set_ancount(&mut self, ancount: u16) {
         self.ancount = ancount;
     }
 
-    /// Sets the nscount attribute with a value
+    // Sets the nscount attribute with a value
     pub fn set_nscount(&mut self, nscount: u16) {
         self.nscount = nscount;
     }
 
-    /// Sets the arcount attribute with a value
+    // Sets the arcount attribute with a value
     pub fn set_arcount(&mut self, arcount: u16) {
         self.arcount = arcount;
     }
@@ -420,62 +419,62 @@ impl Header {
 
 // Getters
 impl Header {
-    /// Gets the id attribute value
+    // Gets the id attribute value
     pub fn get_id(&self) -> u16 {
         self.id
     }
 
-    /// Gets the qr attribute value
+    // Gets the qr attribute value
     pub fn get_qr(&self) -> bool {
         self.qr
     }
 
-    /// Gets the op_code attribute value
+    // Gets the op_code attribute value
     pub fn get_op_code(&self) -> u8 {
         self.op_code
     }
 
-    /// Gets the aa attribute value
+    // Gets the aa attribute value
     pub fn get_aa(&self) -> bool {
         self.aa
     }
 
-    /// Gets the tc attribute value
+    // Gets the tc attribute value
     pub fn get_tc(&self) -> bool {
         self.tc
     }
 
-    /// Gets the rd attribute value
+    // Gets the rd attribute value
     pub fn get_rd(&self) -> bool {
         self.rd
     }
 
-    /// Gets the ra attribute value
+    // Gets the ra attribute value
     pub fn get_ra(&self) -> bool {
         self.ra
     }
 
-    /// Gets the rcode attribute value
+    // Gets the rcode attribute value
     pub fn get_rcode(&self) -> u8 {
         self.rcode
     }
 
-    /// Gets the qdcount attribute value
+    // Gets the qdcount attribute value
     pub fn get_qdcount(&self) -> u16 {
         self.qdcount
     }
 
-    /// Gets the ancount attribute value
+    // Gets the ancount attribute value
     pub fn get_ancount(&self) -> u16 {
         self.ancount
     }
 
-    /// Gets the nscount attribute value
+    // Gets the nscount attribute value
     pub fn get_nscount(&self) -> u16 {
         self.nscount
     }
 
-    /// Gets the arcount attribute value
+    // Gets the arcount attribute value
     pub fn get_arcount(&self) -> u16 {
         self.arcount
     }

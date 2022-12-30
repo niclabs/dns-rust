@@ -738,7 +738,9 @@ mod resource_record_test {
 
     #[test]
     fn constructor_txt_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let text = vec!["dcc".to_string(), "test".to_string()];
+
+        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(text));
         let resource_record = ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
@@ -751,7 +753,7 @@ mod resource_record_test {
                 Rdata::SomeTxtRdata(val) => val.get_text(),
                 _ => unreachable!(),
             },
-            vec!["dcc".to_string()]
+            vec!["dcc".to_string(), "test".to_string()]
         );
     }
 

@@ -183,6 +183,7 @@ impl Resolver {
             let src_address;
 
             println!("{}", "Message recv");
+            
 
             match dns_message_option {
                 Some(val) => {
@@ -434,7 +435,7 @@ impl Resolver {
                         .step_1_udp(socket_copy.try_clone().unwrap(), rx_update_self_slist);
 
                     match answer_local {
-                        Some(val) => {
+                        (Some(val), None) => {
                             println!("Local info!");
 
                             let mut new_dns_msg = dns_msg_copy.clone();
@@ -458,8 +459,16 @@ impl Resolver {
                                 src_address.clone().to_string(),
                                 &socket_copy,
                             );
-                        }
-                        None => {}
+                        },
+                        (None, Some(msg)) => {
+                            tx_query_delete_clone.send(resolver_query.clone());
+                            Resolver::send_answer_by_udp(
+                                msg,
+                                src_address.clone().to_string(),
+                                &socket_copy,
+                            );
+                        },
+                        (_, _) => {},
                     }
 
                     println!("{}", "Thread Finished")
@@ -821,6 +830,7 @@ impl Resolver {
                         // We get the msg type, it can be query or answer
                         let msg_type = dns_message.get_header().get_qr();
 
+                        // if it is a query
                         if msg_type == false {
                             let sname = dns_message.get_question().get_qname().get_name();
                             let stype = dns_message.get_question().get_qtype();

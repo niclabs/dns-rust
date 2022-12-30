@@ -26,7 +26,7 @@ pub fn run_client(host_name: &str, transport: &str) {
 
     // Create query id
     let query_id: u16 = rng.gen();
-    
+
     // Create query msg
     let query_msg =
         DnsMessage::new_query_message(host_name.to_string(), QTYPE, QCLASS, 0, false, query_id);
@@ -97,7 +97,12 @@ pub fn run_client(host_name: &str, transport: &str) {
 
         match Resolver::receive_tcp_msg(stream) {
             Some(val) => {
-                dns_message = DnsMessage::from_bytes(&val).unwrap();
+                dns_message = match DnsMessage::from_bytes(&val) {
+                    Ok(msg) => {
+                        msg
+                    },
+                    Err(_) => {DnsMessage::format_error_msg()},
+                };
             }
             None => {
                 panic!("Temporary Error");
@@ -116,8 +121,22 @@ pub fn run_client(host_name: &str, transport: &str) {
     let additional_count = header.get_arcount();
 
     // Not data found error
-    if answer_count == 0 && header.get_qr() == true && header.get_aa() == true {
-        println!("Not data found");
+    if answer_count == 0 && header.get_qr() == true {
+        if header.get_aa() == true && header.get_rcode()== 3 {
+            println!("Name Error: domain name referenced in the query does not exist.");
+        }
+        else if header.get_rcode() != 0 {
+            match header.get_rcode() {
+                1 => println!("Format Error: The name server was unable to interpret the query."),
+                2 => println!("Server Failure: The name server was unable to process this query due to a problem with the name server."),
+                4 => println!("Not implemented: The name server does not support the requested kind of query."),
+                5 => println!("Refused: The name server refuses to perform the specified operation for policy reasons."),
+                _ => println!("Response with error code {}", header.get_rcode()), 
+            }
+        }
+        else if header.get_aa() == true && header.get_rcode() == 0 {
+            println!("Data not found error: The domain name referenced in the query exists, but data of the appropiate type does not.");
+        }
     } else {
         println!("-------------------------------------");
         println!(

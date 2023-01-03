@@ -48,9 +48,10 @@ impl MasterFile {
 
         master_file
     }
-
-    // Creates a new master file from the parameter filename. For listing cache contents.
-    // Set validation to true if checking validity syntax of the master file is desired.
+    /*
+    Creates a new master file given th eparameters filename and origin. For listing cache contents.
+    Set validation to true if checking validity syntax of the master file is desired.
+    */
     pub fn from_file(filename: String, origin:String,validation: bool) -> Self {
 
         let file = File::open(filename).expect("file not found!");
@@ -62,13 +63,46 @@ impl MasterFile {
             origin.push('.');
         } 
 
+
         let mut master_file = MasterFile::new(origin);
 
-        let mut lines: Vec<String> = Vec::new();
+        //representation of each RR in Master File
+        let lines: Vec<String> = master_file.lines_to_vect(reader);
+
+        //process lines and creates RR
+        println!("Creating new Masterfile");
+        master_file.process_lines(lines, validation);
+
+
+        if validation {
+            println!("Starting validation...");
+            // validate presence of glue records when necessary
+            master_file.check_glue_delegations();
+            // look for cname loops 
+            master_file.check_cname_loop();
+            println!("Masterfile validated correctly.");
+        }
+
+        
+
+        master_file
+    }
+
+    /*
+    Recives buffer with all the master file and returna a vector with lines representing each  RR in the Master File.
+    Thera two option for a represented RR in a Master File:
+    - RR is represented in one line: Read the lines and add it to the returning vector
+    - RR is represented in more than one line: Read each line od the RR , join it andLeaves it in a line then adds it 
+    to the returning vector
+    */
+    fn lines_to_vect(&mut self, buffer:BufReader<File>) -> Vec<String>{
+
         let mut last_line = "".to_string();
+        let mut lines: Vec<String> = Vec::new();
+
 
         // Link lines with parenthesis and remove comments
-        for line in reader.lines() {
+        for line in buffer.lines() {
             let line = line.unwrap();
 
             // Remove comments and replace especial encoding
@@ -102,30 +136,14 @@ impl MasterFile {
             }
         }
 
-        //process lines and creates RR
-        println!("Creating new Masterfile");
-        master_file.process_lines(lines, validation);
+        return lines;
 
 
-        if validation {
-            println!("Starting validation...");
-            master_file.check_soa_rr();
-            // validate presence of glue records when necessary
-            master_file.check_glue_delegations();
-            // look for cname loops 
-            master_file.check_cname_loop();
-            println!("Masterfile validated correctly.");
-        }
-
-        
-
-        master_file
     }
     
     /*
     Obtains the host name and values for creting a RR 
-    Return class, type, full host name and ttl  of the RR for validation and saves values in Master
-    File struct
+    Return class, type and absolute host name of the RR for validation
      */
     fn process_line_rr(&mut self, line: String) -> (String, String, String) {
        
@@ -249,8 +267,12 @@ impl MasterFile {
             
             if validity {
 
-
-
+                match self.host_name_master_file_validation(host_name){
+                    Err(_)=> panic!("Error: host name is not valid"),
+                    Ok(_) => (), 
+                };      
+                
+                //First RR must be SOA
                 if prev_rr_class == "" {
                     //first RR must be SOA
                     if rr_type != "SOA".to_string(){
@@ -259,6 +281,7 @@ impl MasterFile {
                     
                     prev_rr_class = rr_class;
                 }
+                //Can not exist more tha one SOA and all RR must be the same class
                 else {
                     if rr_class != prev_rr_class{
                         panic!("Not all rr have the same class.");
@@ -268,31 +291,10 @@ impl MasterFile {
                     }
                     
                 }
-                // let default_class = self.get_class_default();
 
-            
-                // if default_class == "" {
-                //     //first RR in the MF
-                
-    
-                // }else{
-                //     //verify if all RR have same class
-                //     if default_class != rr_class {
-                //         panic!("Not all rr have the same class.");
-                //     }
-                //     //verify if exist more tha one SOA
-                //     if rr_type == "SOA".to_string(){
-                //         panic!("More than one SOA per zone.");
-                //     }
-                // }
-
-                // //domain name validation
-                // self.host_name_master_file_validation(host_name).unwrap();
 
             }
 
-
-               
         }
     }
 
@@ -349,7 +351,7 @@ impl MasterFile {
     
     /*
      Process information of an specific type of RR and creates it,
-     saves the  RR with the full host name
+     saves the  RR with the absolute host name
      */
     fn process_specific_rr(
         &mut self,
@@ -359,7 +361,6 @@ impl MasterFile {
         rr_type: String,
         full_host_name: String
     ) {
-
 
         let origin = self.get_origin();
 
@@ -534,19 +535,21 @@ impl MasterFile {
 
         }
         
-        
-
         for value in iter{
             line_left_to_process.push_str(value);
             line_left_to_process.push(' ');
         }
         
-                
-
         return (full_host_name, line_left_to_process);
     }
 
-    // Returns whether the type is class, rr_type or ttl
+    /*
+    Returns whether the type is class, rr_type or ttl:
+    - 1 -> Class
+    - 2 -> Type
+    - 0 -> TTL
+     */
+    
     fn get_value_type(&self, value: String) -> u8 {
         match value.as_str() {
             "IN" => 1,
@@ -614,8 +617,6 @@ impl MasterFile {
         
         // remeber the parent origin, for now the origin used is going to change
         let parent_origin = self.get_origin();
-
-
         let mut full_host_name = domain_name;
 
         if full_host_name.ends_with(".")==false {
@@ -627,49 +628,13 @@ impl MasterFile {
             // changing origin to relative domain name of the include
             self.set_origin(full_host_name.clone());
         }
-
         
 
         let file = File::open(file_name.clone()).expect("file not found!");
         let reader = BufReader::new(file);
 
-        let mut lines: Vec<String> = Vec::new();
-        let mut last_line = "".to_string();
-
-        // Link lines with parenthesis and remove comments
-        for line in reader.lines() {
-            let line = line.unwrap();
-
-            // Remove comments and replace especial encoding
-            let line_without_comments = MasterFile::replace_special_encoding(MasterFile::remove_comments(line.clone()).clone());
-            
-            let open_parenthesis = match line_without_comments.clone().find("(") {
-                Some(_) => 1,
-                None => 0,
-            };
-
-            let closed_parenthesis = match line_without_comments.clone().find(")") {
-                Some(_) => 1,
-                None => 0,
-            };
-
-            if open_parenthesis == 1 && closed_parenthesis == 0 {
-                last_line.push_str(&line_without_comments);
-                continue;
-                
-            } else if open_parenthesis == 0
-                && closed_parenthesis == 0
-                && last_line != "".to_string()
-            {
-                last_line.push_str(&line_without_comments);
-                continue;
-        
-            } else {
-                last_line.push_str(&line_without_comments);
-                lines.push(last_line.replace("(", "").replace(")", ""));
-                last_line = "".to_string();
-            }
-        }
+        //representation od each RR in Master File
+        let lines: Vec<String> = self.lines_to_vect(reader);
 
         //process lines in a MF
         self.process_lines(lines,false);
@@ -684,68 +649,70 @@ impl MasterFile {
         
     }
 
-    
-    // Master file: If delegations are present and glue information is required,it should be present.
-    fn check_glue_delegations(&self) {
+    /*
+    If RR type NS is presented and server is a subzone checks if exist RR type A for this host name (glue record). 
+     */
+    fn check_glue_delegations(&self){
         let origin = self.get_origin();
-        let rrs = self.get_rrs();
+        let mut rrs = self.get_rrs();
 
-        let origin_labels: Vec<&str> = origin.split(".").collect();
-        let origin_labels_num = origin_labels.len();
+        //all rr that need glue records
+        rrs.remove(&origin);
 
-        let origin_ns_rr: Vec<ResourceRecord> = match rrs.get(&origin) {
-            Some(origin_rrs) => {
-                NameServer::look_for_type_records(origin.clone(), origin_rrs.to_vec(), 2)
-            },
-            None => {
-                Vec::<ResourceRecord>::new()
-            },
-        };
-
-        // for rr_ns in origin_ns_rr.iter(){
-        //     println!("-----> {}",rr_ns.get_name())
-        // }
-
-
-        for ns in origin_ns_rr {
-
-            let ns_name = match ns.get_rdata() {
-                Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
-                _ => "".to_string(),
-            };
-            
-            let ns_slice: &str = &ns_name;
-            let mut ns_labels: Vec<&str> = ns_slice.split(".").collect();
-
-            while ns_labels.len() >= origin_labels_num {
-                // subzone
-
-                //if they are the same means host name in rdata is a subdomain in the zone
-                if ns_labels == origin_labels { 
-                    // find glue info for this 
-                    match rrs.get(ns_slice){
-                        Some(ns_rrs) => {
-                            let a_rr_glue = NameServer::look_for_type_records(ns_slice.to_string(), ns_rrs.to_vec(), 1);
-                            if a_rr_glue.len() == 0 {
-                                panic!("Information outside authoritative node in the zone is not glue information.");
-                            }
-                        },
-                        None => {
-                            panic!("Information outside authoritative node in the zone is not glue information.");
-                        },
-                    } 
-                }
-                ns_labels.remove(0);
-            }
-        }
-    }
-
-    //Checks that exist at least one RR type SOA in the Master File
-    fn check_soa_rr(&self){
+        //vec with 
+        // let mut rr_glue = Vec::<ResourceRecord>::new();
         let top_host = self.get_top_host();
-        if top_host == "" {
-            panic!("No SOA RR is present in the Master File");
+
+        let top_host_labels: Vec<&str> = top_host.split(".").collect();
+        let top_host_labels_num = top_host_labels.len();
+
+
+        for rr_host in rrs.iter(){
+            // println!("-----> {}",rr_host.0);
+            let name_rr = rr_host.0 ;
+
+            let rrs_ns = NameServer::look_for_type_records(name_rr.clone(), rr_host.1.to_vec(), 2);
+
+            for ns in rrs_ns.iter(){
+
+                //naem of server 
+                let ns_name = match ns.get_rdata() {
+                    Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
+                    _ => "".to_string(),
+                };
+                // println!("ns server name -----> {}",ns_name.clone());
+                let ns_slice: &str = &ns_name;
+                let mut ns_labels: Vec<&str> = ns_slice.split(".").collect();
+
+                while ns_labels.len() >= top_host_labels_num {
+                    // subzone
+
+                    //if they are the end part of the host is the same as the top node glue rr must exist
+                    if ns_labels == top_host_labels { 
+
+                        // find glue info for this 
+                        match rrs.get(ns_slice){
+                            
+                            
+                            Some(ns_rrs) => {
+                                let a_rr_glue = NameServer::look_for_type_records(ns_slice.to_string(), ns_rrs.to_vec(), 1);
+                                if a_rr_glue.len() == 0 {
+                                    panic!("Information outside authoritative node in the zone is not glue information.");
+                                }
+                            },
+                            None => {
+                                panic!("Information outside authoritative node in the zone is not glue information.");
+                            },
+                        } 
+                    }
+                    ns_labels.remove(0);
+                }
+            }
+
+
+
         }
+
     }
 
 
@@ -1589,7 +1556,11 @@ mod master_file_test {
 
     #[test]
     fn test(){
-        let master_file = MasterFile::from_file("test.txt".to_string(),"".to_string(),true);
+        let master_file = MasterFile::from_file("1034-scenario-6.1-edu.txt".to_string(),"EDU".to_string(),true);
+        
+        
+        
+    
     }
 
 

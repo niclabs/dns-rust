@@ -1002,4 +1002,20 @@ mod resource_record_test {
         assert_eq!(resource_record.get_string_type(), String::from("A"));
     }
 
+    #[test]
+    fn rr_equal_test() {
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut resource_record = ResourceRecord::new(soa_rdata);
+        let soa_rdata1 = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut resource_record1 = ResourceRecord::new(soa_rdata1);
+        assert!(resource_record.rr_equal(resource_record1.clone()));
+        resource_record1.set_class(12);
+        assert_ne!(resource_record.rr_equal(resource_record1.clone()), true);
+        resource_record.set_class(12);
+        assert!(resource_record.rr_equal(resource_record1.clone()));
+        resource_record.set_rdlength(16);
+        assert_ne!(resource_record.rr_equal(resource_record1.clone()), true);
+
+    }
+
 }

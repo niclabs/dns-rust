@@ -223,7 +223,6 @@ impl MasterFile {
         
         let mut prev_rr_class = "".to_string();
         for line in lines {
-            println!("line: {}", line);
             if line == "".to_string() {
                 continue;
             }
@@ -637,7 +636,7 @@ impl MasterFile {
         let lines: Vec<String> = self.lines_to_vect(reader);
 
         //process lines in a MF
-        self.process_lines(lines,false);
+        self.process_lines(lines.clone(),false);
 
         //process lines in a MF
         self.process_lines(lines,validity);
@@ -1560,16 +1559,6 @@ mod master_file_test {
     //     assert_eq!(vec_rr_delegation.len(),2);
     //     assert_eq!(vec_rr_example_include.len(),3);
     // }
-
-    #[test]
-    fn test(){
-        let master_file = MasterFile::from_file("1034-scenario-6.1-edu.txt".to_string(),"EDU".to_string(),true);
-        
-        
-        
-    
-    }
-
 
 
 }

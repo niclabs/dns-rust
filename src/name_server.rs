@@ -736,7 +736,7 @@ impl NameServer {
         println!("{}", "TcpListener Created");
 
         loop {
-            println!("{}", "Waiting msg");
+            //println!("{}", "Waiting msg");
 
             match listener.accept() {
                 Ok((stream, src_address)) => {
@@ -2226,8 +2226,8 @@ impl NameServer {
         msg
     }
 
-    pub fn add_zone_from_master_file(&mut self, file_name: String, ip_address_for_refresh: String, validity_check: bool) {
-        let new_zone = NSZone::from_file(file_name, ip_address_for_refresh, validity_check);
+    pub fn add_zone_from_master_file(&mut self, file_name: String, origin:String, ip_address_for_refresh: String, validity_check: bool) {
+        let new_zone = NSZone::from_file(file_name, origin, ip_address_for_refresh, validity_check);
         let mut zones = self.get_zones();
         let zone_class = new_zone.get_class();
 

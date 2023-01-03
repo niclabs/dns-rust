@@ -37,9 +37,9 @@ impl NSZone {
         ns_zone
     }
 
-    pub fn from_file(file_name: String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
+    pub fn from_file(file_name: String, origin:String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
         let master_file_parsed;
-        master_file_parsed = MasterFile::from_file(file_name, validity_check);
+        master_file_parsed = MasterFile::from_file(file_name, origin,validity_check);
         let origin = master_file_parsed.get_origin();
         let mut rrs = master_file_parsed.get_rrs();
 
@@ -56,7 +56,7 @@ impl NSZone {
             ns_zone.add_node(key.clone(), value.clone());
         }
 
-        ns_zone
+        return ns_zone
     }
 
     pub fn from_axfr_msg(msg: DnsMessage) -> Self {

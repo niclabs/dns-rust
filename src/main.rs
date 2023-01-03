@@ -23,8 +23,8 @@ pub fn main() {
     let trim_input_line = input_line.trim();
 
     if trim_input_line == "MF" {
-        for master_file in MASTER_FILES {
-            let _validated_mf = MasterFile::from_file(master_file.to_string(), true);
+        for (master_file_name, master_file_origin) in MASTER_FILES {
+            let _validated_mf = MasterFile::from_file(master_file_name.to_string(), master_file_origin.to_string(),true);
         }
         println!("All Master Files validated successfully.");
     }
@@ -70,8 +70,8 @@ pub fn main() {
                 update_zone_tcp.clone(),
             );
 
-            for master_file in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string(), CHECK_MASTER_FILES);
+            for (master_file_name, master_file_origin) in MASTER_FILES {
+                name_server.add_zone_from_master_file(master_file_name.to_string(), master_file_origin.to_string(),"".to_string(), CHECK_MASTER_FILES);
             }
 
             name_server.run_name_server(
@@ -87,6 +87,7 @@ pub fn main() {
                 rx_update_refresh_zone_tcp,
             );
         } else if trim_input_line == "NR" {
+
             // Resolver Initialize
             let mut resolver = Resolver::new(
                 add_sender_udp.clone(),
@@ -132,8 +133,8 @@ pub fn main() {
                 update_zone_tcp,
             );
 
-            for master_file in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file.to_string(), "".to_string(), CHECK_MASTER_FILES);
+            for (master_file_name, master_file_origin) in MASTER_FILES {
+                name_server.add_zone_from_master_file(master_file_name.to_string(), master_file_origin.to_string(),"".to_string(), CHECK_MASTER_FILES);
             }
             //
 

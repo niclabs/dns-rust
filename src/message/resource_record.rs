@@ -448,6 +448,37 @@ impl ResourceRecord {
         self.rdata = rdata.clone();
     }
 }
+impl ResourceRecord{
+    pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool{
+        let a: u16 = self.get_type_code();
+        let aa: u16 = rr.get_type_code();
+        let b: u16 = self.get_class();
+        let bb: u16 = rr.get_class();
+        let c: u16 = self.get_rdlength();
+        let cc: u16 = rr.get_rdlength();
+        let d: u32 = self.get_ttl();
+        let dd: u32 = rr.get_ttl();
+        let e: Vec<u8> = self.get_rdata().to_bytes();
+        let ee: Vec<u8> = rr.get_rdata().to_bytes();
+        let n : Vec<u8> = self.get_name().to_bytes();
+        let nn: Vec<u8> = rr.get_name().to_bytes(); 
+        let s1 = String::from_utf8(e);
+        let s2 = String::from_utf8(ee);
+        let s = String::from_utf8(n);
+        let ss = String::from_utf8(nn);
+        
+
+        if a==aa && b==bb && c==cc && d==dd && s1==s2 && s==ss{ 
+          true
+    
+        }
+        else {
+            false
+        }
+    
+    
+    }
+}
 
 // Getters
 impl ResourceRecord {

@@ -420,13 +420,8 @@ impl ResolverQuery {
             _ => return Err("Not implemented type of query"),
         };
 
-        println!("LOOK FOR LOCAL INFO S_TYPE VALUE IS {}", s_type);
-
         let s_name = self.get_sname();
         let s_class = self.get_sclass();
-
-        println!("LOOK FOR LOCAL INFO S_NAME VALUE IS {}", s_name);
-        println!("LOOK FOR LOCAL INFO S_CLASS VALUE IS {}", s_class);
 
         // Class is *
         if s_class == 255 {
@@ -620,11 +615,8 @@ impl ResolverQuery {
 // Util for TCP and UDP
 impl ResolverQuery {
     pub fn step_2_tcp(&mut self) {
-        println!("ENTERING STEP 2");
         
         let sbelt = self.get_sbelt();
-
-        println!("sbelt -> {:#?}", sbelt.get_ns_list());
 
         let sname = self.get_sname();
         self.initialize_slist_tcp(sbelt, sname);
@@ -632,15 +624,12 @@ impl ResolverQuery {
         let mut slist = self.get_slist();
         slist.sort();
 
-        println!("Slist intial len: {}", slist.len());
-
         self.set_slist(slist);
 
         // DEBUGGING PURPOSES ONLY
 
         let contents_slist = self.get_slist().get_ns_list();
         
-        println!("slist -> {:#?}", contents_slist);
     }
 
     pub fn step_2_udp(&mut self, socket: UdpSocket) {
@@ -769,7 +758,6 @@ impl ResolverQuery {
                 let mut next_slist_value = received_update_slist.next();
 
                 while next_slist_value.is_none() == false {
-                    println!("Habia un valor kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
                     let new_slist = next_slist_value.unwrap();
 
                     self.set_slist(new_slist);
@@ -876,7 +864,6 @@ impl ResolverQuery {
             && answer[0].get_type_code() == 5
             && answer[0].get_type_code() != self.get_stype()
         {
-            println!("Step 4C");
             return self.step_4c_udp(msg_from_response, socket, rx_update_self_slist);
         }
 
@@ -1252,7 +1239,6 @@ impl ResolverQuery {
         mut query_msg: DnsMessage,
         update_slist_tcp_recv: Receiver<(String, Vec<ResourceRecord>)>,
     ) -> DnsMessage {
-        println!("ENTERING FIRST STEP TCP");
         let local_info = self.look_for_local_info();
 
         match local_info {
@@ -1280,9 +1266,7 @@ impl ResolverQuery {
 
             return query_msg;
         } else {
-            println!("NO LOCAL INFO AVAILABLE, GO TO STEP 2");
             self.step_2_tcp();
-            println!("STEP 2 COMPLETED, GO TO STEP 3");
             return self.step_3_tcp(update_slist_tcp_recv);
         }
     }
@@ -1300,12 +1284,8 @@ impl ResolverQuery {
 
         let mut slist = self.get_slist();
 
-        // for debugging purposes only
-        println!("Starting slist step 3 : {}", slist.len());
-        println!("Starting index to choose step 3 : {}", self.get_index_to_choose());
 
         let mut index_to_choose = self.get_index_to_choose() % slist.len() as u16;
-        println!("Index to choose after module, step 3 : {}", self.get_index_to_choose());
 
         let mut best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
@@ -1364,11 +1344,9 @@ impl ResolverQuery {
             }
 
             slist = self.get_slist();
-            println!("Slist len step 3 : {}", slist.len());
             
             self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
             index_to_choose = self.get_index_to_choose();
-            println!("Index to choose after first +1 step 3 : {}", self.get_index_to_choose());
 
             best_server_to_ask = slist.get(index_to_choose);
             best_server_ip = best_server_to_ask
@@ -1389,10 +1367,7 @@ impl ResolverQuery {
 
         best_server_ip.push_str(":53");
 
-        // Update the index to choose
-        println!("Index to choose variable step 3 : {}", index_to_choose );
         self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
-        println!("Index to choose after second +1 step 3 : {}", self.get_index_to_choose());
         //
 
         // Get address for empty ns in slist
@@ -1431,10 +1406,6 @@ impl ResolverQuery {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
 
-        // Step 4a
-        println!("ANSWER LEN {}", answer.len());
-        println!("RCODE {}", rcode);
-
         if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
         {
@@ -1442,15 +1413,10 @@ impl ResolverQuery {
         }
 
         let authority = msg_from_response.get_authority();
-        //let additional = msg_from_response.get_additional();
-        println!("AUTHORITY {}", authority.len());
+        // let additional = msg_from_response.get_additional();
         // Step 4b
         // If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
-            // debugging purposes only
-            println!("Authority is {}", authority[0]);
-            println!("GOING TO STEP 4B");
-            // 
             return self.step_4b_tcp(msg_from_response, update_slist_tcp_recv);
         }
 
@@ -1464,13 +1430,10 @@ impl ResolverQuery {
         }
 
         let slist = self.get_slist();
-        println!("Index to choose step_4_tcp_before_substract {}", self.get_index_to_choose());
-        println!("Slist len step_4_tcp_before_substract {}", slist.len());
         let mut last_index_to_choose: u16 = 0;
         if  self.get_index_to_choose() != 0 {
             last_index_to_choose = (self.get_index_to_choose() - 1) % slist.len() as u16;
         }
-        println!("Last index to choose step_4_tcp_after_substract {}", last_index_to_choose);
         let best_server = slist.get(last_index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 

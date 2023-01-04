@@ -59,8 +59,6 @@ impl DomainName {
         let mut domain_name_str = "".to_string();
         let mut no_domain_bytes = bytes.clone();
 
-        println!("Entering function from_byes in domain name rs");
-
         while first_byte != 0 {
             let bytes_len = no_domain_bytes.len();
             let msg_compresion = first_byte.clone() >> 6;
@@ -120,9 +118,6 @@ impl DomainName {
         if first_byte == 0 {
             no_domain_bytes = &no_domain_bytes[1..];
         }
-
-        // debugging purposes only
-        println!("Domain name string is {}", domain_name_str);
 
         if domain_name_str.len() > 0 {
             domain_name_str.remove(domain_name_str.len() - 1);

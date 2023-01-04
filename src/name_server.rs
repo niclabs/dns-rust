@@ -22,8 +22,9 @@ use std::thread;
 use std::time::Duration;
 
 pub mod master_file;
-pub mod zone;
+pub mod zone_node;
 pub mod zone_refresh;
+pub mod zone;
 
 #[derive(Clone)]
 // Structs that represents a name server
@@ -1398,7 +1399,10 @@ impl NameServer {
         tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         let mut qname_without_zone_label = qname.replace(&zone.get_name(), "");
-        let mut zone = zone.clone();
+        let zone = zone.clone();
+
+        let zone_nodes = zone.get_zone_nodes();
+
 
         println!("Qname sin label: {}", qname_without_zone_label.clone());
 
@@ -1580,7 +1584,7 @@ impl NameServer {
         // Step 3.a
         let qtype = msg.get_question().get_qtype();
         let qclass = msg.get_question().get_qclass();
-        let mut rrs_by_type = zone.get_rrs_by_type(qtype);
+        let mut rrs_by_type = zone.get_zone_nodes().get_rrs_by_type(qtype);
 
         println!("RRS len: {}", rrs_by_type.len());
 
@@ -2226,8 +2230,8 @@ impl NameServer {
         msg
     }
 
-    pub fn add_zone_from_master_file(&mut self, file_name: String, origin:String, ip_address_for_refresh: String, validity_check: bool) {
-        let new_zone = NSZone::from_file(file_name, origin, ip_address_for_refresh, validity_check);
+    pub fn add_zone_from_master_file(&mut self, file_name: String, ip_address_for_refresh: String, validity_check: bool) {
+        let new_zone = NSZone::from_file(file_name, ip_address_for_refresh, validity_check);
         let mut zones = self.get_zones();
         let zone_class = new_zone.get_class();
 

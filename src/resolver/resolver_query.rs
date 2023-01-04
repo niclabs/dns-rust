@@ -434,13 +434,15 @@ impl ResolverQuery {
                     *class,
                 );
 
+                let main_zone_nodes = main_zone.get_zone_nodes();
+
                 if available == true {
                     let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
 
                     // We were looking for the first node
                     if sname_without_zone_label == "".to_string() {
-                        let mut rrs_by_type = main_zone.get_rrs_by_type(self.get_stype());
-                        let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                        let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
+                        let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
                         let soa_minimun_ttl = match soa_rr.get_rdata() {
                             Rdata::SomeSoaRdata(val) => val.get_minimum(),
                             _ => unreachable!(),
@@ -465,22 +467,22 @@ impl ResolverQuery {
 
                     let mut last_label = "";
 
-                    let mut zone = main_zone.clone();
+                    let mut zone_nodes = main_zone.clone().get_zone_nodes();
 
                     for label in labels {
-                        let exist_child = zone.exist_child(label.to_string());
+                        let exist_child = zone_nodes.exist_child(label.to_string());
 
                         if exist_child == true {
-                            zone = zone.get_child(label.to_string()).0;
+                            zone_nodes = zone_nodes.get_child(label.to_string()).0;
                             last_label = label.clone();
                             continue;
                         }
                     }
 
-                    if last_label == zone.get_name() {
-                        let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
+                    if last_label == zone_nodes.get_name() {
+                        let mut rrs_by_type = zone_nodes.get_rrs_by_type(self.get_stype());
 
-                        let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                        let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
                         let soa_minimun_ttl = match soa_rr.get_rdata() {
                             Rdata::SomeSoaRdata(val) => val.get_minimum(),
                             _ => unreachable!(),
@@ -509,13 +511,15 @@ impl ResolverQuery {
                 s_class,
             );
 
+            let main_zone_nodes = main_zone.get_zone_nodes();
+
             if available == true {
                 let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
 
                 // We were looking for the first node
                 if sname_without_zone_label == "".to_string() {
-                    let mut rrs_by_type = main_zone.get_rrs_by_type(self.get_stype());
-                    let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                    let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
+                    let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
                     let soa_minimun_ttl = match soa_rr.get_rdata() {
                         Rdata::SomeSoaRdata(val) => val.get_minimum(),
                         _ => unreachable!(),
@@ -540,7 +544,7 @@ impl ResolverQuery {
 
                 let mut last_label = "";
 
-                let mut zone = main_zone.clone();
+                let mut zone = main_zone.clone().get_zone_nodes();
 
                 for label in labels {
                     let exist_child = zone.exist_child(label.to_string());
@@ -555,7 +559,7 @@ impl ResolverQuery {
                 if last_label == zone.get_name() {
                     let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
 
-                    let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+                    let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
                     let soa_minimun_ttl = match soa_rr.get_rdata() {
                         Rdata::SomeSoaRdata(val) => val.get_minimum(),
                         _ => unreachable!(),

@@ -1,5 +1,5 @@
 use crate::message::rdata::Rdata;
-use crate::name_server::zone_node::NSNode;
+use crate::name_server::zone::NSZone;
 
 use chrono::Utc;
 
@@ -19,7 +19,7 @@ pub struct ZoneRefresh {
 
 impl ZoneRefresh {
     pub fn new(zone: NSZone) -> Self {
-        let soa_rr = zone.get_rrs_by_type(6)[0].clone();
+        let soa_rr = zone.get_top_node().get_rrs_by_type(6)[0].clone();
         let soa_rdata = match soa_rr.get_rdata() {
             Rdata::SomeSoaRdata(val) => val,
             _ => unreachable!(),
@@ -58,7 +58,7 @@ impl ZoneRefresh {
     }
 
     pub fn update_zone(&mut self, zone: NSZone) {
-        let soa_rr = zone.get_rrs_by_type(6)[0].clone();
+        let soa_rr = zone.get_top_node().get_rrs_by_type(6)[0].clone();
         let soa_rdata = match soa_rr.get_rdata() {
             Rdata::SomeSoaRdata(val) => val,
             _ => unreachable!(),
@@ -166,7 +166,7 @@ mod zone_refresh_test {
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::name_server::zone_node::NSZone;
+    use crate::name_server::zone::NSZone;
     use crate::domain_name::DomainName;
 
     use chrono::Utc;

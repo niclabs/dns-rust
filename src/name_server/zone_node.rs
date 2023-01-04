@@ -1,6 +1,4 @@
 use crate::message::resource_record::ResourceRecord;
-use crate::message::DnsMessage;
-use crate::name_server::master_file::MasterFile;
 
 //utils
 use crate::utils::check_label_name;
@@ -12,7 +10,6 @@ pub struct NSNode {
     value: Vec<ResourceRecord>,
     children: Vec<NSNode>,
     subzone: bool,
-    glue_rrs: Vec<ResourceRecord>,
 }
 
 impl NSNode {
@@ -22,7 +19,6 @@ impl NSNode {
             value: Vec::<ResourceRecord>::new(),
             children: Vec::<NSNode>::new(),
             subzone: false,
-            glue_rrs: Vec::<ResourceRecord>::new(),
         };
 
         return ns_node;
@@ -64,7 +60,7 @@ impl NSNode {
         (child_ns, index)
     }
 
-    fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) -> Result<(), &'static str> {
+    pub fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) -> Result<(), &'static str> {
         let mut children = self.get_children();
         // null label is reserved for the root. Children cannot have it. 
         if host_name.len() == 0 {
@@ -226,11 +222,6 @@ impl NSNode {
     pub fn set_subzone(&mut self, subzone: bool) {
         self.subzone = subzone;
     }
-
-    // Sets the glue_rrs with a new value
-    pub fn set_glue_rrs(&mut self, glue_rrs: Vec<ResourceRecord>) {
-        self.glue_rrs = glue_rrs;
-    }
 }
 
 // Getters
@@ -245,29 +236,19 @@ impl NSNode {
         self.value.clone()
     }
 
-    pub fn get_ip_address_for_refresh_zone(&self) -> String {
-        self.ip_address_for_refresh_zone.clone()
-    }
-
     // Gets the children from the node
     pub fn get_children(&self) -> Vec<NSNode> {
         self.children.clone()
     }
 
-
     // Gets the subzone from the node
     pub fn get_subzone(&self) -> bool {
         self.subzone.clone()
     }
-
-    // Gets the glue rrs from the node
-    pub fn get_glue_rrs(&self) -> Vec<ResourceRecord> {
-        self.glue_rrs.clone()
-    }
 }
 
 #[cfg(test)]
-mod zone_test {
+mod zone_node_test {
     use super::NSNode;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::ns_rdata::NsRdata;
@@ -276,96 +257,81 @@ mod zone_test {
 
     #[test]
     fn constructor_test() {
-        let nszone = NSNode::new();
+        let nsnode = NSNode::new();
 
-        assert_eq!(nszone.name, String::from(""));
-        assert_eq!(nszone.value.len(), 0);
-        assert_eq!(nszone.children.len(), 0);
-        assert_eq!(nszone.subzone, false);
-        assert_eq!(nszone.glue_rrs.len(), 0);
+        assert_eq!(nsnode.name, String::from(""));
+        assert_eq!(nsnode.value.len(), 0);
+        assert_eq!(nsnode.children.len(), 0);
+        assert_eq!(nsnode.subzone, false);
     }
 
     // Getters and Setters
     #[test]
     fn set_and_get_name_test() {
-        let mut nszone = NSNode::new();
+        let mut nsnode = NSNode::new();
 
-        assert_eq!(nszone.get_name(), String::from(""));
-        nszone.set_name(String::from("test.com"));
-        assert_eq!(nszone.get_name(), String::from("test.com"));
+        assert_eq!(nsnode.get_name(), String::from(""));
+        nsnode.set_name(String::from("test.com"));
+        assert_eq!(nsnode.get_name(), String::from("test.com"));
     }
 
     #[test]
     fn set_and_get_value_test() {
-        let mut nszone = NSNode::new();
+        let mut nsnode = NSNode::new();
 
         let mut value: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         value.push(resource_record);
 
-        assert_eq!(nszone.get_value().len(), 0);
-        nszone.set_value(value);
-        assert_eq!(nszone.get_value().len(), 1);
-    }
-
-    #[test]
-    fn set_and_get_glue_rr_test() {
-        let mut nszone = NSNode::new();
-
-        let mut glue: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-        glue.push(resource_record);
-
-        assert_eq!(nszone.get_glue_rrs().len(), 0);
-        nszone.set_glue_rrs(glue);
-        assert_eq!(nszone.get_glue_rrs().len(), 1);
+        assert_eq!(nsnode.get_value().len(), 0);
+        nsnode.set_value(value);
+        assert_eq!(nsnode.get_value().len(), 1);
     }
 
     #[test]
     fn set_and_get_subzone_test() {
-        let mut nszone = NSNode::new();
+        let mut nsnode = NSNode::new();
 
-        assert_eq!(nszone.get_subzone(), false);
-        nszone.set_subzone(true);
-        assert_eq!(nszone.get_subzone(), true);
+        assert_eq!(nsnode.get_subzone(), false);
+        nsnode.set_subzone(true);
+        assert_eq!(nsnode.get_subzone(), true);
     }
 
     #[test]
     fn set_and_get_children_test() {
-        let mut nszone = NSNode::new();
+        let mut nsnode = NSNode::new();
 
         let mut children: Vec<NSNode> = Vec::new();
-        let some_nszone = NSNode::new();
-        children.push(some_nszone);
+        let some_nsnode = NSNode::new();
+        children.push(some_nsnode);
 
-        assert_eq!(nszone.get_children().len(), 0);
-        nszone.set_children(children);
-        assert_eq!(nszone.get_children().len(), 1);
+        assert_eq!(nsnode.get_children().len(), 0);
+        nsnode.set_children(children);
+        assert_eq!(nsnode.get_children().len(), 1);
     }
 
     #[test]
     fn set_duplicate_children_test() {
-        let mut nszone = NSNode::new();
+        let mut nsnode = NSNode::new();
 
         let mut children: Vec<NSNode> = Vec::new();
-        let mut nszone_1 = NSNode::new();
-        nszone_1.set_name(String::from("test1"));
-        children.push(nszone_1);
-        let mut nszone_2 = NSNode::new();
-        nszone_2.set_name(String::from("test2"));
-        children.push(nszone_2);
-        let mut nszone_3 = NSNode::new();
-        nszone_3.set_name(String::from("TEST1"));
-        nszone_3.set_ip_address_for_refresh_zone(String::from("1.2.3"));
-        children.push(nszone_3);
+        let mut nsnode_1 = NSNode::new();
+        nsnode_1.set_name(String::from("test1"));
+        children.push(nsnode_1);
+        let mut nsnode_2 = NSNode::new();
+        nsnode_2.set_name(String::from("test2"));
+        children.push(nsnode_2);
+        let mut nsnode_3 = NSNode::new();
+        nsnode_3.set_name(String::from("TEST1"));
+        nsnode_3.set_ip_address_for_refresh_zone(String::from("1.2.3"));
+        children.push(nsnode_3);
 
-        assert_eq!(nszone.get_children().len(), 0);
-        nszone.set_children(children);
-        assert_eq!(nszone.get_children().len(), 2);
+        assert_eq!(nsnode.get_children().len(), 0);
+        nsnode.set_children(children);
+        assert_eq!(nsnode.get_children().len(), 2);
         assert_eq!(
-            nszone.get_children()[1].get_ip_address_for_refresh_zone(),
+            nsnode.get_children()[1].get_ip_address_for_refresh_zone(),
             String::from("1.2.3")
         );
     }
@@ -381,43 +347,43 @@ mod zone_test {
 
     #[test]
     fn exist_child_test() {
-        let mut nszone = NSNode::new();
-        let mut some_nszone = NSNode::new();
-        some_nszone.set_name(String::from("test.com"));
+        let mut nsnode = NSNode::new();
+        let mut some_nsnode = NSNode::new();
+        some_nsnode.set_name(String::from("test.com"));
 
         let mut children: Vec<NSNode> = Vec::new();
-        children.push(some_nszone);
-        nszone.set_children(children);
-        assert_eq!(nszone.exist_child(String::from("test2.com")), false);
-        assert_eq!(nszone.exist_child(String::from("tEsT.com")), true)
+        children.push(some_nsnode);
+        nsnode.set_children(children);
+        assert_eq!(nsnode.exist_child(String::from("test2.com")), false);
+        assert_eq!(nsnode.exist_child(String::from("tEsT.com")), true)
     }
 
     #[test]
     fn get_child_test() {
-        let mut nszone = NSNode::new();
-        let mut some_nszone = NSNode::new();
-        let mut some_other_nszone = NSNode::new();
-        some_nszone.set_name(String::from("test.com"));
-        some_other_nszone.set_name(String::from("other.test.com"));
+        let mut nsnode = NSNode::new();
+        let mut some_nsnode = NSNode::new();
+        let mut some_other_nsnode = NSNode::new();
+        some_nsnode.set_name(String::from("test.com"));
+        some_other_nsnode.set_name(String::from("other.test.com"));
 
         let mut children: Vec<NSNode> = Vec::new();
-        children.push(some_nszone);
-        children.push(some_other_nszone);
-        nszone.set_children(children);
+        children.push(some_nsnode);
+        children.push(some_other_nsnode);
+        nsnode.set_children(children);
         assert_eq!(
-            nszone
+            nsnode
                 .get_child(String::from("OTher.test.com"))
                 .0
                 .get_name(),
             String::from("other.test.com")
         );
-        assert_eq!(nszone.get_child(String::from("other.test.com")).1, 1);
+        assert_eq!(nsnode.get_child(String::from("other.test.com")).1, 1);
 
         assert_eq!(
-            nszone.get_child(String::from("some.test.com")).0.get_name(),
+            nsnode.get_child(String::from("some.test.com")).0.get_name(),
             String::from("")
         );
-        assert_eq!(nszone.get_child(String::from("some.test.com")).1, -1);
+        assert_eq!(nsnode.get_child(String::from("some.test.com")).1, -1);
     }
 
     #[test]
@@ -427,17 +393,17 @@ mod zone_test {
         let value: Vec<ResourceRecord> = Vec::new();
         
         
-        let mut nszone = NSNode::new();
-        nszone.set_name(String::from(""));
+        let mut nsnode = NSNode::new();
+        nsnode.set_name(String::from(""));
         let children: Vec<NSNode> = Vec::new();
-        nszone.set_children(children);
+        nsnode.set_children(children);
 
-        assert_eq!(nszone.add_node(String::from("mil"), value.clone()), Ok(()));
-        assert_eq!(nszone.add_node(String::from("edu"), value.clone()), Ok(()));
+        assert_eq!(nsnode.add_node(String::from("mil"), value.clone()), Ok(()));
+        assert_eq!(nsnode.add_node(String::from("edu"), value.clone()), Ok(()));
 
-        assert_eq!(nszone.add_node(String::from(""), value.clone()), Err("Error: Child cannot have null label, reserved for root only."));
+        assert_eq!(nsnode.add_node(String::from(""), value.clone()), Err("Error: Child cannot have null label, reserved for root only."));
 
-        assert_eq!(nszone.get_children().len(), 2)
+        assert_eq!(nsnode.get_children().len(), 2)
     }
 
     /*#[test]
@@ -446,7 +412,7 @@ mod zone_test {
 
     #[test]
     fn check_rrs_only_ns_test() {
-        let nszone = NSNode::new();
+        let nsnode = NSNode::new();
         let mut rr: Vec<ResourceRecord> = Vec::new();
 
         let ns_rdata = Rdata::SomeNsRdata(NsRdata::new());
@@ -459,9 +425,9 @@ mod zone_test {
 
         rr.push(resource_record_1);
 
-        assert_eq!(nszone.check_rrs_only_ns(rr.clone()), true);
+        assert_eq!(nsnode.check_rrs_only_ns(rr.clone()), true);
         rr.push(resource_record_2);
-        assert_eq!(nszone.check_rrs_only_ns(rr.clone()), false);
+        assert_eq!(nsnode.check_rrs_only_ns(rr.clone()), false);
     }
     /*
     #[test]
@@ -472,7 +438,7 @@ mod zone_test {
     */
     #[test]
     fn get_rrs_by_type_test() {
-        let mut nszone = NSNode::new();
+        let mut nsnode = NSNode::new();
 
         let mut value: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
@@ -480,8 +446,8 @@ mod zone_test {
         resource_record.set_type_code(1);
         value.push(resource_record);
 
-        assert_eq!(nszone.get_rrs_by_type(1).len(), 0);
-        nszone.set_value(value);
-        assert_eq!(nszone.get_rrs_by_type(1).len(), 1);
+        assert_eq!(nsnode.get_rrs_by_type(1).len(), 0);
+        nsnode.set_value(value);
+        assert_eq!(nsnode.get_rrs_by_type(1).len(), 1);
     }
 }

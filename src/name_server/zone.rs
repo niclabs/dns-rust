@@ -1,19 +1,27 @@
 
 
+use crate::message::DnsMessage;
+use crate::message::resource_record::ResourceRecord;
+
+use super::master_file::MasterFile;
 use super::zone_node::NSNode;
 
+
+#[derive(Clone)]
 /// Struct that represents a zone.
 pub struct NSZone {
     // Zone name
     name: String,
     // Ip to ask the SOA RR data for refreshing
     ip_address_for_refresh_zone: String,
-    // Nodes of the zone
-    nodes: NSNode,
+    // Top node of the zone
+    zone_nodes: NSNode,
     // Zone class
     class: u16,
     // Zone is active
     active: bool,
+    // Glue records of the zone
+    glue_rrs: Vec<ResourceRecord>,
 }
 
 impl NSZone {
@@ -21,9 +29,10 @@ impl NSZone {
         let ns_zone = NSZone {
             name: "".to_string(),
             ip_address_for_refresh_zone: "".to_string(),
-            nodes: NSNode::new(),
+            zone_nodes: NSNode::new(),
             class: 1,
             active: true,
+            glue_rrs: Vec::<ResourceRecord>::new(),
         };
 
         return ns_zone
@@ -37,28 +46,37 @@ impl NSZone {
 
         let origin_rrs = rrs.remove(&origin).unwrap();
 
-        let mut ns_zone = NSNode::new();
-        ns_zone.set_name(origin);
+        // Sets Zone info
+        let mut ns_zone = NSZone::new();
+        let top_node_name = master_file_parsed.get_top_host();
+        ns_zone.set_name(top_node_name.clone());
         ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
-        ns_zone.set_value(origin_rrs);
         ns_zone.set_class_str(master_file_parsed.get_class_default());
+
+        // Sets top node info
+        let mut top_node = NSNode::new();
+        top_node.set_name(top_node_name.clone());
+        top_node.set_value(rrs.get(top_node_name.clone().as_str()).unwrap().clone());
 
         for (key, value) in rrs.iter() {
             println!("{} - {}", key.clone(), value.len());
-            ns_zone.add_node(key.clone(), value.clone());
+            top_node.add_node(key.clone(), value.clone());
         }
+
+        ns_zone.set_zone_nodes(top_node);
 
         return ns_zone
     }
 
     pub fn from_axfr_msg(msg: DnsMessage) -> Self {
         let answers = msg.get_answer();
-        let mut new_zone = NSNode::new();
+        let mut new_zone = NSZone::new();
 
         let soa_rr = answers[0].clone();
         let zone_name = soa_rr.get_name().get_name();
 
         new_zone.set_name(zone_name.clone());
+        
 
         let mut rr_iter = answers[1..].iter();
         let mut next_rr = rr_iter.next();
@@ -76,7 +94,8 @@ impl NSZone {
             } else {
                 // If the rr name is not the same with last rr, add the node to the zone
                 if rr_name != actual_node_name {
-                    new_zone.add_node(actual_node_name, rrs_for_node);
+                    // FIXME:
+                    //new_zone.add_node(actual_node_name, rrs_for_node);
 
                     rrs_for_node = Vec::<ResourceRecord>::new();
                     actual_node_name = rr_name;
@@ -90,24 +109,6 @@ impl NSZone {
 
         return new_zone
     }
-
-    pub fn print_zone(&self) {
-        let name = self.get_name();
-        let values = self.get_value();
-        let children = self.get_children();
-
-        println!("Name: {}", name);
-        println!("Subzone: {}", self.get_subzone());
-
-        for val in values {
-            println!("  Type: {}", val.get_type_code());
-        }
-
-        for child in children {
-            child.print_zone();
-        }
-    }
-
 }
 
 // SETTERS
@@ -121,9 +122,9 @@ impl NSZone {
         self.ip_address_for_refresh_zone = ip_address_for_refresh_zone;
     }
 
-    /// Sets the nodes for the zone
-    pub fn set_nodes(&mut self, nodes: NSNode) {
-        self.nodes = nodes;
+    /// Sets the nodes of the zone
+    pub fn set_zone_nodes(&mut self, zone_nodes: NSNode) {
+        self.zone_nodes = zone_nodes;
     }
 
     /// Sets the class for the zone
@@ -146,7 +147,12 @@ impl NSZone {
     /// Sets if the zone is active or not
     pub fn set_active(&mut self, active: bool) {
         self.active = active;
-    }    
+    }
+
+    /// Sets the glue_rrs with a new value
+    pub fn set_glue_rrs(&mut self, glue_rrs: Vec<ResourceRecord>) {
+        self.glue_rrs = glue_rrs;
+    }
 }
 
 // GETTERS
@@ -161,8 +167,8 @@ impl NSZone {
     }
 
     /// Gets the nodes of the zone
-    pub fn get_nodes(&self) -> NSNode {
-        self.nodes
+    pub fn get_zone_nodes(&self) -> NSNode {
+        self.zone_nodes
     }
 
     /// Gets the zone class
@@ -173,5 +179,41 @@ impl NSZone {
     /// Gets if the zone is active
     pub fn get_active(&self) -> bool {
         self.active
+    }
+
+    /// Gets the glue rrs from the node
+    pub fn get_glue_rrs(&self) -> Vec<ResourceRecord> {
+        self.glue_rrs.clone()
+    }
+}
+
+
+#[cfg(test)]
+mod zone_test {
+    // TODO: constructor test
+
+    /*
+    #[test]
+    fn from_file_test(){
+    }
+    */
+
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::name_server::zone::NSZone;    
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
+
+    #[test]
+    fn set_and_get_glue_rr_test() {
+        let mut nszone = NSZone::new();
+
+        let mut glue: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        glue.push(resource_record);
+
+        assert_eq!(nszone.get_glue_rrs().len(), 0);
+        nszone.set_glue_rrs(glue);
+        assert_eq!(nszone.get_glue_rrs().len(), 1);
     }
 }

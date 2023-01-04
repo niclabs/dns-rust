@@ -4,12 +4,12 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone)]
-/// An struct that represents the rdata for ptr type
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// /                   PTRDNAME                    /
-/// /                                               /
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+// An struct that represents the rdata for ptr type
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// /                   PTRDNAME                    /
+// /                                               /
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
 pub struct PtrRdata {
     // A domain name which points to some location in the
     // domain name space.
@@ -17,7 +17,7 @@ pub struct PtrRdata {
 }
 
 impl ToBytes for PtrRdata {
-    /// Return a vec of bytes that represents the ptr rdata
+    // Return a vec of bytes that represents the ptr rdata
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let ptrdname = self.get_ptrdname();
@@ -32,7 +32,7 @@ impl ToBytes for PtrRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for PtrRdata {
-    /// Creates a new PtrRdata from an array of bytes
+    // Creates a new PtrRdata from an array of bytes
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -59,15 +59,15 @@ impl FromBytes<Result<Self, &'static str>> for PtrRdata {
 }
 
 impl PtrRdata {
-    /// Creates a new PtrRdata with default values.
-    ///
-    /// # Examples
-    /// ```
-    /// let ptr_rdata = PtrRdata::new();
-    ///
-    /// assert_eq!(ptr_rdata.ptrdname.get_name(), String::from(""));
-    /// ```
-    ///
+    // Creates a new PtrRdata with default values.
+    //
+    // # Examples
+    // ```
+    // let ptr_rdata = PtrRdata::new();
+    //
+    // assert_eq!(ptr_rdata.ptrdname.get_name(), String::from(""));
+    // ```
+    //
     pub fn new() -> Self {
         let ptr_rdata = PtrRdata {
             ptrdname: DomainName::new(),

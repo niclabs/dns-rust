@@ -4,12 +4,12 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone)]
-/// An struct that represents the rdata for ns type
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// /                   NSDNAME                     /
-/// /                                               /
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+// An struct that represents the rdata for ns type
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// /                   NSDNAME                     /
+// /                                               /
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
 pub struct NsRdata {
     // A domain name which specifies a host which should be
     // authoritative for the specified class and domain.
@@ -17,7 +17,7 @@ pub struct NsRdata {
 }
 
 impl ToBytes for NsRdata {
-    /// Return a vec of bytes that represents the ns rdata
+    // Return a vec of bytes that represents the ns rdata
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let nsdname = self.get_nsdname();
@@ -32,7 +32,7 @@ impl ToBytes for NsRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for NsRdata {
-    /// Creates a new NsRdata from an array of bytes
+    // Creates a new NsRdata from an array of bytes
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -59,15 +59,15 @@ impl FromBytes<Result<Self, &'static str>> for NsRdata {
 }
 
 impl NsRdata {
-    /// Creates a new NsRdata with default values.
-    ///
-    /// # Examples
-    /// ```
-    /// let ns_rdata = NsRdata::new();
-    ///
-    /// assert_eq!(ns_rdata.nsdname.get_name(), String::from(""));
-    /// ```
-    ///
+    // Creates a new NsRdata with default values.
+    //
+    // # Examples
+    // ```
+    // let ns_rdata = NsRdata::new();
+    //
+    // assert_eq!(ns_rdata.nsdname.get_name(), String::from(""));
+    // ```
+    //
     pub fn new() -> Self {
         let ns_rdata = NsRdata {
             nsdname: DomainName::new(),

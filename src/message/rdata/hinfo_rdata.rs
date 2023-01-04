@@ -6,13 +6,13 @@ use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone)]
-/// An struct that represents the rdata for hinfo type
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                  CPU                          |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                   OS                          |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+// An struct that represents the rdata for hinfo type
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                  CPU                          |
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                   OS                          |
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
 
 pub struct HinfoRdata {
     // Specifies the CPU type.
@@ -22,7 +22,7 @@ pub struct HinfoRdata {
 }
 
 impl ToBytes for HinfoRdata {
-    /// Return a vec of bytes that represents the hinfo rdata
+    // Return a vec of bytes that represents the hinfo rdata
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let mut cpu = self.get_cpu();
@@ -47,7 +47,7 @@ impl ToBytes for HinfoRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for HinfoRdata {
-    /// Creates a new HinfoRdata from an array of bytes
+    // Creates a new HinfoRdata from an array of bytes
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut cpu = String::from("");
         let mut os = String::from("");
@@ -77,16 +77,16 @@ impl FromBytes<Result<Self, &'static str>> for HinfoRdata {
 }
 
 impl HinfoRdata {
-    /// Creates a new HinfoRdata with default values.
-    ///
-    /// # Examples
-    /// ```
-    /// let hinfo_rdata = HinfoRdata::new();
-    ///
-    /// assert_eq!(hinfo_rdata.cpu, String::from(""));
-    /// assert_eq!(hinfo_rdata.os, String::from(""));
-    /// ```
-    ///
+    // Creates a new HinfoRdata with default values.
+    //
+    // # Examples
+    // ```
+    // let hinfo_rdata = HinfoRdata::new();
+    //
+    // assert_eq!(hinfo_rdata.cpu, String::from(""));
+    // assert_eq!(hinfo_rdata.os, String::from(""));
+    // ```
+    //
 
     pub fn new() -> Self {
         let hinfo_rdata = HinfoRdata {

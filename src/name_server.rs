@@ -441,7 +441,7 @@ impl NameServer {
 
                 // If is an inverse query
                 if op_code == 1 {
-                    let not_implemented_msg = DnsMessage::not_implemented_msg(dns_message.clone());
+                    let not_implemented_msg = DnsMessage::not_implemented_msg();
 
                     NameServer::send_response_by_udp(
                         not_implemented_msg,
@@ -865,7 +865,7 @@ impl NameServer {
                         // If is an inverse query
                         if op_code == 1 {
                             let not_implemented_msg =
-                                DnsMessage::not_implemented_msg(dns_message.clone());
+                                DnsMessage::not_implemented_msg();
 
                             NameServer::send_response_by_tcp(
                                 not_implemented_msg,

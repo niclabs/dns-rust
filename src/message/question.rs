@@ -1,18 +1,18 @@
 use crate::domain_name::DomainName;
 
 #[derive(Default, Clone)]
-/// An struct that represents the question section from a dns message
-///
-///                                1  1  1  1  1  1
-///  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    QNAME                      |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    QTYPE                      |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    QCLASS                     |
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+// An struct that represents the question section from a dns message
+//
+//                                1  1  1  1  1  1
+//  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                    QNAME                      |
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                    QTYPE                      |
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// |                    QCLASS                     |
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
 
 // DNS question format of a query.
 pub struct Question {
@@ -26,16 +26,16 @@ pub struct Question {
 // Methods
 impl Question {
     // Creates a new Question with default values
-    ///
-    /// # Examples
-    /// ```
-    ///
-    /// let mut question = Question::new();
-    /// assert_eq!(question.qname.get_name(), String::from(""));
-    /// assert_eq!(question.qtype, 0);
-    /// assert_eq!(question.qclass, 0);
-    /// ```
-    ///
+    //
+    // # Examples
+    // ```
+    //
+    // let mut question = Question::new();
+    // assert_eq!(question.qname.get_name(), String::from(""));
+    // assert_eq!(question.qtype, 0);
+    // assert_eq!(question.qclass, 0);
+    // ```
+    //
     pub fn new() -> Self {
         let question: Question = Question {
             qname: DomainName::new(),
@@ -45,7 +45,7 @@ impl Question {
         question
     }
 
-    /// Given an array of bytes, creates a new Question.
+    // Given an array of bytes, creates a new Question.
     pub fn from_bytes<'a>(
         bytes: &'a [u8],
         full_msg: &'a [u8],
@@ -76,7 +76,7 @@ impl Question {
         Ok((question, &bytes_without_name[4..]))
     }
 
-    /// Returns a byte that represents the first byte from qtype.
+    // Returns a byte that represents the first byte from qtype.
     fn get_first_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
         let first_byte = (qtype >> 8) as u8;
@@ -84,7 +84,7 @@ impl Question {
         first_byte
     }
 
-    /// Returns a byte that represents the second byte from qtype.
+    // Returns a byte that represents the second byte from qtype.
     fn get_second_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
         let second_byte = qtype as u8;
@@ -92,7 +92,7 @@ impl Question {
         second_byte
     }
 
-    /// Returns a byte that represents the first byte from qclass.
+    // Returns a byte that represents the first byte from qclass.
     fn get_first_qclass_byte(&self) -> u8 {
         let qclass = self.get_qclass();
         let first_byte = (qclass >> 8) as u8;
@@ -100,7 +100,7 @@ impl Question {
         first_byte
     }
 
-    /// Returns a byte that represents the second byte from qclass.
+    // Returns a byte that represents the second byte from qclass.
     fn get_second_qclass_byte(&self) -> u8 {
         let qclass = self.get_qclass();
         let second_byte = qclass as u8;
@@ -108,7 +108,7 @@ impl Question {
         second_byte
     }
 
-    /// Returns a vec of bytes that represents the Question.
+    // Returns a vec of bytes that represents the Question.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut question_bytes: Vec<u8> = Vec::new();
 

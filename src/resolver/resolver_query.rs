@@ -404,7 +404,7 @@ impl ResolverQuery {
     }
 
     // Looks for local info in name server zone and cache
-    pub fn look_for_local_info(&mut self) -> Vec<ResourceRecord> {
+    pub fn look_for_local_info(&mut self) -> Result<Vec<ResourceRecord>,  &'static str>{
         let s_type = match self.get_stype() {
             1 => "A".to_string(),
             2 => "NS".to_string(),
@@ -417,11 +417,16 @@ impl ResolverQuery {
             15 => "MX".to_string(),
             16 => "TXT".to_string(),
             255 => "*".to_string(),
-            _ => unreachable!(),
+            _ => return Err("Not implemented type of query"),
         };
+
+        println!("LOOK FOR LOCAL INFO S_TYPE VALUE IS {}", s_type);
 
         let s_name = self.get_sname();
         let s_class = self.get_sclass();
+
+        println!("LOOK FOR LOCAL INFO S_NAME VALUE IS {}", s_name);
+        println!("LOOK FOR LOCAL INFO S_CLASS VALUE IS {}", s_class);
 
         // Class is *
         if s_class == 255 {
@@ -453,7 +458,7 @@ impl ResolverQuery {
                             rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
                         }
 
-                        return rrs_by_type;
+                        return Ok(rrs_by_type);
                     }
 
                     // Delete last dot
@@ -499,13 +504,12 @@ impl ResolverQuery {
             }
 
             if all_answers.len() > 0 {
-                return all_answers;
+                return Ok(all_answers);
             }
         } else {
-            let qname = s_name.clone();
             let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
                 self.get_ns_data(),
-                qname,
+                s_name.clone(),
                 s_class,
             );
 
@@ -528,7 +532,7 @@ impl ResolverQuery {
                         rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
                     }
 
-                    return rrs_by_type;
+                    return Ok(rrs_by_type);
                 }
 
                 // Delete last dot
@@ -568,7 +572,7 @@ impl ResolverQuery {
                         rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
                     }
 
-                    return rrs_by_type;
+                    return Ok(rrs_by_type);
                 }
             }
         }
@@ -609,23 +613,34 @@ impl ResolverQuery {
             }
         }
 
-        return rr_vec;
+        return Ok(rr_vec);
     }
 }
 
 // Util for TCP and UDP
 impl ResolverQuery {
     pub fn step_2_tcp(&mut self) {
+        println!("ENTERING STEP 2");
+        
         let sbelt = self.get_sbelt();
+
+        println!("sbelt -> {:#?}", sbelt.get_ns_list());
+
         let sname = self.get_sname();
         self.initialize_slist_tcp(sbelt, sname);
 
         let mut slist = self.get_slist();
         slist.sort();
 
-        println!("Slist intia len: {}", slist.len());
+        println!("Slist intial len: {}", slist.len());
 
         self.set_slist(slist);
+
+        // DEBUGGING PURPOSES ONLY
+
+        let contents_slist = self.get_slist().get_ns_list();
+        
+        println!("slist -> {:#?}", contents_slist);
     }
 
     pub fn step_2_udp(&mut self, socket: UdpSocket) {
@@ -705,15 +720,22 @@ impl ResolverQuery {
         &mut self,
         socket: UdpSocket,
         rx_update_self_slist: Receiver<Slist>,
-    ) -> Option<Vec<ResourceRecord>> {
+    ) -> (Option<Vec<ResourceRecord>>, Option<DnsMessage>){
         let local_info = self.look_for_local_info();
 
-        if local_info.len() > 0 {
-            return Some(local_info);
+        match local_info {
+            Ok(_) => {},
+            Err(_) => { 
+                return (None, Some(DnsMessage::not_implemented_msg()));
+            },
+        }
+
+        if local_info.clone().unwrap().len() > 0 {
+            return (Some(local_info.clone().unwrap()), None);
         } else {
             self.step_2_udp(socket.try_clone().unwrap());
             self.step_3_udp(socket, rx_update_self_slist);
-            return None;
+            return (None, None);
         }
     }
 
@@ -990,7 +1012,7 @@ impl ResolverQuery {
         self.set_sname(cname.get_name());
 
         match self.step_1_udp(socket, rx_update_self_slist) {
-            Some(val) => {
+            (Some(val), None) => {
                 println!("Local info!");
 
                 msg.set_answer(val);
@@ -1007,10 +1029,13 @@ impl ResolverQuery {
                 msg.set_header(header);
 
                 return Some(msg);
-            }
-            None => {
+            },
+            (None, Some(msg)) => {
+                return Some(msg);
+            },
+            (_, _) => {
                 return None;
-            }
+            },
         }
     }
 
@@ -1227,17 +1252,25 @@ impl ResolverQuery {
         mut query_msg: DnsMessage,
         update_slist_tcp_recv: Receiver<(String, Vec<ResourceRecord>)>,
     ) -> DnsMessage {
+        println!("ENTERING FIRST STEP TCP");
         let local_info = self.look_for_local_info();
 
-        if local_info.len() > 0 {
+        match local_info {
+            Ok(_) => {},
+            Err(_) => { 
+                return DnsMessage::not_implemented_msg();
+            },
+        }
+
+        if local_info.clone().unwrap().len() > 0 {
             println!("Local info!");
 
-            query_msg.set_answer(local_info.clone());
+            query_msg.set_answer(local_info.clone().unwrap().clone());
             query_msg.set_authority(Vec::new());
             query_msg.set_additional(Vec::new());
 
             let mut header = query_msg.get_header();
-            header.set_ancount(local_info.len() as u16);
+            header.set_ancount(local_info.clone().unwrap().len() as u16);
             header.set_nscount(0);
             header.set_arcount(0);
             header.set_id(self.get_old_id());
@@ -1247,7 +1280,9 @@ impl ResolverQuery {
 
             return query_msg;
         } else {
+            println!("NO LOCAL INFO AVAILABLE, GO TO STEP 2");
             self.step_2_tcp();
+            println!("STEP 2 COMPLETED, GO TO STEP 3");
             return self.step_3_tcp(update_slist_tcp_recv);
         }
     }
@@ -1264,7 +1299,14 @@ impl ResolverQuery {
         }
 
         let mut slist = self.get_slist();
+
+        // for debugging purposes only
+        println!("Starting slist step 3 : {}", slist.len());
+        println!("Starting index to choose step 3 : {}", self.get_index_to_choose());
+
         let mut index_to_choose = self.get_index_to_choose() % slist.len() as u16;
+        println!("Index to choose after module, step 3 : {}", self.get_index_to_choose());
+
         let mut best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
@@ -1322,8 +1364,11 @@ impl ResolverQuery {
             }
 
             slist = self.get_slist();
+            println!("Slist len step 3 : {}", slist.len());
+            
             self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
             index_to_choose = self.get_index_to_choose();
+            println!("Index to choose after first +1 step 3 : {}", self.get_index_to_choose());
 
             best_server_to_ask = slist.get(index_to_choose);
             best_server_ip = best_server_to_ask
@@ -1345,7 +1390,9 @@ impl ResolverQuery {
         best_server_ip.push_str(":53");
 
         // Update the index to choose
+        println!("Index to choose variable step 3 : {}", index_to_choose );
         self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
+        println!("Index to choose after second +1 step 3 : {}", self.get_index_to_choose());
         //
 
         // Get address for empty ns in slist
@@ -1372,6 +1419,7 @@ impl ResolverQuery {
         self.set_last_query_hostname(host_name);
         //
 
+
         return self.send_tcp_query(&msg_to_bytes, best_server_ip, update_slist_tcp_recv);
     }
 
@@ -1384,6 +1432,9 @@ impl ResolverQuery {
         let answer = msg_from_response.get_answer();
 
         // Step 4a
+        println!("ANSWER LEN {}", answer.len());
+        println!("RCODE {}", rcode);
+
         if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
         {
@@ -1392,10 +1443,14 @@ impl ResolverQuery {
 
         let authority = msg_from_response.get_authority();
         //let additional = msg_from_response.get_additional();
-
+        println!("AUTHORITY {}", authority.len());
         // Step 4b
         // If there is authority and it is NS type
         if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
+            // debugging purposes only
+            println!("Authority is {}", authority[0]);
+            println!("GOING TO STEP 4B");
+            // 
             return self.step_4b_tcp(msg_from_response, update_slist_tcp_recv);
         }
 
@@ -1409,7 +1464,13 @@ impl ResolverQuery {
         }
 
         let slist = self.get_slist();
-        let last_index_to_choose = (self.get_index_to_choose() - 1) % slist.len() as u16;
+        println!("Index to choose step_4_tcp_before_substract {}", self.get_index_to_choose());
+        println!("Slist len step_4_tcp_before_substract {}", slist.len());
+        let mut last_index_to_choose: u16 = 0;
+        if  self.get_index_to_choose() != 0 {
+            last_index_to_choose = (self.get_index_to_choose() - 1) % slist.len() as u16;
+        }
+        println!("Last index to choose step_4_tcp_after_substract {}", last_index_to_choose);
         let best_server = slist.get(last_index_to_choose);
         let best_server_hostname = best_server.get(&"name".to_string()).unwrap();
 
@@ -1507,17 +1568,22 @@ impl ResolverQuery {
         slist.delete(host_name_asked.clone());
 
         if slist.len() == 0 {
-            match host_name_asked.find(".") {
-                Some(index) => {
-                    let parent_host_name = &host_name_asked[index + 1..];
-                    self.initialize_slist_tcp(self.get_sbelt(), parent_host_name.to_string());
-                    self.set_index_to_choose(0);
-                }
-                None => {
-                    self.initialize_slist_tcp(self.get_sbelt(), ".".to_string());
-                    self.set_index_to_choose(0);
-                }
-            }
+            println!("No answer was found for query");
+
+            
+            // ver como solucionar correctamente
+            return DnsMessage::data_not_found_error_msg();
+            // match host_name_asked.find(".") {
+            //     Some(index) => {
+            //         let parent_host_name = &host_name_asked[index + 1..];
+            //         self.initialize_slist_tcp(self.get_sbelt(), parent_host_name.to_string());
+            //         self.set_index_to_choose(0);
+            //     }
+            //     None => {
+            //         self.initialize_slist_tcp(self.get_sbelt(), ".".to_string());
+            //         self.set_index_to_choose(0);
+            //     }
+            // }
         } else {
             self.set_index_to_choose(self.get_index_to_choose() % slist.len() as u16);
             self.set_slist(slist);

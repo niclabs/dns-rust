@@ -6,18 +6,18 @@ use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone)]
-/// An struct that represents the rdata for txt type.
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// /                   TXT-DATA                    /
-/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///
+// An struct that represents the rdata for txt type.
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+// /                   TXT-DATA                    /
+// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+//
 pub struct TxtRdata {
     // One or more <character-string>s.
     text: Vec<String>,
 }
 
 impl ToBytes for TxtRdata {
-    /// Return a vec of bytes that represents the txt rdata
+    // Return a vec of bytes that represents the txt rdata
     fn to_bytes(&self) -> Vec<u8> {
         let text = self.get_text();
         let mut bytes: Vec<u8> = Vec::new();
@@ -36,42 +36,38 @@ impl ToBytes for TxtRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for TxtRdata {
-    /// Creates a new TxtRdata from an array of bytes
+    // Creates a new TxtRdata from an array of bytes
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut string;
         let mut txt: Vec<String> = Vec::new();
-        let mut i = 0;
-        let len = bytes.len(); 
+        let mut i = 0; 
 
-        while i < len {
-            string = String::from("");
-            let lenght_octet = bytes[i];
-            i += 1;
-            if i >= len {
-                break; 
-            }
-            for _chars in 0..lenght_octet {
-                let byte = bytes[i];
-                string.push(byte as char);
-                i += 1;
-            }
-            txt.push(string);
+        string = String::from("");
+        let lenght_octet = bytes[0];
+          
+        for _chars in 0..lenght_octet {
+            i = i +1;
+            let byte = bytes[i];
+            string.push(byte as char);
         }
+
+        txt.push(string);
+
         let txt_rdata = TxtRdata::new(txt);
         Ok(txt_rdata)
     }
 }
 
 impl TxtRdata {
-    /// Creates a new TxtRdata.
-    ///
-    /// # Examples
-    /// ```
-    /// let txt_rdata = TxtRdata::new(String::from("test"));
-    ///
-    /// assert_eq!(txt_rdata.text, String::from("test"));
-    /// ```
-    ///
+    // Creates a new TxtRdata.
+    //
+    // # Examples
+    // ```
+    // let txt_rdata = TxtRdata::new(String::from("test"));
+    //
+    // assert_eq!(txt_rdata.text, String::from("test"));
+    // ```
+    //
     pub fn new(text: Vec<String>) -> Self {
         let txt_rdata = TxtRdata { text: text };
 
@@ -150,10 +146,10 @@ mod txt_rdata_test {
 
     #[test]
     fn to_bytes_test() {
-        let text = vec!["dcc".to_string(), "test".to_string()];
+        let text = vec!["dcc test".to_string()];
         let txt_rdata = TxtRdata::new(text);
 
-        let bytes_test = [3, 100, 99, 99, 4, 116, 101, 115, 116];
+        let bytes_test = [8, 100, 99, 99, 32, 116, 101, 115, 116];
 
         assert_eq!(txt_rdata.to_bytes(), bytes_test);
     }
@@ -161,21 +157,13 @@ mod txt_rdata_test {
     #[test]
     fn from_bytes_test() {
 
-        let one_elem_test = [3, 100, 99, 99];
-        let two_elem_test = [3, 100, 99, 99, 4, 116, 101, 115, 116];
+        let bytes = [8, 100, 99, 99, 32, 116, 101, 115, 116];
 
-        // bytes is not the full msg, but in this case it will not use inside
-        let txt_rdata_one_elem = TxtRdata::from_bytes(&one_elem_test, &one_elem_test).unwrap();
-        let txt_rdata_two_elem = TxtRdata::from_bytes(&two_elem_test, &two_elem_test).unwrap();
+        let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(
-            txt_rdata_one_elem.get_text(),
-            vec!["dcc".to_string()]
-        );
-
-        assert_eq!(
-            txt_rdata_two_elem.get_text(),
-            vec!["dcc".to_string(), "test".to_string()]
+            txt_rdata.get_text(),
+            vec!["dcc test".to_string()]
         );
     }
 }

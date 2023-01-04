@@ -144,6 +144,18 @@ impl DnsMessage {
         let mut header = msg.get_header();
 
         header.set_rcode(1);
+        header.set_qr(true);
+        msg.set_header(header);
+
+        msg
+    }
+
+    pub fn data_not_found_error_msg() -> Self {
+        let mut msg = DnsMessage::new();
+        let mut header = msg.get_header();
+
+        header.set_aa(true);
+        header.set_qr(true);
         msg.set_header(header);
 
         msg
@@ -158,9 +170,11 @@ impl DnsMessage {
         msg
     }
 
-    pub fn not_implemented_msg(mut msg: DnsMessage) -> Self {
+    pub fn not_implemented_msg() -> Self {
+        let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
         header.set_rcode(4);
+        header.set_qr(true);
 
         msg.set_header(header);
 

@@ -448,6 +448,37 @@ impl ResourceRecord {
         self.rdata = rdata.clone();
     }
 }
+impl ResourceRecord{
+    pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool{
+        let a: u16 = self.get_type_code();
+        let aa: u16 = rr.get_type_code();
+        let b: u16 = self.get_class();
+        let bb: u16 = rr.get_class();
+        let c: u16 = self.get_rdlength();
+        let cc: u16 = rr.get_rdlength();
+        let d: u32 = self.get_ttl();
+        let dd: u32 = rr.get_ttl();
+        let e: Vec<u8> = self.get_rdata().to_bytes();
+        let ee: Vec<u8> = rr.get_rdata().to_bytes();
+        let n : Vec<u8> = self.get_name().to_bytes();
+        let nn: Vec<u8> = rr.get_name().to_bytes(); 
+        let s1 = String::from_utf8(e);
+        let s2 = String::from_utf8(ee);
+        let s = String::from_utf8(n);
+        let ss = String::from_utf8(nn);
+        
+
+        if a==aa && b==bb && c==cc && d==dd && s1==s2 && s==ss{ 
+          true
+    
+        }
+        else {
+            false
+        }
+    
+    
+    }
+}
 
 // Getters
 impl ResourceRecord {
@@ -969,6 +1000,22 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(a_rdata);
 
         assert_eq!(resource_record.get_string_type(), String::from("A"));
+    }
+
+    #[test]
+    fn rr_equal_test() {
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut resource_record = ResourceRecord::new(soa_rdata);
+        let soa_rdata1 = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut resource_record1 = ResourceRecord::new(soa_rdata1);
+        assert!(resource_record.rr_equal(resource_record1.clone()));
+        resource_record1.set_class(12);
+        assert_ne!(resource_record.rr_equal(resource_record1.clone()), true);
+        resource_record.set_class(12);
+        assert!(resource_record.rr_equal(resource_record1.clone()));
+        resource_record.set_rdlength(16);
+        assert_ne!(resource_record.rr_equal(resource_record1.clone()), true);
+
     }
 
 }

@@ -19,7 +19,7 @@ pub struct ZoneRefresh {
 
 impl ZoneRefresh {
     pub fn new(zone: NSZone) -> Self {
-        let soa_rr = zone.get_top_node().get_rrs_by_type(6)[0].clone();
+        let soa_rr = zone.get_zone_nodes().get_rrs_by_type(6)[0].clone();
         let soa_rdata = match soa_rr.get_rdata() {
             Rdata::SomeSoaRdata(val) => val,
             _ => unreachable!(),
@@ -43,7 +43,7 @@ impl ZoneRefresh {
 
         zone_refresh
     }
-    // Compares the new serial with the old one, by Serial number arithmetic
+    /// Compares the new serial with the old one, by Serial number arithmetic
     // https://en.wikipedia.org/wiki/Serial_number_arithmetic
     pub fn new_serial_greater_than_old(&self, serial: u32) -> bool {
         let old_serial = self.get_serial();
@@ -57,8 +57,9 @@ impl ZoneRefresh {
         }
     }
 
-    pub fn update_zone(&mut self, zone: NSZone) {
-        let soa_rr = zone.get_top_node().get_rrs_by_type(6)[0].clone();
+    ///Update itself with the values of the SOA RR in the received NSZone
+    pub fn update_zone_refresh(&mut self, zone: NSZone) {
+        let soa_rr = zone.get_zone_nodes().get_rrs_by_type(6)[0].clone();
         let soa_rdata = match soa_rr.get_rdata() {
             Rdata::SomeSoaRdata(val) => val,
             _ => unreachable!(),
@@ -171,7 +172,6 @@ mod zone_refresh_test {
 
     use chrono::Utc;
 
-
     #[test]
     fn constructor_test() {
         let mut ns_zone = NSZone::new();
@@ -196,7 +196,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value);
+        ns_zone.get_zone_nodes().set_value(value);
 
         let zone_refresh = ZoneRefresh::new(ns_zone);
 
@@ -225,8 +225,8 @@ mod zone_refresh_test {
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
         value.push(resource_record);
-        ns_zone_1.set_value(value.clone());
-        ns_zone_2.set_value(value.clone());
+        ns_zone_1.get_zone_nodes().set_value(value.clone());
+        ns_zone_2.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone_1);
         assert_eq!(zone_refresh.get_zone().get_name(), String::from("example.com"));
@@ -246,7 +246,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_ip_address_for_refresh_zone(), String::from(""));
@@ -264,7 +264,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_serial(), 0 as u32);
@@ -282,7 +282,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_refresh(), 0 as u32);
@@ -300,7 +300,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_retry(), 0 as u32);
@@ -318,7 +318,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_expire(), 0 as u32);
@@ -336,7 +336,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
@@ -355,7 +355,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_last_fails(), false);
@@ -373,7 +373,7 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
@@ -389,7 +389,7 @@ mod zone_refresh_test {
         let  soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
         value.push(resource_record);
-        ns_zone.set_value(value.clone());
+        ns_zone.get_zone_nodes().set_value(value.clone());
 
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         zone_refresh.set_serial(111111111 as u32);
@@ -423,14 +423,14 @@ mod zone_refresh_test {
         value_1.push(resource_record_1);
         value_2.push(resource_record_2);
 
-        ns_zone.set_value(value_1.clone());
+        ns_zone.get_zone_nodes().set_value(value_1.clone());
         let mut zone_refresh = ZoneRefresh::new(ns_zone.clone());
         assert_eq!(zone_refresh.get_serial(), 0 as u32);
         assert_eq!(zone_refresh.get_retry(), 0 as u32);
         assert_eq!(zone_refresh.get_expire(), 0 as u32);
 
-        ns_zone.set_value(value_2.clone());
-        zone_refresh.update_zone(ns_zone.clone());
+        ns_zone.get_zone_nodes().set_value(value_2.clone());
+        zone_refresh.update_zone_refresh(ns_zone.clone());
         assert_eq!(zone_refresh.get_serial(), 1111111111 as u32);
         assert_eq!(zone_refresh.get_retry(), 7200 as u32);
         assert_eq!(zone_refresh.get_expire(), 4000000 as u32);

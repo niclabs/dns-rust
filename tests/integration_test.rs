@@ -1,6 +1,6 @@
 use std::{fs, thread, collections::HashMap};
 
-use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone_node::NSZone, master_file::MasterFile}};
+use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
 
 
 /// Read a zone file and extract the host name to a vector.
@@ -33,8 +33,8 @@ fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
 
 #[test]
 fn validate_master_files() {
-    for master_file in MASTER_FILES {
-        let _validated_mf = MasterFile::from_file(master_file.to_string(), true);
+    for (master_file, master_file_origin) in MASTER_FILES {
+        let _validated_mf = MasterFile::from_file(master_file.to_string(),master_file_origin.to_string(), true);
     }
 }
 
@@ -56,7 +56,7 @@ fn test_500000_cl_domains() {
 }
 
 #[test]
-fn rfc1034_standar_queries_test_6_2_1() {
+fn rfc1034_standard_queries_test_6_2_1() {
     client::run_client("test.uchile.cl", "TCP");
 
     // Run resolver.

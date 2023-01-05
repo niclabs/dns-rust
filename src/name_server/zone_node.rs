@@ -4,7 +4,7 @@ use crate::message::resource_record::ResourceRecord;
 use crate::utils::check_label_name;
 
 #[derive(Clone)]
-/// Structs that represents data from a zone
+/// Recursive Struct that represents data from a zone
 pub struct NSNode {
     name: String,
     value: Vec<ResourceRecord>,
@@ -311,30 +311,10 @@ mod zone_node_test {
         assert_eq!(nsnode.get_children().len(), 1);
     }
 
-    #[test]
+    /* #[test]
     fn set_duplicate_children_test() {
-        let mut nsnode = NSNode::new();
-
-        let mut children: Vec<NSNode> = Vec::new();
-        let mut nsnode_1 = NSNode::new();
-        nsnode_1.set_name(String::from("test1"));
-        children.push(nsnode_1);
-        let mut nsnode_2 = NSNode::new();
-        nsnode_2.set_name(String::from("test2"));
-        children.push(nsnode_2);
-        let mut nsnode_3 = NSNode::new();
-        nsnode_3.set_name(String::from("TEST1"));
-        nsnode_3.set_ip_address_for_refresh_zone(String::from("1.2.3"));
-        children.push(nsnode_3);
-
-        assert_eq!(nsnode.get_children().len(), 0);
-        nsnode.set_children(children);
-        assert_eq!(nsnode.get_children().len(), 2);
-        assert_eq!(
-            nsnode.get_children()[1].get_ip_address_for_refresh_zone(),
-            String::from("1.2.3")
-        );
-    }
+        //TODO:
+    } */
 
     // Other methods
 

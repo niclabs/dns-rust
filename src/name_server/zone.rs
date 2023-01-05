@@ -168,7 +168,7 @@ impl NSZone {
 
     /// Gets the nodes of the zone
     pub fn get_zone_nodes(&self) -> NSNode {
-        self.zone_nodes
+        self.zone_nodes.clone()
     }
 
     /// Gets the zone class

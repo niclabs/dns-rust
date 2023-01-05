@@ -44,7 +44,6 @@ impl NSZone {
         let origin = master_file_parsed.get_origin();
         let mut rrs = master_file_parsed.get_rrs();
 
-        let origin_rrs = rrs.remove(&origin).unwrap();
 
         // Sets Zone info
         let mut ns_zone = NSZone::new();
@@ -57,6 +56,8 @@ impl NSZone {
         let mut top_node = NSNode::new();
         top_node.set_name(top_node_name.clone());
         top_node.set_value(rrs.get(top_node_name.clone().as_str()).unwrap().clone());
+
+        rrs.remove(&origin);
 
         for (key, value) in rrs.iter() {
             println!("{} - {}", key.clone(), value.len());

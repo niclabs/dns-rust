@@ -2334,22 +2334,22 @@ impl NameServer {
 
 // Getters
 impl NameServer {
-    // Gets the zones data from the name server
+    /// Gets the zones data from the name server
     pub fn get_zones_by_class(&self) -> HashMap<u16, HashMap<String, NSZone>> {
         self.zones_by_class.clone()
     }
 
-    // Gets the cache from the name server
+    /// Gets the cache from the name server
     pub fn get_cache(&self) -> DnsCache {
         self.cache.clone()
     }
 
-    // Gets if the server is primary or not
+    /// Gets if the server is primary or not
     pub fn get_primary_server(&self) -> bool {
         self.primary_server
     }
 
-    // Gets the ip address to ask for refresh a zone
+    /// Gets the ip address to ask for refresh a zone
     pub fn get_queries_id_for_soa_rr(&self) -> HashMap<u16, String> {
         self.queries_id_for_soa_rr.clone()
     }
@@ -2362,52 +2362,52 @@ impl NameServer {
         self.refresh_zones_data.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_udp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_tcp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_add_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_udp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_add_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_tcp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_udp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_tcp.clone()
     }
 
-    // Gets the sender to update a refresh zone in name server udp
+    /// Gets the sender to update a refresh zone in name server udp
     pub fn get_update_refresh_zone_tcp(&self) -> Sender<ZoneRefresh> {
         self.update_refresh_zone_tcp.clone()
     }
 
-    // Gets the sender to update a refresh zone in name server tcp
+    /// Gets the sender to update a refresh zone in name server tcp
     pub fn get_update_refresh_zone_udp(&self) -> Sender<ZoneRefresh> {
         self.update_refresh_zone_udp.clone()
     }
 
-    // Gets the sender to update a zone in the udp resolver
+    /// Gets the sender to update a zone in the udp resolver
     pub fn get_update_zone_udp_resolver(&self) -> Sender<NSZone> {
         self.update_zone_udp_resolver.clone()
     }
 
-    // Gets the sender to update a zone in the tcp resolver
+    /// Gets the sender to update a zone in the tcp resolver
     pub fn get_update_zone_tcp_resolver(&self) -> Sender<NSZone> {
         self.update_zone_tcp_resolver.clone()
     }
@@ -2415,27 +2415,27 @@ impl NameServer {
 
 // Setters
 impl NameServer {
-    // Sets the zones with a new value
+    /// Sets the zones with a new value
     pub fn set_zones_by_class(&mut self, zones_by_class: HashMap<u16, HashMap<String, NSZone>>) {
         self.zones_by_class = zones_by_class;
     }
 
-    // Sets the cache with a new cache
+    /// Sets the cache with a new cache
     pub fn set_cache(&mut self, cache: DnsCache) {
         self.cache = cache;
     }
 
-    // Sets the primary server with a new value
+    /// Sets the primary server with a new value
     pub fn set_primary_server(&mut self, primary_server: bool) {
         self.primary_server = primary_server;
     }
 
-    // Sets the queries ids with a new value
+    /// Sets the queries ids with a new value
     pub fn set_queries_id(&mut self, queries_id: HashMap<u16, Vec<(u16, String)>>) {
         self.queries_id = queries_id;
     }
 
-    // Sets the queries ids for soa queries with a new value
+    /// Sets the queries ids for soa queries with a new value
     pub fn set_queries_id_for_soa_rr(&mut self, queries_id: HashMap<u16, String>) {
         self.queries_id_for_soa_rr = queries_id;
     }

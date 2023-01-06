@@ -4,6 +4,7 @@ use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
+use crate::name_server::zone_node::NSNode;
 use crate::name_server::zone_refresh::ZoneRefresh;
 use crate::resolver::Resolver;
 
@@ -22,13 +23,14 @@ use std::thread;
 use std::time::Duration;
 
 pub mod master_file;
-pub mod zone;
+pub mod zone_node;
 pub mod zone_refresh;
+pub mod zone;
 
 #[derive(Clone)]
-// Structs that represents a name server
+/// Structs that represents a name server
 pub struct NameServer {
-    zones: HashMap<u16, HashMap<String, NSZone>>,
+    zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
     cache: DnsCache,
     // For refreshing zone
     primary_server: bool,
@@ -60,7 +62,7 @@ pub struct NameServer {
 }
 
 impl NameServer {
-    // Creates a new name server
+    /// Creates a new name server
     pub fn new(
         primary_server: bool,
         delete_channel_udp: Sender<(String, ResourceRecord)>,
@@ -75,7 +77,7 @@ impl NameServer {
         update_zone_tcp_resolver: Sender<NSZone>,
     ) -> Self {
         let name_server = NameServer {
-            zones: HashMap::<u16, HashMap<String, NSZone>>::new(),
+            zones_by_class: HashMap::<u16, HashMap<String, NSZone>>::new(),
             cache: DnsCache::new(),
             queries_id: HashMap::<u16, Vec<(u16, String)>>::new(),
             queries_id_for_soa_rr: HashMap::<u16, String>::new(),
@@ -96,6 +98,7 @@ impl NameServer {
         name_server
     }
 
+    /// Run an UDP and TCP Name server
     pub fn run_name_server(
         &mut self,
         name_server_ip_address: String,
@@ -172,9 +175,9 @@ impl NameServer {
         let mut minimum_refresh: u32 = 2147483648;
 
         if primary_server == false {
-            let zones = self.get_zones();
+            let zones_by_class = self.get_zones_by_class();
 
-            for (_key, val) in zones.iter() {
+            for (_key, val) in zones_by_class.iter() {
                 for (second_key, second_val) in val.iter() {
                     let zone_data = ZoneRefresh::new(second_val.clone());
                     let zone_refresh = zone_data.get_refresh();
@@ -211,7 +214,7 @@ impl NameServer {
             let mut next_value = received_update_refresh_zone.next();
 
             let mut refresh_zones = self.get_refresh_zones_data();
-            let mut zones = self.get_zones();
+            let mut zones_by_class = self.get_zones_by_class();
 
             while next_value.is_none() == false {
                 let updated_refresh_zone = next_value.unwrap();
@@ -227,12 +230,12 @@ impl NameServer {
                 let mut new_zone_hash = HashMap::new();
                 new_zone_hash.insert(zone_name, zone);
 
-                zones.insert(zone_class, new_zone_hash);
+                zones_by_class.insert(zone_class, new_zone_hash);
 
                 next_value = received_update_refresh_zone.next();
             }
 
-            self.set_zones(zones);
+            self.set_zones_by_class(zones_by_class);
             self.set_refresh_zones_data(refresh_zones);
             //
 
@@ -453,7 +456,7 @@ impl NameServer {
                 }
                 //
 
-                let zones = self.get_zones();
+                let zones_by_class = self.get_zones_by_class();
 
                 let cache = self.get_cache();
 
@@ -490,7 +493,7 @@ impl NameServer {
                     } else {
                         let response_dns_msg = NameServer::step_2(
                             new_msg,
-                            zones,
+                            zones_by_class,
                             cache,
                             tx_delete_udp_copy,
                             tx_delete_tcp_copy,
@@ -632,7 +635,7 @@ impl NameServer {
 
                                                     // Update refresh zone with new soa values in tcp and udp name servers
                                                     refresh_data_actual_zone_copy
-                                                        .update_zone(update_zone);
+                                                        .update_zone_refresh(update_zone);
 
                                                     tx_update_refresh_zone_udp_copy.send(
                                                         refresh_data_actual_zone_copy.clone(),
@@ -705,9 +708,9 @@ impl NameServer {
         let mut minimum_refresh: u32 = 2147483648;
 
         if primary_server == false {
-            let zones = self.get_zones();
+            let zones_by_class = self.get_zones_by_class();
 
-            for (_key, val) in zones.iter() {
+            for (_key, val) in zones_by_class.iter() {
                 for (second_key, second_val) in val.iter() {
                     let zone_data = ZoneRefresh::new(second_val.clone());
                     let zone_refresh = zone_data.get_refresh();
@@ -754,7 +757,7 @@ impl NameServer {
                     let mut next_value = received_update_refresh_zone.next();
 
                     let mut refresh_zones = self.get_refresh_zones_data();
-                    let mut zones = self.get_zones();
+                    let mut zones_by_class = self.get_zones_by_class();
 
                     while next_value.is_none() == false {
                         let updated_refresh_zone = next_value.unwrap();
@@ -770,12 +773,12 @@ impl NameServer {
                         let mut new_zone_hashmap = HashMap::new();
                         new_zone_hashmap.insert(zone_name, zone);
 
-                        zones.insert(zone_class, new_zone_hashmap);
+                        zones_by_class.insert(zone_class, new_zone_hashmap);
 
                         next_value = received_update_refresh_zone.next();
                     }
 
-                    self.set_zones(zones);
+                    self.set_zones_by_class(zones_by_class);
                     self.set_refresh_zones_data(refresh_zones);
                     //
 
@@ -877,7 +880,7 @@ impl NameServer {
                         }
                         //
 
-                        let zones = self.get_zones();
+                        let zones_by_class = self.get_zones_by_class();
                         let cache = self.get_cache();
                         let resolver_ip_clone = local_resolver_ip_and_port.clone();
 
@@ -894,7 +897,7 @@ impl NameServer {
                                 NameServer::send_axfr_response(
                                     dns_message.clone(),
                                     src_address.clone().to_string(),
-                                    zones.clone(),
+                                    zones_by_class.clone(),
                                     stream,
                                 );
                             } else {
@@ -910,7 +913,7 @@ impl NameServer {
                                         resolver_ip_clone,
                                         new_msg,
                                         cache.clone(),
-                                        zones.clone(),
+                                        zones_by_class.clone(),
                                     );
 
                                     response_dns_msg.set_query_id(query_id.clone());
@@ -925,7 +928,7 @@ impl NameServer {
                                 } else {
                                     let mut response_dns_msg = NameServer::step_2(
                                         new_msg,
-                                        zones,
+                                        zones_by_class,
                                         cache,
                                         tx_delete_udp_copy,
                                         tx_delete_tcp_copy,
@@ -1141,7 +1144,7 @@ impl NameServer {
                                                                 );
 
                                                                 // Update refresh zone with new soa values in tcp and udp name servers
-                                                                val_copy.update_zone(update_zone);
+                                                                val_copy.update_zone_refresh(update_zone);
 
                                                                 tx_update_refresh_zone_udp_copy
                                                                     .send(val_copy.clone());
@@ -1306,7 +1309,7 @@ impl NameServer {
                                                                 );
 
                                                                 // Update refresh zone with new soa values in tcp and udp name servers
-                                                                val_copy.update_zone(update_zone);
+                                                                val_copy.update_zone_refresh(update_zone);
 
                                                                 tx_update_refresh_zone_udp_copy
                                                                     .send(val_copy.clone());
@@ -1350,7 +1353,9 @@ impl NameServer {
 
 // Utils for TCP and UDP
 impl NameServer {
+    // FIXME:
     // Step 2 from RFC 1034
+    // find the zone by the qname and class, if is not found goes to find the label of the parent
     pub fn search_nearest_ancestor_zone(
         zones: HashMap<u16, HashMap<String, NSZone>>,
         mut qname: String,
@@ -1385,12 +1390,50 @@ impl NameServer {
         }
     }
 
-    //Step 3 from RFC 1034
+    // Step 2 from RFC 1034
+    //Looks for the nearest ancestor
+    pub fn search_nearest_ancestor(
+        zones: HashMap<u16, HashMap<String, NSZone>>,
+        mut qname: String,
+        qclass: u16,
+    ) -> (NSZone, bool) {
+        // Get the zone by class
+        let zones_by_class_option = zones.get(&qclass);
+
+        match zones_by_class_option {
+            Some(_) => {}
+            None => return (NSZone::new(), false),
+        }
+        //
+
+        let zones_by_class = zones_by_class_option.unwrap();
+
+        let (zone, available) = match zones_by_class.get(&qname) {
+            Some(val) => (val.clone(), true),
+            None => (NSZone::new(), false),
+        };
+
+        if zone.get_name() != "" && zone.get_active() == true {
+            return (zone, available);
+        } else {
+            let dot_position = qname.find(".").unwrap_or(0);
+            if dot_position > 0 {
+                qname.replace_range(..dot_position + 1, "");
+                return NameServer::search_nearest_ancestor_zone(zones, qname, qclass);
+            } else {
+                return (zone, available);
+            }
+        }
+    }
+
+    /// Step 3 from RFC 1034
+    /// Start matching down, label by label, in the zone.
+    //TODO: cambiarle de nombre a algo step_3
     fn search_in_zone(
         zone: NSZone,
         qname: String,
         msg: DnsMessage,
-        zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
         cache: DnsCache,
         tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
         tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
@@ -1398,16 +1441,18 @@ impl NameServer {
         tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
         let mut qname_without_zone_label = qname.replace(&zone.get_name(), "");
-        let mut zone = zone.clone();
+        let zone = zone.clone();
 
-        println!("Qname sin label: {}", qname_without_zone_label.clone());
+        let mut zone_nodes = zone.get_zone_nodes();
+
+        println!("QNAME without label: {}", qname_without_zone_label.clone());
 
         // We were looking for the first node
         if qname_without_zone_label == "".to_string() {
             return NameServer::step_3a(
-                zone,
+                zone_nodes,
                 msg,
-                zones,
+                zones_by_class,
                 cache,
                 tx_delete_resolver_udp,
                 tx_delete_resolver_tcp,
@@ -1424,19 +1469,22 @@ impl NameServer {
         labels.reverse();
 
         for label in labels {
-            let exist_child = zone.exist_child(label.to_string());
+            let exist_child = zone_nodes.exist_child(label.to_string());
 
             println!("Exist child: {}", exist_child.clone());
 
             if exist_child == true {
-                zone = zone.get_child(label.to_string()).0.clone();
+                zone_nodes = zone_nodes.get_child(label.to_string()).0.clone();
 
-                if zone.get_subzone() == true {
+                // RFC 1034 - Step 3b:
+                // If a match would take us out of the authoritative data
+                // we have a referral.
+                if zone_nodes.get_subzone() == true {
                     return NameServer::step_3b(
-                        zone,
+                        zone_nodes,
                         msg,
                         cache,
-                        zones,
+                        zones_by_class,
                         tx_delete_resolver_udp,
                         tx_delete_resolver_tcp,
                         tx_delete_ns_udp,
@@ -1446,14 +1494,14 @@ impl NameServer {
                     continue;
                 }
             } else {
-                return NameServer::step_3c(zone, msg, cache, zones);
+                return NameServer::step_3c(zone_nodes, msg, cache, zones_by_class);
             }
         }
 
         return NameServer::step_3a(
-            zone,
+            zone_nodes,
             msg,
-            zones,
+            zones_by_class,
             cache,
             tx_delete_resolver_udp,
             tx_delete_resolver_tcp,
@@ -1462,9 +1510,13 @@ impl NameServer {
         );
     }
 
+    /// Step 2 RFC 1034
+    /// Search the available zones for the zone which is the nearest 
+    /// ancestor to QNAME.  If such a zone is found, go to step 3,
+    /// otherwise step 4.
     pub fn step_2(
         mut msg: DnsMessage,
-        zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
         cache: DnsCache,
         tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
         tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
@@ -1479,9 +1531,9 @@ impl NameServer {
             let mut all_answers = Vec::new();
 
             // Gets all answers for all classes
-            for (class, _hashzones) in zones.iter() {
+            for (class, _hashzones) in zones_by_class.iter() {
                 let (zone, available) = NameServer::search_nearest_ancestor_zone(
-                    zones.clone(),
+                    zones_by_class.clone(),
                     qname.clone(),
                     class.clone(),
                 );
@@ -1491,7 +1543,7 @@ impl NameServer {
                         zone,
                         qname.clone(),
                         msg.clone(),
-                        zones.clone(),
+                        zones_by_class.clone(),
                         cache.clone(),
                         tx_delete_resolver_udp.clone(),
                         tx_delete_resolver_tcp.clone(),
@@ -1522,7 +1574,7 @@ impl NameServer {
                 return NameServer::step_4(
                     msg,
                     cache,
-                    zones,
+                    zones_by_class,
                     tx_delete_resolver_udp,
                     tx_delete_resolver_tcp,
                     tx_delete_ns_udp,
@@ -1532,7 +1584,7 @@ impl NameServer {
             //
         } else {
             let (zone, available) = NameServer::search_nearest_ancestor_zone(
-                zones.clone(),
+                zones_by_class.clone(),
                 qname.clone(),
                 qclass.clone(),
             );
@@ -1545,7 +1597,7 @@ impl NameServer {
                     zone,
                     qname.clone(),
                     msg.clone(),
-                    zones,
+                    zones_by_class,
                     cache,
                     tx_delete_resolver_udp,
                     tx_delete_resolver_tcp,
@@ -1557,7 +1609,7 @@ impl NameServer {
                 return NameServer::step_4(
                     msg,
                     cache,
-                    zones,
+                    zones_by_class,
                     tx_delete_resolver_udp,
                     tx_delete_resolver_tcp,
                     tx_delete_ns_udp,
@@ -1567,10 +1619,12 @@ impl NameServer {
         }
     }
 
+    /// RFC 1034 - Step 3.a:
+    /// Step when the whole of QNAME is matched
     pub fn step_3a(
-        zone: NSZone,
+        matched_node: NSNode,
         mut msg: DnsMessage,
-        zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
         cache: DnsCache,
         tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
         tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
@@ -1580,19 +1634,19 @@ impl NameServer {
         // Step 3.a
         let qtype = msg.get_question().get_qtype();
         let qclass = msg.get_question().get_qclass();
-        let mut rrs_by_type = zone.get_rrs_by_type(qtype);
+        let mut rrs_by_type = matched_node.get_rrs_by_type(qtype);
 
         println!("RRS len: {}", rrs_by_type.len());
 
         if rrs_by_type.len() > 0 {
             // Set the ttl from SOA RR
             let (main_zone, _available) = NameServer::search_nearest_ancestor_zone(
-                zones.clone(),
+                zones_by_class.clone(),
                 msg.get_question().get_qname().get_name(),
                 qclass,
             );
 
-            let soa_rr = main_zone.get_rrs_by_type(6)[0].clone();
+            let soa_rr = main_zone.get_zone_nodes().get_rrs_by_type(6)[0].clone();
             let soa_rdata = match soa_rr.get_rdata() {
                 Rdata::SomeSoaRdata(val) => val,
                 _ => unreachable!(),
@@ -1616,9 +1670,9 @@ impl NameServer {
             header.set_aa(true);
             msg.set_header(header);
 
-            return NameServer::step_6(msg, cache, zones);
+            return NameServer::step_6(msg, cache, zones_by_class);
         } else {
-            let rr = zone.get_value()[0].clone();
+            let rr = matched_node.get_value()[0].clone();
             if rr.get_type_code() == 5 && qtype != 5 {
                 println!("CNAME!!!");
 
@@ -1644,7 +1698,7 @@ impl NameServer {
 
                 return NameServer::step_2(
                     msg,
-                    zones,
+                    zones_by_class,
                     cache,
                     tx_delete_resolver_udp,
                     tx_delete_resolver_tcp,
@@ -1656,23 +1710,30 @@ impl NameServer {
                 header.set_aa(true);
 
                 msg.set_header(header);
-                return NameServer::step_6(msg, cache, zones);
+                return NameServer::step_6(msg, cache, zones_by_class);
             }
         }
         //
     }
 
+    /// RFC 1034 step 3b
+    /// If a match would take us out of the authoritative data.
+    /// Copy the NS RRs for the subzone into the authority
+    /// section of the reply.  Put whatever addresses are
+    /// available into the additional section, using glue RRs
+    /// if the addresses are not available from authoritative
+    /// data or the cache.  Go to step 4.
     pub fn step_3b(
-        zone: NSZone,
+        subzone_node: NSNode,
         mut msg: DnsMessage,
         mut cache: DnsCache,
-        zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
         tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
         tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
         tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
         tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
-        let ns_rrs = zone.get_value();
+        let ns_rrs = subzone_node.get_value();
 
         msg.set_authority(ns_rrs.clone());
         let mut additional = Vec::<ResourceRecord>::new();
@@ -1683,8 +1744,10 @@ impl NameServer {
                 _ => unreachable!(),
             };
 
+            
             let rrs = cache.get(name_ns.clone(), "A".to_string());
 
+            //If there are RR A in chache whit the referral host nam
             if rrs.len() > 0 {
                 for rr in rrs {
                     additional.push(rr.get_resource_record());
@@ -1692,26 +1755,15 @@ impl NameServer {
             } else {
                 println!("Ns name: {}", name_ns.clone());
 
-                match name_ns.find(&zone.get_name()) {
+                match name_ns.find(&subzone_node.get_name()) {
                     Some(index) => {
                         let new_ns_name = name_ns[..index - 1].to_string();
                         let labels: Vec<&str> = new_ns_name.split(".").collect();
                         let mut a_glue_rrs;
-                        let mut glue_zone = zone.clone();
-
-                        // Goes down for the tree looking for the zone with glue rrs
-                        for label in labels {
-                            let exist_child = glue_zone.exist_child(label.to_string());
-
-                            if exist_child == true {
-                                glue_zone = glue_zone.get_child(label.to_string()).0;
-                            } else {
-                                break;
-                            }
-                        }
+            
 
                         // Gets the rrs from the zone
-                        let glue_rrs = glue_zone.get_value();
+                        let glue_rrs = subzone_node.clone().get_value();
 
                         // Gets the glue rrs for the ns rr
                         a_glue_rrs = NameServer::look_for_type_records(name_ns, glue_rrs, 1);
@@ -1728,7 +1780,7 @@ impl NameServer {
         return NameServer::step_4(
             msg,
             cache,
-            zones,
+            zones_by_class,
             tx_delete_resolver_udp,
             tx_delete_resolver_tcp,
             tx_delete_ns_udp,
@@ -1736,17 +1788,22 @@ impl NameServer {
         );
     }
 
+    
+    /// RFC 1034 - Step 3c:
+    /// If at some label, a match is impossible (i.e., the
+    /// corresponding label does not exist), look to see if a
+    /// the "*" label exists.
     pub fn step_3c(
-        zone: NSZone,
+        current_node: NSNode,
         mut msg: DnsMessage,
         cache: DnsCache,
-        zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
     ) -> DnsMessage {
-        let exist = zone.exist_child("*".to_string());
+        let exist = current_node.exist_child("*".to_string());
 
         if exist == true {
-            let (new_zone, _available) = zone.get_child("*".to_string());
-            let rrs = new_zone.get_value();
+            let (child_node, _available) = current_node.get_child("*".to_string());
+            let rrs = child_node.get_value();
             let qtype = msg.get_question().get_qtype();
             let mut answer = Vec::<ResourceRecord>::new();
 
@@ -1756,7 +1813,6 @@ impl NameServer {
                     answer.push(rr);
                 }
             }
-
 
             let mut header = msg.get_header();
             header.set_aa(true);
@@ -1768,12 +1824,12 @@ impl NameServer {
             msg.set_answer(answer);
 
             msg.set_header(header);
-            return NameServer::step_6(msg, cache, zones);
+            return NameServer::step_6(msg, cache, zones_by_class);
         } 
         
         else { // * label does not exists
             let mut header = msg.get_header();
-            let rr = zone.get_value()[0].clone();
+            let rr = current_node.get_value()[0].clone();
             let qname = msg.get_question().get_qname(); 
         
             let canonical_name = match rr.get_rdata() {
@@ -1794,10 +1850,16 @@ impl NameServer {
         }
     }
 
+    /// RFC 1034 - Step 4:
+    /// Start matching down in the cache.  If QNAME is found in the
+    /// cache, copy all RRs attached to it that match QTYPE into the
+    /// answer section.  If there was no delegation from
+    /// authoritative data, look for the best one from the cache, and
+    /// put it in the authority section.  Go to step 6.
     pub fn step_4(
         mut msg: DnsMessage,
         mut cache: DnsCache,
-        zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
         tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
         tx_delete_resolver_tcp: Sender<(String, ResourceRecord)>,
         tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
@@ -1866,7 +1928,7 @@ impl NameServer {
         }
 
         if msg.get_authority().len() > 0 {
-            return NameServer::step_6(msg, cache, zones);
+            return NameServer::step_6(msg, cache, zones_by_class);
         } else {
             let mut authority = Vec::<ResourceRecord>::new();
 
@@ -1893,14 +1955,17 @@ impl NameServer {
             }
         }
 
-        return NameServer::step_6(msg, cache, zones);
+        return NameServer::step_6(msg, cache, zones_by_class);
     }
 
-    // Adds addittional information to response
+    /// step 6 RFC 1034
+    /// Using local data only, attempt to add other RRs which may be
+    /// useful to the additional section of the query.  Exit.
     fn step_6(
         mut msg: DnsMessage,
         mut cache: DnsCache,
-        zones: HashMap<u16, HashMap<String, NSZone>>,
+        zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
+
     ) -> DnsMessage {
         let answers = msg.get_answer();
         let mut additional = msg.get_additional();
@@ -1911,21 +1976,24 @@ impl NameServer {
             let answer_type = answer.get_type_code();
 
             match answer_type {
+                //answer type MX
                 15 => {
                     let exchange = match answer.get_rdata() {
                         Rdata::SomeMxRdata(val) => val.get_exchange().get_name(),
                         _ => unreachable!(),
                     };
-
+                    
+                    //If answer found is authoritative 
+                    //add in additional RR type A of top node of the zone 
                     if aa == true {
                         let (zone, _available) = NameServer::search_nearest_ancestor_zone(
-                            zones.clone(),
+                            zones_by_class.clone(),
                             exchange,
                             qclass.clone(),
                         );
-
-                        let mut rrs = zone.get_rrs_by_type(1);
-
+                        
+                        
+                        let mut rrs = zone.get_zone_nodes().get_rrs_by_type(1);
                         additional.append(&mut rrs);
                     } else {
                         let rrs = cache.get(exchange, "A".to_string());
@@ -1935,6 +2003,8 @@ impl NameServer {
                         }
                     }
                 }
+
+                //answer type NS
                 2 => {
                     let name_ns = match answer.get_rdata() {
                         Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
@@ -1942,19 +2012,22 @@ impl NameServer {
                     };
 
                     let (zone, _available) = NameServer::search_nearest_ancestor_zone(
-                        zones.clone(),
+                        zones_by_class.clone(),
                         name_ns.clone(),
                         qclass.clone(),
                     );
-
-                    if zone.get_subzone() == true {
+                    
+                    //if zone is a redirection we add rr glue in additional
+                    if zone.get_zone_nodes().get_subzone() == true {
                         let glue_rrs = zone.get_glue_rrs();
 
                         let mut a_glue_rrs =
                             NameServer::look_for_type_records(name_ns, glue_rrs, 1);
 
                         additional.append(&mut a_glue_rrs);
-                    } else {
+                    } 
+                    
+                    else {
                         let rrs = cache.get(name_ns, "A".to_string());
 
                         for rr in rrs {
@@ -2134,6 +2207,7 @@ impl NameServer {
         stream.write(&full_msg);
     }
 
+    //
     fn send_axfr_response(
         mut msg: DnsMessage,
         address: String,
@@ -2156,13 +2230,13 @@ impl NameServer {
         //
 
         // Add Soa rr first
-        let soa_rr = zone.get_rrs_by_type(6)[0].clone();
+        let soa_rr = zone.get_zone_nodes().get_rrs_by_type(6)[0].clone();
 
         answers.push(soa_rr.clone());
         //
 
         // Add others RRs from top node to the answer
-        let rrs = zone.get_value();
+        let rrs = zone.get_zone_nodes().get_value();
 
         for rr in rrs {
             if rr.get_type_code() != 6 {
@@ -2172,7 +2246,7 @@ impl NameServer {
         //
 
         // Add rrs from the children
-        let children = zone.get_children();
+        let children = zone.get_zone_nodes().get_children();
 
         for child in children {
             let mut rrs_from_child = child.get_all_rrs();
@@ -2226,9 +2300,11 @@ impl NameServer {
         msg
     }
 
-    pub fn add_zone_from_master_file(&mut self, file_name: String, origin:String, ip_address_for_refresh: String, validity_check: bool) {
-        let new_zone = NSZone::from_file(file_name, origin, ip_address_for_refresh, validity_check);
-        let mut zones = self.get_zones();
+    
+    pub fn add_zone_from_master_file(&mut self, file_name: String,origin :String ,ip_address_for_refresh: String, validity_check: bool) {
+        let new_zone = NSZone::from_file(file_name,origin, ip_address_for_refresh, validity_check);
+
+        let mut zones_by_class = self.get_zones_by_class();
         let zone_class = new_zone.get_class();
 
         // Create the new zone hash
@@ -2236,9 +2312,9 @@ impl NameServer {
         new_zone_hash.insert(new_zone.get_name(), new_zone);
 
         // Insert the new zone by class
-        zones.insert(zone_class, new_zone_hash);
+        zones_by_class.insert(zone_class, new_zone_hash);
 
-        self.set_zones(zones);
+        self.set_zones_by_class(zones_by_class);
     }
 
     pub fn remove_from_cache(
@@ -2258,22 +2334,22 @@ impl NameServer {
 
 // Getters
 impl NameServer {
-    // Gets the zones data from the name server
-    pub fn get_zones(&self) -> HashMap<u16, HashMap<String, NSZone>> {
-        self.zones.clone()
+    /// Gets the zones data from the name server
+    pub fn get_zones_by_class(&self) -> HashMap<u16, HashMap<String, NSZone>> {
+        self.zones_by_class.clone()
     }
 
-    // Gets the cache from the name server
+    /// Gets the cache from the name server
     pub fn get_cache(&self) -> DnsCache {
         self.cache.clone()
     }
 
-    // Gets if the server is primary or not
+    /// Gets if the server is primary or not
     pub fn get_primary_server(&self) -> bool {
         self.primary_server
     }
 
-    // Gets the ip address to ask for refresh a zone
+    /// Gets the ip address to ask for refresh a zone
     pub fn get_queries_id_for_soa_rr(&self) -> HashMap<u16, String> {
         self.queries_id_for_soa_rr.clone()
     }
@@ -2286,52 +2362,52 @@ impl NameServer {
         self.refresh_zones_data.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_udp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_tcp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_add_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_udp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_add_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_sender_ns_tcp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_ns_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_udp.clone()
     }
 
-    // Get the owner's query address
+    /// Get the owner's query address
     pub fn get_delete_channel_ns_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_sender_ns_tcp.clone()
     }
 
-    // Gets the sender to update a refresh zone in name server udp
+    /// Gets the sender to update a refresh zone in name server udp
     pub fn get_update_refresh_zone_tcp(&self) -> Sender<ZoneRefresh> {
         self.update_refresh_zone_tcp.clone()
     }
 
-    // Gets the sender to update a refresh zone in name server tcp
+    /// Gets the sender to update a refresh zone in name server tcp
     pub fn get_update_refresh_zone_udp(&self) -> Sender<ZoneRefresh> {
         self.update_refresh_zone_udp.clone()
     }
 
-    // Gets the sender to update a zone in the udp resolver
+    /// Gets the sender to update a zone in the udp resolver
     pub fn get_update_zone_udp_resolver(&self) -> Sender<NSZone> {
         self.update_zone_udp_resolver.clone()
     }
 
-    // Gets the sender to update a zone in the tcp resolver
+    /// Gets the sender to update a zone in the tcp resolver
     pub fn get_update_zone_tcp_resolver(&self) -> Sender<NSZone> {
         self.update_zone_tcp_resolver.clone()
     }
@@ -2339,27 +2415,27 @@ impl NameServer {
 
 // Setters
 impl NameServer {
-    // Sets the zones with a new value
-    pub fn set_zones(&mut self, zones: HashMap<u16, HashMap<String, NSZone>>) {
-        self.zones = zones;
+    /// Sets the zones with a new value
+    pub fn set_zones_by_class(&mut self, zones_by_class: HashMap<u16, HashMap<String, NSZone>>) {
+        self.zones_by_class = zones_by_class;
     }
 
-    // Sets the cache with a new cache
+    /// Sets the cache with a new cache
     pub fn set_cache(&mut self, cache: DnsCache) {
         self.cache = cache;
     }
 
-    // Sets the primary server with a new value
+    /// Sets the primary server with a new value
     pub fn set_primary_server(&mut self, primary_server: bool) {
         self.primary_server = primary_server;
     }
 
-    // Sets the queries ids with a new value
+    /// Sets the queries ids with a new value
     pub fn set_queries_id(&mut self, queries_id: HashMap<u16, Vec<(u16, String)>>) {
         self.queries_id = queries_id;
     }
 
-    // Sets the queries ids for soa queries with a new value
+    /// Sets the queries ids for soa queries with a new value
     pub fn set_queries_id_for_soa_rr(&mut self, queries_id: HashMap<u16, String>) {
         self.queries_id_for_soa_rr = queries_id;
     }

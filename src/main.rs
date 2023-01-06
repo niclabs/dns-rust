@@ -70,8 +70,8 @@ pub fn main() {
                 update_zone_tcp.clone(),
             );
 
-            for (master_file_name, master_file_origin) in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file_name.to_string(), master_file_origin.to_string(),"".to_string(), CHECK_MASTER_FILES);
+            for (master_file,master_file_origin) in MASTER_FILES {
+                name_server.add_zone_from_master_file(master_file.to_string(),master_file_origin.to_string(), "".to_string(), CHECK_MASTER_FILES);
             }
 
             name_server.run_name_server(
@@ -133,13 +133,13 @@ pub fn main() {
                 update_zone_tcp,
             );
 
-            for (master_file_name, master_file_origin) in MASTER_FILES {
-                name_server.add_zone_from_master_file(master_file_name.to_string(), master_file_origin.to_string(),"".to_string(), CHECK_MASTER_FILES);
+            for (master_file,master_file_origin)  in MASTER_FILES {
+                name_server.add_zone_from_master_file(master_file.to_string(), master_file_origin.to_string() ,"".to_string(), CHECK_MASTER_FILES);
             }
             //
 
             // Set zones to resolver
-            resolver.set_ns_data(name_server.get_zones());
+            resolver.set_ns_data(name_server.get_zones_by_class());
 
             // Run Name server
             thread::spawn(move || {

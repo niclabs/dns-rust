@@ -80,6 +80,8 @@ impl MasterFile {
             master_file.check_glue_delegations();
             // look for cname loops 
             master_file.check_cname_loop();
+            // look for at least one NS RR at the top of the zone
+            master_file.check_existence_top_ns();
             println!("Masterfile validated correctly.");
         }
 
@@ -223,7 +225,6 @@ impl MasterFile {
         
         let mut prev_rr_class = "".to_string();
         for line in lines {
-            println!("line: {}", line);
             if line == "".to_string() {
                 continue;
             }
@@ -500,7 +501,8 @@ impl MasterFile {
 
     /* Gets the hostname  of a line in a master file.
      - If there is no hostname, takes the last hostnames used.
-     - If host name is relative changes it to full host name
+     - If host name is relative changes it to full host name.
+     - Error when theres a relative name and no origin
       */
     fn get_full_host_name(&mut self, line: String) -> (String, String) {
         let first_char = line.get(0..1).unwrap();
@@ -515,16 +517,22 @@ impl MasterFile {
         if first_char == " ".to_string() {
             full_host_name = self.get_last_host();
             // line_left_to_process = line.clone();
+
         } else {
             
             full_host_name = iter.clone().next().unwrap().to_string();
             
             //full host name for rr in hashmap
             if full_host_name.ends_with(".") == false {
-                if  origin != "." {
+                
+                if origin == ""{
+                    panic!("Error: No origin for relative name");
+                
+                }else if  origin != "." {
                     full_host_name.push_str(".");
-                    full_host_name.push_str(&origin);
+                    full_host_name.push_str(&origin);   
                 }
+
                 else {
                     full_host_name.push_str(&origin);
                 }   
@@ -655,13 +663,13 @@ impl MasterFile {
     fn check_glue_delegations(&self){
         let origin = self.get_origin();
         let mut rrs = self.get_rrs();
+        let top_host = self.get_top_host();
 
         //all rr that need glue records
         rrs.remove(&origin);
 
-        //vec with 
-        // let mut rr_glue = Vec::<ResourceRecord>::new();
-        let top_host = self.get_top_host();
+        let top_host_labels: Vec<&str> = top_host.split(".").collect();
+        let top_host_labels_num = top_host_labels.len();
 
         let top_host_labels: Vec<&str> = top_host.split(".").collect();
         let top_host_labels_num = top_host_labels.len();
@@ -693,7 +701,6 @@ impl MasterFile {
                         // find glue info for this 
                         match rrs.get(ns_slice){
                             
-                            
                             Some(ns_rrs) => {
                                 let a_rr_glue = NameServer::look_for_type_records(ns_slice.to_string(), ns_rrs.to_vec(), 1);
                                 if a_rr_glue.len() == 0 {
@@ -713,6 +720,20 @@ impl MasterFile {
 
         }
 
+    }
+
+    //Checks thata exist at least one RR type NS present at theh top of the zone
+    fn check_existence_top_ns(&self){
+        
+        let top_host = self.get_top_host();
+        let rrs_top_host = self.get_rrs().get(&top_host).unwrap().clone();
+
+        let top_host_ns = NameServer::look_for_type_records(top_host,rrs_top_host, 2);
+
+        let count_ns_top_host = top_host_ns.len();
+        if count_ns_top_host == 0 {
+            panic!("Error: No NS RR at top of the zone");
+        }
     }
 
 
@@ -1553,16 +1574,5 @@ mod master_file_test {
     //     assert_eq!(vec_rr_delegation.len(),2);
     //     assert_eq!(vec_rr_example_include.len(),3);
     // }
-
-    #[test]
-    fn test(){
-        let master_file = MasterFile::from_file("1034-scenario-6.1-edu.txt".to_string(),"EDU".to_string(),true);
-        
-        
-        
-    
-    }
-
-
 
 }

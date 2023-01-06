@@ -1,24 +1,27 @@
-use crate::message::resource_record::ResourceRecord;
-use crate::message::DnsMessage;
-use crate::name_server::master_file::MasterFile;
 
-//utils
-use crate::utils::check_label_name;
+
+use crate::message::DnsMessage;
+use crate::message::resource_record::ResourceRecord;
+
+use super::master_file::MasterFile;
+use super::zone_node::NSNode;
+
 
 #[derive(Clone)]
-/// Structs that represents data from a zone
+/// Struct that represents a zone.
 pub struct NSZone {
+    // Zone name
     name: String,
     // Ip to ask the SOA RR data for refreshing
     ip_address_for_refresh_zone: String,
-    value: Vec<ResourceRecord>,
-    children: Vec<NSZone>,
-    subzone: bool,
-    glue_rrs: Vec<ResourceRecord>,
+    // Top node of the zone
+    zone_nodes: NSNode,
     // Zone class
     class: u16,
     // Zone is active
     active: bool,
+    // Glue records of the zone
+    glue_rrs: Vec<ResourceRecord>,
 }
 
 impl NSZone {
@@ -26,15 +29,13 @@ impl NSZone {
         let ns_zone = NSZone {
             name: "".to_string(),
             ip_address_for_refresh_zone: "".to_string(),
-            value: Vec::<ResourceRecord>::new(),
-            children: Vec::<NSZone>::new(),
-            subzone: false,
-            glue_rrs: Vec::<ResourceRecord>::new(),
+            zone_nodes: NSNode::new(),
             class: 1,
             active: true,
+            glue_rrs: Vec::<ResourceRecord>::new(),
         };
 
-        ns_zone
+        return ns_zone
     }
 
     pub fn from_file(file_name: String, origin:String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
@@ -43,18 +44,27 @@ impl NSZone {
         let origin = master_file_parsed.get_origin();
         let mut rrs = master_file_parsed.get_rrs();
 
-        let origin_rrs = rrs.remove(&origin).unwrap();
 
+        // Sets Zone info
         let mut ns_zone = NSZone::new();
-        ns_zone.set_name(origin);
+        let top_node_name = master_file_parsed.get_top_host();
+        ns_zone.set_name(top_node_name.clone());
         ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
-        ns_zone.set_value(origin_rrs);
         ns_zone.set_class_str(master_file_parsed.get_class_default());
+
+        // Sets top node info
+        let mut top_node = NSNode::new();
+        top_node.set_name(top_node_name.clone());
+        top_node.set_value(rrs.get(top_node_name.clone().as_str()).unwrap().clone());
+
+        rrs.remove(&origin);
 
         for (key, value) in rrs.iter() {
             println!("{} - {}", key.clone(), value.len());
-            ns_zone.add_node(key.clone(), value.clone());
+            top_node.add_node(key.clone(), value.clone());
         }
+
+        ns_zone.set_zone_nodes(top_node);
 
         return ns_zone
     }
@@ -67,6 +77,7 @@ impl NSZone {
         let zone_name = soa_rr.get_name().get_name();
 
         new_zone.set_name(zone_name.clone());
+        
 
         let mut rr_iter = answers[1..].iter();
         let mut next_rr = rr_iter.next();
@@ -84,7 +95,8 @@ impl NSZone {
             } else {
                 // If the rr name is not the same with last rr, add the node to the zone
                 if rr_name != actual_node_name {
-                    new_zone.add_node(actual_node_name, rrs_for_node);
+                    // FIXME:
+                    //new_zone.add_node(actual_node_name, rrs_for_node);
 
                     rrs_for_node = Vec::<ResourceRecord>::new();
                     actual_node_name = rr_name;
@@ -96,240 +108,32 @@ impl NSZone {
             }
         }
 
-        new_zone
-    }
-
-
-    pub fn exist_child(&self, name: String) -> bool {
-        // case insensitive
-        let children = self.get_children();
-        let lower_case_name = name.to_ascii_lowercase();
-
-        for child in children {
-            println!("Child name: {}", child.get_name());
-            let lower_case_child = child.get_name().to_ascii_lowercase();
-            if lower_case_child == lower_case_name{
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    pub fn get_child(&self, name: String) -> (NSZone, i32) {
-        // case insensitive
-        let children = self.get_children();
-        let child_ns = NSZone::new();
-        let lower_case_name = name.to_ascii_lowercase();
-        let mut index = 0;
-
-        for child in children {
-            let lower_case_child = child.get_name().to_ascii_lowercase();
-            if lower_case_child == lower_case_name {
-                return (child.clone(), index);
-            }
-            index = index + 1;
-        }
-
-        index = -1;
-
-        (child_ns, index)
-    }
-
-    fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) -> Result<(), &'static str> {
-        let mut children = self.get_children();
-        // null label is reserved for the root. Children cannot have it. 
-        if host_name.len() == 0 {
-           return Err("Error: Child cannot have null label, reserved for root only.");
-        }
-        else {
-            let mut labels: Vec<&str> = host_name.split(".").collect();
-            // Check if the total number of octets is 255 or less
-            if host_name.len() - labels.len() + 1 <= 255 {
-                labels.reverse();
-
-                let label = labels.remove(0);
-
-                let exist_child = self.exist_child(label.to_string());
-
-                if exist_child == true {
-                    let (mut child, index) = self.get_child(label.to_string());
-
-                    if labels.len() == 0 {
-                        child.set_value(rrs.clone());
-
-                        if self.check_rrs_only_ns(rrs) == true {
-                            child.set_subzone(true);
-                        }
-                    } else {
-                        let mut new_name = "".to_string();
-
-                        labels.reverse();
-
-                        for label in labels {
-                            new_name.push_str(label);
-                            new_name.push_str(".");
-                        }
-
-                        new_name.pop();
-
-                        child.add_node(new_name, rrs);
-                    }
-
-                    children.remove(index as usize);
-                    children.push(child);
-                    self.set_children(children);
-                } else if check_label_name(label.to_string()) {
-                    let mut new_ns_zone = NSZone::new();
-                    new_ns_zone.set_name(label.to_string());
-
-                    println!("RRs len: {}", rrs.len());
-
-                    if labels.len() == 0 {
-                        new_ns_zone.set_value(rrs.clone());
-
-                        if self.check_rrs_only_ns(rrs) == true {
-                            new_ns_zone.set_subzone(true);
-                        }
-                    } else {
-                        let mut new_name = "".to_string();
-
-                        labels.reverse();
-
-                        for label in labels {
-                            new_name.push_str(label);
-                            new_name.push_str(".");
-                        }
-
-                        new_name.pop();
-
-                        new_ns_zone.add_node(new_name, rrs);
-                    }
-
-                    children.push(new_ns_zone);
-                    self.set_children(children);
-                }
-            }
-            return Ok(()); 
-        }
-    }
-
-    fn check_rrs_only_ns(&self, rrs: Vec<ResourceRecord>) -> bool {
-        for rr in rrs {
-            let rr_type = rr.get_type_code();
-
-            if rr_type != 2 {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    pub fn print_zone(&self) {
-        let name = self.get_name();
-        let values = self.get_value();
-        let children = self.get_children();
-
-        println!("Name: {}", name);
-        println!("Subzone: {}", self.get_subzone());
-
-        for val in values {
-            println!("  Type: {}", val.get_type_code());
-        }
-
-        for child in children {
-            child.print_zone();
-        }
-    }
-
-    pub fn get_rrs_by_type(&self, rr_type: u16) -> Vec<ResourceRecord> {
-        let rrs = self.get_value();
-
-        if rr_type == 255 {
-            return rrs;
-        }
-
-        let mut rr_by_type = Vec::<ResourceRecord>::new();
-
-        println!("RRs len zone: {}", rrs.len());
-
-        for rr in rrs {
-            if rr.get_type_code() == rr_type {
-                rr_by_type.push(rr);
-            }
-        }
-
-        return rr_by_type;
-    }
-
-    pub fn get_all_rrs(&self) -> Vec<ResourceRecord> {
-        let mut rrs = self.get_value();
-        let children = self.get_children();
-
-        for child in children {
-            rrs.append(&mut child.get_all_rrs());
-        }
-
-        rrs
+        return new_zone
     }
 }
 
-// Setter
+// SETTERS
 impl NSZone {
-    // Sets the values with a new value
-    pub fn set_value(&mut self, value: Vec<ResourceRecord>) {
-        self.value = value;
+    /// Sets the name of the zone with a new value
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
     }
 
     pub fn set_ip_address_for_refresh_zone(&mut self, ip_address_for_refresh_zone: String) {
         self.ip_address_for_refresh_zone = ip_address_for_refresh_zone;
     }
 
-    // Sets the children with a new value
-    pub fn set_children(&mut self, mut children: Vec<NSZone>) {
-        // check if there is duplicates labels, case insensitive
-        // checks from the vector's tail to keep the last added child
-        let mut labels: Vec<String> = ([]).to_vec();
-        let mut lower_case_labels: Vec<String> = ([]).to_vec();
-        let mut n = children.len();
-        while n > 0 {
-            let label = children[n - 1].get_name();
-            let lower_case_label = label.to_ascii_lowercase();
-            if lower_case_labels.contains(&lower_case_label.clone()) {
-                children.remove(n - 1);
-                //TODO: add warning
-            } else {
-                labels.push(label.clone());
-                lower_case_labels.push(label.clone().to_ascii_lowercase());
-            }
-            n -= 1;
-        }
-
-        self.children = children;
+    /// Sets the nodes of the zone
+    pub fn set_zone_nodes(&mut self, zone_nodes: NSNode) {
+        self.zone_nodes = zone_nodes;
     }
 
-    // Sets the name with a new value
-    pub fn set_name(&mut self, name: String) {
-        self.name = name;
-    }
-
-    // Sets the subzone with a new value
-    pub fn set_subzone(&mut self, subzone: bool) {
-        self.subzone = subzone;
-    }
-
-    // Sets the glue_rrs with a new value
-    pub fn set_glue_rrs(&mut self, glue_rrs: Vec<ResourceRecord>) {
-        self.glue_rrs = glue_rrs;
-    }
-
-    // Sets the class for the zone
+    /// Sets the class for the zone
     pub fn set_class(&mut self, class: u16) {
         self.class = class;
     }
 
-    // Sets the class from a string
+    /// Sets the class from a string
     pub fn set_class_str(&mut self, class: String) {
         let class = match class.as_str() {
             "IN" => 1,
@@ -341,96 +145,64 @@ impl NSZone {
         self.set_class(class);
     }
 
-    // Sets if the zone is active or not
+    /// Sets if the zone is active or not
     pub fn set_active(&mut self, active: bool) {
         self.active = active;
     }
+
+    /// Sets the glue_rrs with a new value
+    pub fn set_glue_rrs(&mut self, glue_rrs: Vec<ResourceRecord>) {
+        self.glue_rrs = glue_rrs;
+    }
 }
 
-// Getters
+// GETTERS
 impl NSZone {
-    // Gets the values from the node
-    pub fn get_value(&self) -> Vec<ResourceRecord> {
-        self.value.clone()
+    /// Gets the name of the zone
+    pub fn get_name(&self) -> String {
+        self.name.clone()
     }
 
     pub fn get_ip_address_for_refresh_zone(&self) -> String {
         self.ip_address_for_refresh_zone.clone()
     }
 
-    // Gets the children from the node
-    pub fn get_children(&self) -> Vec<NSZone> {
-        self.children.clone()
+    /// Gets the nodes of the zone
+    pub fn get_zone_nodes(&self) -> NSNode {
+        self.zone_nodes.clone()
     }
 
-    // Gets the host name from the node
-    pub fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    // Gets the subzone from the node
-    pub fn get_subzone(&self) -> bool {
-        self.subzone.clone()
-    }
-
-    // Gets the glue rrs from the node
-    pub fn get_glue_rrs(&self) -> Vec<ResourceRecord> {
-        self.glue_rrs.clone()
-    }
-
-    // Gets the zone class
+    /// Gets the zone class
     pub fn get_class(&self) -> u16 {
         self.class
     }
 
-    // Gets if the zone is active
+    /// Gets if the zone is active
     pub fn get_active(&self) -> bool {
         self.active
     }
+
+    /// Gets the glue rrs from the node
+    pub fn get_glue_rrs(&self) -> Vec<ResourceRecord> {
+        self.glue_rrs.clone()
+    }
 }
+
 
 #[cfg(test)]
 mod zone_test {
-    use super::NSZone;
+    // TODO: constructor test
+
+    /*
+    #[test]
+    fn from_file_test(){
+    }
+    */
+
     use crate::message::rdata::a_rdata::ARdata;
-    use crate::message::rdata::ns_rdata::NsRdata;
+    use crate::name_server::zone::NSZone;    
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-
-    #[test]
-    fn constructor_test() {
-        let nszone = NSZone::new();
-
-        assert_eq!(nszone.name, String::from(""));
-        assert_eq!(nszone.value.len(), 0);
-        assert_eq!(nszone.children.len(), 0);
-        assert_eq!(nszone.subzone, false);
-        assert_eq!(nszone.glue_rrs.len(), 0);
-    }
-
-    // Getters and Setters
-    #[test]
-    fn set_and_get_name_test() {
-        let mut nszone = NSZone::new();
-
-        assert_eq!(nszone.get_name(), String::from(""));
-        nszone.set_name(String::from("test.com"));
-        assert_eq!(nszone.get_name(), String::from("test.com"));
-    }
-
-    #[test]
-    fn set_and_get_value_test() {
-        let mut nszone = NSZone::new();
-
-        let mut value: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-        value.push(resource_record);
-
-        assert_eq!(nszone.get_value().len(), 0);
-        nszone.set_value(value);
-        assert_eq!(nszone.get_value().len(), 1);
-    }
 
     #[test]
     fn set_and_get_glue_rr_test() {
@@ -444,167 +216,5 @@ mod zone_test {
         assert_eq!(nszone.get_glue_rrs().len(), 0);
         nszone.set_glue_rrs(glue);
         assert_eq!(nszone.get_glue_rrs().len(), 1);
-    }
-
-    #[test]
-    fn set_and_get_subzone_test() {
-        let mut nszone = NSZone::new();
-
-        assert_eq!(nszone.get_subzone(), false);
-        nszone.set_subzone(true);
-        assert_eq!(nszone.get_subzone(), true);
-    }
-
-    #[test]
-    fn set_and_get_children_test() {
-        let mut nszone = NSZone::new();
-
-        let mut children: Vec<NSZone> = Vec::new();
-        let some_nszone = NSZone::new();
-        children.push(some_nszone);
-
-        assert_eq!(nszone.get_children().len(), 0);
-        nszone.set_children(children);
-        assert_eq!(nszone.get_children().len(), 1);
-    }
-
-    #[test]
-    fn set_duplicate_children_test() {
-        let mut nszone = NSZone::new();
-
-        let mut children: Vec<NSZone> = Vec::new();
-        let mut nszone_1 = NSZone::new();
-        nszone_1.set_name(String::from("test1"));
-        children.push(nszone_1);
-        let mut nszone_2 = NSZone::new();
-        nszone_2.set_name(String::from("test2"));
-        children.push(nszone_2);
-        let mut nszone_3 = NSZone::new();
-        nszone_3.set_name(String::from("TEST1"));
-        nszone_3.set_ip_address_for_refresh_zone(String::from("1.2.3"));
-        children.push(nszone_3);
-
-        assert_eq!(nszone.get_children().len(), 0);
-        nszone.set_children(children);
-        assert_eq!(nszone.get_children().len(), 2);
-        assert_eq!(
-            nszone.get_children()[1].get_ip_address_for_refresh_zone(),
-            String::from("1.2.3")
-        );
-    }
-
-    // Other methods
-
-    //pub fn from_file(file_name: String) -> Self
-    /*
-
-    #[test]
-    fn from_file_test(){
-    }*/
-
-    #[test]
-    fn exist_child_test() {
-        let mut nszone = NSZone::new();
-        let mut some_nszone = NSZone::new();
-        some_nszone.set_name(String::from("test.com"));
-
-        let mut children: Vec<NSZone> = Vec::new();
-        children.push(some_nszone);
-        nszone.set_children(children);
-        assert_eq!(nszone.exist_child(String::from("test2.com")), false);
-        assert_eq!(nszone.exist_child(String::from("tEsT.com")), true)
-    }
-
-    #[test]
-    fn get_child_test() {
-        let mut nszone = NSZone::new();
-        let mut some_nszone = NSZone::new();
-        let mut some_other_nszone = NSZone::new();
-        some_nszone.set_name(String::from("test.com"));
-        some_other_nszone.set_name(String::from("other.test.com"));
-
-        let mut children: Vec<NSZone> = Vec::new();
-        children.push(some_nszone);
-        children.push(some_other_nszone);
-        nszone.set_children(children);
-        assert_eq!(
-            nszone
-                .get_child(String::from("OTher.test.com"))
-                .0
-                .get_name(),
-            String::from("other.test.com")
-        );
-        assert_eq!(nszone.get_child(String::from("other.test.com")).1, 1);
-
-        assert_eq!(
-            nszone.get_child(String::from("some.test.com")).0.get_name(),
-            String::from("")
-        );
-        assert_eq!(nszone.get_child(String::from("some.test.com")).1, -1);
-    }
-
-    #[test]
-    fn add_node_test(){       
-
-
-        let value: Vec<ResourceRecord> = Vec::new();
-        
-        
-        let mut nszone = NSZone::new();
-        nszone.set_name(String::from(""));
-        let children: Vec<NSZone> = Vec::new();
-        nszone.set_children(children);
-
-        assert_eq!(nszone.add_node(String::from("mil"), value.clone()), Ok(()));
-        assert_eq!(nszone.add_node(String::from("edu"), value.clone()), Ok(()));
-
-        assert_eq!(nszone.add_node(String::from(""), value.clone()), Err("Error: Child cannot have null label, reserved for root only."));
-
-        assert_eq!(nszone.get_children().len(), 2)
-    }
-
-    /*#[test]
-    fn add_node_test(){ using a wrong domain
-    }*/
-
-    #[test]
-    fn check_rrs_only_ns_test() {
-        let nszone = NSZone::new();
-        let mut rr: Vec<ResourceRecord> = Vec::new();
-
-        let ns_rdata = Rdata::SomeNsRdata(NsRdata::new());
-        let mut resource_record_1 = ResourceRecord::new(ns_rdata);
-        resource_record_1.set_type_code(2);
-
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
-        let mut resource_record_2 = ResourceRecord::new(a_rdata);
-        resource_record_2.set_type_code(1);
-
-        rr.push(resource_record_1);
-
-        assert_eq!(nszone.check_rrs_only_ns(rr.clone()), true);
-        rr.push(resource_record_2);
-        assert_eq!(nszone.check_rrs_only_ns(rr.clone()), false);
-    }
-    /*
-    #[test]
-    fn print_zone_test(){
-
-    }
-
-    */
-    #[test]
-    fn get_rrs_by_type_test() {
-        let mut nszone = NSZone::new();
-
-        let mut value: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
-        let mut resource_record = ResourceRecord::new(a_rdata);
-        resource_record.set_type_code(1);
-        value.push(resource_record);
-
-        assert_eq!(nszone.get_rrs_by_type(1).len(), 0);
-        nszone.set_value(value);
-        assert_eq!(nszone.get_rrs_by_type(1).len(), 1);
     }
 }

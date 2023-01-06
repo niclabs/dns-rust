@@ -62,6 +62,13 @@ impl NSNode {
 
     pub fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) -> Result<(), &'static str> {
         let mut children = self.get_children();
+
+        let mut host_name = host_name;
+
+        if host_name.ends_with("."){
+            host_name.pop();
+        }
+
         // null label is reserved for the root. Children cannot have it. 
         if host_name.len() == 0 {
            return Err("Error: Child cannot have null label, reserved for root only.");

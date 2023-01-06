@@ -810,7 +810,7 @@ impl MasterFile {
 
     // Sets the rrs with a new value
     pub fn set_rrs(&mut self, rrs: HashMap<String, Vec<ResourceRecord>>) {
-        self.rrs = rrs;
+        self.rrs = rrs; 
     }
 
     // Sets the last host used

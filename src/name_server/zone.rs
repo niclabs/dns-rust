@@ -38,6 +38,7 @@ impl NSZone {
         return ns_zone
     }
 
+    ///Creates a zone base on the masterfile given 
     pub fn from_file(file_name: String, origin:String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
         let master_file_parsed;
         master_file_parsed = MasterFile::from_file(file_name, origin,validity_check);
@@ -61,7 +62,7 @@ impl NSZone {
 
         for (key, value) in rrs.iter() {
             println!("{} - {}", key.clone(), value.len());
-            top_node.add_node(key.clone(), value.clone());
+            top_node.add_node(key.clone(), value.clone()).unwrap();
         }
 
         ns_zone.set_zone_nodes(top_node);
@@ -69,6 +70,7 @@ impl NSZone {
         return ns_zone
     }
 
+    ///
     pub fn from_axfr_msg(msg: DnsMessage) -> Self {
         let answers = msg.get_answer();
         let mut new_zone = NSZone::new();
@@ -191,6 +193,12 @@ impl NSZone {
 
 #[cfg(test)]
 mod zone_test {
+
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::name_server::zone::NSZone;    
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
+
     // TODO: constructor test
 
     /*
@@ -199,10 +207,10 @@ mod zone_test {
     }
     */
 
-    use crate::message::rdata::a_rdata::ARdata;
-    use crate::name_server::zone::NSZone;    
-    use crate::message::rdata::Rdata;
-    use crate::message::resource_record::ResourceRecord;
+    /*
+    #[test]
+    fn from_axfr_msg_test()
+    */
 
     #[test]
     fn set_and_get_glue_rr_test() {

@@ -24,12 +24,13 @@ impl NSNode {
         return ns_node;
     }
 
+    ///Returns bolean depending if the node has a children with the same name given
     pub fn exist_child(&self, name: String) -> bool {
         // case insensitive
-        let children = self.get_children();
+        let childrens= self.get_children();
         let lower_case_name = name.to_ascii_lowercase();
 
-        for child in children {
+        for child in childrens {
             println!("Child name: {}", child.get_name());
             let lower_case_child = child.get_name().to_ascii_lowercase();
             if lower_case_child == lower_case_name{
@@ -40,6 +41,8 @@ impl NSNode {
         return false;
     }
 
+    ///looks if exist a children with the name given.
+    /// If exist returns a tuple with the node and the index where is found in the vec 
     pub fn get_child(&self, name: String) -> (NSNode, i32) {
         // case insensitive
         let children = self.get_children();
@@ -60,7 +63,9 @@ impl NSNode {
         (child_ns, index)
     }
 
-    pub fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) -> Result<(), &'static str> {
+    ///Creates all the nodes - if they are not creted yet - within a host name and add as values
+    /// the vec of RR of the final node of the label
+     pub fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) -> Result<(), &'static str> {
         let mut children = self.get_children();
 
         let mut host_name = host_name;
@@ -104,7 +109,7 @@ impl NSNode {
 
                         new_name.pop();
 
-                        child.add_node(new_name, rrs);
+                        child.add_node(new_name, rrs).unwrap();
                     }
 
                     children.remove(index as usize);
@@ -134,7 +139,7 @@ impl NSNode {
 
                         new_name.pop();
 
-                        new_ns_zone.add_node(new_name, rrs);
+                        new_ns_zone.add_node(new_name, rrs).unwrap();
                     }
 
                     children.push(new_ns_zone);
@@ -145,6 +150,7 @@ impl NSNode {
         }
     }
 
+    ///Checks if all the RR given in the vec are type NS
     fn check_rrs_only_ns(&self, rrs: Vec<ResourceRecord>) -> bool {
         for rr in rrs {
             let rr_type = rr.get_type_code();
@@ -157,7 +163,7 @@ impl NSNode {
         return true;
     }
 
-
+    ///Given a type of RR as int returns a vec with all the RR that match tis type (exclude type NS)
     pub fn get_rrs_by_type(&self, rr_type: u16) -> Vec<ResourceRecord> {
         let rrs = self.get_value();
 
@@ -178,6 +184,8 @@ impl NSNode {
         return rr_by_type;
     }
 
+
+    ///Returns all the RR within a node  
     pub fn get_all_rrs(&self) -> Vec<ResourceRecord> {
         let mut rrs = self.get_value();
         let children = self.get_children();
@@ -323,67 +331,63 @@ mod zone_node_test {
         //TODO:
     } */
 
-    // Other methods
-
-    //pub fn from_file(file_name: String) -> Self
-    /*
-
-    #[test]
-    fn from_file_test(){
-    }*/
-
     #[test]
     fn exist_child_test() {
         let mut nsnode = NSNode::new();
+
         let mut some_nsnode = NSNode::new();
         some_nsnode.set_name(String::from("test.com"));
 
         let mut children: Vec<NSNode> = Vec::new();
         children.push(some_nsnode);
         nsnode.set_children(children);
+
         assert_eq!(nsnode.exist_child(String::from("test2.com")), false);
-        assert_eq!(nsnode.exist_child(String::from("tEsT.com")), true)
+        assert_eq!(nsnode.exist_child(String::from("tEsT.com")), true);
+        assert_eq!(nsnode.exist_child(String::from("test.com")), true);
     }
 
     #[test]
     fn get_child_test() {
-        let mut nsnode = NSNode::new();
-        let mut some_nsnode = NSNode::new();
-        let mut some_other_nsnode = NSNode::new();
-        some_nsnode.set_name(String::from("test.com"));
-        some_other_nsnode.set_name(String::from("other.test.com"));
+        //creates nodes
+        let mut node = NSNode::new();
+        let mut ns_node1= NSNode::new();
+        let mut ns_node2 = NSNode::new();
+        ns_node1.set_name(String::from("test.com"));
+        ns_node2.set_name(String::from("other.test.com"));
 
+        //create vec children  
         let mut children: Vec<NSNode> = Vec::new();
-        children.push(some_nsnode);
-        children.push(some_other_nsnode);
-        nsnode.set_children(children);
+        children.push(ns_node1);
+        children.push(ns_node2);
+        node.set_children(children);
+
         assert_eq!(
-            nsnode
+            node
                 .get_child(String::from("OTher.test.com"))
                 .0
                 .get_name(),
             String::from("other.test.com")
         );
-        assert_eq!(nsnode.get_child(String::from("other.test.com")).1, 1);
+        assert_eq!(node.get_child(String::from("other.test.com")).1, 1);
 
         assert_eq!(
-            nsnode.get_child(String::from("some.test.com")).0.get_name(),
+            node.get_child(String::from("some.test.com")).0.get_name(),
             String::from("")
         );
-        assert_eq!(nsnode.get_child(String::from("some.test.com")).1, -1);
+        assert_eq!(node.get_child(String::from("some.test.com")).1, -1);
     }
 
     #[test]
     fn add_node_test(){       
-
-
-        let value: Vec<ResourceRecord> = Vec::new();
-        
-        
+        //creeate node
         let mut nsnode = NSNode::new();
         nsnode.set_name(String::from(""));
+
+        let value: Vec<ResourceRecord> = Vec::new();
         let children: Vec<NSNode> = Vec::new();
         nsnode.set_children(children);
+
 
         assert_eq!(nsnode.add_node(String::from("mil"), value.clone()), Ok(()));
         assert_eq!(nsnode.add_node(String::from("edu"), value.clone()), Ok(()));
@@ -395,6 +399,10 @@ mod zone_node_test {
 
     /*#[test]
     fn add_node_test(){ using a wrong domain
+    }*/
+
+    /*#[test]
+    fn add_node_test(){ recursive case 
     }*/
 
     #[test]
@@ -416,18 +424,13 @@ mod zone_node_test {
         rr.push(resource_record_2);
         assert_eq!(nsnode.check_rrs_only_ns(rr.clone()), false);
     }
-    /*
-    #[test]
-    fn print_zone_test(){
 
-    }
-
-    */
     #[test]
     fn get_rrs_by_type_test() {
-        let mut nsnode = NSNode::new();
 
+        let mut nsnode = NSNode::new();
         let mut value: Vec<ResourceRecord> = Vec::new();
+
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let mut resource_record = ResourceRecord::new(a_rdata);
         resource_record.set_type_code(1);
@@ -437,4 +440,10 @@ mod zone_node_test {
         nsnode.set_value(value);
         assert_eq!(nsnode.get_rrs_by_type(1).len(), 1);
     }
+
+    /* 
+    #[test]
+    fn get_all_rrs_test() {}
+    */
+    
 }

@@ -11,6 +11,8 @@ use dns_rust::client::config::{HOST_NAME, TRANSPORT};
 use dns_rust::config::{MASTER_FILES, RESOLVER_IP_PORT, SBELT_ROOT_IPS, CHECK_MASTER_FILES, NAME_SERVER_IP};
 use dns_rust::name_server::master_file::MasterFile;
 
+
+
 pub fn main() {
     // Users input
     let mut input_line = String::new();

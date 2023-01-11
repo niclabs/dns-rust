@@ -51,17 +51,19 @@ fn test_500000_cl_domains() {
     let host_names_vec: Vec<String> =  get_host_names_from_zone_file("CL-test.zone");
 
     for host_name in host_names_vec {
-        client::run_client(host_name.as_str(), "TCP");
+        client::create_client_query(host_name.as_str(), "TCP" , 1 , 1);
     }
 }
 
 #[test]
 fn rfc1034_standard_queries_test_6_2_1() {
-    client::run_client("test.uchile.cl", "TCP");
+    
 
     // Run resolver.
     thread::spawn(move || {
         resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
     });
+
+    client::create_client_query("dcc.uchile.cl", "TCP",1,1);
 
 }

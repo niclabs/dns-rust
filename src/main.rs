@@ -3,6 +3,7 @@ use std::sync::mpsc;
 use std::thread;
 
 use dns_rust::name_server::NameServer;
+use dns_rust::message::DnsMessage;
 use dns_rust::name_server::zone::NSZone;
 use dns_rust::resolver::Resolver;
 use dns_rust::resolver::slist::Slist;
@@ -32,7 +33,8 @@ pub fn main() {
     }
 
     else if trim_input_line == "C" {
-        client::run_client(HOST_NAME, TRANSPORT);
+        client::run_client();
+        
     } else {
         // Channels
         let (add_sender_udp, add_recv_udp) = mpsc::channel();

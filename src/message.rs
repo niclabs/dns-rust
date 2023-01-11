@@ -8,7 +8,7 @@ use crate::message::header::Header;
 use crate::message::question::Question;
 use crate::message::resource_record::ResourceRecord;
 use crate::name_server::zone::NSZone;
-
+use crate::message::rdata::Rdata;
 use rand::thread_rng;
 use rand::Rng;
 use std::vec::Vec;
@@ -351,6 +351,165 @@ impl DnsMessage {
 
         msg_additionals.append(&mut additionals);
         self.set_answer(msg_additionals);
+    }
+
+    // Print the information of DNS message
+    pub fn print_dns_message(&mut self){
+        // Get the message and print the information
+    let header = self.get_header();
+    let answers = self.get_answer();
+    let authority = self.get_authority();
+    let additional = self.get_additional();
+
+    let answer_count = header.get_ancount();
+    let authority_count = header.get_nscount();
+    let additional_count = header.get_arcount();
+
+    // Not data found error
+    if answer_count == 0 && header.get_qr() == true {
+        if header.get_aa() == true && header.get_rcode()== 3 {
+            println!("Name Error: domain name referenced in the query does not exist.");
+        }
+        else if header.get_rcode() != 0 {
+            match header.get_rcode() {
+                1 => println!("Format Error: The name server was unable to interpret the query."),
+                2 => println!("Server Failure: The name server was unable to process this query due to a problem with the name server."),
+                4 => println!("Not implemented: The name server does not support the requested kind of query."),
+                5 => println!("Refused: The name server refuses to perform the specified operation for policy reasons."),
+                _ => println!("Response with error code {}", header.get_rcode()), 
+            }
+        }
+        else if header.get_aa() == true && header.get_rcode() == 0 {
+            println!("Data not found error: The domain name referenced in the query exists, but data of the appropiate type does not.");
+        }
+    } else {
+        println!("-------------------------------------");
+        println!(
+            "Answers: {} - Authority: {} - Additional: {}",
+            answer_count, authority_count, additional_count
+        );
+        println!("-------------------------------------");
+
+        for answer in answers {
+            match answer.get_rdata() {
+                Rdata::SomeARdata(val) => {
+                    println!("Ip Address: {}", val.get_string_address())
+                }
+                Rdata::SomeAChRdata(val) => {
+                    println!(
+                        "Domain name: {} - Ch Ip address: {}",
+                        val.get_domain_name().get_name(),
+                        val.get_ch_address()
+                    )
+                }
+                Rdata::SomeNsRdata(val) => {
+                    println!("Name Server: {}", val.get_nsdname().get_name())
+                }
+                Rdata::SomeCnameRdata(val) => {
+                    println!("Cname: {}", val.get_cname().get_name())
+                }
+                Rdata::SomeHinfoRdata(val) => {
+                    println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
+                }
+                Rdata::SomeMxRdata(val) => {
+                    println!(
+                        "Preference: {} - Exchange: {}",
+                        val.get_preference(),
+                        val.get_exchange().get_name()
+                    )
+                }
+                Rdata::SomePtrRdata(val) => {
+                    println!("Ptr name: {}", val.get_ptrdname().get_name())
+                }
+                Rdata::SomeSoaRdata(val) => {
+                    println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
+                }
+                Rdata::SomeTxtRdata(val) => {
+                    println!("Txt: {:#?}", val.get_text())
+                }
+            }
+        }
+
+        for answer in authority {
+            match answer.get_rdata() {
+                Rdata::SomeARdata(val) => {
+                    println!("Ip Address: {}", val.get_string_address())
+                }
+                Rdata::SomeAChRdata(val) => {
+                    println!(
+                        "Domain name: {} - Ch Ip address: {}",
+                        val.get_domain_name().get_name(),
+                        val.get_ch_address()
+                    )
+                }
+                Rdata::SomeNsRdata(val) => {
+                    println!("Name Server: {}", val.get_nsdname().get_name())
+                }
+                Rdata::SomeCnameRdata(val) => {
+                    println!("Cname: {}", val.get_cname().get_name())
+                }
+                Rdata::SomeHinfoRdata(val) => {
+                    println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
+                }
+                Rdata::SomeMxRdata(val) => {
+                    println!(
+                        "Preference: {} - Exchange: {}",
+                        val.get_preference(),
+                        val.get_exchange().get_name()
+                    )
+                }
+                Rdata::SomePtrRdata(val) => {
+                    println!("Ptr name: {}", val.get_ptrdname().get_name())
+                }
+                Rdata::SomeSoaRdata(val) => {
+                    println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
+                }
+                Rdata::SomeTxtRdata(val) => {
+                    println!("Txt: {:#?}", val.get_text())
+                }
+            }
+        }
+
+        for answer in additional {
+            match answer.get_rdata() {
+                Rdata::SomeARdata(val) => {
+                    println!("Ip Address: {}", val.get_string_address())
+                }
+                Rdata::SomeAChRdata(val) => {
+                    println!(
+                        "Domain name: {} - Ch Ip address: {}",
+                        val.get_domain_name().get_name(),
+                        val.get_ch_address()
+                    )
+                }
+                Rdata::SomeNsRdata(val) => {
+                    println!("Name Server: {}", val.get_nsdname().get_name())
+                }
+                Rdata::SomeCnameRdata(val) => {
+                    println!("Cname: {}", val.get_cname().get_name())
+                }
+                Rdata::SomeHinfoRdata(val) => {
+                    println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
+                }
+                Rdata::SomeMxRdata(val) => {
+                    println!(
+                        "Preference: {} - Exchange: {}",
+                        val.get_preference(),
+                        val.get_exchange().get_name()
+                    )
+                }
+                Rdata::SomePtrRdata(val) => {
+                    println!("Ptr name: {}", val.get_ptrdname().get_name())
+                }
+                Rdata::SomeSoaRdata(val) => {
+                    println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
+                }
+                Rdata::SomeTxtRdata(val) => {
+                    println!("Txt: {:#?}", val.get_text())
+                }
+            }
+        }
+    }
     }
 }
 

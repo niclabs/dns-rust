@@ -1,4 +1,4 @@
-use std::{fs, thread, collections::HashMap};
+use std::{fs, thread, collections::HashMap, time};
 
 use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
 
@@ -63,6 +63,7 @@ fn rfc1034_standard_queries_test_6_2_1() {
     thread::spawn(move || {
         resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
     });
+    thread::sleep(time::Duration::from_millis(40));
 
     client::create_client_query("dcc.uchile.cl", "TCP",1,1);
 

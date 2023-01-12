@@ -41,12 +41,13 @@ fn test_500000_cl_domains() {
         resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
     });
 
-    // Get all host names from a file
-    let host_names_vec: Vec<String> =  get_host_names_from_zone_file("tests/test_files/test_domains_names.txt");    
-    for host_name in host_names_vec{
-        println!("Domain name: {}", host_name);
-        let mut dnsmessage = client::create_client_query(host_name.as_str(), "TCP" , 1 , 1);
-        dnsmessage.print_dns_message()
+    // Get all host names from a zone file
+    let host_names_vec: Vec<String> =  get_host_names_from_zone_file("tests/test_files/test_domains_names.txt");
+
+    let host_names_vec_2 = &host_names_vec[100000..=200000];
+    for host_name in host_names_vec_2 {
+        println!("domain name: {}", host_name);
+        client::run_client(host_name.as_str(), "TCP");
     }
 
 
@@ -54,7 +55,6 @@ fn test_500000_cl_domains() {
 
 #[test]
 fn rfc1034_standard_queries_test_6_2_1() {
-    
     // Run resolver.
     thread::spawn(move || {
         resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
@@ -62,5 +62,4 @@ fn rfc1034_standard_queries_test_6_2_1() {
 
     thread::sleep(time::Duration::from_millis(40));
     client::create_client_query("dcc.uchile.cl", "TCP",1,1);
-
 }

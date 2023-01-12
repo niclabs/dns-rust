@@ -63,8 +63,8 @@ fn rfc1034_standard_queries_test_6_2_1() {
     thread::spawn(move || {
         resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
     });
-    thread::sleep(time::Duration::from_millis(40));
 
+    thread::sleep(time::Duration::from_millis(40));
     client::create_client_query("dcc.uchile.cl", "TCP",1,1);
 
 }

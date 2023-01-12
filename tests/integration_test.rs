@@ -2,7 +2,8 @@ use std::{fs, thread, collections::HashMap, time};
 
 use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
 
-/// Read a file and extract the host name to a vector.
+
+/// Gets a Vec of host names from a external file
 fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
         
     // Read file content
@@ -10,13 +11,13 @@ fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
     .expect("Should have been able to read the file"); 
     
     // Split file content
-    let splitted_content: Vec<&str> = contents.lines().collect();
+    let splitted_content: Vec<&str> = contents.split("\n").collect();
 
     // Create a vec of host names
     let mut host_names_vec: Vec<String> = Vec::new();
     // Extract host names from file
     for host_name in splitted_content {
-        host_names_vec.push(host_name.to_string());
+        host_names_vec.push(host_name.to_string())
     } 
 
     // Return all host names from file
@@ -25,7 +26,7 @@ fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
 
 
 #[test]
-fn validate_master_files() {
+fn validate_rfc_master_files() {
     for (master_file, master_file_origin) in MASTER_FILES {
         let _validated_mf = MasterFile::from_file(master_file.to_string(),master_file_origin.to_string(), true);
     }
@@ -54,7 +55,6 @@ fn test_500000_cl_domains() {
 #[test]
 fn rfc1034_standard_queries_test_6_2_1() {
     
-
     // Run resolver.
     thread::spawn(move || {
         resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());

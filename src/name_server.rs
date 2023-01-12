@@ -1385,7 +1385,9 @@ impl NameServer {
                 qname.replace_range(..dot_position + 1, "");
                 return NameServer::search_nearest_ancestor_zone(zones, qname, qclass);
             } else {
-                return (zone, available);
+                qname = String::from(".");
+                return NameServer::search_nearest_ancestor_zone(zones, qname, qclass);
+
             }
         }
     }

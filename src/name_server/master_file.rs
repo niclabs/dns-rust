@@ -49,7 +49,7 @@ impl MasterFile {
         master_file
     }
     /*
-    Creates a new master file given th eparameters filename and origin. For listing cache contents.
+    Creates a new master file given th parameters filename and origin. For listing cache contents.
     Set validation to true if checking validity syntax of the master file is desired.
     */
     pub fn from_file(filename: String, origin:String,validation: bool) -> Self {

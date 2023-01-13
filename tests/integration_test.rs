@@ -2,8 +2,7 @@ use std::{fs, thread, collections::HashMap, time};
 
 use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
 
-
-/// Gets a Vec of host names from a external file
+/// Read a file and extract the host name to a vector.
 fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
         
     // Read file content
@@ -11,13 +10,13 @@ fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
     .expect("Should have been able to read the file"); 
     
     // Split file content
-    let splitted_content: Vec<&str> = contents.split("\n").collect();
+    let splitted_content: Vec<&str> = contents.lines().collect();
 
     // Create a vec of host names
     let mut host_names_vec: Vec<String> = Vec::new();
     // Extract host names from file
     for host_name in splitted_content {
-        host_names_vec.push(host_name.to_string())
+        host_names_vec.push(host_name.to_string());
     } 
 
     // Return all host names from file
@@ -41,16 +40,13 @@ fn test_500000_cl_domains() {
         resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
     });
 
-    // Get all host names from a zone file
-    let host_names_vec: Vec<String> =  get_host_names_from_zone_file("tests/test_files/test_domains_names.txt");
-
-    let host_names_vec_2 = &host_names_vec[100000..=200000];
-    for host_name in host_names_vec_2 {
-        println!("domain name: {}", host_name);
-        client::run_client(host_name.as_str(), "TCP");
+    // Get all host names from a file
+    let host_names_vec: Vec<String> =  get_host_names_from_zone_file("tests/test_files/test_domains_names.txt");    
+    for host_name in host_names_vec{
+        println!("Domain name: {}", host_name);
+        let mut dnsmessage = client::create_client_query(host_name.as_str(), "TCP" , 1 , 1);
+        dnsmessage.print_dns_message()
     }
-
-
 }
 
 #[test]

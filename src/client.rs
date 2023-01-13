@@ -8,7 +8,6 @@ use crate::client::config::RESOLVER_IP_PORT;
 use crate::client::config::TIMEOUT;
 
 use crate::client::config::TRANSPORT;
-use crate::message::rdata::Rdata;
 use crate::message::DnsMessage;
 use crate::resolver::Resolver;
 
@@ -21,35 +20,23 @@ use std::time::{Duration, Instant};
 
 pub fn run_client() {
 
-    let host_name: &str = HOST_NAME;
-
-    let transport: &str = TRANSPORT;
-
-    //Start timestamp
+    // Start timestamp
     let now = Instant::now();
 
-    // Create randon generator
-    let mut rng = thread_rng();
+    // Create dns message and send it to the resolver
+    let mut dns_message = create_client_query(HOST_NAME, TRANSPORT, QTYPE, QCLASS);
 
-    // Create query id
-    let query_id: u16 = rng.gen();
-
-    let mut dns_message = create_client_query(host_name,transport,QTYPE,QCLASS);
+    // Print received values
     dns_message.print_dns_message();
 
-    
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
-
-    
-
 }
 
-pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qclass: u16) -> DnsMessage{
-    //Start timestamp
-    let now = Instant::now();
+/// Create dns message and send it to the resolver
+pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qclass: u16) -> DnsMessage {
 
-    // Create randon generator
+    // Create random generator
     let mut rng = thread_rng();
 
     // Create query id
@@ -57,7 +44,7 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
 
     // Create query msg
     let query_msg =
-        DnsMessage::new_query_message(host_name.to_string(), QTYPE, QCLASS, 0, false, query_id);
+        DnsMessage::new_query_message(host_name.to_string(), qtype, qclass, 0, false, query_id);
     
     // Create response buffer
     let mut dns_message = DnsMessage::new();

@@ -355,7 +355,7 @@ impl DnsMessage {
 
     // Print the information of DNS message
     pub fn print_dns_message(&mut self){
-        // Get the message and print the information
+    // Get the message and print the information
     let header = self.get_header();
     let answers = self.get_answer();
     let authority = self.get_authority();

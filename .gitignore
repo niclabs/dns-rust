@@ -1,8 +1,4 @@
 /target
-CL-test.zone
-test_domains_names.txt
+test_files/
 .vscode
-
-zonesTest.zone
-log.txt
 Test_To_Do_List.md

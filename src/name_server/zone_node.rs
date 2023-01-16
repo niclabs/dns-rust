@@ -394,7 +394,10 @@ mod zone_node_test {
 
         assert_eq!(nsnode.add_node(String::from(""), value.clone()), Err("Error: Child cannot have null label, reserved for root only."));
 
-        assert_eq!(nsnode.get_children().len(), 2)
+        assert_eq!(nsnode.get_children().len(), 2);
+        //ToDo: Revisar Práctica 1
+        assert_eq!(nsnode.get_children()[0].get_name(), String::from("mil"));
+        assert_eq!(nsnode.get_children()[1].get_name(), String::from("edu"));
     }
 
     /*#[test]

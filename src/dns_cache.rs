@@ -448,7 +448,25 @@ mod dns_cache_test {
 
     }
 
-    
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn update_and_get_response_time_test(){
+        let mut dns_cache = DnsCache::new();
 
+        dns_cache.set_max_size(1);
+        
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address([127, 0, 0, 1]);
 
+        let r_data = Rdata::SomeARdata(a_rdata);
+
+        let mut a_resource_record = ResourceRecord::new(r_data);
+        a_resource_record.set_type_code(1);
+
+        dns_cache.add(String::from("test.com"), a_resource_record);
+        assert_eq!(dns_cache.get_response_time(String::from("test.com"), String::from("A"), String::from("127.0.0.1")), 5000 as u32);
+
+        dns_cache.update_response_time(String::from("test.com"), String::from("A"),3000,String::from("127.0.0.1"));
+        assert_eq!(dns_cache.get_response_time(String::from("test.com"), String::from("A"), String::from("127.0.0.1")), 4000 as u32); //following the function this should be the reusult
+    }
 }

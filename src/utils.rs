@@ -71,6 +71,8 @@ pub fn is_reverse_query(host_name:String)-> bool {
 
 #[cfg(test)]
 mod utils_test {
+    use crate::utils::is_reverse_query;
+
     use super::check_label_name;
     use super::domain_validity_syntax;
 
@@ -131,5 +133,13 @@ mod utils_test {
     fn syntactically_correct_domain_name_test() {
         assert_eq!(domain_validity_syntax(String::from("label1.label2.test")), Ok(String::from("label1.label2.test")));
         assert_eq!(domain_validity_syntax(String::from("label1.label2.test.")), Ok(String::from("label1.label2.test.")));
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn is_reverse_query_test(){
+        assert_eq!(is_reverse_query(String::from("not_inverse.com")), false);
+        assert_eq!(is_reverse_query(String::from("10.1.0.52")), true);
+        //assert_eq!(is_reverse_query(String::from("100")), false); //clearly not an ip but the fn says true
     }
 }

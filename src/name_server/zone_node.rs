@@ -480,14 +480,36 @@ mod zone_node_test {
         let mut nsnode = NSNode::new();
         let mut value: Vec<ResourceRecord> = Vec::new();
 
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
-        let mut resource_record = ResourceRecord::new(a_rdata);
-        resource_record.set_type_code(1);
-        value.push(resource_record);
+        //ToDo: Revisar Práctica 1
+        let ns_rdata1 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr1 = ResourceRecord::new(ns_rdata1);
+        rr1.set_type_code(2);
 
-        assert_eq!(nsnode.get_rrs_by_type(1).len(), 0);
+        let ns_rdata2 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr2 = ResourceRecord::new(ns_rdata2);
+        rr2.set_type_code(2);
+
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut rr3 = ResourceRecord::new(a_rdata);
+        rr3.set_type_code(1);
+
+        value.push(rr1);
+        value.push(rr2);
+        value.push(rr3);
+        
+        let res1 = nsnode.get_rrs_by_type(1);
+        let res2 = nsnode.get_rrs_by_type(2);
+        assert_eq!(res1.len(), 0);
+        assert_eq!(res2.len(), 0);
+
         nsnode.set_value(value);
-        assert_eq!(nsnode.get_rrs_by_type(1).len(), 1);
+
+        let res3 = nsnode.get_rrs_by_type(1);
+        let res4 = nsnode.get_rrs_by_type(2);
+        let res5 = nsnode.get_rrs_by_type(255);
+        assert_eq!(res3.len(), 1);
+        assert_eq!(res4.len(), 2);
+        assert_eq!(res5.len(), 3);
     }
 
     /* 

@@ -512,9 +512,44 @@ mod zone_node_test {
         assert_eq!(res5.len(), 3);
     }
 
-    /* 
+    //ToDo: Revisar Práctica 1
     #[test]
-    fn get_all_rrs_test() {}
-    */
+    fn get_all_rrs_test() {
+        let mut nsnode = NSNode::new();
+        let mut value: Vec<ResourceRecord> = Vec::new();
+
+        
+        let ns_rdata1 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr1 = ResourceRecord::new(ns_rdata1);
+        rr1.set_type_code(2);
+
+        let ns_rdata2 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr2 = ResourceRecord::new(ns_rdata2);
+        rr2.set_type_code(2);
+
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut rr3 = ResourceRecord::new(a_rdata);
+        rr3.set_type_code(1);
+
+        value.push(rr1);
+        value.push(rr2);
+        value.push(rr3);
+
+        assert_eq!(nsnode.get_all_rrs().len(), 0);
+
+        nsnode.set_value(value);
+
+        assert_eq!(nsnode.get_all_rrs().len(), 3);
+
+        let res1 = nsnode.get_all_rrs()[0].get_type_code();
+        assert_eq!(res1, 2);
+
+        let res2 = nsnode.get_all_rrs()[1].get_type_code();
+        assert_eq!(res2, 2);
+        
+        let res3 = nsnode.get_all_rrs()[2].get_type_code();
+        assert_eq!(res3, 1);
+
+    }
     
 }

@@ -400,6 +400,7 @@ mod zone_node_test {
         assert_eq!(nsnode.get_children()[1].get_name(), String::from("edu"));
     }
 
+    
     /*#[test]
     fn add_node_test(){ using a wrong domain
     }*/

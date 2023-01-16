@@ -400,4 +400,21 @@ mod dns_cache_test {
             1
         )
     }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_size_and_max_size_test(){
+        let mut cache = DnsCache::new();
+
+        assert_eq!(cache.get_size(), 0 as u32);
+        assert_eq!(cache.get_max_size(), 0 as u32);
+
+        cache.set_max_size(5);
+        cache.set_size(3);
+
+        assert_eq!(cache.get_max_size(), 5 as u32);
+        assert_eq!(cache.get_size(), 3 as u32); //For the future: case where we set a size bigger than the max_size
+    }
+
+    
 }

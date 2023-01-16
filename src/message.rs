@@ -826,7 +826,7 @@ mod message_test {
     fn soa_rr_query_msg_test(){
         
     }
-    
+
     //ToDo: Revisar Práctica 1
     #[test]
     fn set_and_get_query_id_test(){
@@ -834,5 +834,25 @@ mod message_test {
         assert_eq!(dns_message.get_query_id(), 0  as u16);
         dns_message.set_query_id(23 as u16);
         assert_eq!(dns_message.get_query_id(), 23 as u16);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_answers_test(){
+        let mut dns_query_message =
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+
+        let mut new_answer = Vec::<ResourceRecord>::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        new_answer.push(rr);
+
+        let res1 = dns_query_message.get_answer().len();
+        assert_eq!(res1, 0);
+
+        dns_query_message.add_answers(new_answer);
+
+        let res2 = dns_query_message.get_answer().len();
+        assert_eq!(res2, 1);
     }
 }

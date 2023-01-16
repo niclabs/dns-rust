@@ -1,6 +1,11 @@
 /target
-test_files
 CL-test.zone
 .vscode
 .github/workflows
+
+# testing 
+test_files
+zonesTest.zone
+log.txt
+test_domains_names.txt
 Test_To_Do_List.md

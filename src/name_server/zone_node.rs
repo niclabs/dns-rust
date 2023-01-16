@@ -400,10 +400,31 @@ mod zone_node_test {
         assert_eq!(nsnode.get_children()[1].get_name(), String::from("edu"));
     }
 
-    
-    /*#[test]
-    fn add_node_test(){ using a wrong domain
-    }*/
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_node_test_wrong_domain(){
+        let mut nsnode = NSNode::new();
+        let mut value = Vec::<ResourceRecord>::new();
+        let children = Vec::<NSNode>::new();
+        let ardata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(ardata);
+        value.push(rr);
+        nsnode.set_children(children);
+
+        let too_large = String::from("kuvfirdigdkfhksjfoi.shfuiedehiauhdeaanda.ehbndpuoeyuwuwmejulfg.hvdjxkkxucicxvadofeiaee.txyvqlclymdgccungwiwrwonl.ehjedknwbupefsysvxmkcski.pmkxifjrqxsth.pljtklaaubdzskc.almwbcllhifmknrxamlhdfywmvtwiblee.zrfttfcloqqc.xsgqtpanxkfih.uwfyxkfeemnl.vdqxkdx.ndtkxdauhuae.jlpllhvhkem.gudururqu.ftqoumt.fywup.edu");
+
+        let res1 = nsnode.add_node(too_large, value.clone());
+        let res2 = nsnode.get_children().len();
+        assert_eq!(res1, Ok(()));
+        assert_eq!(res2, 0); //There must be no children
+
+        let large_but_not_too_much = String::from("this-is-a-extremely-large-label-that-have-exactly--64-characters");
+
+        let res3 = nsnode.add_node(large_but_not_too_much, value.clone());
+        let res4 = nsnode.get_children().len();
+        assert_eq!(res3, Ok(()));
+        assert_eq!(res4, 0); //There must be no children
+    }
 
     /*#[test]
     fn add_node_test(){ recursive case 

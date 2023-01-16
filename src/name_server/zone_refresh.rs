@@ -198,7 +198,7 @@ mod zone_refresh_test {
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value);
 
-        let zone_refresh = ZoneRefresh::new(ns_zone);
+        let zone_refresh = ZoneRefresh::new(ns_zone);// fails when tries to initialize zone refresh
 
         let some_timestamp = Utc::now().timestamp() as u32;
 

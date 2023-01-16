@@ -416,5 +416,39 @@ mod dns_cache_test {
         assert_eq!(cache.get_size(), 3 as u32); //For the future: case where we set a size bigger than the max_size
     }
 
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_cache_test(){ //Modifying the cache of new_cache via the fn add and then setting it to dns_cache
+        let mut dns_cache = DnsCache::new();
+        let mut new_cache = DnsCache::new();
+        assert_eq!(dns_cache.get_cache().len(), 0);
+
+        dns_cache.set_max_size(1);
+        new_cache.set_max_size(1);
+        
+        let mut domain_name = DomainName::new();
+        domain_name.set_name("test2.com".to_string());
+
+        let mut ns_rdata = NsRdata::new();
+        ns_rdata.set_nsdname(domain_name);
+
+        let r_data = Rdata::SomeNsRdata(ns_rdata);
+        let mut ns_resource_record = ResourceRecord::new(r_data);
+        ns_resource_record.set_type_code(2);
+
+        new_cache.add(String::from("test.com"), ns_resource_record);
+        assert_eq!(new_cache.get_size(), 1 as u32);
+        
+        let cache = new_cache.get_cache();
+
+        dns_cache.set_cache(cache);
+        dns_cache.set_size(1);
+
+        assert_eq!(dns_cache.get(String::from("test.com"), String::from("NS"))[0].get_resource_record().get_type_code(), 2);
+
+    }
+
     
+
+
 }

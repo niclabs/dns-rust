@@ -119,9 +119,9 @@ impl DomainName {
             no_domain_bytes = &no_domain_bytes[1..];
         }
 
-        if domain_name_str.len() > 0 {
+        //if domain_name_str.len() > 0 {
             domain_name_str.remove(domain_name_str.len() - 1);
-        }
+        //}
 
         // Check domain name restriction, max 255 octets
         let initial_bytes_len = bytes.len();

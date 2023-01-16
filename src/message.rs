@@ -820,4 +820,19 @@ mod message_test {
             i += 1;
         }
     }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn soa_rr_query_msg_test(){
+        
+    }
+    
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_query_id_test(){
+        let mut dns_message = DnsMessage::new();
+        assert_eq!(dns_message.get_query_id(), 0  as u16);
+        dns_message.set_query_id(23 as u16);
+        assert_eq!(dns_message.get_query_id(), 23 as u16);
+    }
 }

@@ -273,9 +273,15 @@ impl DnsCache {
         self.cache.clone()
     }
 
+    //ToDo: Revisar Práctica 1
+    //Gets the max size of the cache
+    pub fn get_max_size(&self) -> u32 {
+        self.max_size.clone()
+    }
+
     // Gets the size of the cache
     pub fn get_size(&self) -> u32 {
-        self.size
+        self.size.clone()
     }
 }
 

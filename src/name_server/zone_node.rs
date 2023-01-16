@@ -426,9 +426,33 @@ mod zone_node_test {
         assert_eq!(res4, 0); //There must be no children
     }
 
-    /*#[test]
-    fn add_node_test(){ recursive case 
-    }*/
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_node_test_recursive(){
+        let mut nsnode = NSNode::new();
+        let mut value = Vec::<ResourceRecord>::new();
+        let children = Vec::<NSNode>::new();
+        let ardata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(ardata);
+        value.push(rr);
+        nsnode.set_children(children);
+
+        let name = String::from("mail.example.edu");
+
+        let res1 = nsnode.add_node(name, value.clone());
+        let res2 = nsnode.get_children().len();
+        assert_eq!(res1, Ok(()));
+        assert_eq!(res2, 1);
+
+        let child = nsnode.get_children()[0].clone(); //child with the name of edu
+        assert_eq!(child.get_name(), String::from("edu"));
+        
+        let child2 = child.get_children()[0].clone(); //child with the name of example
+        assert_eq!(child2.get_name(), String::from("example"));
+
+        let child3 = child2.get_children()[0].clone(); //child with the name of mail
+        assert_eq!(child3.get_name(), String::from("mail"));
+    }
 
     #[test]
     fn check_rrs_only_ns_test() {

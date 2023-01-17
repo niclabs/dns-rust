@@ -41,18 +41,19 @@ impl NSZone {
     ///Creates a zone base on the masterfile given 
     pub fn from_file(file_name: String, origin:String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
         let master_file_parsed;
+        print!("checkpint1");
         master_file_parsed = MasterFile::from_file(file_name, origin,validity_check);
+        print!("checkpint1");
         let origin = master_file_parsed.get_origin();
         let mut rrs = master_file_parsed.get_rrs();
-
-
+        
         // Sets Zone info
         let mut ns_zone = NSZone::new();
         let top_node_name = master_file_parsed.get_top_host();
         ns_zone.set_name(top_node_name.clone());
         ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
         ns_zone.set_class_str(master_file_parsed.get_class_default());
-
+        
         // Sets top node info
         let mut top_node = NSNode::new();
         top_node.set_name(top_node_name.clone());
@@ -201,7 +202,7 @@ mod zone_test {
     use crate::name_server::zone_node::NSNode;
 
     #[test]
-    fn constructor_test() {
+    fn constructor_test() { //TODO revisar práctica 1
         let mut nszone = NSZone::new();
         let mut nsnode =NSNode::new();
         nsnode.set_name("example.com".to_string());
@@ -214,7 +215,7 @@ mod zone_test {
     }
 
     #[test]
-    fn get_and_set_name_test(){
+    fn get_and_set_name_test(){//TODO revisar práctica 1
         let mut nszone = NSZone::new();
 
         assert_eq!(nszone.get_name(), String::from(""));
@@ -223,7 +224,7 @@ mod zone_test {
     }
 
     #[test]
-    fn get_and_set_ip_address_for_refresh_zone_test(){
+    fn get_and_set_ip_address_for_refresh_zone_test(){//TODO revisar práctica 1
         let mut nszone = NSZone::new();
 
         nszone.set_class(1);
@@ -235,7 +236,7 @@ mod zone_test {
     }
 
     #[test]
-    fn set_and_get_zone_nodes_test(){
+    fn set_and_get_zone_nodes_test(){//TODO revisar práctica 1
         let mut nszone = NSZone::new();
         let mut nsnode =NSNode::new();
         nsnode.set_name("example.com".to_string());
@@ -246,7 +247,7 @@ mod zone_test {
     }
 
     #[test]
-    fn set_and_get_class_test(){
+    fn set_and_get_class_test(){//TODO revisar práctica 1
         let mut nszone = NSZone::new();
         let mut nsnode =NSNode::new();
         nsnode.set_name("example.com".to_string());
@@ -257,7 +258,7 @@ mod zone_test {
     }
 
     #[test]
-    fn set_and_get_active_test(){
+    fn set_and_get_active_test(){//TODO revisar práctica 1
         let mut nszone = NSZone::new();
 
         nszone.set_active(false);
@@ -269,19 +270,29 @@ mod zone_test {
     }
 
 
-    /*
+  
     #[test]
-    fn from_file_test(){
+    fn from_file_test(){//TODO revisar práctica 1
+        let nszone_mut = NSZone::from_file("test.txt".to_string(),"example".to_string(),"192.80.24.11".to_string(),true );
+        let name= nszone_mut.get_name();
+        let class= nszone_mut.get_class();
+        let ip= nszone_mut.get_ip_address_for_refresh_zone();
+        assert_eq!("uchile.cl.".to_string(), name);
+        assert_eq!(1,class);
+        assert_eq!("192.80.24.11".to_string(),ip);
+
     }
-    */
+ 
 
-    /*
+    
     #[test]
-    fn from_axfr_msg_test()
-    */
+    fn from_axfr_msg_test(){//TODO revisar práctica 1
+
+    }
+    
 
     #[test]
-    fn set_and_get_glue_rr_test() {
+    fn set_and_get_glue_rr_test() {//TODO revisar práctica 1
         let mut nszone = NSZone::new();
 
         let mut glue: Vec<ResourceRecord> = Vec::new();
@@ -295,7 +306,7 @@ mod zone_test {
     }
     #[test]
     #[should_panic]
-    fn set_class_str_fail_test(){
+    fn set_class_str_fail_test(){//TODO revisar práctica 1
         let mut nszone = NSZone::new();
         nszone.set_class_str("asjkh".to_string());   
     }

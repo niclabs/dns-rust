@@ -53,10 +53,11 @@ impl MasterFile {
     Set validation to true if checking validity syntax of the master file is desired.
     */
     pub fn from_file(filename: String, origin:String,validation: bool) -> Self {
-
+        print!("checkpint1");
         let file = File::open(filename).expect("file not found!");
+        print!("checkpint1");
         let reader = BufReader::new(file);
-        
+        print!("checkpint1");
         //save origin with . at end
         let mut origin = origin;
         if origin.ends_with(".") == false{

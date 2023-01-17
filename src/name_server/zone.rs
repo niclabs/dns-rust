@@ -141,7 +141,7 @@ impl NSZone {
             "IN" => 1,
             "CH" => 3,
             "HS" => 4,
-            _ => unreachable!(),
+            _ => unreachable!("invalid string"),
         };
 
         self.set_class(class);
@@ -258,6 +258,13 @@ mod zone_test {
 
     #[test]
     fn set_and_get_active_test(){
+        let mut nszone = NSZone::new();
+
+        nszone.set_active(false);
+        assert_eq!(nszone.get_active(), false);
+        nszone.set_active(true);
+        assert_eq!(nszone.get_active(), true);
+        
 
     }
 
@@ -287,16 +294,11 @@ mod zone_test {
         assert_eq!(nszone.get_glue_rrs().len(), 1);
     }
     #[test]
-    fn set_class_str_test(){
+    #[should_panic]
+    fn set_class_str_fail_test(){
         let mut nszone = NSZone::new();
-        nszone.set_class_str("IN".to_string());
-        assert_eq!(1, nszone.get_class());
-        nszone.set_class_str("CH".to_string());
-        assert_eq!(3, nszone.get_class());
-        nszone.set_class_str("HS".to_string());
-        assert_eq!(4, nszone.get_class());
-        //assert_eq!( unreachable!(),nszone.set_class_str("asjkh".to_string())); //TODO
-        //assert_eq!(4, nszone.get_class());
-        
+        nszone.set_class_str("asjkh".to_string());   
     }
+
+    
 }

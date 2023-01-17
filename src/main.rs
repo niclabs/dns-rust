@@ -103,7 +103,11 @@ pub fn main() {
                 update_zone_tcp.clone(),
             );
 
-            name_server.initialize_name_server(
+            for (master_file,master_file_origin) in MASTER_FILES {
+                name_server.add_zone_from_master_file(master_file.to_string(), master_file_origin.to_string() ,"".to_string(), CHECK_MASTER_FILES);
+            }
+
+            name_server.run_name_server(
                 NAME_SERVER_IP.to_string(),
                 RESOLVER_IP_PORT.to_string(),
                 add_recv_ns_udp,
@@ -151,7 +155,7 @@ pub fn main() {
                 update_zone_tcp,
             );    
 
-            for (master_file,master_file_origin)  in MASTER_FILES {
+            for (master_file,master_file_origin) in MASTER_FILES {
                 name_server.add_zone_from_master_file(master_file.to_string(), master_file_origin.to_string() ,"".to_string(), CHECK_MASTER_FILES);
             }
 

@@ -198,8 +198,69 @@ mod zone_test {
     use crate::name_server::zone::NSZone;    
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::name_server::zone_node::NSNode;
 
-    // TODO: constructor test
+    #[test]
+    fn constructor_test() {
+        let mut nszone = NSZone::new();
+        let mut nsnode =NSNode::new();
+        nsnode.set_name("example.com".to_string());
+        nszone.set_zone_nodes(nsnode.clone());
+        assert_eq!(nszone.name, String::from(""));
+        assert_eq!(nszone.zone_nodes.get_name(), nsnode.clone().get_name());
+        assert_eq!(nszone.class, 1);
+        assert_eq!(nszone.active, true);
+        assert_eq!(nszone.glue_rrs.len(), 0);
+    }
+
+    #[test]
+    fn get_and_set_name_test(){
+        let mut nszone = NSZone::new();
+
+        assert_eq!(nszone.get_name(), String::from(""));
+        nszone.set_name(String::from("test.com"));
+        assert_eq!(nszone.get_name(), String::from("test.com"));
+    }
+
+    #[test]
+    fn get_and_set_ip_address_for_refresh_zone_test(){
+        let mut nszone = NSZone::new();
+
+        nszone.set_class(1);
+        assert_eq!(nszone.get_class(), 1);
+        nszone.set_class(3);
+        assert_eq!(nszone.get_class(), 3);
+
+
+    }
+
+    #[test]
+    fn set_and_get_zone_nodes_test(){
+        let mut nszone = NSZone::new();
+        let mut nsnode =NSNode::new();
+        nsnode.set_name("example.com".to_string());
+        nszone.set_zone_nodes(nsnode.clone());
+        
+        assert_eq!(nszone.zone_nodes.get_name(), nsnode.clone().get_name());
+
+    }
+
+    #[test]
+    fn set_and_get_class_test(){
+        let mut nszone = NSZone::new();
+        let mut nsnode =NSNode::new();
+        nsnode.set_name("example.com".to_string());
+        nszone.set_zone_nodes(nsnode.clone());
+        assert_eq!(nszone.name, String::from(""));
+        assert_eq!(nszone.zone_nodes.get_name(), nsnode.clone().get_name());
+
+    }
+
+    #[test]
+    fn set_and_get_active_test(){
+
+    }
+
 
     /*
     #[test]
@@ -224,5 +285,18 @@ mod zone_test {
         assert_eq!(nszone.get_glue_rrs().len(), 0);
         nszone.set_glue_rrs(glue);
         assert_eq!(nszone.get_glue_rrs().len(), 1);
+    }
+    #[test]
+    fn set_class_str_test(){
+        let mut nszone = NSZone::new();
+        nszone.set_class_str("IN".to_string());
+        assert_eq!(1, nszone.get_class());
+        nszone.set_class_str("CH".to_string());
+        assert_eq!(3, nszone.get_class());
+        nszone.set_class_str("HS".to_string());
+        assert_eq!(4, nszone.get_class());
+        //assert_eq!( unreachable!(),nszone.set_class_str("asjkh".to_string())); //TODO
+        //assert_eq!(4, nszone.get_class());
+        
     }
 }

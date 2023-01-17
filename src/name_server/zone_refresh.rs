@@ -163,7 +163,7 @@ impl ZoneRefresh {
 }
 
 #[cfg(test)]
-mod zone_refresh_test {
+mod zone_refresh_test { 
     
     use super::ZoneRefresh;
     use crate::message::rdata::soa_rdata::SoaRdata;
@@ -175,7 +175,7 @@ mod zone_refresh_test {
     use chrono::Utc;
 
     #[test]
-    fn constructor_test() {
+    fn constructor_test() { //TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
       
         let origin = String::from("example.com");
@@ -199,11 +199,11 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        let mut top_node = ns_zone.get_zone_nodes();
+        let mut top_node = ns_zone.get_zone_nodes(); // added to fix the initialization in all tests 
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);
         
-        let zone_refresh = ZoneRefresh::new(ns_zone);// fails when tries to initialize zone refresh
+        let zone_refresh = ZoneRefresh::new(ns_zone);// fails when tries to initialize zone refresh(fixed)
 
     
         let some_timestamp = Utc::now().timestamp() as u32;
@@ -220,7 +220,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_zone_test(){
+    fn set_and_get_zone_test(){ //TODO revisar práctica 1
         let mut ns_zone_1 = NSZone::new();
         let mut ns_zone_2 = NSZone::new();
 
@@ -245,7 +245,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_ip_address_for_refresh_zone_test(){
+    fn set_and_get_ip_address_for_refresh_zone_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -268,7 +268,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_serial_test(){
+    fn set_and_get_serial_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -289,7 +289,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_refresh_test(){
+    fn set_and_get_refresh_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -310,7 +310,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_retry_test(){
+    fn set_and_get_retry_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -331,7 +331,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_expire_test(){
+    fn set_and_get_expire_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -352,7 +352,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_timestamp_test(){
+    fn set_and_get_timestamp_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -374,7 +374,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_last_fails_test(){
+    fn set_and_get_last_fails_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -395,7 +395,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_last_serial_check_test(){
+    fn set_and_get_last_serial_check_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -417,7 +417,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn new_serial_greater_than_old_test(){
+    fn new_serial_greater_than_old_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
         let mut value = Vec::<ResourceRecord>::new();
         let  soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
@@ -438,7 +438,7 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn update_zone_test(){
+    fn update_zone_test(){//TODO revisar práctica 1
         let mut ns_zone = NSZone::new();
 
         let mut value_1 = Vec::<ResourceRecord>::new();

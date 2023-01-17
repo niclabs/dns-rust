@@ -222,7 +222,7 @@ mod zone_refresh_test {
     #[test]
     fn set_and_get_zone_test(){ //TODO revisar práctica 1
         let mut ns_zone_1 = NSZone::new();
-        let mut ns_zone_2 = NSZone::new();
+        let ns_zone_2 = NSZone::new();
 
         let origin = String::from("example.com");
         ns_zone_1.set_name(origin);

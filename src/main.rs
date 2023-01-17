@@ -151,7 +151,7 @@ pub fn main() {
                 update_refresh_zone_tcp,
                 update_zone_udp,
                 update_zone_tcp,
-            );
+            );    
 
             for (master_file, master_file_origin) in MASTER_FILES {
                 name_server.add_zone_from_master_file(
@@ -164,7 +164,7 @@ pub fn main() {
 
             resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
             resolver.set_ns_data(name_server.get_zones_by_class());
-
+            
             // Run Name server
             thread::spawn(move || {
                 name_server.run_name_server(

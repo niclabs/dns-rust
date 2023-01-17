@@ -1220,7 +1220,6 @@ impl Resolver {
         self.ns_data = ns_data;
     }
 }
-
 #[cfg(test)]
 mod resolver_test {
     use crate::dns_cache::DnsCache;

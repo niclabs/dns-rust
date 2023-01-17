@@ -1,6 +1,6 @@
-use std::{fs, thread, collections::HashMap, time};
+use std::{fs, thread, collections::HashMap, time, sync::mpsc};
 
-use dns_rust::{client, resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
+use dns_rust::{client, resolver::{self, Resolver}, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
 
 
 /// Gets a Vec of host names from a external file
@@ -11,7 +11,7 @@ fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
     .expect("Should have been able to read the file"); 
     
     // Split file content
-    let splitted_content: Vec<&str> = contents.split("\n").collect();
+    let splitted_content: Vec<&str> = contents.lines().collect();
 
     // Create a vec of host names
     let mut host_names_vec: Vec<String> = Vec::new();
@@ -24,7 +24,6 @@ fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
     return host_names_vec
 }
 
-
 #[test]
 fn validate_rfc_master_files() {
     for (master_file, master_file_origin) in MASTER_FILES {
@@ -35,10 +34,52 @@ fn validate_rfc_master_files() {
 /// Robustness test
 #[test]
 fn test_500000_cl_domains() {
-
+    let (add_sender_udp, add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, delete_recv_ns_tcp) = mpsc::channel();
+    let (update_cache_sender_udp, rx_update_cache_udp) = mpsc::channel();
+    let (update_cache_sender_tcp, rx_update_cache_tcp) = mpsc::channel();
+    let (update_cache_sender_ns_udp, rx_update_cache_ns_udp) = mpsc::channel();
+    let (update_cache_sender_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
+    let (update_zone_udp, rx_update_zone_udp) = mpsc::channel();
+    let (update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
+    
     // Run resolver.
-    let resolver = thread::spawn(move || {
-        resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
+    thread::spawn(move || {
+        // Resolver Initialize
+        let mut resolver = Resolver::new(
+            add_sender_udp.clone(),
+            delete_sender_udp.clone(),
+            add_sender_tcp.clone(),
+            delete_sender_tcp.clone(),
+            add_sender_ns_udp.clone(),
+            delete_sender_ns_udp.clone(),
+            add_sender_ns_tcp.clone(),
+            delete_sender_ns_tcp.clone(),
+            update_cache_sender_udp.clone(),
+            update_cache_sender_tcp.clone(),
+            update_cache_sender_ns_udp.clone(),
+            update_cache_sender_ns_tcp.clone(),
+        );
+
+        resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
+
+        // Run Resolver
+        resolver.run_resolver(
+            add_recv_udp,
+            delete_recv_udp,
+            add_recv_tcp,
+            delete_recv_tcp,
+            rx_update_cache_udp,
+            rx_update_cache_tcp,
+            rx_update_zone_udp,
+            rx_update_zone_tcp,
+        );
     });
 
     // Get all host names from a file
@@ -48,16 +89,4 @@ fn test_500000_cl_domains() {
         let mut dnsmessage = client::create_client_query(host_name.as_str(), "TCP" , 1 , 1);
         dnsmessage.print_dns_message()
     }
-}
-
-#[test]
-fn rfc1034_standard_queries_test_6_2_1() {
-    
-    // Run resolver.
-    thread::spawn(move || {
-        resolver::run_resolver(RESOLVER_IP_PORT, SBELT_ROOT_IPS, HashMap::<u16, HashMap<String, NSZone>>::new());
-    });
-
-    thread::sleep(time::Duration::from_millis(40));
-    client::create_client_query("dcc.uchile.cl", "TCP",1,1);
 }

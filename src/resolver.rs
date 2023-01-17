@@ -99,6 +99,22 @@ impl Resolver {
         resolver
     }
 
+    /// Sets the initial IP, PORT and SBELT values.
+    pub fn set_initial_configuration(
+        &mut self, 
+        resolver_ip_port: &'static str,
+        sbelt_root_ips: [&str; 3], 
+    ) {
+        self.set_ip_address(resolver_ip_port.to_string());
+    
+        let mut sbelt = Slist::new();
+    
+        for ip in sbelt_root_ips {
+            sbelt.insert(".".to_string(), ip.to_string(), 5000);
+        }
+        self.set_sbelt(sbelt);
+    }
+
     pub fn run_resolver(
         &mut self,
         rx_add_udp: Receiver<(String, ResourceRecord)>,
@@ -129,7 +145,7 @@ impl Resolver {
     }
 
     // Runs a udp resolver
-    pub fn run_resolver_udp(
+    fn run_resolver_udp(
         &mut self,
         rx_add_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_udp: Receiver<(String, ResourceRecord)>,
@@ -654,7 +670,7 @@ impl Resolver {
     }
 
     // Runs a tcp resolver
-    pub fn run_resolver_tcp(
+    fn run_resolver_tcp(
         &mut self,
         rx_add_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_tcp: Receiver<(String, ResourceRecord)>,
@@ -1188,63 +1204,6 @@ impl Resolver {
         self.ns_data = ns_data;
     }
 }
-
-pub fn run_resolver(resolver_ip_port: &'static str, sbelt_root_ips: [&str; 3], ns_data: HashMap<u16, HashMap<String, NSZone>>) {
-    // Channels
-    let (add_sender_udp, add_recv_udp) = mpsc::channel();
-    let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
-    let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
-    let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-    let (update_cache_sender_udp, rx_update_cache_udp) = mpsc::channel();
-    let (update_cache_sender_tcp, rx_update_cache_tcp) = mpsc::channel();
-    let (update_cache_sender_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    let (update_cache_sender_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-
-    let (_update_zone_udp, rx_update_zone_udp) = mpsc::channel();
-    let (_update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
-
-    let mut resolver = Resolver::new(
-        add_sender_udp.clone(),
-        delete_sender_udp.clone(),
-        add_sender_tcp.clone(),
-        delete_sender_tcp.clone(),
-        add_sender_ns_udp.clone(),
-        delete_sender_ns_udp.clone(),
-        add_sender_ns_tcp.clone(),
-        delete_sender_ns_tcp.clone(),
-        update_cache_sender_udp.clone(),
-        update_cache_sender_tcp.clone(),
-        update_cache_sender_ns_udp.clone(),
-        update_cache_sender_ns_tcp.clone(),
-    );
-
-    resolver.set_ip_address(resolver_ip_port.to_string());
-
-    let mut sbelt = Slist::new();
-
-    for ip in sbelt_root_ips {
-        sbelt.insert(".".to_string(), ip.to_string(), 5000);
-    }
-
-    resolver.set_sbelt(sbelt);
-    resolver.set_ns_data(ns_data);
-
-    resolver.run_resolver(
-        add_recv_udp,
-        delete_recv_udp,
-        add_recv_tcp,
-        delete_recv_tcp,
-        rx_update_cache_udp,
-        rx_update_cache_tcp,
-        rx_update_zone_udp,
-        rx_update_zone_tcp,
-    );
-}
-
 #[cfg(test)]
 mod resolver_test {
     use crate::dns_cache::DnsCache;

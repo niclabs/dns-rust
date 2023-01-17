@@ -1,3 +1,5 @@
+use crate::config::CHECK_MASTER_FILES;
+use crate::config::MASTER_FILES;
 use crate::config::RECURSIVE_AVAILABLE;
 use crate::dns_cache::DnsCache;
 use crate::message::rdata::Rdata;
@@ -98,7 +100,39 @@ impl NameServer {
         name_server
     }
 
-    /// Run an UDP and TCP Name server
+    pub fn initialize_name_server(
+        &mut self,
+        name_server_ip_address: String,
+        local_resolver_ip_and_port: String,
+        rx_add_ns_udp: Receiver<(String, ResourceRecord)>,
+        rx_delete_ns_udp: Receiver<(String, ResourceRecord)>,
+        rx_add_ns_tcp: Receiver<(String, ResourceRecord)>,
+        rx_delete_ns_tcp: Receiver<(String, ResourceRecord)>,
+        rx_update_cache_ns_udp: Receiver<(String, String, u32)>,
+        rx_update_cache_ns_tcp: Receiver<(String, String, u32)>,
+        rx_update_refresh_zone_udp: Receiver<ZoneRefresh>,
+        rx_update_refresh_zone_tcp: Receiver<ZoneRefresh>,
+    ) {
+
+        for (master_file,master_file_origin) in MASTER_FILES {
+            self.add_zone_from_master_file(master_file.to_string(), master_file_origin.to_string() ,"".to_string(), CHECK_MASTER_FILES);
+        }
+
+        self.run_name_server(
+            name_server_ip_address,
+            local_resolver_ip_and_port,
+            rx_add_ns_udp,
+            rx_delete_ns_udp,
+            rx_add_ns_tcp,
+            rx_delete_ns_tcp,
+            rx_update_cache_ns_udp,
+            rx_update_cache_ns_tcp,
+            rx_update_refresh_zone_udp,
+            rx_update_refresh_zone_tcp,
+        );
+    }
+
+    /// Runs an UDP and TCP Name server
     pub fn run_name_server(
         &mut self,
         name_server_ip_address: String,
@@ -137,7 +171,7 @@ impl NameServer {
         );
     }
 
-    pub fn run_name_server_udp(
+    fn run_name_server_udp(
         &mut self,
         mut name_server_ip_address: String,
         local_resolver_ip_and_port: String,
@@ -677,7 +711,7 @@ impl NameServer {
         }
     }
 
-    pub fn run_name_server_tcp(
+    fn run_name_server_tcp(
         &mut self,
         mut name_server_ip_address: String,
         local_resolver_ip_and_port: String,

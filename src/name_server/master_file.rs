@@ -850,8 +850,10 @@ impl MasterFile {
 
 #[cfg(test)]
 mod master_file_test {
+    use std::collections::HashMap;
+
     use super::MasterFile;
-    use crate::{message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}}, name_server::master_file::master_file_test};
+    use crate::{message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}, resource_record::ResourceRecord}, name_server::master_file::master_file_test};
        
 
     #[test]
@@ -899,11 +901,36 @@ mod master_file_test {
         let expected_0 = "".to_string();
         assert_eq!(master_file_test.get_origin(), expected_0);
 
-        // // Test with "dcc" as origin
+        // Test with "dcc" as origin
         let origin_test = "dcc".to_string();
         let explected_1 = "dcc".to_string();
         master_file_test.set_origin(origin_test);
         assert_eq!(master_file_test.get_origin(), explected_1);
+    }
+
+    #[test]
+    fn set_and_get_rss() {
+        // // Create a master file with "cl" as origin
+        // let mut master_file_test = MasterFile::new("cl".to_string());
+
+        // // Test default value
+        // let rdata_test = Rdata::SomeARdata(ARdata::new());
+        // let mut rr_0 = ResourceRecord::new(rdata_test);
+        // let mut rr_vector:Vec<ResourceRecord> = Vec::new();
+        // rr_vector.push(rr_0);
+
+        // let mut rrs_expected = HashMap::new();
+        // rrs_expected.insert("".to_string(), rr_vector);
+
+
+        // let expected_0 = "".to_string();
+        // assert_eq!(master_file_test.get_rrs(), rrs_expected);
+
+        // // // Test with "dcc" as top host
+        // // let top_host_test = "dcc".to_string();
+        // // let explected_1 = "dcc".to_string();
+        // master_file_test.set_top_host(top_host_test);
+        // assert_eq!(master_file_test.get_top_host(), explected_1);
     }
 
 
@@ -929,16 +956,17 @@ mod master_file_test {
 
     // #[test]
     // fn host_name_master_file_validation_test(){
-    //     let host_name = "anakena.dcc".to_string(); 
+    //     let host_name = "anakena.dcc".to_string()
+    //     .to_string(); 
     //     let host_root = '.'.to_string(); 
     //     let host_wildcard = "*.dcc".to_string();
     //     let host_reverse = "1.2.168.192.IN-ADDR.ARPA".to_string();
 
 
     //     let vect_host_names = vec![host_name,
-    //                                             host_root,
-    //                                             host_wildcard,
-    //                                             host_reverse];
+    // //                                             host_root,
+    // //                                             host_wildcard,
+    // //                                             host_reverse];
 
     //     let  master_file = MasterFile::new("uchile.cl".to_string());
         

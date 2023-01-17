@@ -851,7 +851,7 @@ impl MasterFile {
 #[cfg(test)]
 mod master_file_test {
     use super::MasterFile;
-    //use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}};
+    use crate::{message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}}, name_server::master_file::master_file_test};
        
 
     #[test]
@@ -865,6 +865,50 @@ mod master_file_test {
         assert_eq!(line_without_comments, "dcc  A  192.80.24.11 ");
         assert_eq!(line_no_rr_without_comments, "");
     }
+
+
+    #[test]
+    fn set_and_get_top_host_test() {
+        // Create a master file with "cl" as origin
+        let mut master_file_test = MasterFile::new("cl".to_string());
+
+        // Test default value
+        let expected_0 = "".to_string();
+        assert_eq!(master_file_test.get_top_host(), expected_0);
+
+        // Test with "dcc" as top host
+        let top_host_test = "dcc".to_string();
+        let explected_1 = "dcc".to_string();
+        master_file_test.set_top_host(top_host_test);
+        assert_eq!(master_file_test.get_top_host(), explected_1);
+
+        // Test adding a different host
+        let top_host_test = "notdcc".to_string();
+        let explected_1 = "notdcc".to_string();
+        master_file_test.set_top_host(top_host_test);
+        assert_eq!(master_file_test.get_top_host(), explected_1);
+    }
+
+    #[test]
+    fn set_and_get_origin_test() {
+        // Create a master file with "" as origin
+        let mut master_file_test = MasterFile::new("".to_string());
+
+
+        // Test default value
+        let expected_0 = "".to_string();
+        assert_eq!(master_file_test.get_origin(), expected_0);
+
+        // // Test with "dcc" as origin
+        let origin_test = "dcc".to_string();
+        let explected_1 = "dcc".to_string();
+        master_file_test.set_origin(origin_test);
+        assert_eq!(master_file_test.get_origin(), explected_1);
+    }
+
+
+
+    
 
     // #[test]
     // fn replace_special_encoding_test(){

@@ -55,7 +55,7 @@ impl NSZone {
         ns_zone.set_name(top_node_name.clone());
         ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
         ns_zone.set_class_str(master_file_parsed.get_class_default());
-
+        
         // Sets top node info
         let mut top_node = NSNode::new();
         top_node.set_name(top_node_name.clone());

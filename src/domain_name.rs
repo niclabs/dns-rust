@@ -159,7 +159,7 @@ impl DomainName {
         bytes
     }
 
-    pub fn from_master_file(mut name: String, host_name: String) -> Self {
+    pub fn from_master_file(name: String, host_name: String) -> Self {
         let end_dot = name.ends_with(".");
 
         // Absolute host name

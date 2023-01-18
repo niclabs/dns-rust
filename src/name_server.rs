@@ -200,8 +200,9 @@ impl NameServer {
             // Setting read timeout
             let read_timeout = Duration::new(minimum_refresh.into(), 0);
 
-            socket.set_read_timeout(Some(read_timeout));
-
+            socket
+                .set_read_timeout(Some(read_timeout))
+                .expect("set_read_timeout call failed");
             //
         }
 
@@ -286,13 +287,21 @@ impl NameServer {
                             let mut zone = val.get_zone();
                             zone.set_active(false);
 
-                            tx_update_zone_udp_resolver.send(zone.clone());
-                            tx_update_zone_tcp_resolver.send(zone.clone());
+                            tx_update_zone_udp_resolver
+                                .send(zone.clone())
+                                .expect("Couldn't update the zone using UDP to resolver");
+                            tx_update_zone_tcp_resolver
+                                .send(zone.clone())
+                                .expect("Couldn't update the zone using TCP to resolver");
 
                             val.set_zone(zone);
 
-                            tx_update_refresh_zone_udp.send(val.clone());
-                            tx_update_refresh_zone_tcp.send(val.clone());
+                            tx_update_refresh_zone_udp
+                                .send(val.clone())
+                                .expect("Couldn't update the refresh zone using UDP to resolver");
+                            tx_update_refresh_zone_tcp
+                                .send(val.clone())
+                                .expect("Couldn't update the refresh zone using TCP to resolver");
                         }
                     } else {
                         let last_timestamp = val.get_timestamp();
@@ -313,7 +322,8 @@ impl NameServer {
                                 let msg_to_bytes = msg.to_bytes();
 
                                 socket
-                                    .send_to(&msg_to_bytes, zone.get_ip_address_for_refresh_zone());
+                                    .send_to(&msg_to_bytes, zone.get_ip_address_for_refresh_zone())
+                                    .expect("Couldn't send the message to the resresh zone using UDP");
 
                                 val.set_timestamp(now_timestamp);
                             }
@@ -331,7 +341,8 @@ impl NameServer {
                                 let msg_to_bytes = msg.to_bytes();
 
                                 socket
-                                    .send_to(&msg_to_bytes, zone.get_ip_address_for_refresh_zone());
+                                    .send_to(&msg_to_bytes, zone.get_ip_address_for_refresh_zone())
+                                    .expect("Couldn't send the message to the zone using UDP");
 
                                 val.set_timestamp(now_timestamp);
                             }
@@ -610,8 +621,9 @@ impl NameServer {
                                                 let full_msg =
                                                     [&tcp_bytes_length, bytes.as_slice()].concat();
 
-                                                stream.write(&full_msg)
-                                                      .expect("Couldn't write the message");
+                                                stream
+                                                    .write(&full_msg)
+                                                    .expect("Couldn't write the message");
                                                 //
 
                                                 // Receive response from name server and parse the msg
@@ -640,12 +652,14 @@ impl NameServer {
                                                     refresh_data_actual_zone_copy
                                                         .update_zone_refresh(update_zone);
 
-                                                    tx_update_refresh_zone_udp_copy.send(
-                                                        refresh_data_actual_zone_copy.clone(),
-                                                    );
+                                                    tx_update_refresh_zone_udp_copy
+                                                        .send(
+                                                            refresh_data_actual_zone_copy.clone(),
+                                                        ).expect("Couldn't send the new refresh zone using UDP");
 
                                                     tx_update_refresh_zone_tcp_copy
-                                                        .send(refresh_data_actual_zone_copy);
+                                                        .send(refresh_data_actual_zone_copy)
+                                                        .expect("Couldn't send the new refresh zone using TCP");
                                                     //
                                                 }
                                                 //
@@ -734,7 +748,9 @@ impl NameServer {
 
         // Sets nonblocking listener
         if primary_server == false {
-            listener.set_nonblocking(true);
+            listener
+                .set_nonblocking(true)
+                .expect("Cannot set non-blocking");
         }
 
         //
@@ -768,8 +784,12 @@ impl NameServer {
                         let zone_name = zone.get_name();
                         let zone_class = zone.get_class();
 
-                        tx_update_zone_udp_resolver.send(zone.clone());
-                        tx_update_zone_tcp_resolver.send(zone.clone());
+                        tx_update_zone_udp_resolver
+                            .send(zone.clone())
+                            .expect("Couldn't send the new zone via UDP to resolver");
+                        tx_update_zone_tcp_resolver
+                            .send(zone.clone())
+                            .expect("Couldn't send the new zone via TCP to resolver");
 
                         refresh_zones.insert(zone_name.clone(), updated_refresh_zone);
 
@@ -998,13 +1018,21 @@ impl NameServer {
                                 if zone.get_active() == true {
                                     zone.set_active(false);
 
-                                    tx_update_zone_udp_resolver.send(zone.clone());
-                                    tx_update_zone_tcp_resolver.send(zone.clone());
+                                    tx_update_zone_udp_resolver
+                                        .send(zone.clone())
+                                        .expect("Couldn't send the new zone using UDP to resolver");
+                                    tx_update_zone_tcp_resolver
+                                        .send(zone.clone())
+                                        .expect("Couldn't send the new zone using TCP to resolver");
 
                                     val.set_zone(zone);
 
-                                    tx_update_refresh_zone_udp.send(val.clone());
-                                    tx_update_refresh_zone_tcp.send(val.clone());
+                                    tx_update_refresh_zone_udp
+                                        .send(val.clone())
+                                        .expect("Couldn't send the new refresh zone using UDP to resolver");
+                                    tx_update_refresh_zone_tcp
+                                        .send(val.clone())
+                                        .expect("Couldn't send the new refresh zone using TCP to resolver");
                                 }
                             } else {
                                 let last_timestamp = val.get_timestamp();
@@ -1038,10 +1066,13 @@ impl NameServer {
                                         )
                                         .unwrap();
 
-                                        stream.set_read_timeout(Some(Duration::new(2, 0)));
+                                        stream
+                                            .set_read_timeout(Some(Duration::new(2, 0)))
+                                            .expect("set_read_timeout call failed");
 
-                                        stream.write(&full_msg)
-                                              .expect("Couldn't write the message");
+                                        stream
+                                            .write(&full_msg)
+                                            .expect("Couldn't write the message");
 
                                         let mut received_msg = Vec::new();
                                         let bytes_readed = stream.read(&mut received_msg).unwrap();
@@ -1113,8 +1144,9 @@ impl NameServer {
                                                             ]
                                                             .concat();
 
-                                                            stream.write(&full_msg)
-                                                                  .expect("Couldn't write the message");
+                                                            stream
+                                                                .write(&full_msg)
+                                                                .expect("Couldn't write the message");
                                                             //
 
                                                             // Receive response from name server and parse the msg
@@ -1152,10 +1184,12 @@ impl NameServer {
                                                                 val_copy.update_zone_refresh(update_zone);
 
                                                                 tx_update_refresh_zone_udp_copy
-                                                                    .send(val_copy.clone());
+                                                                    .send(val_copy.clone())
+                                                                    .expect("Couldn't send the new refresh zone using UDP");
 
                                                                 tx_update_refresh_zone_tcp_copy
-                                                                    .send(val_copy.clone());
+                                                                    .send(val_copy.clone())
+                                                                    .expect("Couldn't send the new refresh zone using TCP");
                                                                 //
                                                             }
                                                             //
@@ -1205,10 +1239,13 @@ impl NameServer {
                                         )
                                         .unwrap();
 
-                                        stream.set_read_timeout(Some(Duration::new(2, 0)));
+                                        stream
+                                            .set_read_timeout(Some(Duration::new(2, 0)))
+                                            .expect("set_read_timeout call failed");
 
-                                        stream.write(&full_msg)
-                                              .expect("Couldn't write the message");
+                                        stream
+                                            .write(&full_msg)
+                                            .expect("Couldn't write the message");
 
                                         let mut received_msg = Vec::new();
                                         let bytes_readed = stream.read(&mut received_msg).unwrap();
@@ -1280,8 +1317,9 @@ impl NameServer {
                                                             ]
                                                             .concat();
 
-                                                            stream.write(&full_msg)
-                                                                  .expect("Couldn't write the message");
+                                                            stream
+                                                                .write(&full_msg)
+                                                                .expect("Couldn't write the message");
                                                             //
 
                                                             // Receive response from name server and parse the msg
@@ -1319,10 +1357,12 @@ impl NameServer {
                                                                 val_copy.update_zone_refresh(update_zone);
 
                                                                 tx_update_refresh_zone_udp_copy
-                                                                    .send(val_copy.clone());
+                                                                    .send(val_copy.clone())
+                                                                    .expect("Couldn't send the new refresh zone using UDP");
 
                                                                 tx_update_refresh_zone_tcp_copy
-                                                                    .send(val_copy.clone());
+                                                                    .send(val_copy.clone())
+                                                                    .expect("Couldn't send the new refresh zone using TCP");
                                                                 //
                                                             }
                                                             //
@@ -1756,7 +1796,7 @@ impl NameServer {
             
             let rrs = cache.get(name_ns.clone(), "A".to_string());
 
-            //If there are RR A in chache whit the referral host nam
+            //If there are RR A in cache with the referral host name
             if rrs.len() > 0 {
                 for rr in rrs {
                     additional.push(rr.get_resource_record());
@@ -1767,10 +1807,9 @@ impl NameServer {
                 match name_ns.find(&subzone_node.get_name()) {
                     Some(index) => {
                         let new_ns_name = name_ns[..index - 1].to_string();
-                        let labels: Vec<&str> = new_ns_name.split(".").collect();
+                        let _labels: Vec<&str> = new_ns_name.split(".").collect();
                         let mut a_glue_rrs;
             
-
                         // Gets the rrs from the zone
                         let glue_rrs = subzone_node.clone().get_value();
 
@@ -2078,7 +2117,8 @@ impl NameServer {
 
         msg.set_header(header);
 
-        tx.send((vec![(old_id, src_address)], new_id));
+        tx.send((vec![(old_id, src_address)], new_id))
+            .expect("Couldn't send the information through the channel");
 
         // Send request to resolver
         socket.send_to(&msg.to_bytes(), resolver_ip_and_port)
@@ -2188,8 +2228,9 @@ impl NameServer {
 
         // Send query to local resolver
         let mut stream = TcpStream::connect(resolver_ip_and_port).unwrap();
-        stream.write(&full_msg)
-              .expect("Couldn't write the message");
+        stream
+            .write(&full_msg)
+            .expect("Couldn't write the message");
 
         let received_msg = Resolver::receive_tcp_msg(stream).unwrap();
 
@@ -2215,8 +2256,9 @@ impl NameServer {
         let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
 
-        stream.write(&full_msg)
-              .expect("Couldn't write the message");
+        stream
+            .write(&full_msg)
+            .expect("Couldn't write the message");
     }
 
     //

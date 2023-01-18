@@ -75,7 +75,6 @@ impl NSZone {
     pub fn from_axfr_msg(msg: DnsMessage) -> Self {
         let answers = msg.get_answer();
         let mut new_zone = NSZone::new();
-
         let soa_rr = answers[0].clone();
         let zone_name = soa_rr.get_name().get_name();
 
@@ -200,6 +199,7 @@ mod zone_test {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::name_server::zone_node::NSNode;
+    use crate::message::DnsMessage;
 
     #[test]
     //TODO revisar práctica 1
@@ -280,6 +280,22 @@ mod zone_test {
     #[test]
     //TODO revisar práctica 1
     fn from_axfr_msg_test(){
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record = ResourceRecord::new(a_rdata);
+        let mut name_server= resource_record.get_name();
+        name_server.set_name("example_name".to_string());
+        resource_record.set_name(name_server);
+        answer.push(resource_record);
+
+
+        let mut dns_query_message =
+            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+        dns_query_message.set_answer(answer);
+        let nszone_mut = NSZone::from_axfr_msg(dns_query_message);
+        let new_name = nszone_mut.get_name();
+        assert_eq!(new_name,"example_name".to_string())
+
 
     }
     

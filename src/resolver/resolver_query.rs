@@ -646,7 +646,9 @@ impl ResolverQuery {
 
         self.set_slist(slist);
 
-        self.get_tx_update_query().send(self.clone());
+        self.get_tx_update_query()
+            .send(self.clone())
+            .expect("Couldn't send the query to update");
     }
 
     pub fn step_4a(&mut self, msg: DnsMessage) -> DnsMessage {
@@ -738,7 +740,9 @@ impl ResolverQuery {
         // Temporary Error
         if queries_left <= 0 {
             let tx_delete_query = self.get_tx_delete_query();
-            tx_delete_query.send(self.clone());
+            tx_delete_query
+                .send(self.clone())
+                .expect("Couldn't delete query");
             panic!("Temporary Error");
         }
 
@@ -825,12 +829,16 @@ impl ResolverQuery {
         //
 
         // Set last host name asked
-        let host_name = best_server_to_ask.get(&"name".to_string()).unwrap().clone();
+        let host_name = best_server_to_ask.get(&"name".to_string())
+                                                  .unwrap()
+                                                  .clone();
         self.set_last_query_hostname(host_name);
         //
 
         // Send the resolver query to the resolver for update
-        self.get_tx_update_query().send(self.clone());
+        self.get_tx_update_query()
+            .send(self.clone())
+            .expect("Couldn't send the resolver query to the resolver for update");
         //
 
         self.send_udp_query(&msg_to_bytes, best_server_ip, socket);
@@ -1065,7 +1073,9 @@ impl ResolverQuery {
         }
 
         // Update the query data in resolver
-        self.get_tx_update_query().send(self.clone());
+        self.get_tx_update_query()
+            .send(self.clone())
+            .expect("Couldn't update the query data in resolver");
         //
 
         self.step_3_udp(socket, rx_update_self_slist);
@@ -1152,7 +1162,9 @@ impl ResolverQuery {
                     internal_query
                         .set_query_id_update_slist(resolver_query_to_update.get_main_query_id());
 
-                    tx_update_query_copy.send(internal_query.clone());
+                    tx_update_query_copy
+                        .send(internal_query.clone())
+                        .expect("Couldn't update internal query");
 
                     internal_query.step_2_udp(socket_copy.try_clone().unwrap());
                     internal_query.step_3_udp(socket_copy, rx_update_self_slist);
@@ -1182,9 +1194,13 @@ impl ResolverQuery {
         let mut stream = TcpStream::connect(ip_address.clone()).unwrap();
 
         // Set timeout for read
-        stream.set_read_timeout(Some(Duration::from_millis(timeout as u64)));
+        stream
+            .set_read_timeout(Some(Duration::from_millis(timeout as u64)))
+            .expect("set_read_timeout call failed");
 
-        stream.write(&full_msg);
+        stream
+            .write(&full_msg)
+            .expect("Couldn't write the message");
 
         match Resolver::receive_tcp_msg(stream) {
             Some(val) => {
@@ -1211,25 +1227,25 @@ impl ResolverQuery {
                     self.get_last_query_hostname(),
                     ip_address.clone(),
                     response_time,
-                ));
+                )).expect("Couldn't send request to resolver, using UDP, to update cache");
 
                 self.get_update_cache_tcp().send((
                     self.get_last_query_hostname(),
                     ip_address.clone(),
                     response_time,
-                ));
+                )).expect("Couldn't send request to resolver, using TCP, to update cache");
 
                 self.get_update_cache_ns_udp().send((
                     self.get_last_query_hostname(),
                     ip_address.clone(),
                     response_time,
-                ));
+                )).expect("Couldn't send request to name server, using UDP, to update cache");
 
                 self.get_update_cache_ns_tcp().send((
                     self.get_last_query_hostname(),
                     ip_address.clone(),
                     response_time,
-                ));
+                )).expect("Couldn't send request to name server, using TCP, to update cache");
                 //
 
                 return self.step_4_tcp(dns_response, update_slist_tcp_recv);
@@ -1645,7 +1661,8 @@ impl ResolverQuery {
 
                     resolver_query_to_update
                         .get_update_slist_tcp_sender()
-                        .send((host_name, answers));
+                        .send((host_name, answers))
+                        .expect("Couldn't update the slist using TCP");
                 }
             });
         }

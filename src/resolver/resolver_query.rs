@@ -629,11 +629,6 @@ impl ResolverQuery {
         slist.sort();
 
         self.set_slist(slist);
-
-        // DEBUGGING PURPOSES ONLY
-
-        let contents_slist = self.get_slist().get_ns_list();
-        
     }
 
     pub fn step_2_udp(&mut self, socket: UdpSocket) {

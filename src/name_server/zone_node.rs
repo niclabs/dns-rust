@@ -3,7 +3,7 @@ use crate::message::resource_record::ResourceRecord;
 //utils
 use crate::utils::check_label_name;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 /// Recursive Struct that represents data from a zone
 pub struct NSNode {
     name: String,

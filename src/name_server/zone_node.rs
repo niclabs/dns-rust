@@ -326,10 +326,34 @@ mod zone_node_test {
         assert_eq!(nsnode.get_children().len(), 1);
     }
 
-    /* #[test]
+
+    //TODO: Revisar Práctica 1
+    #[test]
     fn set_duplicate_children_test() {
-        //TODO:
-    } */
+        let mut nsnode = NSNode::new();
+
+        let mut children = Vec::<NSNode>::new();
+        let mut nsnode_1 = NSNode::new();
+        nsnode_1.set_name(String::from("test1"));
+        children.push(nsnode_1);
+        let mut nsnode_3 = NSNode::new();
+        nsnode_3.set_name(String::from("test2"));
+        children.push(nsnode_3);
+        let mut nsnode_3 = NSNode::new();
+        nsnode_3.set_name(String::from("TEST1"));
+        children.push(nsnode_3);
+
+        assert_eq!(nsnode.get_children().len(), 0);
+        nsnode.set_children(children);
+        assert_eq!(nsnode.get_children().len(), 2);
+        let child1_name = nsnode.get_children()[1].get_name();
+        assert_eq!(
+            child1_name,
+            String::from("TEST1") 
+        );
+        assert_eq!(nsnode.get_children()[0].get_name(), String::from("test2"));
+        assert_eq!(nsnode.exist_child(String::from("test1")), true); //child still can be searched in lowercase      
+    }
 
     #[test]
     fn exist_child_test() {

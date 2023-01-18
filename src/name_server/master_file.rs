@@ -851,7 +851,7 @@ impl MasterFile {
 #[cfg(test)]
 mod master_file_test {
     use super::MasterFile;
-    use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}};
+    //use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}};
        
 
     #[test]

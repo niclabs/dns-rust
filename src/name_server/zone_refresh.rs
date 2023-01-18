@@ -3,7 +3,7 @@ use crate::name_server::zone::NSZone;
 
 use chrono::Utc;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 // An struct that represents zone refresh data for a zone
 pub struct ZoneRefresh {
     zone: NSZone,

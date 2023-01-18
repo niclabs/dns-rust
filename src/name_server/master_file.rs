@@ -852,7 +852,7 @@ impl MasterFile {
 mod master_file_test {
     use std::collections::HashMap;
     use super::MasterFile;
-    //use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}};
+    use crate::{message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata, mx_rdata::MxRdata}, resource_record::ResourceRecord}, name_server::master_file::master_file_test};
        
     #[test]
     fn remove_comments_test(){

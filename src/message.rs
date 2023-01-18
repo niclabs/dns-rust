@@ -926,4 +926,15 @@ mod message_test {
         assert_eq!(header.get_qr(), true);
     }
 
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn data_not_found_error_msg_test(){
+        let msg = DnsMessage::data_not_found_error_msg();
+
+        let header = msg.get_header();
+
+        assert_eq!(header.get_aa(), true);
+        assert_eq!(header.get_qr(), true);
+    }
+
 }

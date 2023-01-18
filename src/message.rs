@@ -848,9 +848,9 @@ mod message_test {
         }
         
         let resource_record = ResourceRecord::new(soa_rdata);
-
+        //zone from the constructor test in zone_refresh.rs
         value.push(resource_record);
-        let mut top_node = ns_zone.get_zone_nodes(); //zone from the constructor test in zone_refresh.rs
+        let mut top_node = ns_zone.get_zone_nodes(); 
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);
 
@@ -898,9 +898,9 @@ mod message_test {
         let msg = DnsMessage::format_error_msg();
 
         let header = msg.get_header();
-
+        //only two things are set in this fn
         assert_eq!(header.get_rcode(), 1);
-        assert_eq!(header.get_qr(), true); //only two things are set in this fn
+        assert_eq!(header.get_qr(), true); 
     }
 
     //ToDo: Revisar Práctica 1
@@ -935,6 +935,54 @@ mod message_test {
 
         assert_eq!(header.get_aa(), true);
         assert_eq!(header.get_qr(), true);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn update_header_counters_test(){
+        let mut dns_query_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+
+        assert_eq!(dns_query_message.get_header().get_ancount(), 0);
+        assert_eq!(dns_query_message.get_header().get_nscount(), 0);
+        assert_eq!(dns_query_message.get_header().get_arcount(), 0);
+
+        let mut new_answer = Vec::<ResourceRecord>::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        new_answer.push(rr);
+
+        let a_rdata1 = Rdata::SomeARdata(ARdata::new());
+        let rr1 = ResourceRecord::new(a_rdata1);
+        new_answer.push(rr1);
+
+        let a_rdata2 = Rdata::SomeARdata(ARdata::new());
+        let rr2 = ResourceRecord::new(a_rdata2);
+        new_answer.push(rr2);
+        dns_query_message.set_answer(new_answer);
+
+        let mut new_authority = Vec::<ResourceRecord>::new();
+        let a_rdata3 = Rdata::SomeARdata(ARdata::new());
+        let rr3 = ResourceRecord::new(a_rdata3);
+        new_authority.push(rr3);
+
+        let a_rdata4 = Rdata::SomeARdata(ARdata::new());
+        let rr4 = ResourceRecord::new(a_rdata4);
+        new_authority.push(rr4);
+        dns_query_message.set_authority(new_authority);
+
+        let mut new_additional = Vec::<ResourceRecord>::new();
+        let a_rdata5 = Rdata::SomeARdata(ARdata::new());
+        let rr5 = ResourceRecord::new(a_rdata5);
+        new_additional.push(rr5);
+        dns_query_message.set_additional(new_additional);
+
+        dns_query_message.update_header_counters();
+        dns_query_message.print_dns_message();
+
+        assert_eq!(dns_query_message.get_header().get_ancount(), 3);
+        assert_eq!(dns_query_message.get_header().get_nscount(), 2);
+        assert_eq!(dns_query_message.get_header().get_arcount(), 1);
+
     }
 
 }

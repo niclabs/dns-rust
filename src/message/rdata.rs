@@ -19,7 +19,7 @@ use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 // This enum, enumerates the differents types of rdata struct
 pub enum Rdata {
     SomeARdata(ARdata),

@@ -672,10 +672,6 @@ impl MasterFile {
         let top_host_labels: Vec<&str> = top_host.split(".").collect();
         let top_host_labels_num = top_host_labels.len();
 
-        let top_host_labels: Vec<&str> = top_host.split(".").collect();
-        let top_host_labels_num = top_host_labels.len();
-
-
         for rr_host in rrs.iter(){
             // println!("-----> {}",rr_host.0);
             let name_rr = rr_host.0 ;

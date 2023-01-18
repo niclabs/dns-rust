@@ -175,7 +175,8 @@ mod zone_refresh_test {
     use chrono::Utc;
 
     #[test]
-    fn constructor_test() { //TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn constructor_test() { 
         let mut ns_zone = NSZone::new();
       
         let origin = String::from("example.com");
@@ -199,13 +200,12 @@ mod zone_refresh_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         value.push(resource_record);
-        let mut top_node = ns_zone.get_zone_nodes(); // added to fix the initialization in all tests 
+         // added to fix the initialization in all tests 
+        let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);
-        
-        let zone_refresh = ZoneRefresh::new(ns_zone);// fails when tries to initialize zone refresh(fixed)
-
-    
+        // fails when tries to initialize zone refresh(fixed)
+        let zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
 
         assert_eq!(zone_refresh.zone.get_name(), String::from("example.com"));
@@ -220,13 +220,12 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_zone_test(){ //TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_zone_test(){ 
         let mut ns_zone_1 = NSZone::new();
         let ns_zone_2 = NSZone::new();
-
         let origin = String::from("example.com");
         ns_zone_1.set_name(origin);
-
         let mut value = Vec::<ResourceRecord>::new();
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
@@ -245,7 +244,8 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_ip_address_for_refresh_zone_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_ip_address_for_refresh_zone_test(){
         let mut ns_zone = NSZone::new();
 
         let mut value = Vec::<ResourceRecord>::new();
@@ -268,20 +268,16 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_serial_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_serial_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
-
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);
-        
-
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_serial(), 0 as u32);
         zone_refresh.set_serial(1111111111 as u32);
@@ -289,14 +285,12 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_refresh_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_refresh_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
-
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
@@ -310,20 +304,17 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_retry_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_retry_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
-
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
-        ns_zone.set_zone_nodes(top_node);
-        
+        ns_zone.set_zone_nodes(top_node);      
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_retry(), 0 as u32);
         zone_refresh.set_retry(7200 as u32);
@@ -331,14 +322,12 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_expire_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_expire_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
-
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
@@ -352,14 +341,12 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_timestamp_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_timestamp_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
-
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
@@ -374,14 +361,12 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_last_fails_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_last_fails_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
-
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
@@ -395,20 +380,17 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn set_and_get_last_serial_check_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_last_serial_check_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
-
         let  soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
-        ns_zone.set_zone_nodes(top_node);
-        
+        ns_zone.set_zone_nodes(top_node);       
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
         assert_eq!(zone_refresh.get_last_serial_check(), some_timestamp);
@@ -417,7 +399,8 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn new_serial_greater_than_old_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn new_serial_greater_than_old_test(){
         let mut ns_zone = NSZone::new();
         let mut value = Vec::<ResourceRecord>::new();
         let  soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
@@ -426,8 +409,7 @@ mod zone_refresh_test {
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
-        ns_zone.set_zone_nodes(top_node);
-        
+        ns_zone.set_zone_nodes(top_node);       
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         zone_refresh.set_serial(111111111 as u32);
         assert_eq!(zone_refresh.new_serial_greater_than_old(4294967295 as u32), false);
@@ -438,15 +420,13 @@ mod zone_refresh_test {
     }
 
     #[test]
-    fn update_zone_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn update_zone_test(){
         let mut ns_zone = NSZone::new();
-
         let mut value_1 = Vec::<ResourceRecord>::new();
         let mut value_2 = Vec::<ResourceRecord>::new();
-
         let  soa_rdata_1 = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record_1 = ResourceRecord::new(soa_rdata_1);
-
         let mut soa_rdata_2 = Rdata::SomeSoaRdata(SoaRdata::new());
         match soa_rdata_2 {
             Rdata::SomeSoaRdata(ref mut val) => {val.set_expire(4000000 as u32);
@@ -454,27 +434,21 @@ mod zone_refresh_test {
                                                 val.set_serial(1111111111 as u32)},
             _ => unreachable!(),
         }
-
         let resource_record_2 = ResourceRecord::new(soa_rdata_2);
-
         value_1.push(resource_record_1);
         value_2.push(resource_record_2);
-
         ns_zone.get_zone_nodes().set_value(value_1.clone());
         let mut top_node1 = ns_zone.get_zone_nodes();
         top_node1.set_value(value_1);
-        ns_zone.set_zone_nodes(top_node1);
-        
+        ns_zone.set_zone_nodes(top_node1);      
         let mut zone_refresh = ZoneRefresh::new(ns_zone.clone());
         assert_eq!(zone_refresh.get_serial(), 0 as u32);
         assert_eq!(zone_refresh.get_retry(), 0 as u32);
         assert_eq!(zone_refresh.get_expire(), 0 as u32);
-
         ns_zone.get_zone_nodes().set_value(value_2.clone());
         let mut top_node2 = ns_zone.get_zone_nodes();
         top_node2.set_value(value_2);
-        ns_zone.set_zone_nodes(top_node2);
-        
+        ns_zone.set_zone_nodes(top_node2); 
         zone_refresh.update_zone_refresh(ns_zone.clone());
         assert_eq!(zone_refresh.get_serial(), 1111111111 as u32);
         assert_eq!(zone_refresh.get_retry(), 7200 as u32);

@@ -278,13 +278,15 @@ mod zone_test {
     }
  
     #[test]
-    fn from_axfr_msg_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn from_axfr_msg_test(){
 
     }
     
 
     #[test]
-    fn set_and_get_glue_rr_test() {//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_and_get_glue_rr_test() {
         let mut nszone = NSZone::new();
         let mut glue: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
@@ -295,7 +297,8 @@ mod zone_test {
         assert_eq!(nszone.get_glue_rrs().len(), 1);
     }
     #[test]
-    fn set_class_str_fail_test(){//TODO revisar práctica 1
+    //TODO revisar práctica 1
+    fn set_class_str_fail_test(){
         let mut nszone = NSZone::new();
         nszone.set_class_str("IN".to_string()); 
         assert_eq!(nszone.get_class(), 1);
@@ -306,8 +309,9 @@ mod zone_test {
     }
 
     #[test]
+    //TODO revisar práctica 1
     #[should_panic]
-    fn set_class_str_test(){//TODO revisar práctica 1
+    fn set_class_str_test(){
         let mut nszone = NSZone::new();
         nszone.set_class_str("asjkh".to_string());   
     }

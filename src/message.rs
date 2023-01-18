@@ -903,4 +903,16 @@ mod message_test {
         assert_eq!(header.get_qr(), true); //only two things are set in this fn
     }
 
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn axfr_query_message_test(){
+        let dns_message = DnsMessage::axfr_query_message(String::from("example.com"));
+
+        assert_eq!(dns_message.get_question().get_qname().get_name(), String::from("example.com"));
+        assert_eq!(dns_message.get_question().get_qtype(), 252);
+        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(dns_message.get_header().get_op_code(), 0);
+        assert_eq!(dns_message.get_header().get_rd(), false);
+    }
+
 }

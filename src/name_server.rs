@@ -1,5 +1,3 @@
-use crate::config::CHECK_MASTER_FILES;
-use crate::config::MASTER_FILES;
 use crate::config::RECURSIVE_AVAILABLE;
 use crate::dns_cache::DnsCache;
 use crate::message::rdata::Rdata;

@@ -851,11 +851,9 @@ impl MasterFile {
 #[cfg(test)]
 mod master_file_test {
     use std::collections::HashMap;
-
     use super::MasterFile;
-    use crate::{message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}, resource_record::ResourceRecord}, name_server::master_file::master_file_test};
+    use crate::{message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata, mx_rdata::MxRdata}, resource_record::ResourceRecord}, name_server::master_file::master_file_test};
        
-
     #[test]
     fn remove_comments_test(){
         let line = "dcc  A  192.80.24.11 ; this is a ; line with comments".to_string();
@@ -867,7 +865,6 @@ mod master_file_test {
         assert_eq!(line_without_comments, "dcc  A  192.80.24.11 ");
         assert_eq!(line_no_rr_without_comments, "");
     }
-
 
     #[test]
     fn set_and_get_top_host_test() {
@@ -909,33 +906,51 @@ mod master_file_test {
     }
 
     #[test]
-    fn set_and_get_rss() {
-        // // Create a master file with "cl" as origin
-        // let mut master_file_test = MasterFile::new("cl".to_string());
+    fn set_and_get_rrs_test() {
+        // Create a master file with "cl" as origin
+        let mut master_file_test = MasterFile::new("cl".to_string());
 
-        // // Test default value
-        // let rdata_test = Rdata::SomeARdata(ARdata::new());
-        // let mut rr_0 = ResourceRecord::new(rdata_test);
-        // let mut rr_vector:Vec<ResourceRecord> = Vec::new();
-        // rr_vector.push(rr_0);
+        // Test default value
+        let hash_rr_expected_0 = HashMap::<String, Vec<ResourceRecord>>::new();
+        assert_eq!(master_file_test.get_rrs(), hash_rr_expected_0);
 
-        // let mut rrs_expected = HashMap::new();
-        // rrs_expected.insert("".to_string(), rr_vector);
+        // Test with a new RR 
+        let ardata_test_0 = Rdata::SomeARdata(ARdata::new());
+        let rr_test_0 = ResourceRecord::new(ardata_test_0);
+        let mut rrs_test_0:Vec<ResourceRecord> = Vec::new();
+        rrs_test_0.push(rr_test_0);
+        let mut hash_rr_test_0 = HashMap::<String, Vec<ResourceRecord>>::new();
+        hash_rr_test_0.insert("".to_string(), rrs_test_0.clone());
 
+        let mut hash_rr_expected_1 = hash_rr_test_0.clone();
 
-        // let expected_0 = "".to_string();
-        // assert_eq!(master_file_test.get_rrs(), rrs_expected);
+        assert_ne!(master_file_test.get_rrs(), hash_rr_expected_1);
+        master_file_test.set_rrs(hash_rr_test_0.clone());
+        assert_eq!(master_file_test.get_rrs(), hash_rr_expected_1);
 
-        // // // Test with "dcc" as top host
-        // // let top_host_test = "dcc".to_string();
-        // // let explected_1 = "dcc".to_string();
-        // master_file_test.set_top_host(top_host_test);
-        // assert_eq!(master_file_test.get_top_host(), explected_1);
+        // Test inserting a new rr with mx type data
+        let mx_rdata_test_1 = Rdata::SomeMxRdata(MxRdata::new());
+        let rr_test_1 = ResourceRecord::new(mx_rdata_test_1);
+        rrs_test_0.push(rr_test_1);
+        hash_rr_test_0.insert("".to_string(), rrs_test_0.clone());
+        master_file_test.set_rrs(hash_rr_test_0.clone());
+
+        // Value added to test
+        assert_ne!(master_file_test.get_rrs(), hash_rr_expected_1);
+
+        // Value added to expected 
+        hash_rr_expected_1.insert("".to_string(), rrs_test_0.clone());
+        assert_eq!(master_file_test.get_rrs(), hash_rr_expected_1);
+
+        // Test inserting same rr and different string
+        hash_rr_test_0.insert("example1".to_string(), rrs_test_0.clone());
+        hash_rr_expected_1.insert("example2".to_string(), rrs_test_0.clone());
+        assert_ne!(master_file_test.get_rrs(), hash_rr_expected_1);
+        master_file_test.set_rrs(hash_rr_test_0.clone());
+        assert_ne!(master_file_test.get_rrs(), hash_rr_expected_1);
+        
     }
 
-
-
-    
 
     // #[test]
     // fn replace_special_encoding_test(){

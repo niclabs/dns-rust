@@ -1824,7 +1824,6 @@ impl NameServer {
                         let new_ns_name = name_ns[..index - 1].to_string();
                         let _labels: Vec<&str> = new_ns_name.split(".").collect();
                         let mut a_glue_rrs;
-
                         // Gets the rrs from the zone
                         let glue_rrs = subzone_node.clone().get_value();
 

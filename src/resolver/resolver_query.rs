@@ -814,7 +814,9 @@ impl ResolverQuery {
         //
     
         // Set last host name asked
-        let host_name = best_server_to_ask.get(&"name".to_string()).unwrap().clone();
+        let host_name = best_server_to_ask.get(&"name".to_string())
+                                                  .unwrap()
+                                                  .clone();
         self.set_last_query_hostname(host_name);
         //
     

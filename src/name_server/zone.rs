@@ -377,6 +377,7 @@ mod zone_test {
     }
 
     #[test]
+    //TODO revisar práctica 1
     #[should_panic]
     fn set_class_str() {
         let mut nszone = NSZone::new();

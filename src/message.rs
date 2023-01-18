@@ -915,4 +915,15 @@ mod message_test {
         assert_eq!(dns_message.get_header().get_rd(), false);
     }
 
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn not_implemented_msg_test(){
+        let msg = DnsMessage::not_implemented_msg();
+
+        let header = msg.get_header();
+
+        assert_eq!(header.get_rcode(), 4);
+        assert_eq!(header.get_qr(), true);
+    }
+
 }

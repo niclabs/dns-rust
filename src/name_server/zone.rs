@@ -7,7 +7,7 @@ use super::master_file::MasterFile;
 use super::zone_node::NSNode;
 
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 /// Struct that represents a zone.
 pub struct NSZone {
     // Zone name

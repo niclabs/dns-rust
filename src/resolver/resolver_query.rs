@@ -25,6 +25,8 @@ use std::time::Duration;
 use std::vec::Vec;
 
 #[derive(Clone)]
+// dead code allowed because no use of client msg value
+#[allow(dead_code)]
 // This struct represents a resolver query
 pub struct ResolverQuery {
     timestamp: u32,

@@ -892,4 +892,15 @@ mod message_test {
         assert_eq!(res2, 1);
     }
 
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn format_error_msg_test(){
+        let msg = DnsMessage::format_error_msg();
+
+        let header = msg.get_header();
+
+        assert_eq!(header.get_rcode(), 1);
+        assert_eq!(header.get_qr(), true); //only two things are set in this fn
+    }
+
 }

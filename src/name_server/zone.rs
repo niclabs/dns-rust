@@ -208,6 +208,7 @@ mod zone_test {
     use crate::message::DnsMessage;
     use crate::name_server::zone::NSZone;
     use crate::name_server::zone_node::NSNode;
+    use crate::message::DnsMessage;
 
     #[test]
     fn constructor() {

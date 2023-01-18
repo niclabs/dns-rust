@@ -609,6 +609,8 @@ mod message_test {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
+    use crate::name_server::zone::NSZone;
+    use crate::message::rdata::soa_rdata::SoaRdata;
 
     #[test]
     fn constructor_test() {
@@ -705,23 +707,24 @@ mod message_test {
         assert_eq!(dns_query_message.get_additional().len(), 1);
     }
 
-    /*#[test]
-    fn from_bytes_test() {
-        /*let bytes: [u8; 50] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4,
-            116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0,
-            16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
-        ];*/
-
-        /*let bytes: [u8; 50] = [
+    //ToDo: Revisar Pŕactica 1
+    #[test]
+    fn from_bytes_test() {      
+        /*let bytes: [u8; 50] = [ //format error with this one 
             0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
             0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
             0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
-        ];*/
+        ];
+        */
+        let bytes: [u8; 50] = [ //test passes with this one
+            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4,
+            116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0,
+            16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
 
         let dns_message = DnsMessage::from_bytes(&bytes).unwrap();
 
-        /*let header = dns_message.get_header();
+        let header = dns_message.get_header();
         let question = dns_message.get_question();
         let answer = dns_message.get_answer();
         let authority = dns_message.get_authority();
@@ -760,8 +763,8 @@ mod message_test {
         assert_eq!(authority.len(), 0);
 
         // Additional
-        assert_eq!(additional.len(), 0);*/
-    }*/
+        assert_eq!(additional.len(), 0);
+    }
 
     #[test]
     fn to_bytes_test() {
@@ -824,7 +827,40 @@ mod message_test {
     //ToDo: Revisar Práctica 1
     #[test]
     fn soa_rr_query_msg_test(){
+        let mut ns_zone = NSZone::new();
+      
+        let origin = String::from("example.com");
+        ns_zone.set_name(origin);
+        ns_zone.set_ip_address_for_refresh_zone(String::from("200.89.76.36"));
         
+        let mut value = Vec::<ResourceRecord>::new();
+
+        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        mname_domain_name.set_name(String::from("ns.primaryserver.com"));
+        let mut rname_domain_name = DomainName::new();
+        rname_domain_name.set_name(String::from("admin.example.com"));
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {val.set_mname(mname_domain_name);
+                                                val.set_rname(rname_domain_name);
+                                                val.set_serial(1111111111 as u32)},
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(soa_rdata);
+
+        value.push(resource_record);
+        let mut top_node = ns_zone.get_zone_nodes(); //zone from the constructor test in zone_refresh.rs
+        top_node.set_value(value);
+        ns_zone.set_zone_nodes(top_node);
+
+        let dns_message = DnsMessage::soa_rr_query_msg(ns_zone);
+
+        assert_eq!(dns_message.get_question().get_qname().get_name(), String::from("example.com"));
+        assert_eq!(dns_message.get_question().get_qtype(), 6);
+        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(dns_message.get_header().get_op_code(), 0);
+        assert_eq!(dns_message.get_header().get_rd(), false);
     }
 
     //ToDo: Revisar Práctica 1
@@ -855,4 +891,5 @@ mod message_test {
         let res2 = dns_query_message.get_answer().len();
         assert_eq!(res2, 1);
     }
+
 }

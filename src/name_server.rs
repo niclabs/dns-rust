@@ -1,5 +1,3 @@
-use crate::config::CHECK_MASTER_FILES;
-use crate::config::MASTER_FILES;
 use crate::config::RECURSIVE_AVAILABLE;
 use crate::dns_cache::DnsCache;
 use crate::message::rdata::Rdata;
@@ -224,8 +222,10 @@ impl NameServer {
                 let zone_name = zone.get_name();
                 let zone_class = zone.get_class();
 
-                tx_update_zone_udp_resolver.send(zone.clone());
-                tx_update_zone_tcp_resolver.send(zone.clone());
+                tx_update_zone_udp_resolver.send(zone.clone())
+                                           .expect("Couldn't update resolver zone using UDP");
+                tx_update_zone_tcp_resolver.send(zone.clone())
+                                           .expect("Couldn't update resolver zone using TCP");
 
                 refresh_zones.insert(zone_name.clone(), updated_refresh_zone);
 
@@ -610,7 +610,8 @@ impl NameServer {
                                                 let full_msg =
                                                     [&tcp_bytes_length, bytes.as_slice()].concat();
 
-                                                stream.write(&full_msg);
+                                                stream.write(&full_msg)
+                                                      .expect("Couldn't write the message");
                                                 //
 
                                                 // Receive response from name server and parse the msg
@@ -1039,7 +1040,8 @@ impl NameServer {
 
                                         stream.set_read_timeout(Some(Duration::new(2, 0)));
 
-                                        stream.write(&full_msg);
+                                        stream.write(&full_msg)
+                                              .expect("Couldn't write the message");
 
                                         let mut received_msg = Vec::new();
                                         let bytes_readed = stream.read(&mut received_msg).unwrap();
@@ -1111,7 +1113,8 @@ impl NameServer {
                                                             ]
                                                             .concat();
 
-                                                            stream.write(&full_msg);
+                                                            stream.write(&full_msg)
+                                                                  .expect("Couldn't write the message");
                                                             //
 
                                                             // Receive response from name server and parse the msg
@@ -1204,7 +1207,8 @@ impl NameServer {
 
                                         stream.set_read_timeout(Some(Duration::new(2, 0)));
 
-                                        stream.write(&full_msg);
+                                        stream.write(&full_msg)
+                                              .expect("Couldn't write the message");
 
                                         let mut received_msg = Vec::new();
                                         let bytes_readed = stream.read(&mut received_msg).unwrap();
@@ -1276,7 +1280,8 @@ impl NameServer {
                                                             ]
                                                             .concat();
 
-                                                            stream.write(&full_msg);
+                                                            stream.write(&full_msg)
+                                                                  .expect("Couldn't write the message");
                                                             //
 
                                                             // Receive response from name server and parse the msg
@@ -2076,7 +2081,8 @@ impl NameServer {
         tx.send((vec![(old_id, src_address)], new_id));
 
         // Send request to resolver
-        socket.send_to(&msg.to_bytes(), resolver_ip_and_port);
+        socket.send_to(&msg.to_bytes(), resolver_ip_and_port)
+              .expect("Couldn't send request to resolver");
     }
 
     // Sends the response to the address by udp
@@ -2089,7 +2095,7 @@ impl NameServer {
 
             socket
                 .send_to(&bytes, src_address)
-                .expect("failed to send message");
+                .expect("Couldn't send message");
         } else {
             let ancount = response.get_header().get_ancount();
             let nscount = response.get_header().get_nscount();
@@ -2182,7 +2188,8 @@ impl NameServer {
 
         // Send query to local resolver
         let mut stream = TcpStream::connect(resolver_ip_and_port).unwrap();
-        stream.write(&full_msg);
+        stream.write(&full_msg)
+              .expect("Couldn't write the message");
 
         let received_msg = Resolver::receive_tcp_msg(stream).unwrap();
 
@@ -2208,7 +2215,8 @@ impl NameServer {
         let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
 
-        stream.write(&full_msg);
+        stream.write(&full_msg)
+              .expect("Couldn't write the message");
     }
 
     //
@@ -2321,7 +2329,7 @@ impl NameServer {
         self.set_zones_by_class(zones_by_class);
     }
 
-    pub fn remove_from_cache(
+    fn remove_from_cache(
         domain_name: String,
         resource_record: ResourceRecord,
         tx_resolver_udp: Sender<(String, ResourceRecord)>,
@@ -2329,10 +2337,14 @@ impl NameServer {
         tx_ns_udp: Sender<(String, ResourceRecord)>,
         tx_ns_tcp: Sender<(String, ResourceRecord)>,
     ) {
-        tx_resolver_udp.send((domain_name.clone(), resource_record.clone()));
-        tx_resolver_tcp.send((domain_name.clone(), resource_record.clone()));
-        tx_ns_udp.send((domain_name.clone(), resource_record.clone()));
-        tx_ns_tcp.send((domain_name.clone(), resource_record.clone()));
+        tx_resolver_udp.send((domain_name.clone(), resource_record.clone()))
+                 .expect("Couldn't send domain name and RR while removing from cache");
+        tx_resolver_tcp.send((domain_name.clone(), resource_record.clone()))
+                 .expect("Couldn't send domain name and RR while removing from cache");
+        tx_ns_udp.send((domain_name.clone(), resource_record.clone()))
+                 .expect("Couldn't send domain name and RR while removing from cache");
+        tx_ns_tcp.send((domain_name.clone(), resource_record.clone()))
+                 .expect("Couldn't send domain name and RR while removing from cache");        
     }
 }
 

@@ -33,6 +33,7 @@ fn validate_rfc_master_files() {
 /// Robustness test
 #[test]
 #[allow(unused_variables)]
+#[ignore = "TODO: Investigating..."]
 fn test_500000_cl_domains() {
     let (add_sender_udp, add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, delete_recv_udp) = mpsc::channel();

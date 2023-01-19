@@ -177,15 +177,13 @@ mod zone_refresh_test {
     #[test]
     //TODO revisar práctica 1
     fn constructor() { 
-        let mut ns_zone = NSZone::new();
-      
+        let mut ns_zone = NSZone::new();     
         let name = String::from("example.com");
         ns_zone.set_name(name);
         let ip = String::from("200.89.76.36");
         ns_zone.set_ip_address_for_refresh_zone(ip);
         
         let mut value = Vec::<ResourceRecord>::new();
-
         let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let mut mname_domain_name = DomainName::new();
         let domain_name_name= String::from("ns.primaryserver.com");
@@ -199,20 +197,21 @@ mod zone_refresh_test {
                                                 val.set_serial(1111111111 as u32)},
             _ => unreachable!(),
         }
-        
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
+
          // added to fix the initialization in all tests 
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);
         // fails when tries to initialize zone refresh(fixed)
+
         let zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
         let expected_name = String::from("example.com");
         assert_eq!(zone_refresh.zone.get_name(), expected_name);
         let expected_ip = String::from("200.89.76.36");
+
         assert_eq!(zone_refresh.ip_address_for_refresh_zone, expected_ip);
         assert_eq!(zone_refresh.serial, 1111111111 as u32);
         assert_eq!(zone_refresh.refresh, 0 as u32);
@@ -241,7 +240,7 @@ mod zone_refresh_test {
         let mut top_node = ns_zone_1.get_zone_nodes();
         top_node.set_value(value);
         ns_zone_1.set_zone_nodes(top_node);
-          
+
         let mut zone_refresh = ZoneRefresh::new(ns_zone_1);
         let expected_name1 = String::from("example.com");
         assert_eq!(zone_refresh.get_zone().get_name(), expected_name1);
@@ -252,26 +251,24 @@ mod zone_refresh_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_ip_address_for_refresh_zone_test(){
+    fn set_and_get_ip_address_for_refresh_zone(){
         let mut ns_zone = NSZone::new();
-
         let mut value = Vec::<ResourceRecord>::new();
 
-        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
-        
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());      
         let resource_record = ResourceRecord::new(soa_rdata);
-
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
-        ns_zone.set_zone_nodes(top_node);
-        
-
+        ns_zone.set_zone_nodes(top_node); 
+               
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_ip_address_for_refresh_zone(), String::from(""));
-        zone_refresh.set_ip_address_for_refresh_zone(String::from("200.89.76.36"));
-        assert_eq!(zone_refresh.get_ip_address_for_refresh_zone(), String::from("200.89.76.36"));
+        let ip= String::from("200.89.76.36");
+        zone_refresh.set_ip_address_for_refresh_zone(ip);
+        let expected_ip = String::from("200.89.76.36");
+        assert_eq!(zone_refresh.get_ip_address_for_refresh_zone(), expected_ip);
     }
 
     #[test]

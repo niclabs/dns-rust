@@ -984,5 +984,21 @@ mod message_test {
         assert_eq!(dns_query_message.get_header().get_arcount(), 1);
 
     }
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_authorities_test(){
+        let mut dns_query_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+
+        let mut new_authority = Vec::<ResourceRecord>::new();
+        let a_rdata3 = Rdata::SomeARdata(ARdata::new());
+        let rr3 = ResourceRecord::new(a_rdata3);
+        new_authority.push(rr3);
+
+        assert_eq!(dns_query_message.get_answer().len(), 0);
+
+        dns_query_message.add_authorities(new_authority);
+        //since the new authority is added to the answer lets check if something was added
+        assert_eq!(dns_query_message.get_answer().len(), 1);
+    }
 
 }

@@ -176,20 +176,23 @@ mod zone_refresh_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn constructor_test() { 
+    fn constructor() { 
         let mut ns_zone = NSZone::new();
       
-        let origin = String::from("example.com");
-        ns_zone.set_name(origin);
-        ns_zone.set_ip_address_for_refresh_zone(String::from("200.89.76.36"));
+        let name = String::from("example.com");
+        ns_zone.set_name(name);
+        let ip = String::from("200.89.76.36");
+        ns_zone.set_ip_address_for_refresh_zone(ip);
         
         let mut value = Vec::<ResourceRecord>::new();
 
         let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let mut mname_domain_name = DomainName::new();
-        mname_domain_name.set_name(String::from("ns.primaryserver.com"));
+        let domain_name_name= String::from("ns.primaryserver.com");
+        mname_domain_name.set_name(domain_name_name);
         let mut rname_domain_name = DomainName::new();
-        rname_domain_name.set_name(String::from("admin.example.com"));
+        let rname_name= String::from("admin.example.com");
+        rname_domain_name.set_name(rname_name);
         match soa_rdata {
             Rdata::SomeSoaRdata(ref mut val) => {val.set_mname(mname_domain_name);
                                                 val.set_rname(rname_domain_name);
@@ -207,9 +210,10 @@ mod zone_refresh_test {
         // fails when tries to initialize zone refresh(fixed)
         let zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
-
-        assert_eq!(zone_refresh.zone.get_name(), String::from("example.com"));
-        assert_eq!(zone_refresh.ip_address_for_refresh_zone, String::from("200.89.76.36"));
+        let expected_name = String::from("example.com");
+        assert_eq!(zone_refresh.zone.get_name(), expected_name);
+        let expected_ip = String::from("200.89.76.36");
+        assert_eq!(zone_refresh.ip_address_for_refresh_zone, expected_ip);
         assert_eq!(zone_refresh.serial, 1111111111 as u32);
         assert_eq!(zone_refresh.refresh, 0 as u32);
         assert_eq!(zone_refresh.retry, 0 as u32);

@@ -353,7 +353,7 @@ mod zone_refresh_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_timestamp_test(){
+    fn set_and_get_timestamp(){
         let mut ns_zone = NSZone::new();
         let mut value = Vec::<ResourceRecord>::new();
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());

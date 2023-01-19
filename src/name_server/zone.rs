@@ -290,7 +290,7 @@ mod zone_test {
  
     #[test]
     //TODO revisar práctica 1
-    fn from_axfr_msg_test(){
+    fn from_axfr_msg(){
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let mut resource_record = ResourceRecord::new(a_rdata);
@@ -298,12 +298,14 @@ mod zone_test {
         name_server.set_name("example_name".to_string());
         resource_record.set_name(name_server);
         answer.push(resource_record);
+        let qname ="test.com".to_string();
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(qname, 1, 1, 0, false, 1);
         dns_query_message.set_answer(answer);
         let nszone_mut = NSZone::from_axfr_msg(dns_query_message);
         let new_name = nszone_mut.get_name();
-        assert_eq!(new_name,"example_name".to_string())
+        let expected_name ="example_name".to_string();
+        assert_eq!(new_name,expected_name);
     }
     
 

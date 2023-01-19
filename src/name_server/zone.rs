@@ -252,7 +252,7 @@ mod zone_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_class_test(){
+    fn set_and_get_class(){
         let mut nszone = NSZone::new();
         nszone.set_class(1);
         assert_eq!(nszone.get_class(), 1);
@@ -262,7 +262,7 @@ mod zone_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_active_test(){
+    fn set_and_get_active(){
         let mut nszone = NSZone::new();
         nszone.set_active(false);
         assert_eq!(nszone.get_active(), false);
@@ -272,7 +272,7 @@ mod zone_test {
   
     #[test]
     //TODO revisar práctica 1
-    fn from_file_test(){
+    fn from_file(){
         let nszone_mut = NSZone::from_file("test.txt".to_string(),"example".to_string(),"192.80.24.11".to_string(),true );
         let name= nszone_mut.get_name();
         let class= nszone_mut.get_class();

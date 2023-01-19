@@ -311,7 +311,7 @@ mod zone_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_glue_rr_test() {
+    fn set_and_get_glue_rr() {
         let mut nszone = NSZone::new();
         let mut glue: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());

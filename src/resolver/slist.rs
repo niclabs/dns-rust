@@ -298,7 +298,6 @@ mod slist_test {
         first_element.insert("ip_address".to_string(), ip_address);
         first_element.insert("response_time".to_string(), response_time.to_string());
 
-
         slist.insert("VENERA.ISI.EDU".to_string(), "128.9.0.32".to_string(), 5000);
         slist.insert("XX.LCS.MIT.EDU".to_string(), "10.0.0.44".to_string(), 5001);
 
@@ -306,7 +305,7 @@ mod slist_test {
     }
 
     #[test]
-    fn get_test(){
+    fn get_test() {
         let mut slist = Slist::new();
         let mut some_element = HashMap::new();
 

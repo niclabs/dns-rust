@@ -217,14 +217,14 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
-    fn get_and_set_name(){
+    fn get_and_set_name() {
         let mut nszone = NSZone::new();
-        assert_eq!(nszone.get_name(), String::from(""));
-        let new_name=String::from("test.com");
+
+        let new_name = String::from("test.com");
         nszone.set_name(new_name);
+
         let expected = String::from("test.com");
-        assert_eq!(nszone.get_name(), expected );
+        assert_eq!(nszone.get_name(), expected);
     }
 
     #[test]

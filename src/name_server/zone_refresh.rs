@@ -344,8 +344,8 @@ mod zone_refresh_test {
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);  
-        let mut zone_refresh = ZoneRefresh::new(ns_zone);
         
+        let mut zone_refresh = ZoneRefresh::new(ns_zone);
         assert_eq!(zone_refresh.get_expire(), 0 as u32);
         zone_refresh.set_expire(4000000 as u32);
         assert_eq!(zone_refresh.get_expire(), 4000000 as u32);
@@ -359,6 +359,7 @@ mod zone_refresh_test {
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
         value.push(resource_record);
+
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);

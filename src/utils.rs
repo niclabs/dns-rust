@@ -24,7 +24,7 @@ pub fn domain_validity_syntax(domain_name: String)-> Result<String, &'static str
     let mut empty_label = false;
     for label in domain_name.split("."){
         if empty_label {
-            return Err("Error: Empty label is only allowed at the end os a hostname.")
+            return Err("Error: Empty label is only allowed at the end of a hostname.")
         }
         if label.is_empty() {
             empty_label = true;
@@ -114,8 +114,8 @@ mod utils_test {
     #[test]
     fn check_empty_domain_test() {
         assert_eq!(domain_validity_syntax(String::from("")), Ok(String::from("")));
-        assert_eq!(domain_validity_syntax(String::from("label1..label2")), Err("Error: Empty label is only allowed at the end os a hostname."));
-        assert_eq!(domain_validity_syntax(String::from(".label")), Err("Error: Empty label is only allowed at the end os a hostname."));
+        assert_eq!(domain_validity_syntax(String::from("label1..label2")), Err("Error: Empty label is only allowed at the end of a hostname."));
+        assert_eq!(domain_validity_syntax(String::from(".label")), Err("Error: Empty label is only allowed at the end of a hostname."));
         assert_eq!(domain_validity_syntax(String::from("label1.label2.")), Ok(String::from("label1.label2.")));
     }
 

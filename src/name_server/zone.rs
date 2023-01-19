@@ -203,7 +203,7 @@ mod zone_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn constructor_test() { 
+    fn constructor() { 
         let mut nszone = NSZone::new();
         let mut nsnode =NSNode::new();
         nsnode.set_name("example.com".to_string());
@@ -310,7 +310,7 @@ mod zone_test {
     }
     #[test]
     //TODO revisar práctica 1
-    fn set_class_str_fail_test(){
+    fn set_class_str_fail(){
         let mut nszone = NSZone::new();
         nszone.set_class_str("IN".to_string()); 
         assert_eq!(nszone.get_class(), 1);

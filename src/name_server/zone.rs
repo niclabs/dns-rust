@@ -287,16 +287,12 @@ mod zone_test {
         name_server.set_name("example_name".to_string());
         resource_record.set_name(name_server);
         answer.push(resource_record);
-
-
         let mut dns_query_message =
             DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
         dns_query_message.set_answer(answer);
         let nszone_mut = NSZone::from_axfr_msg(dns_query_message);
         let new_name = nszone_mut.get_name();
         assert_eq!(new_name,"example_name".to_string())
-
-
     }
     
 
@@ -327,7 +323,7 @@ mod zone_test {
     #[test]
     //TODO revisar práctica 1
     #[should_panic]
-    fn set_class_str_test(){
+    fn set_class_str(){
         let mut nszone = NSZone::new();
         nszone.set_class_str("asjkh".to_string());   
     }

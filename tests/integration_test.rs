@@ -1,7 +1,6 @@
-use std::{fs, thread, collections::HashMap, time, sync::mpsc};
+use std::{fs, thread, sync::mpsc};
 
-use dns_rust::{client, resolver::{self, Resolver}, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::{zone::NSZone, master_file::MasterFile}};
-
+use dns_rust::{client, resolver::Resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::master_file::MasterFile};
 
 /// Gets a Vec of host names from a external file
 fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
@@ -33,6 +32,7 @@ fn validate_rfc_master_files() {
 
 /// Robustness test
 #[test]
+#[allow(unused_variables)]
 fn test_500000_cl_domains() {
     let (add_sender_udp, add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, delete_recv_udp) = mpsc::channel();

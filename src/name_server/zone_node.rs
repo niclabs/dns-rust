@@ -27,13 +27,13 @@ impl NSNode {
     ///Returns bolean depending if the node has a children with the same name given
     pub fn exist_child(&self, name: String) -> bool {
         // case insensitive
-        let childrens= self.get_children();
+        let childrens = self.get_children();
         let lower_case_name = name.to_ascii_lowercase();
 
         for child in childrens {
             println!("Child name: {}", child.get_name());
             let lower_case_child = child.get_name().to_ascii_lowercase();
-            if lower_case_child == lower_case_name{
+            if lower_case_child == lower_case_name {
                 return true;
             }
         }
@@ -42,7 +42,7 @@ impl NSNode {
     }
 
     ///looks if exist a children with the name given.
-    /// If exist returns a tuple with the node and the index where is found in the vec 
+    /// If exist returns a tuple with the node and the index where is found in the vec
     pub fn get_child(&self, name: String) -> (NSNode, i32) {
         // case insensitive
         let children = self.get_children();
@@ -65,20 +65,23 @@ impl NSNode {
 
     ///Creates all the nodes - if they are not creted yet - within a host name and add as values
     /// the vec of RR of the final node of the label
-     pub fn add_node(&mut self, host_name: String, rrs: Vec<ResourceRecord>) -> Result<(), &'static str> {
+    pub fn add_node(
+        &mut self,
+        host_name: String,
+        rrs: Vec<ResourceRecord>,
+    ) -> Result<(), &'static str> {
         let mut children = self.get_children();
 
         let mut host_name = host_name;
 
-        if host_name.ends_with("."){
+        if host_name.ends_with(".") {
             host_name.pop();
         }
 
-        // null label is reserved for the root. Children cannot have it. 
+        // null label is reserved for the root. Children cannot have it.
         if host_name.len() == 0 {
-           return Err("Error: Child cannot have null label, reserved for root only.");
-        }
-        else {
+            return Err("Error: Child cannot have null label, reserved for root only.");
+        } else {
             let mut labels: Vec<&str> = host_name.split(".").collect();
             // Check if the total number of octets is 255 or less
             if host_name.len() - labels.len() + 1 <= 255 {
@@ -146,7 +149,7 @@ impl NSNode {
                     self.set_children(children);
                 }
             }
-            return Ok(()); 
+            return Ok(());
         }
     }
 
@@ -183,7 +186,6 @@ impl NSNode {
 
         return rr_by_type;
     }
-
 
     ///Returns all the RR within a node  
     pub fn get_all_rrs(&self) -> Vec<ResourceRecord> {
@@ -326,7 +328,6 @@ mod zone_node_test {
         assert_eq!(nsnode.get_children().len(), 1);
     }
 
-
     //TODO: Revisar Práctica 1
     #[test]
     fn set_duplicate_children_test() {
@@ -347,12 +348,9 @@ mod zone_node_test {
         nsnode.set_children(children);
         assert_eq!(nsnode.get_children().len(), 2);
         let child1_name = nsnode.get_children()[1].get_name();
-        assert_eq!(
-            child1_name,
-            String::from("TEST1") 
-        );
+        assert_eq!(child1_name, String::from("TEST1"));
         assert_eq!(nsnode.get_children()[0].get_name(), String::from("test2"));
-        assert_eq!(nsnode.exist_child(String::from("test1")), true); //child still can be searched in lowercase      
+        assert_eq!(nsnode.exist_child(String::from("test1")), true); //child still can be searched in lowercase
     }
 
     #[test]
@@ -375,22 +373,19 @@ mod zone_node_test {
     fn get_child_test() {
         //creates nodes
         let mut node = NSNode::new();
-        let mut ns_node1= NSNode::new();
+        let mut ns_node1 = NSNode::new();
         let mut ns_node2 = NSNode::new();
         ns_node1.set_name(String::from("test.com"));
         ns_node2.set_name(String::from("other.test.com"));
 
-        //create vec children  
+        //create vec children
         let mut children: Vec<NSNode> = Vec::new();
         children.push(ns_node1);
         children.push(ns_node2);
         node.set_children(children);
 
         assert_eq!(
-            node
-                .get_child(String::from("OTher.test.com"))
-                .0
-                .get_name(),
+            node.get_child(String::from("OTher.test.com")).0.get_name(),
             String::from("other.test.com")
         );
         assert_eq!(node.get_child(String::from("other.test.com")).1, 1);
@@ -403,7 +398,7 @@ mod zone_node_test {
     }
 
     #[test]
-    fn add_node_test(){       
+    fn add_node_test() {
         //creeate node
         let mut nsnode = NSNode::new();
         nsnode.set_name(String::from(""));
@@ -412,11 +407,13 @@ mod zone_node_test {
         let children: Vec<NSNode> = Vec::new();
         nsnode.set_children(children);
 
-
         assert_eq!(nsnode.add_node(String::from("mil"), value.clone()), Ok(()));
         assert_eq!(nsnode.add_node(String::from("edu"), value.clone()), Ok(()));
 
-        assert_eq!(nsnode.add_node(String::from(""), value.clone()), Err("Error: Child cannot have null label, reserved for root only."));
+        assert_eq!(
+            nsnode.add_node(String::from(""), value.clone()),
+            Err("Error: Child cannot have null label, reserved for root only.")
+        );
 
         assert_eq!(nsnode.get_children().len(), 2);
         //ToDo: Revisar Práctica 1
@@ -426,7 +423,7 @@ mod zone_node_test {
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn add_node_test_wrong_domain(){
+    fn add_node_test_wrong_domain() {
         let mut nsnode = NSNode::new();
         let mut value = Vec::<ResourceRecord>::new();
         let children = Vec::<NSNode>::new();
@@ -442,7 +439,8 @@ mod zone_node_test {
         assert_eq!(res1, Ok(()));
         assert_eq!(res2, 0); //There must be no children
 
-        let large_but_not_too_much = String::from("this-is-a-extremely-large-label-that-have-exactly--64-characters");
+        let large_but_not_too_much =
+            String::from("this-is-a-extremely-large-label-that-have-exactly--64-characters");
 
         let res3 = nsnode.add_node(large_but_not_too_much, value.clone());
         let res4 = nsnode.get_children().len();
@@ -452,7 +450,7 @@ mod zone_node_test {
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn add_node_test_recursive(){
+    fn add_node_test_recursive() {
         let mut nsnode = NSNode::new();
         let mut value = Vec::<ResourceRecord>::new();
         let children = Vec::<NSNode>::new();
@@ -470,7 +468,7 @@ mod zone_node_test {
 
         let child = nsnode.get_children()[0].clone(); //child with the name of edu
         assert_eq!(child.get_name(), String::from("edu"));
-        
+
         let child2 = child.get_children()[0].clone(); //child with the name of example
         assert_eq!(child2.get_name(), String::from("example"));
 
@@ -500,7 +498,6 @@ mod zone_node_test {
 
     #[test]
     fn get_rrs_by_type_test() {
-
         let mut nsnode = NSNode::new();
         let mut value: Vec<ResourceRecord> = Vec::new();
 
@@ -520,7 +517,7 @@ mod zone_node_test {
         value.push(rr1);
         value.push(rr2);
         value.push(rr3);
-        
+
         let res1 = nsnode.get_rrs_by_type(1);
         let res2 = nsnode.get_rrs_by_type(2);
         assert_eq!(res1.len(), 0);
@@ -542,7 +539,6 @@ mod zone_node_test {
         let mut nsnode = NSNode::new();
         let mut value: Vec<ResourceRecord> = Vec::new();
 
-        
         let ns_rdata1 = Rdata::SomeNsRdata(NsRdata::new());
         let mut rr1 = ResourceRecord::new(ns_rdata1);
         rr1.set_type_code(2);
@@ -570,10 +566,8 @@ mod zone_node_test {
 
         let res2 = nsnode.get_all_rrs()[1].get_type_code();
         assert_eq!(res2, 2);
-        
+
         let res3 = nsnode.get_all_rrs()[2].get_type_code();
         assert_eq!(res3, 1);
-
     }
-    
 }

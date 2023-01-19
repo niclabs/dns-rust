@@ -609,6 +609,8 @@ mod message_test {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
+    use crate::name_server::zone::NSZone;
+    use crate::message::rdata::soa_rdata::SoaRdata;
 
     #[test]
     fn constructor_test() {
@@ -705,23 +707,24 @@ mod message_test {
         assert_eq!(dns_query_message.get_additional().len(), 1);
     }
 
-    /*#[test]
-    fn from_bytes_test() {
-        /*let bytes: [u8; 50] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4,
-            116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0,
-            16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
-        ];*/
-
-        /*let bytes: [u8; 50] = [
+    //ToDo: Revisar Pŕactica 1
+    #[test]
+    fn from_bytes_test() {      
+        /*let bytes: [u8; 50] = [ //format error with this one 
             0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
             0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
             0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
-        ];*/
+        ];
+        */
+        let bytes: [u8; 50] = [ //test passes with this one
+            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4,
+            116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0,
+            16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
 
         let dns_message = DnsMessage::from_bytes(&bytes).unwrap();
 
-        /*let header = dns_message.get_header();
+        let header = dns_message.get_header();
         let question = dns_message.get_question();
         let answer = dns_message.get_answer();
         let authority = dns_message.get_authority();
@@ -760,8 +763,8 @@ mod message_test {
         assert_eq!(authority.len(), 0);
 
         // Additional
-        assert_eq!(additional.len(), 0);*/
-    }*/
+        assert_eq!(additional.len(), 0);
+    }
 
     #[test]
     fn to_bytes_test() {
@@ -824,7 +827,40 @@ mod message_test {
     //ToDo: Revisar Práctica 1
     #[test]
     fn soa_rr_query_msg_test(){
+        let mut ns_zone = NSZone::new();
+      
+        let origin = String::from("example.com");
+        ns_zone.set_name(origin);
+        ns_zone.set_ip_address_for_refresh_zone(String::from("200.89.76.36"));
         
+        let mut value = Vec::<ResourceRecord>::new();
+
+        let  mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        mname_domain_name.set_name(String::from("ns.primaryserver.com"));
+        let mut rname_domain_name = DomainName::new();
+        rname_domain_name.set_name(String::from("admin.example.com"));
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {val.set_mname(mname_domain_name);
+                                                val.set_rname(rname_domain_name);
+                                                val.set_serial(1111111111 as u32)},
+            _ => unreachable!(),
+        }
+        
+        let resource_record = ResourceRecord::new(soa_rdata);
+        //zone from the constructor test in zone_refresh.rs
+        value.push(resource_record);
+        let mut top_node = ns_zone.get_zone_nodes(); 
+        top_node.set_value(value);
+        ns_zone.set_zone_nodes(top_node);
+
+        let dns_message = DnsMessage::soa_rr_query_msg(ns_zone);
+
+        assert_eq!(dns_message.get_question().get_qname().get_name(), String::from("example.com"));
+        assert_eq!(dns_message.get_question().get_qtype(), 6);
+        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(dns_message.get_header().get_op_code(), 0);
+        assert_eq!(dns_message.get_header().get_rd(), false);
     }
 
     //ToDo: Revisar Práctica 1
@@ -855,4 +891,131 @@ mod message_test {
         let res2 = dns_query_message.get_answer().len();
         assert_eq!(res2, 1);
     }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn format_error_msg_test(){
+        let msg = DnsMessage::format_error_msg();
+
+        let header = msg.get_header();
+        //only two things are set in this fn
+        assert_eq!(header.get_rcode(), 1);
+        assert_eq!(header.get_qr(), true); 
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn axfr_query_message_test(){
+        let dns_message = DnsMessage::axfr_query_message(String::from("example.com"));
+
+        assert_eq!(dns_message.get_question().get_qname().get_name(), String::from("example.com"));
+        assert_eq!(dns_message.get_question().get_qtype(), 252);
+        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(dns_message.get_header().get_op_code(), 0);
+        assert_eq!(dns_message.get_header().get_rd(), false);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn not_implemented_msg_test(){
+        let msg = DnsMessage::not_implemented_msg();
+
+        let header = msg.get_header();
+
+        assert_eq!(header.get_rcode(), 4);
+        assert_eq!(header.get_qr(), true);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn data_not_found_error_msg_test(){
+        let msg = DnsMessage::data_not_found_error_msg();
+
+        let header = msg.get_header();
+
+        assert_eq!(header.get_aa(), true);
+        assert_eq!(header.get_qr(), true);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn update_header_counters_test(){
+        let mut dns_query_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+
+        assert_eq!(dns_query_message.get_header().get_ancount(), 0);
+        assert_eq!(dns_query_message.get_header().get_nscount(), 0);
+        assert_eq!(dns_query_message.get_header().get_arcount(), 0);
+
+        let mut new_answer = Vec::<ResourceRecord>::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        new_answer.push(rr);
+
+        let a_rdata1 = Rdata::SomeARdata(ARdata::new());
+        let rr1 = ResourceRecord::new(a_rdata1);
+        new_answer.push(rr1);
+
+        let a_rdata2 = Rdata::SomeARdata(ARdata::new());
+        let rr2 = ResourceRecord::new(a_rdata2);
+        new_answer.push(rr2);
+        dns_query_message.set_answer(new_answer);
+
+        let mut new_authority = Vec::<ResourceRecord>::new();
+        let a_rdata3 = Rdata::SomeARdata(ARdata::new());
+        let rr3 = ResourceRecord::new(a_rdata3);
+        new_authority.push(rr3);
+
+        let a_rdata4 = Rdata::SomeARdata(ARdata::new());
+        let rr4 = ResourceRecord::new(a_rdata4);
+        new_authority.push(rr4);
+        dns_query_message.set_authority(new_authority);
+
+        let mut new_additional = Vec::<ResourceRecord>::new();
+        let a_rdata5 = Rdata::SomeARdata(ARdata::new());
+        let rr5 = ResourceRecord::new(a_rdata5);
+        new_additional.push(rr5);
+        dns_query_message.set_additional(new_additional);
+
+        dns_query_message.update_header_counters();
+        dns_query_message.print_dns_message();
+
+        assert_eq!(dns_query_message.get_header().get_ancount(), 3);
+        assert_eq!(dns_query_message.get_header().get_nscount(), 2);
+        assert_eq!(dns_query_message.get_header().get_arcount(), 1);
+
+    }
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_authorities_test(){
+        let mut dns_query_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+
+        let mut new_authority = Vec::<ResourceRecord>::new();
+        let a_rdata3 = Rdata::SomeARdata(ARdata::new());
+        let rr3 = ResourceRecord::new(a_rdata3);
+        new_authority.push(rr3);
+
+        assert_eq!(dns_query_message.get_answer().len(), 0);
+
+        dns_query_message.add_authorities(new_authority);
+        //since the new authority is added to the answer lets check if something was added
+        assert_eq!(dns_query_message.get_answer().len(), 1);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_additionals_test(){
+        let mut dns_query_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+
+        let mut new_additional = Vec::<ResourceRecord>::new();
+        let a_rdata5 = Rdata::SomeARdata(ARdata::new());
+        let rr5 = ResourceRecord::new(a_rdata5);
+        new_additional.push(rr5);
+
+        assert_eq!(dns_query_message.get_answer().len(), 0);
+
+        dns_query_message.add_additionals(new_additional);
+        //since the new additional is added to the answer lets check if something was added
+        assert_eq!(dns_query_message.get_answer().len(), 1);
+    }
+
 }

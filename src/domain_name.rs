@@ -4,7 +4,7 @@ use std::fmt;
 //utils
 use crate::utils::check_label_name;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, Debug)]
 
 // DNS domain name represented as a sequence of labels, where each label consists of
 // a length octet followed by that number of octets.
@@ -159,7 +159,7 @@ impl DomainName {
         bytes
     }
 
-    pub fn from_master_file(mut name: String, host_name: String) -> Self {
+    pub fn from_master_file(name: String, host_name: String) -> Self {
         let end_dot = name.ends_with(".");
 
         // Absolute host name

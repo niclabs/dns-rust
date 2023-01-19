@@ -7,7 +7,7 @@ use super::master_file::MasterFile;
 use super::zone_node::NSNode;
 
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 /// Struct that represents a zone.
 pub struct NSZone {
     // Zone name
@@ -41,18 +41,19 @@ impl NSZone {
     ///Creates a zone base on the masterfile given 
     pub fn from_file(file_name: String, origin:String, ip_address_for_refresh_zone: String, validity_check: bool) -> Self {
         let master_file_parsed;
+        print!("checkpint1");
         master_file_parsed = MasterFile::from_file(file_name, origin,validity_check);
+        print!("checkpint1");
         let origin = master_file_parsed.get_origin();
         let mut rrs = master_file_parsed.get_rrs();
-
-
+        
         // Sets Zone info
         let mut ns_zone = NSZone::new();
         let top_node_name = master_file_parsed.get_top_host();
         ns_zone.set_name(top_node_name.clone());
         ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
         ns_zone.set_class_str(master_file_parsed.get_class_default());
-
+        
         // Sets top node info
         let mut top_node = NSNode::new();
         top_node.set_name(top_node_name.clone());
@@ -74,7 +75,6 @@ impl NSZone {
     pub fn from_axfr_msg(msg: DnsMessage) -> Self {
         let answers = msg.get_answer();
         let mut new_zone = NSZone::new();
-
         let soa_rr = answers[0].clone();
         let zone_name = soa_rr.get_name().get_name();
 
@@ -141,7 +141,7 @@ impl NSZone {
             "IN" => 1,
             "CH" => 3,
             "HS" => 4,
-            _ => unreachable!(),
+            _ => unreachable!("invalid string"),
         };
 
         self.set_class(class);
@@ -198,31 +198,149 @@ mod zone_test {
     use crate::name_server::zone::NSZone;    
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-
-    // TODO: constructor test
-
-    /*
-    #[test]
-    fn from_file_test(){
-    }
-    */
-
-    /*
-    #[test]
-    fn from_axfr_msg_test()
-    */
+    use crate::name_server::zone_node::NSNode;
+    use crate::message::DnsMessage;
 
     #[test]
-    fn set_and_get_glue_rr_test() {
+    //TODO revisar práctica 1
+    fn constructor() { 
         let mut nszone = NSZone::new();
+        let mut nsnode =NSNode::new();
+        nsnode.set_name("example.com".to_string());
+        nszone.set_zone_nodes(nsnode.clone());
+        assert_eq!(nszone.name, String::from(""));
+        assert_eq!(nszone.zone_nodes.get_name(), nsnode.clone().get_name());
+        assert_eq!(nszone.class, 1);
+        assert_eq!(nszone.active, true);
+        assert_eq!(nszone.glue_rrs.len(), 0);
+    }
 
+    #[test]
+    //TODO revisar práctica 1
+    fn get_and_set_name(){
+        let mut nszone = NSZone::new();
+        assert_eq!(nszone.get_name(), String::from(""));
+        let new_name=String::from("test.com");
+        nszone.set_name(new_name);
+        let expected = String::from("test.com");
+        assert_eq!(nszone.get_name(), expected );
+    }
+
+    #[test]
+    //TODO revisar práctica 1
+    fn get_and_set_ip_address_for_refresh_zone(){
+        let mut nszone = NSZone::new();
+        assert_eq!(nszone.get_name(), String::from(""));
+        let new_ip=String::from("193.000.233.12");
+        nszone.set_ip_address_for_refresh_zone(new_ip);
+        let expected =String::from("193.000.233.12");
+        assert_eq!(nszone.get_ip_address_for_refresh_zone(), expected);
+    }
+
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_zone_nodes(){
+        let mut nszone = NSZone::new();
+        let mut nsnode =NSNode::new();
+        let node_name ="example.com".to_string();
+        nsnode.set_name(node_name);
+        nszone.set_zone_nodes(nsnode.clone());
+        assert_eq!(nszone.name, String::from(""));
+        let expected ="example.com".to_string();
+        assert_eq!(nszone.zone_nodes.get_name(), expected);
+    }
+
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_class(){
+        let mut nszone = NSZone::new();
+        nszone.set_class(1);
+        assert_eq!(nszone.get_class(), 1);
+        nszone.set_class(3);
+        assert_eq!(nszone.get_class(), 3);
+    }
+
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_active(){
+        let mut nszone = NSZone::new();
+        nszone.set_active(false);
+        assert_eq!(nszone.get_active(), false);
+        nszone.set_active(true);
+        assert_eq!(nszone.get_active(), true);   
+    }
+  
+    #[test]
+    //TODO revisar práctica 1
+    fn from_file(){
+        let file_name ="test.txt".to_string();
+        let origin ="example".to_string();
+        let ip ="192.80.24.11".to_string();
+        let nszone_mut = NSZone::from_file(file_name,origin,ip,true );
+        let name= nszone_mut.get_name();
+        let class= nszone_mut.get_class();
+        let ip= nszone_mut.get_ip_address_for_refresh_zone();
+        let expected_name="uchile.cl.".to_string();
+        assert_eq!(expected_name, name);
+        assert_eq!(1,class);
+        let expected_ip ="192.80.24.11".to_string();
+        assert_eq!(expected_ip,ip);
+
+    }
+ 
+    #[test]
+    //TODO revisar práctica 1
+    fn from_axfr_msg(){
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record = ResourceRecord::new(a_rdata);
+        let mut name_server= resource_record.get_name();
+        name_server.set_name("example_name".to_string());
+        resource_record.set_name(name_server);
+        answer.push(resource_record);
+        let qname ="test.com".to_string();
+        let mut dns_query_message =
+            DnsMessage::new_query_message(qname, 1, 1, 0, false, 1);
+        dns_query_message.set_answer(answer);
+        let nszone_mut = NSZone::from_axfr_msg(dns_query_message);
+        let new_name = nszone_mut.get_name();
+        let expected_name ="example_name".to_string();
+        assert_eq!(new_name,expected_name);
+    }
+    
+
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_glue_rr() {
+        let mut nszone = NSZone::new();
         let mut glue: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         glue.push(resource_record);
-
         assert_eq!(nszone.get_glue_rrs().len(), 0);
         nszone.set_glue_rrs(glue);
         assert_eq!(nszone.get_glue_rrs().len(), 1);
     }
+    #[test]
+    //TODO revisar práctica 1
+    fn set_class_str_fail(){
+        let mut nszone = NSZone::new();
+        nszone.set_class_str("IN".to_string()); 
+        assert_eq!(nszone.get_class(), 1);
+        nszone.set_class_str("CH".to_string()); 
+        assert_eq!(nszone.get_class(), 3);
+        nszone.set_class_str("HS".to_string()); 
+        assert_eq!(nszone.get_class(), 4);  
+    }
+
+    #[test]
+    //TODO revisar práctica 1
+    #[should_panic]
+    fn set_class_str(){
+        let mut nszone = NSZone::new();
+        let wrong_class= "asjkh".to_string();
+        nszone.set_class_str(wrong_class);   
+    }
+
+    
 }

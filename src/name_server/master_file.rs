@@ -53,10 +53,11 @@ impl MasterFile {
     Set validation to true if checking validity syntax of the master file is desired.
     */
     pub fn from_file(filename: String, origin:String,validation: bool) -> Self {
-
+        print!("checkpint1");
         let file = File::open(filename).expect("file not found!");
+        print!("checkpint1");
         let reader = BufReader::new(file);
-        
+        print!("checkpint1");
         //save origin with . at end
         let mut origin = origin;
         if origin.ends_with(".") == false{
@@ -671,10 +672,6 @@ impl MasterFile {
         let top_host_labels: Vec<&str> = top_host.split(".").collect();
         let top_host_labels_num = top_host_labels.len();
 
-        let top_host_labels: Vec<&str> = top_host.split(".").collect();
-        let top_host_labels_num = top_host_labels.len();
-
-
         for rr_host in rrs.iter(){
             // println!("-----> {}",rr_host.0);
             let name_rr = rr_host.0 ;
@@ -854,7 +851,7 @@ impl MasterFile {
 #[cfg(test)]
 mod master_file_test {
     use super::MasterFile;
-    use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}};
+    //use crate::message::{rdata::{a_rdata::ARdata, cname_rdata::CnameRdata, Rdata, ns_rdata::NsRdata}};
        
 
     #[test]

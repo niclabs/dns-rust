@@ -5,7 +5,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::string::String;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 // An struct that represents the rdata for hinfo type
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 // |                  CPU                          |

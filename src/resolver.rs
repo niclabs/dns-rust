@@ -468,7 +468,8 @@ impl Resolver {
 
                             new_dns_msg.set_header(header);
 
-                            tx_query_delete_clone.send(resolver_query.clone());
+                            tx_query_delete_clone.send(resolver_query.clone())
+                                                 .expect("Couldn't send the resolver query through the channel");
 
                             Resolver::send_answer_by_udp(
                                 new_dns_msg,
@@ -477,7 +478,8 @@ impl Resolver {
                             );
                         },
                         (None, Some(msg)) => {
-                            tx_query_delete_clone.send(resolver_query.clone());
+                            tx_query_delete_clone.send(resolver_query.clone())
+                                                 .expect("Couldn't send the resolver query through the channel");
                             Resolver::send_answer_by_udp(
                                 msg,
                                 src_address.clone().to_string(),
@@ -529,25 +531,25 @@ impl Resolver {
                             resolver_query.get_last_query_hostname(),
                             src_address_copy.clone(),
                             response_time,
-                        ));
+                        )).expect("Couldn't send request using UDP to update cache to resolver");
 
                         tx_update_cache_tcp_copy.send((
                             resolver_query.get_last_query_hostname(),
                             src_address_copy.clone(),
                             response_time,
-                        ));
+                        )).expect("Couldn't send request using TCP to update cache to resolver");
 
                         tx_update_cache_ns_udp_copy.send((
                             resolver_query.get_last_query_hostname(),
                             src_address_copy.clone(),
                             response_time,
-                        ));
+                        )).expect("Couldn't send request using UDP to update cache to name server");
 
                         tx_update_cache_ns_tcp_copy.send((
                             resolver_query.get_last_query_hostname(),
                             src_address_copy.clone(),
                             response_time,
-                        ));
+                        )).expect("Couldn't send request using TCP to update cache to name server");
                         //
 
                         resolver_query.set_cache(resolver.get_cache());
@@ -578,7 +580,8 @@ impl Resolver {
                                     header.set_arcount(additional.len() as u16);
                                     msg.set_header(header);
 
-                                    tx_query_delete_clone.send(resolver_query.clone());
+                                    tx_query_delete_clone.send(resolver_query.clone())
+                                                         .expect("Couldn't send the resolver query through the channel");
 
                                     Resolver::send_answer_by_udp(
                                         msg,
@@ -653,9 +656,12 @@ impl Resolver {
 
                                             resolver_query_to_update
                                                 .get_tx_update_self_slist()
-                                                .send(slist_to_update);
-                                            tx_query_update_clone.send(resolver_query_to_update);
-                                            tx_query_delete_clone.send(resolver_query.clone());
+                                                .send(slist_to_update)
+                                                .expect("Couldn't send the slist to update through the channel");
+                                            tx_query_update_clone.send(resolver_query_to_update)
+                                                                 .expect("Couldn't send the resolver query through the channel");
+                                            tx_query_delete_clone.send(resolver_query.clone())
+                                                                 .expect("Couldn't send the resolver query through the channel");
                                         }
                                         None => {}
                                     }
@@ -1095,7 +1101,8 @@ impl Resolver {
 
         let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
 
-        stream.write(&full_msg);
+        stream.write(&full_msg)
+              .expect("Couldn't write the message");
     }
 }
 
@@ -1204,6 +1211,7 @@ impl Resolver {
         self.ns_data = ns_data;
     }
 }
+
 #[cfg(test)]
 mod resolver_test {
     use crate::dns_cache::DnsCache;

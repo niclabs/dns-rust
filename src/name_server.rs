@@ -8,7 +8,7 @@ use crate::name_server::zone_node::NSNode;
 use crate::name_server::zone_refresh::ZoneRefresh;
 use crate::resolver::Resolver;
 
-use chrono::{Utc};
+use chrono::Utc;
 use rand::{thread_rng, Rng};
 use std::cmp;
 use std::collections::HashMap;
@@ -23,9 +23,9 @@ use std::thread;
 use std::time::Duration;
 
 pub mod master_file;
+pub mod zone;
 pub mod zone_node;
 pub mod zone_refresh;
-pub mod zone;
 
 #[derive(Clone)]
 /// Structs that represents a name server
@@ -223,10 +223,12 @@ impl NameServer {
                 let zone_name = zone.get_name();
                 let zone_class = zone.get_class();
 
-                tx_update_zone_udp_resolver.send(zone.clone())
-                                           .expect("Couldn't update resolver zone using UDP");
-                tx_update_zone_tcp_resolver.send(zone.clone())
-                                           .expect("Couldn't update resolver zone using TCP");
+                tx_update_zone_udp_resolver
+                    .send(zone.clone())
+                    .expect("Couldn't update resolver zone using UDP");
+                tx_update_zone_tcp_resolver
+                    .send(zone.clone())
+                    .expect("Couldn't update resolver zone using TCP");
 
                 refresh_zones.insert(zone_name.clone(), updated_refresh_zone);
 
@@ -323,7 +325,9 @@ impl NameServer {
 
                                 socket
                                     .send_to(&msg_to_bytes, zone.get_ip_address_for_refresh_zone())
-                                    .expect("Couldn't send the message to the resresh zone using UDP");
+                                    .expect(
+                                        "Couldn't send the message to the resresh zone using UDP",
+                                    );
 
                                 val.set_timestamp(now_timestamp);
                             }
@@ -890,8 +894,7 @@ impl NameServer {
 
                         // If is an inverse query
                         if op_code == 1 {
-                            let not_implemented_msg =
-                                DnsMessage::not_implemented_msg();
+                            let not_implemented_msg = DnsMessage::not_implemented_msg();
 
                             NameServer::send_response_by_tcp(
                                 not_implemented_msg,
@@ -1027,12 +1030,12 @@ impl NameServer {
 
                                     val.set_zone(zone);
 
-                                    tx_update_refresh_zone_udp
-                                        .send(val.clone())
-                                        .expect("Couldn't send the new refresh zone using UDP to resolver");
-                                    tx_update_refresh_zone_tcp
-                                        .send(val.clone())
-                                        .expect("Couldn't send the new refresh zone using TCP to resolver");
+                                    tx_update_refresh_zone_udp.send(val.clone()).expect(
+                                        "Couldn't send the new refresh zone using UDP to resolver",
+                                    );
+                                    tx_update_refresh_zone_tcp.send(val.clone()).expect(
+                                        "Couldn't send the new refresh zone using TCP to resolver",
+                                    );
                                 }
                             } else {
                                 let last_timestamp = val.get_timestamp();
@@ -1144,9 +1147,9 @@ impl NameServer {
                                                             ]
                                                             .concat();
 
-                                                            stream
-                                                                .write(&full_msg)
-                                                                .expect("Couldn't write the message");
+                                                            stream.write(&full_msg).expect(
+                                                                "Couldn't write the message",
+                                                            );
                                                             //
 
                                                             // Receive response from name server and parse the msg
@@ -1181,7 +1184,9 @@ impl NameServer {
                                                                 );
 
                                                                 // Update refresh zone with new soa values in tcp and udp name servers
-                                                                val_copy.update_zone_refresh(update_zone);
+                                                                val_copy.update_zone_refresh(
+                                                                    update_zone,
+                                                                );
 
                                                                 tx_update_refresh_zone_udp_copy
                                                                     .send(val_copy.clone())
@@ -1317,9 +1322,9 @@ impl NameServer {
                                                             ]
                                                             .concat();
 
-                                                            stream
-                                                                .write(&full_msg)
-                                                                .expect("Couldn't write the message");
+                                                            stream.write(&full_msg).expect(
+                                                                "Couldn't write the message",
+                                                            );
                                                             //
 
                                                             // Receive response from name server and parse the msg
@@ -1354,7 +1359,9 @@ impl NameServer {
                                                                 );
 
                                                                 // Update refresh zone with new soa values in tcp and udp name servers
-                                                                val_copy.update_zone_refresh(update_zone);
+                                                                val_copy.update_zone_refresh(
+                                                                    update_zone,
+                                                                );
 
                                                                 tx_update_refresh_zone_udp_copy
                                                                     .send(val_copy.clone())
@@ -1434,7 +1441,6 @@ impl NameServer {
             } else {
                 qname = String::from(".");
                 return NameServer::search_nearest_ancestor_zone(zones, qname, qclass);
-
             }
         }
     }
@@ -1560,7 +1566,7 @@ impl NameServer {
     }
 
     /// Step 2 RFC 1034
-    /// Search the available zones for the zone which is the nearest 
+    /// Search the available zones for the zone which is the nearest
     /// ancestor to QNAME.  If such a zone is found, go to step 3,
     /// otherwise step 4.
     pub fn step_2(
@@ -1793,7 +1799,6 @@ impl NameServer {
                 _ => unreachable!(),
             };
 
-            
             let rrs = cache.get(name_ns.clone(), "A".to_string());
 
             //If there are RR A in cache with the referral host name
@@ -1809,7 +1814,7 @@ impl NameServer {
                         let new_ns_name = name_ns[..index - 1].to_string();
                         let _labels: Vec<&str> = new_ns_name.split(".").collect();
                         let mut a_glue_rrs;
-            
+
                         // Gets the rrs from the zone
                         let glue_rrs = subzone_node.clone().get_value();
 
@@ -1836,7 +1841,6 @@ impl NameServer {
         );
     }
 
-    
     /// RFC 1034 - Step 3c:
     /// If at some label, a match is impossible (i.e., the
     /// corresponding label does not exist), look to see if a
@@ -1873,23 +1877,22 @@ impl NameServer {
 
             msg.set_header(header);
             return NameServer::step_6(msg, cache, zones_by_class);
-        } 
-        
-        else { // * label does not exists
+        } else {
+            // * label does not exists
             let mut header = msg.get_header();
             let rr = current_node.get_value()[0].clone();
-            let qname = msg.get_question().get_qname(); 
-        
-            let canonical_name = match rr.get_rdata() {
-                    Rdata::SomeCnameRdata(val) => val.get_cname(),
-                    _ => unreachable!(),
-                };
+            let qname = msg.get_question().get_qname();
 
-            if qname.get_name() != canonical_name.get_name(){
+            let canonical_name = match rr.get_rdata() {
+                Rdata::SomeCnameRdata(val) => val.get_cname(),
+                _ => unreachable!(),
+            };
+
+            if qname.get_name() != canonical_name.get_name() {
                 header.set_rcode(3);
                 if msg.get_answer().len() == 0 {
                     header.set_aa(true);
-                } 
+                }
             }
 
             msg.set_header(header);
@@ -2013,7 +2016,6 @@ impl NameServer {
         mut msg: DnsMessage,
         mut cache: DnsCache,
         zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
-
     ) -> DnsMessage {
         let answers = msg.get_answer();
         let mut additional = msg.get_additional();
@@ -2030,17 +2032,16 @@ impl NameServer {
                         Rdata::SomeMxRdata(val) => val.get_exchange().get_name(),
                         _ => unreachable!(),
                     };
-                    
-                    //If answer found is authoritative 
-                    //add in additional RR type A of top node of the zone 
+
+                    //If answer found is authoritative
+                    //add in additional RR type A of top node of the zone
                     if aa == true {
                         let (zone, _available) = NameServer::search_nearest_ancestor_zone(
                             zones_by_class.clone(),
                             exchange,
                             qclass.clone(),
                         );
-                        
-                        
+
                         let mut rrs = zone.get_zone_nodes().get_rrs_by_type(1);
                         additional.append(&mut rrs);
                     } else {
@@ -2064,7 +2065,7 @@ impl NameServer {
                         name_ns.clone(),
                         qclass.clone(),
                     );
-                    
+
                     //if zone is a redirection we add rr glue in additional
                     if zone.get_zone_nodes().get_subzone() == true {
                         let glue_rrs = zone.get_glue_rrs();
@@ -2073,9 +2074,7 @@ impl NameServer {
                             NameServer::look_for_type_records(name_ns, glue_rrs, 1);
 
                         additional.append(&mut a_glue_rrs);
-                    } 
-                    
-                    else {
+                    } else {
                         let rrs = cache.get(name_ns, "A".to_string());
 
                         for rr in rrs {
@@ -2121,8 +2120,9 @@ impl NameServer {
             .expect("Couldn't send the information through the channel");
 
         // Send request to resolver
-        socket.send_to(&msg.to_bytes(), resolver_ip_and_port)
-              .expect("Couldn't send request to resolver");
+        socket
+            .send_to(&msg.to_bytes(), resolver_ip_and_port)
+            .expect("Couldn't send request to resolver");
     }
 
     // Sends the response to the address by udp
@@ -2210,7 +2210,6 @@ impl NameServer {
         cache: DnsCache,
         zones: HashMap<u16, HashMap<String, NSZone>>,
     ) -> DnsMessage {
-
         let mut rng = thread_rng();
         let new_id: u16 = rng.gen();
 
@@ -2228,9 +2227,7 @@ impl NameServer {
 
         // Send query to local resolver
         let mut stream = TcpStream::connect(resolver_ip_and_port).unwrap();
-        stream
-            .write(&full_msg)
-            .expect("Couldn't write the message");
+        stream.write(&full_msg).expect("Couldn't write the message");
 
         let received_msg = Resolver::receive_tcp_msg(stream).unwrap();
 
@@ -2256,9 +2253,7 @@ impl NameServer {
         let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
 
-        stream
-            .write(&full_msg)
-            .expect("Couldn't write the message");
+        stream.write(&full_msg).expect("Couldn't write the message");
     }
 
     //
@@ -2317,7 +2312,7 @@ impl NameServer {
         }
 
         msg.set_answer(answers);
-    
+
         msg.set_header(header);
 
         NameServer::send_response_by_tcp(msg, address, stream);
@@ -2354,9 +2349,14 @@ impl NameServer {
         msg
     }
 
-    
-    pub fn add_zone_from_master_file(&mut self, file_name: String,origin :String ,ip_address_for_refresh: String, validity_check: bool) {
-        let new_zone = NSZone::from_file(file_name,origin, ip_address_for_refresh, validity_check);
+    pub fn add_zone_from_master_file(
+        &mut self,
+        file_name: String,
+        origin: String,
+        ip_address_for_refresh: String,
+        validity_check: bool,
+    ) {
+        let new_zone = NSZone::from_file(file_name, origin, ip_address_for_refresh, validity_check);
 
         let mut zones_by_class = self.get_zones_by_class();
         let zone_class = new_zone.get_class();
@@ -2379,14 +2379,18 @@ impl NameServer {
         tx_ns_udp: Sender<(String, ResourceRecord)>,
         tx_ns_tcp: Sender<(String, ResourceRecord)>,
     ) {
-        tx_resolver_udp.send((domain_name.clone(), resource_record.clone()))
-                 .expect("Couldn't send domain name and RR while removing from cache");
-        tx_resolver_tcp.send((domain_name.clone(), resource_record.clone()))
-                 .expect("Couldn't send domain name and RR while removing from cache");
-        tx_ns_udp.send((domain_name.clone(), resource_record.clone()))
-                 .expect("Couldn't send domain name and RR while removing from cache");
-        tx_ns_tcp.send((domain_name.clone(), resource_record.clone()))
-                 .expect("Couldn't send domain name and RR while removing from cache");        
+        tx_resolver_udp
+            .send((domain_name.clone(), resource_record.clone()))
+            .expect("Couldn't send domain name and RR while removing from cache");
+        tx_resolver_tcp
+            .send((domain_name.clone(), resource_record.clone()))
+            .expect("Couldn't send domain name and RR while removing from cache");
+        tx_ns_udp
+            .send((domain_name.clone(), resource_record.clone()))
+            .expect("Couldn't send domain name and RR while removing from cache");
+        tx_ns_tcp
+            .send((domain_name.clone(), resource_record.clone()))
+            .expect("Couldn't send domain name and RR while removing from cache");
     }
 }
 

@@ -1,14 +1,18 @@
-use std::{fs, thread, sync::mpsc};
+use std::{fs, sync::mpsc, thread};
 
-use dns_rust::{client, resolver::Resolver, config::RESOLVER_IP_PORT, config::{SBELT_ROOT_IPS, MASTER_FILES}, name_server::master_file::MasterFile};
+use dns_rust::{
+    client,
+    config::RESOLVER_IP_PORT,
+    config::{MASTER_FILES, SBELT_ROOT_IPS},
+    name_server::master_file::MasterFile,
+    resolver::Resolver,
+};
 
 /// Gets a Vec of host names from a external file
 fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
-        
     // Read file content
-    let contents = fs::read_to_string(path)
-    .expect("Should have been able to read the file"); 
-    
+    let contents = fs::read_to_string(path).expect("Should have been able to read the file");
+
     // Split file content
     let splitted_content: Vec<&str> = contents.lines().collect();
 
@@ -17,16 +21,20 @@ fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
     // Extract host names from file
     for host_name in splitted_content {
         host_names_vec.push(host_name.to_string())
-    } 
+    }
 
     // Return all host names from file
-    return host_names_vec
+    return host_names_vec;
 }
 
 #[test]
 fn validate_rfc_master_files() {
     for (master_file, master_file_origin) in MASTER_FILES {
-        let _validated_mf = MasterFile::from_file(master_file.to_string(),master_file_origin.to_string(), true);
+        let _validated_mf = MasterFile::from_file(
+            master_file.to_string(),
+            master_file_origin.to_string(),
+            true,
+        );
     }
 }
 
@@ -49,7 +57,7 @@ fn test_500000_cl_domains() {
     let (update_cache_sender_ns_tcp, rx_update_cache_ns_tcp) = mpsc::channel();
     let (update_zone_udp, rx_update_zone_udp) = mpsc::channel();
     let (update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
-    
+
     // Resolver Initialize
     let mut resolver = Resolver::new(
         add_sender_udp.clone(),
@@ -84,10 +92,11 @@ fn test_500000_cl_domains() {
     });
 
     // Get all host names from a file
-    let host_names_vec: Vec<String> =  get_host_names_from_zone_file("tests/test_files/test_domains_names.txt");    
-    for host_name in host_names_vec{
+    let host_names_vec: Vec<String> =
+        get_host_names_from_zone_file("tests/test_files/test_domains_names.txt");
+    for host_name in host_names_vec {
         println!("Domain name: {}", host_name);
-        let mut dnsmessage = client::create_client_query(host_name.as_str(), "TCP" , 1 , 1);
+        let mut dnsmessage = client::create_client_query(host_name.as_str(), "TCP", 1, 1);
         dnsmessage.print_dns_message()
     }
 }

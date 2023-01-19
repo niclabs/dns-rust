@@ -189,20 +189,28 @@ mod a_rdata_test {
     }
 
     #[test]
-    fn get_string_address_test(){
+    fn get_string_address_test() {
         let mut a_rdata = ARdata::new();
 
-        a_rdata.set_address([127, 0, 0, 1]); 
+        a_rdata.set_address([127, 0, 0, 1]);
 
         assert_eq!(a_rdata.get_string_address(), "127.0.0.1");
     }
 
     #[test]
     fn rr_from_master_file_test() {
-        let a_rr = ARdata::rr_from_master_file("204.13.100.3".split_whitespace(), 0, 0,"admin1.googleplex.edu".to_string());
-        
+        let a_rr = ARdata::rr_from_master_file(
+            "204.13.100.3".split_whitespace(),
+            0,
+            0,
+            "admin1.googleplex.edu".to_string(),
+        );
+
         assert_eq!(a_rr.get_class(), 0);
-        assert_eq!(a_rr.get_name().get_name(), String::from("admin1.googleplex.edu"));
+        assert_eq!(
+            a_rr.get_name().get_name(),
+            String::from("admin1.googleplex.edu")
+        );
         assert_eq!(a_rr.get_type_code(), 1);
         assert_eq!(a_rr.get_ttl(), 0);
         assert_eq!(a_rr.get_rdlength(), 4);

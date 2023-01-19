@@ -157,9 +157,9 @@ pub fn main() {
 
             for (master_file,master_file_origin) in MASTER_FILES {
                 name_server.add_zone_from_master_file(master_file.to_string(), master_file_origin.to_string() ,"".to_string(), CHECK_MASTER_FILES);
-            }
-
-            resolver.set_initial_configuration(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+            }   
+            
+            resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
             resolver.set_ns_data(name_server.get_zones_by_class());
             
             // Run Name server

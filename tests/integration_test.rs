@@ -49,26 +49,26 @@ fn test_500000_cl_domains() {
     let (update_zone_udp, rx_update_zone_udp) = mpsc::channel();
     let (update_zone_tcp, rx_update_zone_tcp) = mpsc::channel();
     
+    // Resolver Initialize
+    let mut resolver = Resolver::new(
+        add_sender_udp.clone(),
+        delete_sender_udp.clone(),
+        add_sender_tcp.clone(),
+        delete_sender_tcp.clone(),
+        add_sender_ns_udp.clone(),
+        delete_sender_ns_udp.clone(),
+        add_sender_ns_tcp.clone(),
+        delete_sender_ns_tcp.clone(),
+        update_cache_sender_udp.clone(),
+        update_cache_sender_tcp.clone(),
+        update_cache_sender_ns_udp.clone(),
+        update_cache_sender_ns_tcp.clone(),
+    );
+
+    resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
+
     // Run resolver.
     thread::spawn(move || {
-        // Resolver Initialize
-        let mut resolver = Resolver::new(
-            add_sender_udp.clone(),
-            delete_sender_udp.clone(),
-            add_sender_tcp.clone(),
-            delete_sender_tcp.clone(),
-            add_sender_ns_udp.clone(),
-            delete_sender_ns_udp.clone(),
-            add_sender_ns_tcp.clone(),
-            delete_sender_ns_tcp.clone(),
-            update_cache_sender_udp.clone(),
-            update_cache_sender_tcp.clone(),
-            update_cache_sender_ns_udp.clone(),
-            update_cache_sender_ns_tcp.clone(),
-        );
-
-        resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
-
         // Run Resolver
         resolver.run_resolver(
             add_recv_udp,

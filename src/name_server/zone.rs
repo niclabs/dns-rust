@@ -217,21 +217,24 @@ mod zone_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn get_and_set_name_test(){
+    fn get_and_set_name(){
         let mut nszone = NSZone::new();
         assert_eq!(nszone.get_name(), String::from(""));
-        let new_name=String::from("test.com")
-;        nszone.set_name(new_name);
-        assert_eq!(nszone.get_name(), String::from("test.com"));
+        let new_name=String::from("test.com");
+        nszone.set_name(new_name);
+        let expected = String::from("test.com");
+        assert_eq!(nszone.get_name(), expected );
     }
 
     #[test]
     //TODO revisar práctica 1
-    fn get_and_set_ip_address_for_refresh_zone_test(){
+    fn get_and_set_ip_address_for_refresh_zone(){
         let mut nszone = NSZone::new();
         assert_eq!(nszone.get_name(), String::from(""));
-        nszone.set_ip_address_for_refresh_zone(String::from("193.000.233.12"));
-        assert_eq!(nszone.get_ip_address_for_refresh_zone(), String::from("193.000.233.12"));
+        let new_ip=String::from("193.000.233.12");
+        nszone.set_ip_address_for_refresh_zone(new_ip);
+        let expected =String::from("193.000.233.12");
+        assert_eq!(nszone.get_ip_address_for_refresh_zone(), expected);
     }
 
     #[test]

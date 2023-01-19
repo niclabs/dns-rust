@@ -239,13 +239,15 @@ mod zone_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_zone_nodes_test(){
+    fn set_and_get_zone_nodes(){
         let mut nszone = NSZone::new();
         let mut nsnode =NSNode::new();
-        nsnode.set_name("example.com".to_string());
+        let node_name ="example.com".to_string();
+        nsnode.set_name(node_name);
         nszone.set_zone_nodes(nsnode.clone());
         assert_eq!(nszone.name, String::from(""));
-        assert_eq!(nszone.zone_nodes.get_name(), nsnode.clone().get_name());
+        let expected ="example.com".to_string();
+        assert_eq!(nszone.zone_nodes.get_name(), expected);
     }
 
     #[test]

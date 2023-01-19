@@ -338,7 +338,8 @@ mod zone_test {
     #[should_panic]
     fn set_class_str(){
         let mut nszone = NSZone::new();
-        nszone.set_class_str("asjkh".to_string());   
+        let wrong_class= "asjkh".to_string();
+        nszone.set_class_str(wrong_class);   
     }
 
     

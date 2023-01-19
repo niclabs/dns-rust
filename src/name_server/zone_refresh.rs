@@ -293,18 +293,19 @@ mod zone_refresh_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_refresh_test(){
+    fn set_and_get_refresh(){
         let mut ns_zone = NSZone::new();
         let mut value = Vec::<ResourceRecord>::new();
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
         value.push(resource_record);
+
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);
-        
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
+        
         assert_eq!(zone_refresh.get_refresh(), 0 as u32);
         zone_refresh.set_refresh(86400 as u32);
         assert_eq!(zone_refresh.get_refresh(), 86400 as u32);

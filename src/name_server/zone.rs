@@ -202,12 +202,13 @@ mod zone_test {
     use crate::message::DnsMessage;
 
     #[test]
-    //TODO revisar práctica 1
     fn constructor() { 
         let mut nszone = NSZone::new();
-        let mut nsnode =NSNode::new();
+        let mut nsnode = NSNode::new();
+
         nsnode.set_name("example.com".to_string());
         nszone.set_zone_nodes(nsnode.clone());
+
         assert_eq!(nszone.name, String::from(""));
         assert_eq!(nszone.zone_nodes.get_name(), nsnode.clone().get_name());
         assert_eq!(nszone.class, 1);

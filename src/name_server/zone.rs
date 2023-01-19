@@ -220,7 +220,8 @@ mod zone_test {
     fn get_and_set_name_test(){
         let mut nszone = NSZone::new();
         assert_eq!(nszone.get_name(), String::from(""));
-        nszone.set_name(String::from("test.com"));
+        let new_name=String::from("test.com")
+;        nszone.set_name(new_name);
         assert_eq!(nszone.get_name(), String::from("test.com"));
     }
 

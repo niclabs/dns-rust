@@ -151,9 +151,8 @@ impl AChRdata {
 mod a_ch_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_ch_rdata::AChRdata;
-    use crate::message::resource_record::{FromBytes, ToBytes};
     use crate::message::rdata::ARdata;
-
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
@@ -199,22 +198,28 @@ mod a_ch_rdata_test {
     }
 
     #[test]
-    fn set_and_get_domain_name_test(){
+    fn set_and_get_domain_name_test() {
         let mut ach_rdata = AChRdata::new();
         let mut domain_name = DomainName::new();
 
-        assert_eq!(ach_rdata.get_domain_name().get_name(), domain_name.get_name());
+        assert_eq!(
+            ach_rdata.get_domain_name().get_name(),
+            domain_name.get_name()
+        );
 
         domain_name.set_name(String::from("test.com"));
-        ach_rdata.set_domain_name(domain_name); 
+        ach_rdata.set_domain_name(domain_name);
 
-        assert_eq!(ach_rdata.get_domain_name().get_name(), String::from("test.com"));
+        assert_eq!(
+            ach_rdata.get_domain_name().get_name(),
+            String::from("test.com")
+        );
     }
-    
+
     /*#[test]
     fn rr_from_master_file_test() {
         let ach_rr = AChRdata::rr_from_master_file("204.13.100.3".split_whitespace(), 0, 0,"admin.googleplex".to_string(), "edu".to_string());
-        
+
         assert_eq!(ach_rr.get_class(), 3);
         assert_eq!(ach_rr.get_name().get_name(), String::from("dcc.cl"));
         assert_eq!(ach_rr.get_type_code(), 1);

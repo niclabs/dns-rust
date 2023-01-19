@@ -406,7 +406,7 @@ impl ResolverQuery {
     }
 
     // Looks for local info in name server zone and cache
-    pub fn look_for_local_info(&mut self) -> Result<Vec<ResourceRecord>,  &'static str>{
+    pub fn look_for_local_info(&mut self) -> Result<Vec<ResourceRecord>, &'static str> {
         let s_type = match self.get_stype() {
             1 => "A".to_string(),
             2 => "NS".to_string(),
@@ -621,7 +621,6 @@ impl ResolverQuery {
 // Util for TCP and UDP
 impl ResolverQuery {
     pub fn step_2_tcp(&mut self) {
-        
         let sbelt = self.get_sbelt();
 
         let sname = self.get_sname();
@@ -712,14 +711,14 @@ impl ResolverQuery {
         &mut self,
         socket: UdpSocket,
         rx_update_self_slist: Receiver<Slist>,
-    ) -> (Option<Vec<ResourceRecord>>, Option<DnsMessage>){
+    ) -> (Option<Vec<ResourceRecord>>, Option<DnsMessage>) {
         let local_info = self.look_for_local_info();
 
         match local_info {
-            Ok(_) => {},
-            Err(_) => { 
+            Ok(_) => {}
+            Err(_) => {
                 return (None, Some(DnsMessage::not_implemented_msg()));
-            },
+            }
         }
 
         if local_info.clone().unwrap().len() > 0 {
@@ -802,7 +801,6 @@ impl ResolverQuery {
 
         self.send_internal_queries_for_slist_udp(self.get_slist(), socket.try_clone().unwrap());
 
-
         let query_msg = self.create_query_message();
         let msg_to_bytes = query_msg.to_bytes();
 
@@ -826,9 +824,7 @@ impl ResolverQuery {
         //
 
         // Set last host name asked
-        let host_name = best_server_to_ask.get(&"name".to_string())
-                                                  .unwrap()
-                                                  .clone();
+        let host_name = best_server_to_ask.get(&"name".to_string()).unwrap().clone();
         self.set_last_query_hostname(host_name);
         //
 
@@ -1025,13 +1021,13 @@ impl ResolverQuery {
                 msg.set_header(header);
 
                 return Some(msg);
-            },
+            }
             (None, Some(msg)) => {
                 return Some(msg);
-            },
+            }
             (_, _) => {
                 return None;
-            },
+            }
         }
     }
 
@@ -1195,9 +1191,7 @@ impl ResolverQuery {
             .set_read_timeout(Some(Duration::from_millis(timeout as u64)))
             .expect("set_read_timeout call failed");
 
-        stream
-            .write(&full_msg)
-            .expect("Couldn't write the message");
+        stream.write(&full_msg).expect("Couldn't write the message");
 
         match Resolver::receive_tcp_msg(stream) {
             Some(val) => {
@@ -1220,29 +1214,37 @@ impl ResolverQuery {
                 let response_time = (timestamp_ms - last_query_timestamp) as u32;
 
                 // Send request to update cache to resolver and name server
-                self.get_update_cache_udp().send((
-                    self.get_last_query_hostname(),
-                    ip_address.clone(),
-                    response_time,
-                )).expect("Couldn't send request to resolver, using UDP, to update cache");
+                self.get_update_cache_udp()
+                    .send((
+                        self.get_last_query_hostname(),
+                        ip_address.clone(),
+                        response_time,
+                    ))
+                    .expect("Couldn't send request to resolver, using UDP, to update cache");
 
-                self.get_update_cache_tcp().send((
-                    self.get_last_query_hostname(),
-                    ip_address.clone(),
-                    response_time,
-                )).expect("Couldn't send request to resolver, using TCP, to update cache");
+                self.get_update_cache_tcp()
+                    .send((
+                        self.get_last_query_hostname(),
+                        ip_address.clone(),
+                        response_time,
+                    ))
+                    .expect("Couldn't send request to resolver, using TCP, to update cache");
 
-                self.get_update_cache_ns_udp().send((
-                    self.get_last_query_hostname(),
-                    ip_address.clone(),
-                    response_time,
-                )).expect("Couldn't send request to name server, using UDP, to update cache");
+                self.get_update_cache_ns_udp()
+                    .send((
+                        self.get_last_query_hostname(),
+                        ip_address.clone(),
+                        response_time,
+                    ))
+                    .expect("Couldn't send request to name server, using UDP, to update cache");
 
-                self.get_update_cache_ns_tcp().send((
-                    self.get_last_query_hostname(),
-                    ip_address.clone(),
-                    response_time,
-                )).expect("Couldn't send request to name server, using TCP, to update cache");
+                self.get_update_cache_ns_tcp()
+                    .send((
+                        self.get_last_query_hostname(),
+                        ip_address.clone(),
+                        response_time,
+                    ))
+                    .expect("Couldn't send request to name server, using TCP, to update cache");
                 //
 
                 return self.step_4_tcp(dns_response, update_slist_tcp_recv);
@@ -1259,10 +1261,10 @@ impl ResolverQuery {
         let local_info = self.look_for_local_info();
 
         match local_info {
-            Ok(_) => {},
-            Err(_) => { 
+            Ok(_) => {}
+            Err(_) => {
                 return DnsMessage::not_implemented_msg();
-            },
+            }
         }
 
         if local_info.clone().unwrap().len() > 0 {
@@ -1300,7 +1302,6 @@ impl ResolverQuery {
         }
 
         let mut slist = self.get_slist();
-
 
         let mut index_to_choose = self.get_index_to_choose() % slist.len() as u16;
 
@@ -1361,7 +1362,7 @@ impl ResolverQuery {
             }
 
             slist = self.get_slist();
-            
+
             self.set_index_to_choose((index_to_choose + 1) % slist.len() as u16);
             index_to_choose = self.get_index_to_choose();
 
@@ -1411,7 +1412,6 @@ impl ResolverQuery {
         self.set_last_query_hostname(host_name);
         //
 
-
         return self.send_tcp_query(&msg_to_bytes, best_server_ip, update_slist_tcp_recv);
     }
 
@@ -1448,7 +1448,7 @@ impl ResolverQuery {
 
         let slist = self.get_slist();
         let mut last_index_to_choose: u16 = 0;
-        if  self.get_index_to_choose() != 0 {
+        if self.get_index_to_choose() != 0 {
             last_index_to_choose = (self.get_index_to_choose() - 1) % slist.len() as u16;
         }
         let best_server = slist.get(last_index_to_choose);
@@ -1550,7 +1550,6 @@ impl ResolverQuery {
         if slist.len() == 0 {
             println!("No answer was found for query");
 
-            
             // ver como solucionar correctamente
             return DnsMessage::data_not_found_error_msg();
             // match host_name_asked.find(".") {
@@ -2210,7 +2209,6 @@ mod resolver_query_tests {
 
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
 
-
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2310,7 +2308,6 @@ mod resolver_query_tests {
 
         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-        
 
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
@@ -2713,7 +2710,6 @@ mod resolver_query_tests {
             tx_update_cache_ns_tcp,
             tx_update_slist_tcp,
             tx_update_self_slist,
-            
         );
 
         resolver_query.set_sname("test.test2.com".to_string());

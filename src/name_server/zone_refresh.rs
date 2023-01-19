@@ -407,7 +407,7 @@ mod zone_refresh_test {
         ns_zone.set_zone_nodes(top_node);       
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
-        
+
         assert_eq!(zone_refresh.get_last_serial_check(), some_timestamp);
         zone_refresh.set_last_serial_check(some_timestamp-1);
         assert_eq!(zone_refresh.get_last_serial_check(), some_timestamp-1);
@@ -415,17 +415,19 @@ mod zone_refresh_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn new_serial_greater_than_old_test(){
+    fn new_serial_greater_than_old(){
         let mut ns_zone = NSZone::new();
         let mut value = Vec::<ResourceRecord>::new();
         let  soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
+
         value.push(resource_record);
         ns_zone.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone.get_zone_nodes();
         top_node.set_value(value);
         ns_zone.set_zone_nodes(top_node);       
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
+        
         zone_refresh.set_serial(111111111 as u32);
         assert_eq!(zone_refresh.new_serial_greater_than_old(4294967295 as u32), false);
         assert_eq!(zone_refresh.new_serial_greater_than_old(111111112 as u32), true);

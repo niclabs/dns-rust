@@ -1001,4 +1001,21 @@ mod message_test {
         assert_eq!(dns_query_message.get_answer().len(), 1);
     }
 
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_additionals_test(){
+        let mut dns_query_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+
+        let mut new_additional = Vec::<ResourceRecord>::new();
+        let a_rdata5 = Rdata::SomeARdata(ARdata::new());
+        let rr5 = ResourceRecord::new(a_rdata5);
+        new_additional.push(rr5);
+
+        assert_eq!(dns_query_message.get_answer().len(), 0);
+
+        dns_query_message.add_additionals(new_additional);
+        //since the new additional is added to the answer lets check if something was added
+        assert_eq!(dns_query_message.get_answer().len(), 1);
+    }
+
 }

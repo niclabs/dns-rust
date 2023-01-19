@@ -225,26 +225,29 @@ mod zone_refresh_test {
 
     #[test]
     //TODO revisar práctica 1
-    fn set_and_get_zone_test(){ 
+    fn set_and_get_zone(){ 
         let mut ns_zone_1 = NSZone::new();
         let ns_zone_2 = NSZone::new();
         let origin = String::from("example.com");
         ns_zone_1.set_name(origin);
+
         let mut value = Vec::<ResourceRecord>::new();
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
         value.push(resource_record);
+
         ns_zone_1.get_zone_nodes().set_value(value.clone());
         ns_zone_2.get_zone_nodes().set_value(value.clone());
         let mut top_node = ns_zone_1.get_zone_nodes();
         top_node.set_value(value);
         ns_zone_1.set_zone_nodes(top_node);
-        
+          
         let mut zone_refresh = ZoneRefresh::new(ns_zone_1);
-        assert_eq!(zone_refresh.get_zone().get_name(), String::from("example.com"));
-
+        let expected_name1 = String::from("example.com");
+        assert_eq!(zone_refresh.get_zone().get_name(), expected_name1);
         zone_refresh.set_zone(ns_zone_2);
-        assert_eq!(zone_refresh.get_zone().get_name(), String::from(""));
+        let expected_name2= String::from("");
+        assert_eq!(zone_refresh.get_zone().get_name(), expected_name2);
     }
 
     #[test]

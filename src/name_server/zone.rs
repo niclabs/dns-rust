@@ -273,13 +273,18 @@ mod zone_test {
     #[test]
     //TODO revisar práctica 1
     fn from_file(){
-        let nszone_mut = NSZone::from_file("test.txt".to_string(),"example".to_string(),"192.80.24.11".to_string(),true );
+        let file_name ="test.txt".to_string();
+        let origin ="example".to_string();
+        let ip ="192.80.24.11".to_string();
+        let nszone_mut = NSZone::from_file(file_name,origin,ip,true );
         let name= nszone_mut.get_name();
         let class= nszone_mut.get_class();
         let ip= nszone_mut.get_ip_address_for_refresh_zone();
-        assert_eq!("uchile.cl.".to_string(), name);
+        let expected_name="uchile.cl.".to_string();
+        assert_eq!(expected_name, name);
         assert_eq!(1,class);
-        assert_eq!("192.80.24.11".to_string(),ip);
+        let expected_ip ="192.80.24.11".to_string();
+        assert_eq!(expected_ip,ip);
 
     }
  

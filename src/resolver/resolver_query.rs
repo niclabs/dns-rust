@@ -2850,7 +2850,12 @@ mod resolver_query_tests {
         resolver_query.set_last_query_timestamp(234);
         let result = resolver_query.get_last_query_timestamp();
 
-        assert_eq!(result, 234)
+        assert_eq!(result, 234);
+
+        resolver_query.set_last_query_timestamp(111);
+        let result = resolver_query.get_last_query_timestamp();
+
+        assert_eq!(result, 111);
 
     }
     

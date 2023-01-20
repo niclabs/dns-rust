@@ -1616,6 +1616,5 @@ mod resolver_test {
         created with the get fn used*/ 
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
-
     }
 }

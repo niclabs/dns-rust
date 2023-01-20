@@ -2554,7 +2554,8 @@ mod resolver_query_tests {
     }
 
     #[test]
-    fn create_query_message_test() {
+    // TODO revisar práctica 1
+    fn create_query_message() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -2564,19 +2565,14 @@ mod resolver_query_tests {
         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-
         let (tx_update_query, _rx_update_query) = mpsc::channel();
         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-
         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-
         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2601,7 +2597,6 @@ mod resolver_query_tests {
         resolver_query.set_rd(true);
         resolver_query.set_stype(1);
         resolver_query.set_sclass(1);
-
         let dns_message = resolver_query.create_query_message();
 
         assert_eq!(dns_message.get_header().get_rd(), true);

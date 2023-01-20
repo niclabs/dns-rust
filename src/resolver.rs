@@ -1230,6 +1230,7 @@ mod resolver_test {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
+    use crate::name_server::zone::NSZone;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use crate::resolver::Resolver;
@@ -1407,27 +1408,18 @@ mod resolver_test {
     //ToDo: Revisar Práctica 1
     #[test]
     fn set_and_get_ns_data_test() {
-        let mut domain_name = DomainName::new();
-        domain_name.set_name("test2.com".to_string());
+        let file_name = "test.txt".to_string();
+        let origin = "example".to_string();
+        let ip = "192.80.24.11".to_string();
+        let nszone = NSZone::from_file(file_name, origin, ip, true);
 
-        let mut ns_rdata = NsRdata::new();
-        ns_rdata.set_nsdname(domain_name);
+        let mut hash_string_and_nszone = HashMap::<String, NSZone>::new();
 
-        let r_data = Rdata::SomeNsRdata(ns_rdata);
-        let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        hash_string_and_nszone.insert("test.com".to_string(), nszone);
 
-        let mut resource_record_vec = Vec::<ResourceRecord>::new();
+        let mut new_ns_data = HashMap::<u16, HashMap<String, NSZone>>::new();
 
-        resource_record_vec.push(ns_resource_record);
-
-        let mut host_names_hash = HashMap::<String, Vec<ResourceRecord>>::new();
-
-        host_names_hash.insert("test.com".to_string(), resource_record_vec);
-
-        let mut rr_type_hash = HashMap::<String, HashMap<String, Vec<ResourceRecord>>>::new();
-
-        rr_type_hash.insert("NS".to_string(), host_names_hash);
+        new_ns_data.insert(2, hash_string_and_nszone);
 
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -1451,7 +1443,7 @@ mod resolver_test {
 
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
 
-        let resolver_query_test = ResolverQuery::new(
+        let mut resolver_query_test = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
             add_sender_tcp,
@@ -1472,11 +1464,10 @@ mod resolver_test {
         );
 
         assert_eq!(resolver_query_test.get_ns_data().len(), 0);
+        //old ver of this test used to insert a incorrect hashmap, that was different from the one defined in the resolver struct
+        resolver_query_test.set_ns_data(new_ns_data);
 
-        //ns_data to be set is in the wrong format
-        //resolver_query_test.set_ns_data(rr_type_hash);
-
-        //assert_eq!(resolver_query_test.get_ns_data().len(), 1);
+        assert_eq!(resolver_query_test.get_ns_data().len(), 1);
     }
 
     //ToDo: Revisar Práctica 1

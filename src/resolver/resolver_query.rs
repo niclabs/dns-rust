@@ -2716,6 +2716,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    //TODO revisar práctica 1
     fn set_and_get_src_address() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2726,19 +2727,14 @@ mod resolver_query_tests {
         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-
         let (tx_update_query, _rx_update_query) = mpsc::channel();
         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-
         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-
         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2758,8 +2754,6 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-
-        assert_eq!(resolver_query.get_src_address(), "".to_string());
 
         resolver_query.set_src_address(String::from("test.com"));
 

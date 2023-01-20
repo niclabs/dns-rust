@@ -2803,7 +2803,12 @@ mod resolver_query_tests {
         resolver_query.set_queries_before_temporary_error(234);
         let result = resolver_query.get_queries_before_temporary_error();
 
-        assert_eq!(result, 234)
+        assert_eq!(result, 234);
+
+        resolver_query.set_queries_before_temporary_error(111);
+        let result = resolver_query.get_queries_before_temporary_error();
+
+        assert_eq!(result, 111)
 
     }
 

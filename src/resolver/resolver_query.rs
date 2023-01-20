@@ -2761,6 +2761,54 @@ mod resolver_query_tests {
     }
 
     #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_queries_before_temporary_error(){
+
+    }
+
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_last_query_timestamp(){
+
+    }
+    
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_last_query_hostname(){
+
+    }
+    
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_index_to_choose(){
+
+    }
+    
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_query_id_update_slist(){
+
+    }
+    
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_tx_update_self_slist(){
+
+    }
+    
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_internal_query (){
+
+    }
+
+    #[test]
+    //TODO revisar práctica 1
+    fn set_and_get_timeout(){
+
+    }
+
+    #[test]
     // TODO revisar práctica 1
     fn create_query_message() {
         // Channels

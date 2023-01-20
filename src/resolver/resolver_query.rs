@@ -2435,7 +2435,6 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-
         let mut slist = Slist::new();
         assert_eq!(resolver_query.slist.get_ns_list().len(), 0);
 

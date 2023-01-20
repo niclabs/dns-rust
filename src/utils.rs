@@ -163,8 +163,9 @@ mod utils_test {
     //ToDo: Revisar Práctica 1
     #[test]
     fn is_reverse_query_test() {
-        assert_eq!(is_reverse_query(String::from("not_inverse.com")), false);
-        assert_eq!(is_reverse_query(String::from("10.1.0.52")), true);
-        //assert_eq!(is_reverse_query(String::from("100")), false); //clearly not an ip but the fn says true
+        assert!(!is_reverse_query(String::from("not_inverse.com")));
+        assert!(is_reverse_query(String::from("10.1.0.52")));
+        //clearly not an ip but the fn says true
+        //assert!(!is_reverse_query(String::from("100")));
     }
 }

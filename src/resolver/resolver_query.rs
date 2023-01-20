@@ -2085,7 +2085,6 @@ mod resolver_query_tests {
 
     #[test]
     // TODO revisar práctica 1
-
     fn constructor() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2132,6 +2131,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_timestamp() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2178,6 +2178,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_sname() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2222,6 +2223,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_stype() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2266,6 +2268,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_sclass() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2310,6 +2313,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_op_code() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2354,6 +2358,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_rd() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2398,6 +2403,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_slist() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2445,6 +2451,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_sbelt() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2492,6 +2499,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    // TODO revisar práctica 1
     fn set_and_get_cache() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -2502,19 +2510,14 @@ mod resolver_query_tests {
         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-
         let (tx_update_query, _rx_update_query) = mpsc::channel();
         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-
         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-
         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-
         let mut resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
@@ -2534,17 +2537,12 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-
         let mut cache = DnsCache::new();
         cache.set_max_size(1);
-
         assert_eq!(resolver_query.cache.get_size(), 0);
-
         let ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut a_rdata = ARdata::new();
-
         a_rdata.set_address(ip_address);
-
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(1);

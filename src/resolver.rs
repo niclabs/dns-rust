@@ -1975,6 +1975,4 @@ mod resolver_test {
         created with the get fn used*/ 
         assert_eq!(msg_result, msg.clone());
     }
-
-    
 }

@@ -2626,6 +2626,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    //TODO revisar práctica 1 
     fn set_and_get_main_query_id() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();

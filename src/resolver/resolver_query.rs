@@ -3249,6 +3249,7 @@ mod resolver_query_tests {
     }
 
     #[test]
+    //ToDo: Revisar Práctica 1
     fn initialize_slist_empty() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();

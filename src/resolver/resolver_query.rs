@@ -3416,8 +3416,9 @@ mod resolver_query_tests {
         let add_rcv_udp = _add_recv_udp;
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
 
-        add_channel_udp_test.send((String::from("test"), rr.clone())).unwrap();
+        add_channel_udp_test.send(msg).unwrap();
         let (name, rr_result) = add_rcv_udp.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable

@@ -2082,7 +2082,6 @@ mod resolver_query_tests {
     use chrono::Utc;
     use std::collections::HashMap;
     use std::sync::mpsc;
-    use std::vec::Vec;
 
     #[test]
     // TODO revisar práctica 1

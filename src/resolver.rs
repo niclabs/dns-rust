@@ -1234,7 +1234,6 @@ mod resolver_test {
     use crate::resolver::Resolver;
     use std::collections::HashMap;
     use std::sync::mpsc;
-    use std::vec::Vec;
 
     #[test]
     fn constructor_test() {

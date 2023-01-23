@@ -3485,55 +3485,61 @@ mod resolver_query_tests {
     //ToDo: Revisar Práctica 1
     #[test]
     fn get_add_channel_ns_udp(){
-                // Channels
-                let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-                let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-                let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-                let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-                let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-                let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-                let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-                let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-                let (tx_update_query, _rx_update_query) = mpsc::channel();
-                let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-                let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-                let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-                let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-                let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-                let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-                let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-                let resolver_query = ResolverQuery::new(
-                    add_sender_udp,
-                    delete_sender_udp,
-                    add_sender_tcp,
-                    delete_sender_tcp,
-                    add_sender_ns_udp,
-                    delete_sender_ns_udp,
-                    add_sender_ns_tcp,
-                    delete_sender_ns_tcp,
-                    tx_update_query,
-                    tx_delete_query,
-                    DnsMessage::new(),
-                    tx_update_cache_udp,
-                    tx_update_cache_tcp,
-                    tx_update_cache_ns_udp,
-                    tx_update_cache_ns_tcp,
-                    tx_update_slist_tcp,
-                    tx_update_self_slist,
-                );
-        
-                let add_channel_ns_udp_test = resolver_query.get_add_channel_ns_udp();
-                let add_rcv_ns_udp = _add_recv_ns_udp;
-                let a_rdata = Rdata::SomeARdata(ARdata::new());
-                let rr = ResourceRecord::new(a_rdata);
-                let msg = (String::from("test"), rr.clone());
-        
-                add_channel_ns_udp_test.send(msg).unwrap();
-                let (name, rr_result) = add_rcv_ns_udp.recv().unwrap();
-        
-                /*if the message was correctly sent it should work with the variable
-                created with the get fn used*/ 
-                assert_eq!(name, String::from("test"));
-                assert_eq!(rr_result.get_name(), rr.clone().get_name());
+        // Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+
+        let add_channel_ns_udp_test = resolver_query.get_add_channel_ns_udp();
+        let add_rcv_ns_udp = _add_recv_ns_udp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        add_channel_ns_udp_test.send(msg).unwrap();
+        let (name, rr_result) = add_rcv_ns_udp.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_add_channel_ns_tcp(){
+
     }
 }

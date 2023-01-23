@@ -2688,4 +2688,42 @@ mod name_server_test{
 
         assert!(name_server.get_primary_server());
     }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_queries_id_for_soa_rr(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut new_queries_id_soa_rr = HashMap::<u16, String>::new();
+        new_queries_id_soa_rr.insert(1, String::from("test.com"));
+
+        name_server.set_queries_id_for_soa_rr(new_queries_id_soa_rr);
+
+        let res = name_server.get_queries_id_for_soa_rr();
+
+        assert_eq!(res.len(), 1);
+    }
 }

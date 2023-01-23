@@ -2506,3 +2506,47 @@ impl NameServer {
         self.refresh_zones_data = refresh_data;
     }
 }
+
+#[cfg(test)]
+
+mod name_server_test{
+    use std::sync::mpsc;
+
+    use super::NameServer;
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn constructor_test(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        assert_eq!(name_server.cache.get_size(), 0);
+        assert_eq!(name_server.zones_by_class.len(), 0);
+        assert_eq!(name_server.queries_id.len(), 0);
+        assert!(name_server.primary_server);
+        assert_eq!(name_server.queries_id_for_soa_rr.len(), 0);
+        assert_eq!(name_server.refresh_zones_data.len(), 0);
+    }
+}

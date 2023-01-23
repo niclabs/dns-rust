@@ -3178,7 +3178,7 @@ mod resolver_query_tests {
 
     #[test]
     // TODO revisar práctica 1
-    fn initialize_slist() {
+    fn initialize_slist_tcp() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();

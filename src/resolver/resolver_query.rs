@@ -2078,6 +2078,7 @@ mod resolver_query_tests {
     use crate::name_server::zone::NSZone;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
+    use crate::resolver::UdpSocket;
 
     use chrono::Utc;
     use std::collections::HashMap;
@@ -3176,9 +3177,10 @@ mod resolver_query_tests {
         );
     }
 
+   
     #[test]
     // TODO revisar práctica 1
-    fn initialize_slist_tcp() {
+    fn initialize_slist_udp() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -3236,12 +3238,12 @@ mod resolver_query_tests {
         cache.add("test2.com".to_string(), ns_resource_record);
         cache.add("test2.com".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
-
+        let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
 
         let mut sbelt = Slist::new();
         sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
-        resolver_query.initialize_slist_tcp(sbelt, resolver_query.get_sname());
+        resolver_query.initialize_slist_udp(sbelt, resolver_query.get_sname(), socket);
 
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
         assert_eq!(

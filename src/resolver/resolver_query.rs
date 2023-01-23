@@ -2555,20 +2555,16 @@ mod resolver_query_tests {
     }
 
     #[test]
-    fn set_and_get_ns_data_test() {
+    // TODO revisar práctica 1
+    fn set_and_get_ns_data() {
         let file_name = "test.txt".to_string();
         let origin = "example".to_string();
         let ip = "192.80.24.11".to_string();
         let nszone = NSZone::from_file(file_name, origin, ip, true);
-
         let mut hash_string_and_nszone = HashMap::<String, NSZone>::new();
-
         hash_string_and_nszone.insert("test.com".to_string(), nszone);
-
         let mut new_ns_data = HashMap::<u16, HashMap<String, NSZone>>::new();
-
         new_ns_data.insert(2, hash_string_and_nszone);
-
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -2578,18 +2574,14 @@ mod resolver_query_tests {
         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-
         let (tx_update_query, _rx_update_query) = mpsc::channel();
         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-
         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-
         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-
         let mut resolver_query_test = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,

@@ -2075,6 +2075,7 @@ mod resolver_query_tests {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
+    use crate::name_server::zone::NSZone;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
 
@@ -4136,5 +4137,96 @@ mod resolver_query_tests {
 
         assert!(must_be_true);
         assert!(!must_be_false);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn initialize(){
+        //Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+
+        let mut cache = DnsCache::new();
+        cache.set_max_size(1);
+        assert_eq!(resolver_query.cache.get_size(), 0);
+        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(1);
+
+        cache.add("127.0.0.0".to_string(), resource_record);
+
+        let mut sbelt = Slist::new();
+        assert_eq!(resolver_query.sbelt.get_ns_list().len(), 0);
+
+        sbelt.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+
+        let file_name = "test.txt".to_string();
+        let origin = "example".to_string();
+        let ip = "192.80.24.11".to_string();
+        let nszone = NSZone::from_file(file_name, origin, ip, true);
+        let mut hash_string_and_nszone = HashMap::<String, NSZone>::new();
+        hash_string_and_nszone.insert("test.com".to_string(), nszone);
+        let mut new_ns_data = HashMap::<u16, HashMap<String, NSZone>>::new();
+
+        new_ns_data.insert(2, hash_string_and_nszone);
+
+        resolver_query.initialize(
+            String::from("example.com"),
+            1,
+            2,
+            1,
+            true,
+            sbelt,
+            cache,
+            new_ns_data, 
+            String::from("test.com"), 
+            12);
+
+        assert_eq!(resolver_query.get_sname(), String::from("example.com"));
+        assert_eq!(resolver_query.get_stype(), 1);
+        assert_eq!(resolver_query.get_sclass(), 2);
+        assert_eq!(resolver_query.get_op_code(), 1);
+        assert!(resolver_query.get_rd());
+        assert_eq!(resolver_query.get_sbelt().len(), 1);
+        assert_eq!(resolver_query.get_cache().get_size(), 1);
+        assert_eq!(resolver_query.get_ns_data().len(), 1);
+        assert_eq!(resolver_query.get_src_address(), String::from("test.com"));
+        assert_eq!(resolver_query.get_old_id(), 12);
     }
 }

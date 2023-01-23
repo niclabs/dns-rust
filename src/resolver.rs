@@ -1503,8 +1503,8 @@ mod resolver_test {
         let add_rcv_tcp = _add_recv_tcp;
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
-        add_sender_tcp_test.send((String::from("test"), rr.clone())).unwrap();
 
+        add_sender_tcp_test.send((String::from("test"), rr.clone())).unwrap();
         let (name, rr_result) = add_rcv_tcp.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
@@ -1550,8 +1550,8 @@ mod resolver_test {
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
         let msg = (String::from("test"), rr.clone());
-        delete_sender_udp_test.send(msg).unwrap();
 
+        delete_sender_udp_test.send(msg).unwrap();
         let (name, rr_result) = delete_rcv_upd.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
@@ -1596,8 +1596,8 @@ mod resolver_test {
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
         let msg = (String::from("test"), rr.clone());
-        delete_sender_tcp_test.send(msg).unwrap();
 
+        delete_sender_tcp_test.send(msg).unwrap();
         let (name, rr_result) = delete_rcv_tcp.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
@@ -1642,8 +1642,8 @@ mod resolver_test {
         let add_rcv_ns_udp = _add_recv_ns_udp;
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
-        add_sender_ns_udp_test.send((String::from("test"), rr.clone())).unwrap();
 
+        add_sender_ns_udp_test.send((String::from("test"), rr.clone())).unwrap();
         let (name, rr_result) = add_rcv_ns_udp.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
@@ -1688,8 +1688,8 @@ mod resolver_test {
         let add_rcv_ns_tcp = _add_recv_ns_tcp;
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
-        add_sender_ns_tcp_test.send((String::from("test"), rr.clone())).unwrap();
 
+        add_sender_ns_tcp_test.send((String::from("test"), rr.clone())).unwrap();
         let (name, rr_result) = add_rcv_ns_tcp.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
@@ -1735,8 +1735,8 @@ mod resolver_test {
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
         let msg = (String::from("test"), rr.clone());
-        delete_sender_ns_udp_test.send(msg).unwrap();
 
+        delete_sender_ns_udp_test.send(msg).unwrap();
         let (name, rr_result) = delete_rcv_ns_upd.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
@@ -1782,8 +1782,8 @@ mod resolver_test {
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
         let msg = (String::from("test"), rr.clone());
-        delete_sender_ns_tcp_test.send(msg).unwrap();
 
+        delete_sender_ns_tcp_test.send(msg).unwrap();
         let (name, rr_result) = delete_rcv_ns_tcp.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
@@ -1827,8 +1827,8 @@ mod resolver_test {
         let update_cache_udp_test = resolver.get_update_cache_udp();
         let rcv_update_cache_udp = _rx_update_cache_udp;
         let msg = (String::from("test1"), String::from("test2"), 1);
-        update_cache_udp_test.send(msg.clone()).unwrap();
 
+        update_cache_udp_test.send(msg.clone()).unwrap();
         let msg_result = rcv_update_cache_udp.recv().unwrap();
         /*if the message was correctly sent it should work with the variable
         created with the get fn used*/ 
@@ -1913,9 +1913,10 @@ mod resolver_test {
         let update_cache_ns_tcp_test = resolver.get_update_cache_ns_tcp();
         let rcv_update_cache_ns_tcp = _rx_update_cache_ns_tcp;
         let msg = (String::from("test1"), String::from("test2"), 1);
-        update_cache_ns_tcp_test.send(msg.clone()).unwrap();
 
+        update_cache_ns_tcp_test.send(msg.clone()).unwrap();
         let msg_result = rcv_update_cache_ns_tcp.recv().unwrap();
+
         /*if the message was correctly sent it should work with the variable
         created with the get fn used*/ 
         assert_eq!(msg_result, msg.clone());
@@ -1956,9 +1957,10 @@ mod resolver_test {
         let update_cache_ns_udp_test = resolver.get_update_cache_ns_udp();
         let rcv_update_cache_ns_udp = _rx_update_cache_ns_udp;
         let msg = (String::from("test1"), String::from("test2"), 1);
-        update_cache_ns_udp_test.send(msg.clone()).unwrap();
 
+        update_cache_ns_udp_test.send(msg.clone()).unwrap();
         let msg_result = rcv_update_cache_ns_udp.recv().unwrap();
+        
         /*if the message was correctly sent it should work with the variable
         created with the get fn used*/ 
         assert_eq!(msg_result, msg.clone());

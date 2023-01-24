@@ -797,6 +797,22 @@ fn sadsadsad(){
         update_cache_sender_ns_tcp.clone(),
     );
 
+    // Resolver Initialize
+    let mut resolver = Resolver::new(
+        add_sender_udp.clone(),
+        delete_sender_udp.clone(),
+        add_sender_tcp.clone(),
+        delete_sender_tcp.clone(),
+        add_sender_ns_udp.clone(),
+        delete_sender_ns_udp.clone(),
+        add_sender_ns_tcp.clone(),
+        delete_sender_ns_tcp.clone(),
+        update_cache_sender_udp.clone(),
+        update_cache_sender_tcp.clone(),
+        update_cache_sender_ns_udp.clone(),
+        update_cache_sender_ns_tcp.clone(),
+    );
+
     resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
     
 

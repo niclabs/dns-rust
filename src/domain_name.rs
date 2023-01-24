@@ -1,10 +1,10 @@
-use std::string::String;
 use std::fmt;
+use std::string::String;
 
 //utils
 use crate::utils::check_label_name;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, Debug)]
 
 // DNS domain name represented as a sequence of labels, where each label consists of
 // a length octet followed by that number of octets.
@@ -120,7 +120,7 @@ impl DomainName {
         }
 
         //if domain_name_str.len() > 0 {
-            domain_name_str.remove(domain_name_str.len() - 1);
+        domain_name_str.remove(domain_name_str.len() - 1);
         //}
 
         // Check domain name restriction, max 255 octets
@@ -159,7 +159,7 @@ impl DomainName {
         bytes
     }
 
-    pub fn from_master_file(mut name: String, host_name: String) -> Self {
+    pub fn from_master_file(name: String, host_name: String) -> Self {
         let end_dot = name.ends_with(".");
 
         // Absolute host name
@@ -246,13 +246,13 @@ mod domain_name_test {
         ];
         let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test).unwrap();
 
-        println!("{}",domain_name.get_name());
-       
+        println!("{}", domain_name.get_name());
+
         // assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
     }
 
     #[test]
-    fn from_bytes_no_offset_test(){
+    fn from_bytes_no_offset_test() {
         let bytes_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
@@ -261,7 +261,6 @@ mod domain_name_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(name);
         assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
-
     }
 
     #[test]
@@ -277,13 +276,15 @@ mod domain_name_test {
 
         domain_name = DomainName::from_master_file(name, hostname);
         assert_eq!(domain_name.get_name(), String::from("XX.LCS.MIT.EDU."));
-
     }
 
     #[test]
-    fn fmt_test(){
+    fn fmt_test() {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("XX.LCS.MIT.EDU."));
-        assert_eq!(format!("The domain name is: {domain_name}"), "The domain name is: XX.LCS.MIT.EDU.");
+        assert_eq!(
+            format!("The domain name is: {domain_name}"),
+            "The domain name is: XX.LCS.MIT.EDU."
+        );
     }
 }

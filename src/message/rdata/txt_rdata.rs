@@ -5,7 +5,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::string::String;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 // An struct that represents the rdata for txt type.
 // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 // /                   TXT-DATA                    /
@@ -40,13 +40,13 @@ impl FromBytes<Result<Self, &'static str>> for TxtRdata {
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut string;
         let mut txt: Vec<String> = Vec::new();
-        let mut i = 0; 
+        let mut i = 0;
 
         string = String::from("");
         let lenght_octet = bytes[0];
-          
+
         for _chars in 0..lenght_octet {
-            i = i +1;
+            i = i + 1;
             let byte = bytes[i];
             string.push(byte as char);
         }
@@ -156,14 +156,10 @@ mod txt_rdata_test {
 
     #[test]
     fn from_bytes_test() {
-
         let bytes = [8, 100, 99, 99, 32, 116, 101, 115, 116];
 
         let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes).unwrap();
 
-        assert_eq!(
-            txt_rdata.get_text(),
-            vec!["dcc test".to_string()]
-        );
+        assert_eq!(txt_rdata.get_text(), vec!["dcc test".to_string()]);
     }
 }

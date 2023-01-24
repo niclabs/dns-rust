@@ -13,13 +13,12 @@ use crate::resolver::Resolver;
 
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
-use std::io::{Write};
+use std::io::Write;
 use std::net::TcpStream;
 use std::net::UdpSocket;
 use std::time::{Duration, Instant};
 
 pub fn run_client() {
-
     // Start timestamp
     let now = Instant::now();
 
@@ -45,7 +44,7 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
     // Create query msg
     let query_msg =
         DnsMessage::new_query_message(host_name.to_string(), qtype, qclass, 0, false, query_id);
-    
+
     // Create response buffer
     let mut dns_message = DnsMessage::new();
 
@@ -62,7 +61,7 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
         // Hashmap to save incomplete messages
         let messages = HashMap::<u16, DnsMessage>::new();
 
-        match socket.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000))){
+        match socket.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000))) {
             Err(_) => panic!("Error setting read timeout for socket"),
             Ok(_) => (),
         }
@@ -100,12 +99,12 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
 
         let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
 
-        match stream.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000))){
+        match stream.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000))) {
             Err(_) => panic!("Error setting read timeout for socket"),
             Ok(_) => (),
         }
 
-        match stream.write(&full_msg){
+        match stream.write(&full_msg) {
             Err(_) => panic!("Error: could not write to stream"),
             Ok(_) => (),
         }
@@ -113,10 +112,8 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
         match Resolver::receive_tcp_msg(stream) {
             Some(val) => {
                 dns_message = match DnsMessage::from_bytes(&val) {
-                    Ok(msg) => {
-                        msg
-                    },
-                    Err(_) => {DnsMessage::format_error_msg()},
+                    Ok(msg) => msg,
+                    Err(_) => DnsMessage::format_error_msg(),
                 };
             }
             None => {

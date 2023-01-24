@@ -47,7 +47,7 @@ impl DnsCache {
             14 => "MINFO".to_string(),
             15 => "MX".to_string(),
             16 => "TXT".to_string(),
-            //  Replace the next line when AAAA is implemented 
+            //  Replace the next line when AAAA is implemented
             28 => "TXT".to_string(),
             //
             _ => unreachable!(),
@@ -238,7 +238,8 @@ impl DnsCache {
                     }
 
                     if ip_address_bytes == rr_ip_address {
-                        rr_cache.set_response_time((response_time + rr_cache.get_response_time())/2);
+                        rr_cache
+                            .set_response_time((response_time + rr_cache.get_response_time()) / 2);
                     }
 
                     rr_cache_vec.push(rr_cache.clone());
@@ -273,7 +274,6 @@ impl DnsCache {
         self.cache.clone()
     }
 
-    //ToDo: Revisar Práctica 1
     //Gets the max size of the cache
     pub fn get_max_size(&self) -> u32 {
         self.max_size.clone()
@@ -302,6 +302,7 @@ impl DnsCache {
         self.size = size
     }
 }
+
 #[cfg(test)]
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
@@ -312,14 +313,14 @@ mod dns_cache_test {
     use crate::message::resource_record::ResourceRecord;
 
     #[test]
-    fn constructor_test() {
+    fn constructor() {
         let cache = DnsCache::new();
 
         assert_eq!(cache.cache.len(), 0);
     }
 
     #[test]
-    fn add_get_and_remove_test() {
+    fn add_get_and_remove() {
         let mut cache = DnsCache::new();
         cache.set_max_size(2);
 
@@ -401,31 +402,39 @@ mod dns_cache_test {
         )
     }
 
-    //ToDo: Revisar Práctica 1
     #[test]
-    fn set_and_get_size_and_max_size_test(){
+    fn set_and_get_size() {
         let mut cache = DnsCache::new();
 
         assert_eq!(cache.get_size(), 0 as u32);
+
+        cache.set_size(3);
+
+        //For the future: case where we set a size bigger than the max_size
+        assert_eq!(cache.get_size(), 3 as u32);
+    }
+
+    #[test]
+    fn set_and_get_max_size() {
+        let mut cache = DnsCache::new();
+
         assert_eq!(cache.get_max_size(), 0 as u32);
 
         cache.set_max_size(5);
-        cache.set_size(3);
 
         assert_eq!(cache.get_max_size(), 5 as u32);
-        assert_eq!(cache.get_size(), 3 as u32); //For the future: case where we set a size bigger than the max_size
     }
 
-    //ToDo: Revisar Práctica 1
     #[test]
-    fn set_and_get_cache_test(){ //Modifying the cache of new_cache via the fn add and then setting it to dns_cache
+    //Modifying the cache of new_cache via the fn add and then setting it to dns_cache
+    fn set_and_get_cache() {
         let mut dns_cache = DnsCache::new();
         let mut new_cache = DnsCache::new();
         assert_eq!(dns_cache.get_cache().len(), 0);
 
         dns_cache.set_max_size(1);
         new_cache.set_max_size(1);
-        
+
         let mut domain_name = DomainName::new();
         domain_name.set_name("test2.com".to_string());
 
@@ -438,23 +447,25 @@ mod dns_cache_test {
 
         new_cache.add(String::from("test.com"), ns_resource_record);
         assert_eq!(new_cache.get_size(), 1 as u32);
-        
+
         let cache = new_cache.get_cache();
 
         dns_cache.set_cache(cache);
         dns_cache.set_size(1);
 
-        assert_eq!(dns_cache.get(String::from("test.com"), String::from("NS"))[0].get_resource_record().get_type_code(), 2);
+        let rr_cache = dns_cache.get(String::from("test.com"), String::from("NS"));
+        let rr = rr_cache[0].get_resource_record();
+        let qtype = rr.get_type_code();
 
+        assert_eq!(qtype, 2);
     }
 
-    //ToDo: Revisar Práctica 1
     #[test]
-    fn update_and_get_response_time_test(){
+    fn update_and_get_response_time() {
         let mut dns_cache = DnsCache::new();
 
         dns_cache.set_max_size(1);
-        
+
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
 
@@ -464,9 +475,24 @@ mod dns_cache_test {
         a_resource_record.set_type_code(1);
 
         dns_cache.add(String::from("test.com"), a_resource_record);
-        assert_eq!(dns_cache.get_response_time(String::from("test.com"), String::from("A"), String::from("127.0.0.1")), 5000 as u32);
+        let response_time = dns_cache.get_response_time(
+            String::from("test.com"),
+            String::from("A"),
+            String::from("127.0.0.1"),
+        );
+        assert_eq!(response_time, 5000 as u32);
 
-        dns_cache.update_response_time(String::from("test.com"), String::from("A"),3000,String::from("127.0.0.1"));
-        assert_eq!(dns_cache.get_response_time(String::from("test.com"), String::from("A"), String::from("127.0.0.1")), 4000 as u32); //following the function this should be the reusult
+        dns_cache.update_response_time(
+            String::from("test.com"),
+            String::from("A"),
+            3000,
+            String::from("127.0.0.1"),
+        );
+        let new_response_time = dns_cache.get_response_time(
+            String::from("test.com"),
+            String::from("A"),
+            String::from("127.0.0.1"),
+        );
+        assert_eq!(new_response_time, 4000 as u32);
     }
 }

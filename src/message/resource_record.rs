@@ -4,7 +4,7 @@ use crate::domain_name::DomainName;
 use std::fmt;
 use std::vec::Vec;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 // An struct that represents the resource record secction from a dns message
 //                               1  1  1  1  1  1
 // 0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
@@ -170,9 +170,9 @@ impl ResourceRecord {
          3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 5, 104,
          101, 108, 108, 111,
      ];
-    
+
      let resource_record_test = ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
-    
+
      assert_eq!(resource_record_test.get_name().get_name(), String::from("dcc.cl"));
      assert_eq!(resource_record_test.get_type_code(), 16);
      assert_eq!(resource_record_test.get_class(), 1);
@@ -334,29 +334,29 @@ impl ResourceRecord {
     }
 
     /* Returns a vec fo bytes that represents the resource record
-    
+
      # Example
      ```
      let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
      let mut resource_record = ResourceRecord::new(txt_rdata);
      let mut domain_name = DomainName::new();
      domain_name.set_name(String::from("dcc.cl"));
-    
+
      resource_record.set_name(domain_name);
      resource_record.set_type_code(2);
      resource_record.set_class(1);
      resource_record.set_ttl(5642);
      resource_record.set_rdlength(3);
-    
+
      let bytes_msg = [
          3, 100, 99, 99, 2, 99, 108, 0, 0, 2, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 3, 100, 99,
         99,
      ];
-    
+
      let rr_to_bytes = resource_record.to_bytes();
-    
+
      let mut i = 0;
-    
+
      for value in rr_to_bytes.as_slice() {
         assert_eq!(*value, bytes_msg[i]);
          i += 1;
@@ -446,8 +446,8 @@ impl ResourceRecord {
         self.rdata = rdata.clone();
     }
 }
-impl ResourceRecord{
-    pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool{
+impl ResourceRecord {
+    pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool {
         let a: u16 = self.get_type_code();
         let aa: u16 = rr.get_type_code();
         let b: u16 = self.get_class();
@@ -458,23 +458,18 @@ impl ResourceRecord{
         let dd: u32 = rr.get_ttl();
         let e: Vec<u8> = self.get_rdata().to_bytes();
         let ee: Vec<u8> = rr.get_rdata().to_bytes();
-        let n : Vec<u8> = self.get_name().to_bytes();
-        let nn: Vec<u8> = rr.get_name().to_bytes(); 
+        let n: Vec<u8> = self.get_name().to_bytes();
+        let nn: Vec<u8> = rr.get_name().to_bytes();
         let s1 = String::from_utf8(e);
         let s2 = String::from_utf8(ee);
         let s = String::from_utf8(n);
         let ss = String::from_utf8(nn);
-        
 
-        if a==aa && b==bb && c==cc && d==dd && s1==s2 && s==ss{ 
-          true
-    
-        }
-        else {
+        if a == aa && b == bb && c == cc && d == dd && s1 == s2 && s == ss {
+            true
+        } else {
             false
         }
-    
-    
     }
 }
 
@@ -1023,7 +1018,5 @@ mod resource_record_test {
         assert!(resource_record.rr_equal(resource_record1.clone()));
         resource_record.set_rdlength(16);
         assert_ne!(resource_record.rr_equal(resource_record1.clone()), true);
-
     }
-
 }

@@ -4246,6 +4246,7 @@ mod resolver_query_tests {
     //ToDo: Revisar Práctica 1
     fn send_udp_query(){
         // Channels
+        println!("probando1");
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
@@ -4262,7 +4263,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-        let mut resolver_query = ResolverQuery::new(
+        let resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
             add_sender_tcp,
@@ -4281,30 +4282,12 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        resolver_query.set_sname("test.test2.com".to_string());
-        resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
-        let mut cache = DnsCache::new();
-        cache.set_max_size(4);
-        let mut domain_name = DomainName::new();
-        domain_name.set_name("test2.com".to_string());
-        let mut ns_rdata = NsRdata::new();
-        ns_rdata.set_nsdname(domain_name);
-        let r_data = Rdata::SomeNsRdata(ns_rdata);
-        let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address([127, 0, 0, 1]);
-        let r_data = Rdata::SomeARdata(a_rdata);
-        let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
-        cache.add("test2.com".to_string(), ns_resource_record);
-        cache.add("test2.com".to_string(), a_resource_record);
-        resolver_query.set_cache(cache);
-        let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
+        println!("probando1");
+        let socket = UdpSocket::bind("127.0.0.1:3400").expect("couldn't bind to address");
+        println!("probando1");
         let msg = [12];
-        let ip_address = "127.0.0.1:34254".to_string();
+        let ip_address = "127.123:234".to_string();
+        println!("probando1");
         resolver_query.send_udp_query(&msg, ip_address, socket)
 
     }
@@ -4330,7 +4313,7 @@ mod resolver_query_tests {
         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-        let mut resolver_query = ResolverQuery::new(
+        let resolver_query = ResolverQuery::new(
             add_sender_udp,
             delete_sender_udp,
             add_sender_tcp,
@@ -4349,30 +4332,9 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        resolver_query.set_sname("test.test2.com".to_string());
-        resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
-        let mut cache = DnsCache::new();
-        cache.set_max_size(4);
-        let mut domain_name = DomainName::new();
-        domain_name.set_name("test2.com".to_string());
-        let mut ns_rdata = NsRdata::new();
-        ns_rdata.set_nsdname(domain_name);
-        let r_data = Rdata::SomeNsRdata(ns_rdata);
-        let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address([127, 0, 0, 1]);
-        let r_data = Rdata::SomeARdata(a_rdata);
-        let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
-        cache.add("test2.com".to_string(), ns_resource_record);
-        cache.add("test2.com".to_string(), a_resource_record);
-        resolver_query.set_cache(cache);
-        let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
+        let socket = UdpSocket::bind("127.0.0.1:").expect("couldn't bind to address");
         let msg = [12];
-        let ip_address = "1127.0.0.1:34255".to_string();
+        let ip_address = "127.0.0.1:".to_string();
         resolver_query.send_udp_query(&msg, ip_address, socket)
 
     }

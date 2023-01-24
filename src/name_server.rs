@@ -1484,7 +1484,7 @@ impl NameServer {
 
     /// Step 3 from RFC 1034
     /// Start matching down, label by label, in the zone.
-    //TODO: cambiarle de nombre a algo step_3
+    //TODO: Change function name to something related to step_3?
     fn search_in_zone(
         zone: NSZone,
         qname: String,

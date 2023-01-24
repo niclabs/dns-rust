@@ -228,7 +228,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn get_and_set_ip_address_for_refresh_zone() {
         let mut nszone = NSZone::new();
         assert_eq!(nszone.get_name(), String::from(""));
@@ -241,7 +240,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn set_and_get_zone_nodes() {
         let mut nszone = NSZone::new();
         let mut nsnode = NSNode::new();
@@ -256,7 +254,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn set_and_get_class() {
         let mut nszone = NSZone::new();
 
@@ -268,7 +265,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn set_and_get_active() {
         let mut nszone = NSZone::new();
 
@@ -280,7 +276,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn from_file() {
         let file_name = "test.txt".to_string();
         let origin = "example".to_string();
@@ -300,7 +295,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn from_axfr_msg() {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
@@ -321,7 +315,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn set_and_get_glue_rr() {
         let mut nszone = NSZone::new();
         let mut glue: Vec<ResourceRecord> = Vec::new();
@@ -336,7 +329,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     fn set_class_str_fail() {
         let mut nszone = NSZone::new();
 
@@ -351,7 +343,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     #[should_panic]
     fn set_class_str() {
         let mut nszone = NSZone::new();

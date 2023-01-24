@@ -24,7 +24,7 @@ pub fn run_client() {
     let now = Instant::now();
 
     // Create dns message and send it to the resolver
-    let mut dns_message = create_client_query(HOST_NAME, TRANSPORT, QTYPE, QCLASS);
+    let mut dns_message = create_client_query(HOST_NAME, TRANSPORT, QTYPE, QCLASS , RESOLVER_IP_PORT);
 
     // Print received values
     dns_message.print_dns_message();
@@ -34,7 +34,7 @@ pub fn run_client() {
 }
 
 /// Create dns message and send it to the resolver
-pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qclass: u16) -> DnsMessage {
+pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qclass: u16 , resolver_ip_port: &str) -> DnsMessage {
 
     // Create random generator
     let mut rng = thread_rng();
@@ -54,7 +54,7 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
         let socket = UdpSocket::bind(CLIENT_IP_PORT).expect("No connection");
         let msg_to_bytes = query_msg.to_bytes();
 
-        match socket.send_to(&msg_to_bytes, RESOLVER_IP_PORT){
+        match socket.send_to(&msg_to_bytes, resolver_ip_port){
             Err(_) => panic!("Error sending query"),
             Ok(_) => (),
         }
@@ -90,7 +90,7 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
 
     // Send query by TCP
     if transport == "TCP" {
-        let mut stream = TcpStream::connect(RESOLVER_IP_PORT).expect("No connection");
+        let mut stream = TcpStream::connect(resolver_ip_port).expect("No connection");
 
         let bytes = query_msg.to_bytes();
 

@@ -103,12 +103,13 @@ impl Resolver {
     pub fn set_initial_configuration(
         &mut self, 
         resolver_ip_port: &'static str,
-        sbelt_root_ips: [&str; 3], 
+        sbelt_root_ips: [&str;3], 
     ) {
+        //set ip resolver
         self.set_ip_address(resolver_ip_port.to_string());
     
+        //set sbelt
         let mut sbelt = Slist::new();
-    
         for ip in sbelt_root_ips {
             sbelt.insert(".".to_string(), ip.to_string(), 5000);
         }

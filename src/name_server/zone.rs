@@ -232,8 +232,10 @@ mod zone_test {
     fn get_and_set_ip_address_for_refresh_zone() {
         let mut nszone = NSZone::new();
         assert_eq!(nszone.get_name(), String::from(""));
+
         let new_ip = String::from("193.000.233.12");
         nszone.set_ip_address_for_refresh_zone(new_ip);
+
         let expected = String::from("193.000.233.12");
         assert_eq!(nszone.get_ip_address_for_refresh_zone(), expected);
     }
@@ -243,9 +245,11 @@ mod zone_test {
     fn set_and_get_zone_nodes() {
         let mut nszone = NSZone::new();
         let mut nsnode = NSNode::new();
+
         let node_name = "example.com".to_string();
         nsnode.set_name(node_name);
         nszone.set_zone_nodes(nsnode.clone());
+
         assert_eq!(nszone.name, String::from(""));
         let expected = "example.com".to_string();
         assert_eq!(nszone.zone_nodes.get_name(), expected);
@@ -255,8 +259,10 @@ mod zone_test {
     //TODO revisar práctica 1
     fn set_and_get_class() {
         let mut nszone = NSZone::new();
+
         nszone.set_class(1);
         assert_eq!(nszone.get_class(), 1);
+
         nszone.set_class(3);
         assert_eq!(nszone.get_class(), 3);
     }
@@ -265,8 +271,10 @@ mod zone_test {
     //TODO revisar práctica 1
     fn set_and_get_active() {
         let mut nszone = NSZone::new();
+
         nszone.set_active(false);
         assert_eq!(nszone.get_active(), false);
+
         nszone.set_active(true);
         assert_eq!(nszone.get_active(), true);
     }
@@ -277,13 +285,16 @@ mod zone_test {
         let file_name = "test.txt".to_string();
         let origin = "example".to_string();
         let ip = "192.80.24.11".to_string();
+
         let nszone_mut = NSZone::from_file(file_name, origin, ip, true);
         let name = nszone_mut.get_name();
         let class = nszone_mut.get_class();
         let ip = nszone_mut.get_ip_address_for_refresh_zone();
         let expected_name = "uchile.cl.".to_string();
+
         assert_eq!(expected_name, name);
         assert_eq!(1, class);
+
         let expected_ip = "192.80.24.11".to_string();
         assert_eq!(expected_ip, ip);
     }
@@ -295,6 +306,7 @@ mod zone_test {
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let mut resource_record = ResourceRecord::new(a_rdata);
         let mut name_server = resource_record.get_name();
+
         name_server.set_name("example_name".to_string());
         resource_record.set_name(name_server);
         answer.push(resource_record);
@@ -304,6 +316,7 @@ mod zone_test {
         let nszone_mut = NSZone::from_axfr_msg(dns_query_message);
         let new_name = nszone_mut.get_name();
         let expected_name = "example_name".to_string();
+
         assert_eq!(new_name, expected_name);
     }
 
@@ -314,19 +327,25 @@ mod zone_test {
         let mut glue: Vec<ResourceRecord> = Vec::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
+
         glue.push(resource_record);
         assert_eq!(nszone.get_glue_rrs().len(), 0);
+
         nszone.set_glue_rrs(glue);
         assert_eq!(nszone.get_glue_rrs().len(), 1);
     }
+
     #[test]
     //TODO revisar práctica 1
     fn set_class_str_fail() {
         let mut nszone = NSZone::new();
+
         nszone.set_class_str("IN".to_string());
         assert_eq!(nszone.get_class(), 1);
+
         nszone.set_class_str("CH".to_string());
         assert_eq!(nszone.get_class(), 3);
+
         nszone.set_class_str("HS".to_string());
         assert_eq!(nszone.get_class(), 4);
     }
@@ -336,7 +355,9 @@ mod zone_test {
     #[should_panic]
     fn set_class_str() {
         let mut nszone = NSZone::new();
+
         let wrong_class = "asjkh".to_string();
+
         nszone.set_class_str(wrong_class);
     }
 }

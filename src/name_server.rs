@@ -2519,6 +2519,9 @@ mod name_server_test{
     use crate::name_server::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::name_server::DnsCache;
+    use crate::name_server::ZoneRefresh;
+    use crate::domain_name::DomainName;
+    use crate::message::rdata::soa_rdata::SoaRdata;
 
 
     //ToDo: Revisar Práctica 1
@@ -2769,5 +2772,77 @@ mod name_server_test{
         assert_eq!(res.len(), 1);
         assert!(res.contains_key(&1));
         assert!(!res.contains_key(&2));
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_refresh_zone_data(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut ns_zone = NSZone::new();
+        let name = String::from("mail.example.com");
+        ns_zone.set_name(name);
+        let ip = String::from("200.89.76.36");
+        ns_zone.set_ip_address_for_refresh_zone(ip);
+
+        let mut value = Vec::<ResourceRecord>::new();
+        let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        let domain_name_name = String::from("ns.primaryserver.com");
+        mname_domain_name.set_name(domain_name_name);
+        let mut rname_domain_name = DomainName::new();
+        let rname_name = String::from("admin.mail.example.com");
+        rname_domain_name.set_name(rname_name);
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {
+                val.set_mname(mname_domain_name);
+                val.set_rname(rname_domain_name);
+                val.set_serial(1111111111 as u32)
+            }
+            _ => unreachable!(),
+        }
+        let resource_record = ResourceRecord::new(soa_rdata);
+        value.push(resource_record);
+
+        let mut top_node = ns_zone.get_zone_nodes();
+        top_node.set_value(value);
+        ns_zone.set_zone_nodes(top_node);
+
+        let zone_refresh = ZoneRefresh::new(ns_zone);
+
+        let mut new_refresh_zone_data = HashMap::<String, ZoneRefresh>::new();
+
+        new_refresh_zone_data.insert(String::from("example.com"), zone_refresh);
+
+        assert_eq!(name_server.get_refresh_zones_data().len(), 0);
+
+        name_server.set_refresh_zones_data(new_refresh_zone_data);
+        let res = name_server.get_refresh_zones_data();
+
+        assert_eq!(res.len(), 1);
+        assert!(res.contains_key(&String::from("example.com")));
     }
 }

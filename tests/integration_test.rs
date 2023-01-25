@@ -179,3 +179,33 @@ fn test_qtype_mx_example() {
     let answers = client_query_to_our_resolver.get_answer();
     let answer_count = header.get_ancount();
 }
+
+#[test]
+fn test_invalid_domain(){
+    let host_name = "?test.com";
+    let transport = "TCP";
+    let qtype = 1;
+    let qclass = 1;
+    let mut client_query_to_our_resolver = create_client_query(host_name, transport, qtype, qclass , RESOLVER_IP_PORT);
+    let header = client_query_to_our_resolver.get_header();
+    let aut = client_query_to_our_resolver.get_authority();
+    // FIXME: entrega 6 answers en vez de 3, pero es porque estan repetidas.
+    let answer_count = header.get_ancount();
+    //let uwu = header.get
+    //assert_eq!(0,answer_count);
+    println!("{}" , aut.len());
+    for autho in aut{
+        assert_eq!(autho.get_name().get_name() , "com.");
+        // TODO: verificar que sea un SOA
+        assert_eq!(autho.get_string_type() , "SOA");
+        match autho.get_rdata(){
+            Rdata::SomeSoaRdata(val) => {
+                println!("dsfsdfdsfsd");
+                assert_eq!("a.gtld-servers.net." , val.get_mname().get_name());
+                assert_eq!("nstld.verisign-grs.com." , val.get_rname().get_name());
+            }
+            _ => {}
+        }
+
+    }
+}

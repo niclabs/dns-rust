@@ -3475,6 +3475,6 @@ mod name_server_test{
 
         let zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, boolean) = NameServer::search_nearest_ancestor_zone(zones_by_class, String::from("uchile.cl"), 1);
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(zones_by_class, String::from("uchile.cl"), 1);
     }
 }

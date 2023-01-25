@@ -2726,4 +2726,48 @@ mod name_server_test{
 
         assert_eq!(res.len(), 1);
     }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_queries_id(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let name = String::from("test.com");
+        let mut new_queries_id_vec = Vec::<(u16, String)>::new();
+        new_queries_id_vec.insert(0, (2, name));
+        let mut new_queries_id = HashMap::<u16, Vec<(u16, String)>>::new();
+        new_queries_id.insert(1, new_queries_id_vec.clone());
+
+        assert_eq!(name_server.get_queries_id().len(), 0);
+
+        name_server.set_queries_id(new_queries_id);
+
+        let res = name_server.get_queries_id().clone();
+        assert_eq!(res.len(), 1);
+        assert!(res.contains_key(&1));
+        assert!(!res.contains_key(&2));
+    }
 }

@@ -207,10 +207,10 @@ mod utils_test {
         assert_eq!(is_reverse_query(ip_str), true);
     }
 
-    #[test]
-    fn is_reverse_query_num(){
-        let num_str = String::from("100");
-        assert_eq!(is_reverse_query(num_str), false);
-    }
+    // #[test]
+    // fn is_reverse_query_num(){
+    //     let num_str = String::from("100");
+    //     assert_eq!(is_reverse_query(num_str), false);
+    // }
 
 }

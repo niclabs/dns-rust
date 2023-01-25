@@ -3438,6 +3438,4 @@ mod name_server_test{
         assert!(!must_be_false);
         assert_eq!(_zone.get_ip_address_for_refresh_zone(), String::from(""));
     }
-
-    //ToDo: Revisar Práctica 1
 }

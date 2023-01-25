@@ -4242,4 +4242,101 @@ mod resolver_query_tests {
         assert!(!must_be_false);
     }
 
+    #[test]
+    //ToDo: Revisar Práctica 1
+    fn send_udp_query(){
+        // Channels
+        println!("probando1");
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        println!("probando1");
+        let socket = UdpSocket::bind("127.0.0.1:3400").expect("couldn't bind to address");
+        println!("probando1");
+        let msg = [12];
+        let ip_address = "127.123:234".to_string();
+        println!("probando1");
+        resolver_query.send_udp_query(&msg, ip_address, socket)
+
+    }
+    
+    #[test]
+    #[should_panic]
+    //ToDo: Revisar Práctica 1
+    fn send_udp_query_fail(){
+        // Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        let socket = UdpSocket::bind("127.0.0.1:").expect("couldn't bind to address");
+        let msg = [12];
+        let ip_address = "127.0.0.1:".to_string();
+        resolver_query.send_udp_query(&msg, ip_address, socket)
+
+    }
+
 }

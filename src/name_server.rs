@@ -1433,7 +1433,8 @@ impl NameServer {
 
         if zone.get_name() != "" && zone.get_active() == true {
             return (zone, available);
-        } else {
+        } 
+        else {
             let dot_position = qname.find(".").unwrap_or(0);
             if dot_position > 0 {
                 qname.replace_range(..dot_position + 1, "");
@@ -2512,6 +2513,7 @@ impl NameServer {
 mod name_server_test{
     use std::sync::mpsc;
     use crate::name_server::HashMap;
+    use chrono::Utc;
 
     use super::NameServer;
     use crate::name_server::zone::NSZone;
@@ -2519,6 +2521,10 @@ mod name_server_test{
     use crate::name_server::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::name_server::DnsCache;
+    use crate::name_server::ZoneRefresh;
+    use crate::domain_name::DomainName;
+    use crate::message::rdata::soa_rdata::SoaRdata;
+    use crate::name_server::NSNode;
 
 
     //ToDo: Revisar Práctica 1
@@ -2725,5 +2731,750 @@ mod name_server_test{
         let res = name_server.get_queries_id_for_soa_rr();
 
         assert_eq!(res.len(), 1);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_queries_id(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let name = String::from("test.com");
+        let mut new_queries_id_vec = Vec::<(u16, String)>::new();
+        new_queries_id_vec.insert(0, (2, name));
+        let mut new_queries_id = HashMap::<u16, Vec<(u16, String)>>::new();
+        new_queries_id.insert(1, new_queries_id_vec.clone());
+
+        assert_eq!(name_server.get_queries_id().len(), 0);
+
+        name_server.set_queries_id(new_queries_id);
+
+        let res = name_server.get_queries_id().clone();
+        assert_eq!(res.len(), 1);
+        assert!(res.contains_key(&1));
+        assert!(!res.contains_key(&2));
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn set_and_get_refresh_zone_data(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut ns_zone = NSZone::new();
+        let name = String::from("mail.example.com");
+        ns_zone.set_name(name);
+        let ip = String::from("200.89.76.36");
+        ns_zone.set_ip_address_for_refresh_zone(ip);
+
+        let mut value = Vec::<ResourceRecord>::new();
+        let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        let domain_name_name = String::from("ns.primaryserver.com");
+        mname_domain_name.set_name(domain_name_name);
+        let mut rname_domain_name = DomainName::new();
+        let rname_name = String::from("admin.mail.example.com");
+        rname_domain_name.set_name(rname_name);
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {
+                val.set_mname(mname_domain_name);
+                val.set_rname(rname_domain_name);
+                val.set_serial(1111111111 as u32)
+            }
+            _ => unreachable!(),
+        }
+        let resource_record = ResourceRecord::new(soa_rdata);
+        value.push(resource_record);
+
+        let mut top_node = ns_zone.get_zone_nodes();
+        top_node.set_value(value);
+        ns_zone.set_zone_nodes(top_node);
+
+        let zone_refresh = ZoneRefresh::new(ns_zone);
+
+        let mut new_refresh_zone_data = HashMap::<String, ZoneRefresh>::new();
+
+        new_refresh_zone_data.insert(String::from("example.com"), zone_refresh);
+
+        assert_eq!(name_server.get_refresh_zones_data().len(), 0);
+
+        name_server.set_refresh_zones_data(new_refresh_zone_data);
+        let res = name_server.get_refresh_zones_data();
+
+        assert_eq!(res.len(), 1);
+        assert!(res.contains_key(&String::from("example.com")));
+    }
+
+    //ToDo: Revisar Prácitca 1
+    #[test]
+    fn get_delete_channel_udp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let delete_channel_udp_test = name_server.get_delete_channel_udp();
+        let delete_rcv_udp_ = _delete_recv_udp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        delete_channel_udp_test.send(msg).unwrap();
+        let (name, rr_result) = delete_rcv_udp_.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_delete_channel_tcp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let delete_channel_tcp_test = name_server.get_delete_channel_tcp();
+        let delete_rcv_tcp_ = _delete_recv_tcp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        delete_channel_tcp_test.send(msg).unwrap();
+        let (name, rr_result) = delete_rcv_tcp_.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_delete_channel_ns_udp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let delete_channel_ns_udp_test = name_server.get_delete_channel_ns_udp();
+        let delete_rcv_ns_udp_ = _delete_recv_ns_udp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        delete_channel_ns_udp_test.send(msg).unwrap();
+        let (name, rr_result) = delete_rcv_ns_udp_.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_delete_channel_ns_tcp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let delete_channel_ns_tcp_test = name_server.get_delete_channel_ns_tcp();
+        let delete_rcv_ns_tcp_ = _delete_recv_ns_tcp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        delete_channel_ns_tcp_test.send(msg).unwrap();
+        let (name, rr_result) = delete_rcv_ns_tcp_.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_add_channel_ns_udp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let add_channel_ns_udp_test = name_server.get_add_channel_ns_udp();
+        let add_rcv_ns_udp_ = _add_recv_ns_udp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        add_channel_ns_udp_test.send(msg).unwrap();
+        let (name, rr_result) = add_rcv_ns_udp_.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_add_channel_ns_tcp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let add_channel_ns_tcp_test = name_server.get_add_channel_ns_tcp();
+        let add_rcv_ns_tcp_ = _add_recv_ns_tcp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        add_channel_ns_tcp_test.send(msg).unwrap();
+        let (name, rr_result) = add_rcv_ns_tcp_.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_update_refresh_zone_udp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut ns_zone = NSZone::new();
+        let name = String::from("mail.example.com");
+        ns_zone.set_name(name);
+        let ip = String::from("200.89.76.36");
+        ns_zone.set_ip_address_for_refresh_zone(ip);
+
+        let mut value = Vec::<ResourceRecord>::new();
+        let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        let domain_name_name = String::from("ns.primaryserver.com");
+        mname_domain_name.set_name(domain_name_name);
+        let mut rname_domain_name = DomainName::new();
+        let rname_name = String::from("admin.mail.example.com");
+        rname_domain_name.set_name(rname_name);
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {
+                val.set_mname(mname_domain_name);
+                val.set_rname(rname_domain_name);
+                val.set_serial(1111111111 as u32)
+            }
+            _ => unreachable!(),
+        }
+        let resource_record = ResourceRecord::new(soa_rdata);
+        value.push(resource_record);
+
+        let mut top_node = ns_zone.get_zone_nodes();
+        top_node.set_value(value);
+        ns_zone.set_zone_nodes(top_node);
+
+        let zone_refresh = ZoneRefresh::new(ns_zone);
+
+        let update_refresh_zone_udp_test = name_server.get_update_refresh_zone_udp();
+        let update_refresh_zone_rcv_udp = _rx_update_refresh_zone_udp;
+
+        update_refresh_zone_udp_test.send(zone_refresh).unwrap();
+        let res_zone_refresh = update_refresh_zone_rcv_udp.recv().unwrap();
+
+        let some_timestamp = Utc::now().timestamp() as u32;
+        let expected_name = String::from("mail.example.com");
+        assert_eq!(res_zone_refresh.get_zone().get_name(), expected_name);
+        let expected_ip = String::from("200.89.76.36");
+
+        assert_eq!(res_zone_refresh.get_ip_address_for_refresh_zone(), expected_ip);
+        assert_eq!(res_zone_refresh.get_serial(), 1111111111 as u32);
+        assert_eq!(res_zone_refresh.get_refresh(), 0 as u32);
+        assert_eq!(res_zone_refresh.get_retry(), 0 as u32);
+        assert_eq!(res_zone_refresh.get_expire(), 0 as u32);
+        assert_eq!(res_zone_refresh.get_timestamp(), some_timestamp);
+        assert_eq!(res_zone_refresh.get_last_fails(), false);
+        assert_eq!(res_zone_refresh.get_last_serial_check(), some_timestamp);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_update_refresh_zone_tcp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut ns_zone = NSZone::new();
+        let name = String::from("mail.example.com");
+        ns_zone.set_name(name);
+        let ip = String::from("200.89.76.36");
+        ns_zone.set_ip_address_for_refresh_zone(ip);
+
+        let mut value = Vec::<ResourceRecord>::new();
+        let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut mname_domain_name = DomainName::new();
+        let domain_name_name = String::from("ns.primaryserver.com");
+        mname_domain_name.set_name(domain_name_name);
+        let mut rname_domain_name = DomainName::new();
+        let rname_name = String::from("admin.mail.example.com");
+        rname_domain_name.set_name(rname_name);
+        match soa_rdata {
+            Rdata::SomeSoaRdata(ref mut val) => {
+                val.set_mname(mname_domain_name);
+                val.set_rname(rname_domain_name);
+                val.set_serial(1111111111 as u32)
+            }
+            _ => unreachable!(),
+        }
+        let resource_record = ResourceRecord::new(soa_rdata);
+        value.push(resource_record);
+
+        let mut top_node = ns_zone.get_zone_nodes();
+        top_node.set_value(value);
+        ns_zone.set_zone_nodes(top_node);
+
+        let zone_refresh = ZoneRefresh::new(ns_zone);
+
+        let update_refresh_zone_tcp_test = name_server.get_update_refresh_zone_tcp();
+        let update_refresh_zone_rcv_tcp = _rx_update_refresh_zone_tcp;
+
+        update_refresh_zone_tcp_test.send(zone_refresh).unwrap();
+        let res_zone_refresh = update_refresh_zone_rcv_tcp.recv().unwrap();
+
+        let some_timestamp = Utc::now().timestamp() as u32;
+        let expected_name = String::from("mail.example.com");
+        assert_eq!(res_zone_refresh.get_zone().get_name(), expected_name);
+        let expected_ip = String::from("200.89.76.36");
+
+        assert_eq!(res_zone_refresh.get_ip_address_for_refresh_zone(), expected_ip);
+        assert_eq!(res_zone_refresh.get_serial(), 1111111111 as u32);
+        assert_eq!(res_zone_refresh.get_refresh(), 0 as u32);
+        assert_eq!(res_zone_refresh.get_retry(), 0 as u32);
+        assert_eq!(res_zone_refresh.get_expire(), 0 as u32);
+        assert_eq!(res_zone_refresh.get_timestamp(), some_timestamp);
+        assert_eq!(res_zone_refresh.get_last_fails(), false);
+        assert_eq!(res_zone_refresh.get_last_serial_check(), some_timestamp);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_update_zone_udp_resolver(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut nszone = NSZone::new();
+        let mut nsnode = NSNode::new();
+
+        nsnode.set_name("mail.example.com".to_string());
+        nszone.set_zone_nodes(nsnode.clone());
+        nszone.set_name(String::from("example.com"));
+        nszone.set_ip_address_for_refresh_zone(String::from("127.0.0.0"));
+
+        let update_zone_udp_test = name_server.get_update_zone_udp_resolver();
+        let update_zone_udp_rcv = _tx_update_zone_udp_resolver;
+
+        update_zone_udp_test.send(nszone).unwrap();
+        let res_nszone = update_zone_udp_rcv.recv().unwrap();
+
+        assert_eq!(res_nszone.get_name(), String::from("example.com"));
+        assert_eq!(res_nszone.get_zone_nodes().get_name(), nsnode.clone().get_name());
+        assert_eq!(res_nszone.get_ip_address_for_refresh_zone(), String::from("127.0.0.0"));
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_update_zone_tcp_resolver(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut nszone = NSZone::new();
+        let mut nsnode = NSNode::new();
+
+        nsnode.set_name("mail.example.com".to_string());
+        nszone.set_zone_nodes(nsnode.clone());
+        nszone.set_name(String::from("example.com"));
+        nszone.set_ip_address_for_refresh_zone(String::from("127.0.0.0"));
+
+        let update_zone_tcp_test = name_server.get_update_zone_tcp_resolver();
+        let update_zone_tcp_rcv = _tx_update_zone_tcp_resolver;
+
+        update_zone_tcp_test.send(nszone).unwrap();
+        let res_nszone = update_zone_tcp_rcv.recv().unwrap();
+
+        assert_eq!(res_nszone.get_name(), String::from("example.com"));
+        assert_eq!(res_nszone.get_zone_nodes().get_name(), nsnode.clone().get_name());
+        assert_eq!(res_nszone.get_ip_address_for_refresh_zone(), String::from("127.0.0.0"));
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn add_zone_from_master_file(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let file_name = "test.txt".to_string();
+        let origin = "example".to_string();
+        let ip = "192.80.24.11".to_string();
+
+        assert_eq!(name_server.get_zones_by_class().len(), 0);
+
+        name_server.add_zone_from_master_file(file_name, origin, ip, true);
+
+        let res = name_server.get_zones_by_class();
+
+        assert!(res.contains_key(&1));
+        assert_eq!(res.len(), 1);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn search_nearest_ancestor_zone_no_class_in_it(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let zones_by_class = name_server.get_zones_by_class();
+
+        let (_zone, must_be_false) = NameServer::search_nearest_ancestor(zones_by_class, String::from("Not_in.org"), 3);
+
+        assert!(!must_be_false);
+        assert_eq!(_zone.get_ip_address_for_refresh_zone(), String::from(""));
+    }
+
+    //ToDo: Completar test
+    #[test]
+    fn search_nearest_ancestor_zone(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let file_name = "test.txt".to_string();
+        let origin = "example".to_string();
+        let ip = "192.80.24.11".to_string();
+
+        name_server.add_zone_from_master_file(file_name, origin, ip, true);
+
+        let zones_by_class = name_server.get_zones_by_class();
+
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(zones_by_class, String::from("uchile.cl"), 1);
     }
 }

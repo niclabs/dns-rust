@@ -3417,7 +3417,7 @@ mod name_server_test{
         let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
         let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
 
-        let mut name_server = NameServer::new(
+        let name_server = NameServer::new(
             true,
             delete_sender_udp,
             delete_sender_tcp,
@@ -3431,11 +3431,6 @@ mod name_server_test{
             update_zone_tcp_resolver,
         );
 
-        let file_name = "test.txt".to_string();
-        let origin = "example".to_string();
-        let ip = "192.80.24.11".to_string();
-
-        name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let zones_by_class = name_server.get_zones_by_class();
 
         let (_zone, must_be_false) = NameServer::search_nearest_ancestor(zones_by_class, String::from("Not_in.org"), 3);
@@ -3443,4 +3438,6 @@ mod name_server_test{
         assert!(!must_be_false);
         assert_eq!(_zone.get_ip_address_for_refresh_zone(), String::from(""));
     }
+
+    //ToDo: Revisar Práctica 1
 }

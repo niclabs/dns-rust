@@ -3060,4 +3060,47 @@ mod name_server_test{
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
     }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_add_channel_ns_tcp(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let add_channel_ns_tcp_test = name_server.get_add_channel_ns_tcp();
+        let add_rcv_ns_tcp_ = _add_recv_ns_tcp;
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let rr = ResourceRecord::new(a_rdata);
+        let msg = (String::from("test"), rr.clone());
+
+        add_channel_ns_tcp_test.send(msg).unwrap();
+        let (name, rr_result) = add_rcv_ns_tcp_.recv().unwrap();
+
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/ 
+        assert_eq!(name, String::from("test"));
+        assert_eq!(rr_result.get_name(), rr.clone().get_name());
+    }
 }

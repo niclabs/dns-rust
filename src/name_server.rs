@@ -3312,4 +3312,51 @@ mod name_server_test{
         assert_eq!(res_nszone.get_zone_nodes().get_name(), nsnode.clone().get_name());
         assert_eq!(res_nszone.get_ip_address_for_refresh_zone(), String::from("127.0.0.0"));
     }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_update_zone_tcp_resolver(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let mut nszone = NSZone::new();
+        let mut nsnode = NSNode::new();
+
+        nsnode.set_name("mail.example.com".to_string());
+        nszone.set_zone_nodes(nsnode.clone());
+        nszone.set_name(String::from("example.com"));
+        nszone.set_ip_address_for_refresh_zone(String::from("127.0.0.0"));
+
+        let update_zone_tcp_test = name_server.get_update_zone_tcp_resolver();
+        let update_zone_tcp_rcv = _tx_update_zone_tcp_resolver;
+
+        update_zone_tcp_test.send(nszone).unwrap();
+        let res_nszone = update_zone_tcp_rcv.recv().unwrap();
+
+        assert_eq!(res_nszone.get_name(), String::from("example.com"));
+        assert_eq!(res_nszone.get_zone_nodes().get_name(), nsnode.clone().get_name());
+        assert_eq!(res_nszone.get_ip_address_for_refresh_zone(), String::from("127.0.0.0"));
+    }
 }

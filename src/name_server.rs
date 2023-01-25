@@ -1433,7 +1433,8 @@ impl NameServer {
 
         if zone.get_name() != "" && zone.get_active() == true {
             return (zone, available);
-        } else {
+        } 
+        else {
             let dot_position = qname.find(".").unwrap_or(0);
             if dot_position > 0 {
                 qname.replace_range(..dot_position + 1, "");
@@ -3400,5 +3401,11 @@ mod name_server_test{
 
         assert!(res.contains_key(&1));
         assert_eq!(res.len(), 1);
+    }
+
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn search_nearest_ancestor_zone(){
+
     }
 }

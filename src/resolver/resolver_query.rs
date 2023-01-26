@@ -702,9 +702,7 @@ impl ResolverQuery {
 // Utils for Udp
 impl ResolverQuery {
     fn send_udp_query(&self, msg: &[u8], ip_address: String, socket: UdpSocket) {
-        socket
-            .send_to(msg, ip_address)
-            .expect("failed to send message");
+        socket.send_to(msg, ip_address).expect("failed to send message");
     }
 
     pub fn step_1_udp(
@@ -4281,13 +4279,10 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        println!("probando1");
         let socket = UdpSocket::bind("127.0.0.1:3400").expect("couldn't bind to address");
-        println!("probando1");
         let msg = [12];
         let ip_address = "127.123:234".to_string();
-        println!("probando1");
-        resolver_query.send_udp_query(&msg, ip_address, socket)
+        resolver_query.send_udp_query(&msg, ip_address, socket);
 
     }
     

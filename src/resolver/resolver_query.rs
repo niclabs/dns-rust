@@ -3315,7 +3315,6 @@ mod resolver_query_tests {
         sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
 
         resolver_query.initialize_slist_tcp(sbelt, resolver_query.get_sname());
-
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
         assert_eq!(
             resolver_query
@@ -4381,7 +4380,62 @@ mod resolver_query_tests {
         let mut slist = Slist::new();
         slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
         resolver_query.send_internal_queries_for_slist_tcp(slist);
-
      
+    }
+
+    //ToDo: Revisar Práctica/in progress
+    #[test]
+    #[ignore = "TODO: look if the slist is empty after the step_2_tcp"]
+    fn step_2_tcp(){
+         // Channels
+         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+         let (tx_update_query, _rx_update_query) = mpsc::channel();
+         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+         let mut resolver_query = ResolverQuery::new(
+             add_sender_udp,
+             delete_sender_udp,
+             add_sender_tcp,
+             delete_sender_tcp,
+             add_sender_ns_udp,
+             delete_sender_ns_udp,
+             add_sender_ns_tcp,
+             delete_sender_ns_tcp,
+             tx_update_query,
+             tx_delete_query,
+             DnsMessage::new(),
+             tx_update_cache_udp,
+             tx_update_cache_tcp,
+             tx_update_cache_ns_udp,
+             tx_update_cache_ns_tcp,
+             tx_update_slist_tcp,
+             tx_update_self_slist,
+         );
+         resolver_query.set_sname("test.com".to_string());
+         let mut slist = Slist::new();
+         slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+         slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2000);
+         resolver_query.set_slist(slist);
+         resolver_query.step_2_tcp();
+         let resolver =resolver_query.clone();
+         let slist= resolver.get_slist();
+         //the test fail when we try to do the get first, probably the slist is empty after
+         //the step_2_tcp
+         slist.get_first();
+  
+        
+
     }
 }

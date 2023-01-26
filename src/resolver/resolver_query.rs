@@ -4243,7 +4243,6 @@ mod resolver_query_tests {
     //ToDo: Revisar Práctica 1
     fn send_udp_query(){
         // Channels
-        println!("probando1");
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();

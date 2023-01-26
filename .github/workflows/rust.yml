@@ -1,18 +1,23 @@
-name: Rust
+name: Rust testing
+#Name of the process
 
+#Moment when the code will run.
 on: [ push ]
-      
+
+#Adding Color
 env:
   CARGO_TERM_COLOR: always
 
+#Jobs that the action will do
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
+    #Used for get the repo
     - uses: actions/checkout@v3
+    #Build the proyect
     - name: Build
       run: cargo build --verbose
+    #Test the proyect
     - name: Run tests
       run: cargo test --verbose

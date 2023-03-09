@@ -40,28 +40,29 @@ pub fn domain_validity_syntax(domain_name: String) -> Result<String, &'static st
 
 // checks if host_name is writtena as an reverse query
 pub fn is_reverse_query(host_name: String) -> bool {
-    let mut length_ip = 4;
     let mut is_reverse_query: bool = false;
     let labels = host_name.split(".");
+    let mut length_ip = host_name.split(".").count();
+
+    if length_ip != 4 {
+        return is_reverse_query;
+    }
 
     for label in labels {
         let label_char = label.chars();
 
         //if it's reverse query should be a number
-        if length_ip > 0 {
-            for char in label_char {
-                //verified if it's a number
-                is_reverse_query = char.is_ascii_digit();
+        for char in label_char {
+            //verified if it's a number
+            is_reverse_query = char.is_ascii_digit();
 
-                //if not a number is not a reverse query
-                if is_reverse_query == false {
-                    return is_reverse_query;
-                }
+            //if not a number is not a reverse query
+            if is_reverse_query == false {
+                return is_reverse_query;
             }
         }
-
-        length_ip = length_ip - 1;
     }
+
     return is_reverse_query;
 }
 
@@ -207,10 +208,10 @@ mod utils_test {
         assert_eq!(is_reverse_query(ip_str), true);
     }
 
-    // #[test]
-    // fn is_reverse_query_num(){
-    //     let num_str = String::from("100");
-    //     assert_eq!(is_reverse_query(num_str), false);
-    // }
+    #[test]
+    fn is_reverse_query_num(){
+        let num_str = String::from("100");
+        assert_eq!(is_reverse_query(num_str), false);
+    }
 
 }

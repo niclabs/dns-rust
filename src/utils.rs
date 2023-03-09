@@ -42,7 +42,7 @@ pub fn domain_validity_syntax(domain_name: String) -> Result<String, &'static st
 pub fn is_reverse_query(host_name: String) -> bool {
     let mut is_reverse_query: bool = false;
     let labels = host_name.split(".");
-    let mut length_ip = host_name.split(".").count();
+    let length_ip = host_name.split(".").count();
 
     if length_ip != 4 {
         return is_reverse_query;

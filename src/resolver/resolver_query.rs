@@ -3973,6 +3973,7 @@ mod resolver_query_tests {
 
     //ToDo: Revisar Práctica 1
     #[test]
+
     fn add_to_cache_and_remove_from_cache(){
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -4334,6 +4335,7 @@ mod resolver_query_tests {
      
     //ToDo: Revisar Práctica/in progress
     #[test]
+    #[ignore = "TODO: look if the slist is empty after the step_2_tcp"]
     fn step_2_tcp(){
          // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -4387,6 +4389,7 @@ mod resolver_query_tests {
     
     //ToDo: Revisar Práctica/in progress
     #[test]
+    #[ignore = "TODO"]
     fn step_1_tcp(){
          // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();

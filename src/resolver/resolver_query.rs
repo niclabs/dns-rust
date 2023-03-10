@@ -4427,6 +4427,7 @@ mod resolver_query_tests {
              tx_update_slist_tcp,
              tx_update_self_slist,
          );
+         resolver_query.set_sname("test.com".to_string());
   
     }
 }

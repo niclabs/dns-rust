@@ -355,7 +355,6 @@ mod slist_test {
         assert_eq!(slist.get_ns_list().len(), 2);
 
         slist.sort();
-
         assert_eq!(
             *slist.get_first().get(&"response_time".to_string()).unwrap(),
             2000.to_string()

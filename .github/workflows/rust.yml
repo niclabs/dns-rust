@@ -21,3 +21,6 @@ jobs:
     #Test the proyect
     - name: Run tests
       run: cargo test --verbose
+    #Add info to Codecov
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3

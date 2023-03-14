@@ -4514,7 +4514,7 @@ mod resolver_query_tests {
             tx_update_self_slist,
         );
         resolver_query.set_sname("test.com".to_string());
-        let mut slist = Slist::new();
+        let slist = Slist::new();
         resolver_query.set_slist(slist);
         let x = resolver_query.get_slist().len();
         print!("largolargo{}",x);

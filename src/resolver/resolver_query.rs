@@ -622,13 +622,10 @@ impl ResolverQuery {
 impl ResolverQuery {
     pub fn step_2_tcp(&mut self) {
         let sbelt = self.get_sbelt();
-
         let sname = self.get_sname();
         self.initialize_slist_tcp(sbelt, sname);
-
         let mut slist = self.get_slist();
         slist.sort();
-
         self.set_slist(slist);
     }
 
@@ -4411,7 +4408,7 @@ mod resolver_query_tests {
      
     //ToDo: Revisar Práctica/in progress
     #[test]
-    #[ignore = "TODO: look if the slist is empty after the step_2_tcp"]
+    #[ignore = "the slist is empty after the step_2_tcp"]
     fn step_2_tcp(){
          // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -4451,16 +4448,34 @@ mod resolver_query_tests {
          );
          resolver_query.set_sname("test.com".to_string());
          let mut slist = Slist::new();
-         slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
-         slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2000);
+
+         let mut first_element = HashMap::new();
+ 
+         let name = "VENERA.ISI.EDU".to_string();
+         let ip_address = "128.9.0.32".to_string();
+         let response_time = 5000;
+ 
+         first_element.insert("name".to_string(), name);
+         first_element.insert("ip_address".to_string(), ip_address);
+         first_element.insert("response_time".to_string(), response_time.to_string());
+ 
+         slist.insert("VENERA.ISI.EDU".to_string(), "128.9.0.32".to_string(), 5000);
+         slist.insert("XX.LCS.MIT.EDU".to_string(), "10.0.0.44".to_string(), 5001);
+ 
          resolver_query.set_slist(slist);
+         let x = resolver_query.get_slist().len();
+         print!("largolargo{}",x);
          resolver_query.step_2_tcp();
          let resolver =resolver_query.clone();
          //the test fail when we try to do the get first, probably the slist is empty after
          //the step_2_tcp
-         print!("prueba1");
-         let expected = resolver.get_slist();
-         print!("prueba2");
+         let expected_slist = resolver.get_slist().get_ns_list();
+         let len = expected_slist.len();
+         assert_eq!(len, 2);
+         
+         
+         
+        
          
   
     }

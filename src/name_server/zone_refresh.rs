@@ -502,4 +502,36 @@ mod zone_refresh_test {
         assert_eq!(zone_refresh.get_retry(), 7200 as u32);
         assert_eq!(zone_refresh.get_expire(), 4000000 as u32);
     }
+
+    #[test]
+    fn update_zone_refresh_same_data() {
+        let mut ns_zone = NSZone::new();
+        let mut rr_value = Vec::<ResourceRecord>::new();
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let resource_record = ResourceRecord::new(soa_rdata);
+        
+        rr_value.push(resource_record);
+
+        ns_zone.get_zone_nodes().set_value(rr_value.clone());
+        let mut top_node = ns_zone.get_zone_nodes();
+        top_node.set_value(rr_value);
+        ns_zone.set_zone_nodes(top_node);
+
+        let mut zone_refresh = ZoneRefresh::new(ns_zone.clone());
+        let zero = 0 as u32;
+        assert_eq!(zone_refresh.get_serial(), zero.clone());
+        assert_eq!(zone_refresh.get_retry(), zero.clone());
+        assert_eq!(zone_refresh.get_expire(), zero.clone());
+
+        let serial_init_state = zone_refresh.get_serial();
+        let retry_init_state = zone_refresh.get_retry();
+        let expire_init_state = zone_refresh.get_expire();
+
+        //add nothing
+        zone_refresh.update_zone_refresh(ns_zone.clone());
+
+        assert_eq!(zone_refresh.get_serial(), serial_init_state);
+        assert_eq!(zone_refresh.get_retry(), retry_init_state);
+        assert_eq!(zone_refresh.get_expire(), expire_init_state);
+    }
 }

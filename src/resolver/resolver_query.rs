@@ -1290,16 +1290,12 @@ impl ResolverQuery {
         update_slist_tcp_recv: Receiver<(String, Vec<ResourceRecord>)>,
     ) -> DnsMessage {
         let queries_left = self.get_queries_before_temporary_error();
-
         // Temporary Error
         if queries_left <= 0 {
             panic!("Temporary Error");
-        }
-
+    }
         let mut slist = self.get_slist();
-
         let mut index_to_choose = self.get_index_to_choose() % slist.len() as u16;
-
         let mut best_server_to_ask = slist.get(index_to_choose);
         let mut best_server_ip = best_server_to_ask
             .get(&"ip_address".to_string())
@@ -1307,7 +1303,6 @@ impl ResolverQuery {
             .clone();
 
         let mut counter = 0;
-
         while &best_server_ip == "" {
             if counter > slist.len() {
                 // Update slist
@@ -1406,7 +1401,7 @@ impl ResolverQuery {
         let host_name = best_server_to_ask.get(&"name".to_string()).unwrap().clone();
         self.set_last_query_hostname(host_name);
         //
-
+        
         return self.send_tcp_query(&msg_to_bytes, best_server_ip, update_slist_tcp_recv);
     }
 
@@ -4516,8 +4511,6 @@ mod resolver_query_tests {
         resolver_query.set_sname("test.com".to_string());
         let slist = Slist::new();
         resolver_query.set_slist(slist);
-        let x = resolver_query.get_slist().len();
-        print!("largolargo{}",x);
         resolver_query.step_2_tcp();
         let resolver =resolver_query.clone();
         //the test fail when we try to do the get first, probably the slist is empty after
@@ -4576,7 +4569,6 @@ mod resolver_query_tests {
     }
 
     #[test]
-    #[ignore = "TODO"]
     #[should_panic]
     fn step_3_tcp_should_panic(){
          // Channels
@@ -4621,4 +4613,55 @@ mod resolver_query_tests {
          resolver_query.step_3_tcp( update_slist_tcp_recv);
          
     }
+
+    #[test]
+    #[ignore = "TODO"]
+    fn step_3_tcp(){
+        // Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        resolver_query.set_sname("test.com".to_string());
+        let mut slist = Slist::new();
+        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+        slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2000);
+        resolver_query.set_slist(slist);
+        let resolver =resolver_query.clone();
+        let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+        let DNS = resolver_query.step_3_tcp(update_slist_tcp_recv);
+    
+        
+   }
 }

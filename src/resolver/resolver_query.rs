@@ -2077,7 +2077,7 @@ mod resolver_query_tests {
 
     use chrono::Utc;
     use std::collections::HashMap;
-    use std::sync::mpsc;
+    use std::sync::mpsc::{self, Receiver};
 
     #[test]
     // TODO revisar práctica 1
@@ -4567,7 +4567,11 @@ mod resolver_query_tests {
              tx_update_slist_tcp,
              tx_update_self_slist,
          );
+         let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
          resolver_query.set_sname("test.com".to_string());
-  
+         let query_msg = resolver_query.create_query_message();
+
+         let expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
+         
     }
 }

@@ -4616,7 +4616,7 @@ mod resolver_query_tests {
 
     #[test]
     #[ignore = "TODO"]
-    fn step_3_tcp(){
+    fn step_3_tcp_empty_ips(){
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -4655,13 +4655,12 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.com".to_string());
         let mut slist = Slist::new();
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
-        slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2000);
+        slist.insert("test.com".to_string(), "".to_string(), 5000);
+        slist.insert("test2.com".to_string(), "".to_string(), 2000);
         resolver_query.set_slist(slist);
-        let resolver =resolver_query.clone();
+        let mut resolver =resolver_query.clone();
         let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-        let DNS = resolver_query.step_3_tcp(update_slist_tcp_recv);
-    
-        
+        let DNS = resolver.step_3_tcp(update_slist_tcp_recv);      
    }
+
 }

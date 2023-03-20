@@ -189,6 +189,14 @@ impl NSZone {
     pub fn get_glue_rrs(&self) -> Vec<ResourceRecord> {
         self.glue_rrs.clone()
     }
+
+    /// Check if the zone is empty
+    pub fn is_empty(&self) -> bool {
+        // We will say a Zone is empty if it doesn't have a node.
+        let zone_nodes_value = self.zone_nodes.get_value();
+        let are_there_nodes = zone_nodes_value.len() > 0;
+        return !are_there_nodes;
+    }
 }
 
 #[cfg(test)]

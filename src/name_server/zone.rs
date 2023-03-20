@@ -323,6 +323,32 @@ mod zone_test {
     }
 
     #[test]
+    fn from_axfr_msg_next_rr_not_none() {
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata_ = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record = ResourceRecord::new(a_rdata);
+        let mut resource_record_ = ResourceRecord::new(a_rdata_);
+        let mut name_server = resource_record.get_name();
+        let mut name_server_= resource_record_.get_name();
+
+        name_server.set_name("example_name".to_string());
+        name_server_.set_name("example_namessss".to_string());
+        resource_record.set_name(name_server);
+        resource_record_.set_name(name_server_);
+        answer.push(resource_record);
+        answer.push(resource_record_);
+        let qname = "test.com".to_string();
+        let mut dns_query_message = DnsMessage::new_query_message(qname, 1, 1, 0, false, 1);
+        dns_query_message.set_answer(answer);
+        let nszone_mut = NSZone::from_axfr_msg(dns_query_message);
+        let new_name = nszone_mut.get_name();
+        let expected_name = "example_name".to_string();
+
+        assert_eq!(new_name, expected_name);
+    }
+
+    #[test]
     fn set_and_get_glue_rr() {
         let mut nszone = NSZone::new();
         let mut glue: Vec<ResourceRecord> = Vec::new();

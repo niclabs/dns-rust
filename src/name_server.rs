@@ -3473,9 +3473,7 @@ mod name_server_test{
         let ip = "192.80.24.11".to_string();
 
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
-
-        let zones_by_class = name_server.get_zones_by_class();
-
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(zones_by_class, String::from("uchile.cl"), 1);
+        let _zones_by_class = name_server.get_zones_by_class();
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("uchile.cl"), 1);
     }
 }

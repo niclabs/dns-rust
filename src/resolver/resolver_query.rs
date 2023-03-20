@@ -3239,6 +3239,84 @@ mod resolver_query_tests {
     }
 
     #[test]
+    fn initialize_slist_udp_ip_found_zero() {
+        // Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        resolver_query.set_sname("test.test2.com".to_string());
+        resolver_query.set_rd(true);
+        resolver_query.set_stype(1);
+        resolver_query.set_sclass(1);
+        let mut cache = DnsCache::new();
+        cache.set_max_size(4);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name("test2.com".to_string());
+        let mut ns_rdata = NsRdata::new();
+        ns_rdata.set_nsdname(domain_name);
+        let r_data = Rdata::SomeNsRdata(ns_rdata);
+        let mut ns_resource_record = ResourceRecord::new(r_data);
+        ns_resource_record.set_type_code(2);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address([127, 0, 0, 1]);
+        let r_data = Rdata::SomeARdata(a_rdata);
+        let mut a_resource_record = ResourceRecord::new(r_data);
+        a_resource_record.set_type_code(1);
+        cache.add("test2.com".to_string(), ns_resource_record);
+        cache.add("test2.com".to_string(), a_resource_record);
+        resolver_query.set_cache(cache);
+        let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
+        assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
+
+        let mut sbelt = Slist::new();
+        sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
+        resolver_query.initialize_slist_udp(sbelt, resolver_query.get_sname(), socket);
+
+        assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
+        assert_eq!(
+            resolver_query
+                .get_slist()
+                .get_first()
+                .get(&"name".to_string())
+                .unwrap(),
+            &"test2.com".to_string()
+        );
+    }
+
+
+    #[test]
     // TODO revisar práctica 1
     fn initialize_slist_tcp() {
         // Channels

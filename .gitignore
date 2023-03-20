@@ -9,3 +9,6 @@ zonesTest.zone
 log.txt
 test_domains_names.txt
 Test_To_Do_List.md
+
+# coverage
+/coverage/*.profraw

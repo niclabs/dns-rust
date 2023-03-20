@@ -3479,7 +3479,7 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("uchile.cl."), 1);
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("dcc.uchile.cl."), 1);
 
         assert!(_boolean);
         assert_eq!(String::from("uchile.cl."), _zone.get_name());
@@ -3520,7 +3520,7 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor(_zones_by_class, String::from("uchile.cl."), 1);
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor(_zones_by_class, String::from("dcc.uchile.cl."), 1);
 
         assert!(_boolean);
         assert_eq!(String::from("uchile.cl."), _zone.get_name());

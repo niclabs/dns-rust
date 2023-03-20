@@ -61,6 +61,7 @@ impl Question {
 
         let (qname, bytes_without_name) = domain_name_result.unwrap();
 
+        println!("{}", bytes_without_name.len());
         if bytes_without_name.len() < 4 {
             return Err("Format Error");
         }
@@ -114,9 +115,7 @@ impl Question {
 
         let qname = self.get_qname().get_name();
 
-        if qname == "".to_string() {
-            return question_bytes;
-        } else {
+        if qname != "".to_string() {
             let qname_bytes = self.get_qname().to_bytes();
             for byte in qname_bytes.as_slice() {
                 question_bytes.push(*byte);
@@ -126,9 +125,8 @@ impl Question {
             question_bytes.push(self.get_second_qtype_byte());
             question_bytes.push(self.get_first_qclass_byte());
             question_bytes.push(self.get_second_qclass_byte());
-
-            question_bytes
         }
+        return question_bytes;
     }
 }
 
@@ -164,6 +162,8 @@ impl Question {
 
 #[cfg(test)]
 mod question_test {
+    use std::io::Write;
+
     use super::Question;
     use crate::domain_name::DomainName;
 
@@ -177,50 +177,50 @@ mod question_test {
     }
 
     #[test]
-    fn set_and_get_qname_test() {
+    fn set_and_get_qname() {
         let mut question = Question::new();
 
-        assert_eq!(question.get_qname().get_name(), String::from(""));
+        let mut qname = question.get_qname().get_name();
+        assert_eq!(qname, String::from(""));
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("Test"));
         question.set_qname(domain_name);
 
-        let qname = question.get_qname().get_name();
+        qname = question.get_qname().get_name();
         assert_eq!(qname, String::from("Test"));
     }
 
     #[test]
-    fn set_and_get_qtype_test() {
+    fn set_and_get_qtype() {
         let mut question = Question::new();
 
-        assert_eq!(question.get_qtype(), 0);
+        let mut qtype = question.get_qtype();
+        assert_eq!(qtype, 0);
 
         question.set_qtype(1 as u16);
-        let qtype = question.get_qtype();
-
+        qtype = question.get_qtype();
         assert_eq!(qtype, 1 as u16);
     }
 
     #[test]
-    fn set_and_get_qclass_test() {
+    fn set_and_get_qclass() {
         let mut question = Question::new();
 
-        assert_eq!(question.get_qclass(), 0);
+        let mut qclass = question.get_qclass();
+        assert_eq!(qclass, 0);
 
         question.set_qclass(1 as u16);
-        let qclass = question.get_qclass();
-
+        qclass = question.get_qclass();
         assert_eq!(qclass, 1 as u16);
     }
 
     #[test]
-    fn to_bytes_test() {
-        let mut question = Question::new();
-
+    fn to_bytes_correct_val() {
         let mut domain_name = DomainName::new();
+        let mut question = Question::new();
+        
         domain_name.set_name(String::from("test.com"));
-
         question.set_qname(domain_name);
         question.set_qtype(5);
         question.set_qclass(1);
@@ -234,13 +234,41 @@ mod question_test {
     }
 
     #[test]
-    fn from_bytes_test() {
+    fn to_bytes_empty_qname() {
+        let question = Question::new();
+        let expected_question_to_bytes: Vec<u8> = Vec::new();
+
+        let real_question_to_bytes = question.to_bytes();      
+        assert_eq!(real_question_to_bytes, expected_question_to_bytes);
+    }
+
+    #[test]
+    fn from_bytes_correct_val() {
         let bytes: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 1];
 
         let (question, _others_msg_bytes) = Question::from_bytes(&bytes, &bytes).unwrap();
 
-        assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(question.get_qtype(), 5);
-        assert_eq!(question.get_qclass(), 1);
+        let qname = question.get_qname().get_name();
+        assert_eq!(qname, String::from("test.com"));
+        let qtype = question.get_qtype();
+        assert_eq!(qtype, 5);
+        let qclass = question.get_qclass();
+        assert_eq!(qclass, 1);
+    }
+
+    #[test]
+    #[should_panic(expected = "Format Error")]
+    fn from_bytes_handling_err() {
+        let bytes: [u8; 14] = [38, 55, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 1];
+
+        Question::from_bytes(&bytes, &bytes).unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "Format Error")]
+    fn from_bytes_less_bytes_than_expected() {
+        let bytes: [u8; 12] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5];
+
+        Question::from_bytes(&bytes, &bytes).unwrap();
     }
 }

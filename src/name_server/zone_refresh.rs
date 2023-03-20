@@ -19,6 +19,10 @@ pub struct ZoneRefresh {
 
 impl ZoneRefresh {
     pub fn new(zone: NSZone) -> Self {
+        if zone.is_empty() {
+            panic!("Can not initialize a Zone Refresh instance with an empty Zone");
+        }
+
         let soa_rr = zone.get_zone_nodes().get_rrs_by_type(6)[0].clone();
 
         let soa_rdata = match soa_rr.get_rdata() {

@@ -1499,6 +1499,10 @@ impl NameServer {
         let mut qname_without_zone_label = qname.replace(&zone.get_name(), "");
         let zone = zone.clone();
 
+        /*ToDo: See case where zone is empty
+        if (zone.is_empty()){
+        }*/
+
         let mut zone_nodes = zone.get_zone_nodes();
 
         println!("QNAME without label: {}", qname_without_zone_label.clone());
@@ -3474,6 +3478,51 @@ mod name_server_test{
 
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("uchile.cl"), 1);
+
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("uchile.cl."), 1);
+
+        assert!(_boolean);
+        assert_eq!(String::from("uchile.cl."), _zone.get_name());
+    }
+
+    //ToDo: Revisar Test
+    #[test]
+    fn search_nearest_ancestor(){
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let file_name = "test.txt".to_string();
+        let origin = "example".to_string();
+        let ip = "192.80.24.11".to_string();
+
+        name_server.add_zone_from_master_file(file_name, origin, ip, true);
+        let _zones_by_class = name_server.get_zones_by_class();
+
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor(_zones_by_class, String::from("uchile.cl."), 1);
+
+        assert!(_boolean);
+        assert_eq!(String::from("uchile.cl."), _zone.get_name());
     }
 }

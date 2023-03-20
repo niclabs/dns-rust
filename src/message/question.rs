@@ -162,8 +162,6 @@ impl Question {
 
 #[cfg(test)]
 mod question_test {
-    use std::io::Write;
-
     use super::Question;
     use crate::domain_name::DomainName;
 

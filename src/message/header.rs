@@ -170,13 +170,12 @@ impl Header {
     // See the dns message structure in struct documentation for more info.
     fn aa_to_byte(&self) -> u8 {
         let aa = self.get_aa();
-        let mut aa_to_byte: u8 = 0;
 
-        if aa == true {
-            aa_to_byte = 0b00000100;
+        if aa {
+            return 0b00000100;
         }
 
-        aa_to_byte
+        return 0 as u8;
     }
 
     // Returns a byte that represents the field in the dns message.
@@ -184,13 +183,12 @@ impl Header {
     // See the dns message structure in struct documentation for more info.
     fn tc_to_byte(&self) -> u8 {
         let tc = self.get_tc();
-        let mut tc_to_byte: u8 = 0;
 
-        if tc == true {
-            tc_to_byte = 0b00000010;
+        if tc {
+            return 0b00000010;
         }
 
-        tc_to_byte
+        return 0 as u8;
     }
 
     // Returns a byte that represents the field in the dns message.
@@ -198,13 +196,12 @@ impl Header {
     // See the dns message structure in struct documentation for more info.
     fn rd_to_byte(&self) -> u8 {
         let rd = self.get_rd();
-        let mut rd_to_byte: u8 = 0;
 
-        if rd == true {
-            rd_to_byte = 0b00000001;
+        if rd {
+            return 0b00000001;
         }
 
-        rd_to_byte
+        return 0 as u8;
     }
 
     // Returns a byte that represents the field in the dns message.
@@ -212,13 +209,12 @@ impl Header {
     // See the dns message structure in struct documentation for more info.
     fn ra_to_byte(&self) -> u8 {
         let ra = self.get_ra();
-        let mut ra_to_byte: u8 = 0;
 
-        if ra == true {
-            ra_to_byte = 0b10000000;
+        if ra {
+            return 0b10000000;
         }
 
-        ra_to_byte
+        return 0 as u8;
     }
 
     // Gets the first byte from the qdcount attribute.
@@ -502,120 +498,144 @@ mod header_test {
     }
 
     #[test]
-    fn set_and_get_id_test() {
+    fn set_and_get_id() {
         let mut header = Header::new();
+
         let mut id = header.get_id();
         assert_eq!(id, 0);
+
         header.set_id(5);
         id = header.get_id();
         assert_eq!(id, 5);
     }
 
     #[test]
-    fn set_and_get_qr_test() {
+    fn set_and_get_qr() {
         let mut header = Header::new();
+
         let mut qr = header.get_qr();
         assert_eq!(qr, false);
+
         header.set_qr(true);
         qr = header.get_qr();
         assert_eq!(qr, true);
     }
 
     #[test]
-    fn set_and_get_op_code_test() {
+    fn set_and_get_op_code() {
         let mut header = Header::new();
+
         let mut op_code = header.get_op_code();
         assert_eq!(op_code, 0);
+
         header.set_op_code(145);
         op_code = header.get_op_code();
         assert_eq!(op_code, 145);
     }
 
     #[test]
-    fn set_and_get_aa_test() {
+    fn set_and_get_aa() {
         let mut header = Header::new();
+
         let mut aa = header.get_aa();
         assert_eq!(aa, false);
+
         header.set_aa(true);
         aa = header.get_aa();
         assert_eq!(aa, true);
     }
 
     #[test]
-    fn set_and_get_tc_test() {
+    fn set_and_get_tc() {
         let mut header = Header::new();
+
         let mut tc = header.get_tc();
         assert_eq!(tc, false);
+
         header.set_tc(true);
         tc = header.get_tc();
         assert_eq!(tc, true);
     }
 
     #[test]
-    fn set_and_get_rd_test() {
+    fn set_and_get_rd() {
         let mut header = Header::new();
+
         let mut rd = header.get_rd();
         assert_eq!(rd, false);
+
         header.set_rd(true);
         rd = header.get_rd();
         assert_eq!(rd, true);
     }
 
     #[test]
-    fn set_and_get_ra_test() {
+    fn set_and_get_ra() {
         let mut header = Header::new();
+
         let mut ra = header.get_ra();
         assert_eq!(ra, false);
+
         header.set_ra(true);
         ra = header.get_ra();
         assert_eq!(ra, true);
     }
 
     #[test]
-    fn set_and_get_rcode_test() {
+    fn set_and_get_rcode() {
         let mut header = Header::new();
+
         let mut rcode = header.get_rcode();
         assert_eq!(rcode, 0);
+
         header.set_rcode(2);
         rcode = header.get_rcode();
         assert_eq!(rcode, 2);
     }
 
     #[test]
-    fn set_and_get_qdcount_test() {
+    fn set_and_get_qdcount() {
         let mut header = Header::new();
+
         let mut qdcount = header.get_qdcount();
         assert_eq!(qdcount, 0);
+
         header.set_qdcount(1);
         qdcount = header.get_qdcount();
         assert_eq!(qdcount, 1);
     }
 
     #[test]
-    fn set_and_get_ancount_test() {
+    fn set_and_get_ancount() {
         let mut header = Header::new();
+
         let mut ancount = header.get_ancount();
         assert_eq!(ancount, 0);
+
         header.set_ancount(5);
         ancount = header.get_ancount();
         assert_eq!(ancount, 5);
     }
 
     #[test]
-    fn set_and_get_nscount_test() {
+    fn set_and_get_nscount() {
         let mut header = Header::new();
+
         let mut nscount = header.get_nscount();
         assert_eq!(nscount, 0);
+
         header.set_nscount(4);
         nscount = header.get_nscount();
         assert_eq!(nscount, 4);
     }
 
     #[test]
-    fn set_and_get_arcount_test() {
+    fn set_and_get_arcount() {
         let mut header = Header::new();
+
         let mut arcount = header.get_arcount();
         assert_eq!(arcount, 0);
+
         header.set_arcount(12);
         arcount = header.get_arcount();
         assert_eq!(arcount, 12);

@@ -4560,11 +4560,11 @@ mod resolver_query_tests {
              tx_update_slist_tcp,
              tx_update_self_slist,
          );
-         let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
          resolver_query.set_sname("test.com".to_string());
          let query_msg = resolver_query.create_query_message();
 
-         let expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
+         let _expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
          
     }
 
@@ -4607,7 +4607,7 @@ mod resolver_query_tests {
              tx_update_slist_tcp,
              tx_update_self_slist,
          );
-         let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
          resolver_query.set_sname("test.com".to_string());
          resolver_query.set_queries_before_temporary_error(0);
          resolver_query.step_3_tcp( update_slist_tcp_recv);
@@ -4659,8 +4659,8 @@ mod resolver_query_tests {
         slist.insert("test2.com".to_string(), "".to_string(), 2000);
         resolver_query.set_slist(slist);
         let mut resolver =resolver_query.clone();
-        let (update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-        let DNS = resolver.step_3_tcp(update_slist_tcp_recv);      
+        let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+        let _dns = resolver.step_3_tcp(update_slist_tcp_recv);      
    }
 
 }

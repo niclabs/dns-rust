@@ -4,7 +4,7 @@ CL-test.zone
 .github/workflows
 
 # coverage
-/coverage
+coverage/
 
 # testing 
 test_files
@@ -12,3 +12,4 @@ zonesTest.zone
 log.txt
 test_domains_names.txt
 Test_To_Do_List.md
+coverage/html/src/dns_cache.rs.html

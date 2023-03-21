@@ -4481,7 +4481,7 @@ mod resolver_query_tests {
 
     //ToDo: Revisar Práctica/in progress
     #[test]
-    fn step_1_tcp(){
+    fn step_1_tcp_no_local_info(){
          // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();
          let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();

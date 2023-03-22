@@ -66,6 +66,25 @@ pub fn is_reverse_query(host_name: String) -> bool {
     return is_reverse_query;
 }
 
+/// Given the value of the STYPE, obtains its corresponding string.
+pub fn get_string_stype(stype_code: u16) -> Result<String, &'static str> {
+    let s_type = match stype_code {
+        1 => Ok("A".to_string()),
+        2 => Ok("NS".to_string()),
+        5 => Ok("CNAME".to_string()),
+        6 => Ok("SOA".to_string()),
+        11 => Ok("WKS".to_string()),
+        12 => Ok("PTR".to_string()),
+        13 => Ok("HINFO".to_string()),
+        14 => Ok("MINFO".to_string()),
+        15 => Ok("MX".to_string()),
+        16 => Ok("TXT".to_string()),
+        255 => Ok("*".to_string()),
+        _ => return Err("Not implemented type of query"),
+    };
+    s_type
+}
+
 #[cfg(test)]
 mod utils_test {
     use crate::utils::is_reverse_query;

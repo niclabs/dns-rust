@@ -9,6 +9,7 @@ use crate::resolver::Resolver;
 
 use crate::config::QUERIES_FOR_CLIENT_REQUEST;
 use crate::config::USE_CACHE;
+use crate::utils;
 
 use chrono::Utc;
 use rand::{thread_rng, Rng};
@@ -407,19 +408,9 @@ impl ResolverQuery {
 
     // Looks for local info in name server zone and cache
     pub fn look_for_local_info(&mut self) -> Result<Vec<ResourceRecord>, &'static str> {
-        let s_type = match self.get_stype() {
-            1 => "A".to_string(),
-            2 => "NS".to_string(),
-            5 => "CNAME".to_string(),
-            6 => "SOA".to_string(),
-            11 => "WKS".to_string(),
-            12 => "PTR".to_string(),
-            13 => "HINFO".to_string(),
-            14 => "MINFO".to_string(),
-            15 => "MX".to_string(),
-            16 => "TXT".to_string(),
-            255 => "*".to_string(),
-            _ => return Err("Not implemented type of query"),
+        let s_type = match utils::get_string_stype(self.get_stype()) {
+            Ok(s) => s,
+            Err(e) => return Err(e),
         };
 
         let s_name = self.get_sname();

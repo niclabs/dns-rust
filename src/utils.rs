@@ -80,7 +80,7 @@ pub fn get_string_stype(stype_code: u16) -> Result<String, &'static str> {
         15 => Ok("MX".to_string()),
         16 => Ok("TXT".to_string()),
         255 => Ok("*".to_string()),
-        _ => return Err("Not implemented type of query"),
+        _ => Err("Not implemented type of query"),
     };
     s_type
 }

@@ -424,6 +424,7 @@ impl ResolverQuery {
         if s_class == 255 {
             let mut all_answers = Vec::new();
 
+            // When QCLASS=*, all classes must be matched
             for (class, _hashzone) in self.get_ns_data().iter() {
                 let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
                     self.get_ns_data(),

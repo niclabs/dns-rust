@@ -693,6 +693,8 @@ impl ResolverQuery {
         socket.send_to(msg, ip_address).expect("failed to send message");
     }
 
+    /// See if the answer is in local information, and if so it returns it to the client.
+    /// If no local information is found, Step 2 and Step 3 are run and returns None.
     pub fn step_1_udp(
         &mut self,
         socket: UdpSocket,

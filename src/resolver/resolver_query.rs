@@ -407,6 +407,9 @@ impl ResolverQuery {
     }
 
     // Looks for local info in name server zone and cache
+    /// Returns the RRs from the local information.
+    /// Searches the cache and the name server for the desired data, to be
+    /// used in Step 1.
     pub fn look_for_local_info(&mut self) -> Result<Vec<ResourceRecord>, &'static str> {
         let s_type = match utils::get_string_stype(self.get_stype()) {
             Ok(s) => s,

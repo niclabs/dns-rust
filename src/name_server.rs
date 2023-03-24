@@ -2529,6 +2529,7 @@ mod name_server_test{
     use crate::domain_name::DomainName;
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::name_server::NSNode;
+    use crate::message::DnsMessage;
 
 
     //ToDo: Revisar Práctica 1
@@ -3691,5 +3692,16 @@ mod name_server_test{
         assert!(!_boolean);
         assert_eq!(String::from(""), _zone.get_name());
     }
-    
+
+    //ToDo: Revisar
+    #[test]
+    fn set_ra(){
+        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+        assert!(!dns_message.get_header().get_ra());
+        
+        let dns_message_answer = NameServer::set_ra(dns_message, true);
+
+        assert!(dns_message_answer.get_header().get_ra());
+    }
+
 }

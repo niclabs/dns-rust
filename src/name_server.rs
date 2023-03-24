@@ -3446,7 +3446,7 @@ mod name_server_test{
     // TODD: Completar test
     #[test]
     #[ignore = "TODO: bug in fn search_nearest_ancestor, investigating..."]
-    fn search_nearest_ancestor_zone(){
+    fn search_nearest_ancestor_zone_with_dot(){
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3487,7 +3487,7 @@ mod name_server_test{
 
     //ToDo: Revisar Test
     #[test]
-    fn search_nearest_ancestor(){
+    fn search_nearest_ancestor_with_dot(){
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();

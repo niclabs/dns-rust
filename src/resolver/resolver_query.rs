@@ -612,7 +612,7 @@ impl ResolverQuery {
         let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
         let soa_minimun_ttl = match soa_rr.get_rdata() {
             Rdata::SomeSoaRdata(val) => val.get_minimum(),
-            _ => unreachable!(),
+            _ => unreachable!("holamecai"),
         };
 
         // Sets TTL to max between RR TTL and SOA min.
@@ -2075,6 +2075,7 @@ mod resolver_query_tests {
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::name_server::zone::NSZone;
+    use crate::name_server::zone_node::NSNode;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use crate::resolver::UdpSocket;
@@ -4752,6 +4753,67 @@ mod resolver_query_tests {
         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
         let _dns = resolver.step_3_tcp(update_slist_tcp_recv);      
    }
+   #[test]
+   #[should_panic]
+   fn  get_first_node_rrs_by_type_unreachable(){
+    // Channels
+    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    let (tx_update_query, _rx_update_query) = mpsc::channel();
+    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+    let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+    let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+    let mut resolver_query = ResolverQuery::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+        tx_update_query,
+        tx_delete_query,
+        DnsMessage::new(),
+        tx_update_cache_udp,
+        tx_update_cache_tcp,
+        tx_update_cache_ns_udp,
+        tx_update_cache_ns_tcp,
+        tx_update_slist_tcp,
+        tx_update_self_slist,
+    );
+    resolver_query.set_sname("test.com".to_string());
 
+        let mut main_zone_nodes = NSNode::new();
+        let mut value: Vec<ResourceRecord> = Vec::new();
+        let ns_rdata1 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr1 = ResourceRecord::new(ns_rdata1);
+        rr1.set_type_code(6);
+
+        let ns_rdata2 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr2 = ResourceRecord::new(ns_rdata2);
+        rr2.set_type_code(6);
+
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut rr3 = ResourceRecord::new(a_rdata);
+        rr3.set_type_code(1);
+
+        value.push(rr1);
+        value.push(rr2);
+        value.push(rr3);
+        main_zone_nodes.set_value(value);
+        let _expected = resolver_query.get_first_node_rrs_by_type(main_zone_nodes);
+   }
+   
 
 }

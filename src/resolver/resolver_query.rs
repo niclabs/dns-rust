@@ -419,7 +419,7 @@ impl ResolverQuery {
         let s_name = self.get_sname();
         let s_class = self.get_sclass();
 
-        // Class is *
+        // If QCLASS=* is used, then authoritative answers won't be available
         if s_class == 255 {
             let mut all_answers = Vec::new();
 
@@ -499,7 +499,10 @@ impl ResolverQuery {
             if all_answers.len() > 0 {
                 return Ok(all_answers);
             }
-        } else {
+        } 
+
+        // If QCLASS of the search request is not *
+        else {
             let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
                 self.get_ns_data(),
                 s_name.clone(),
@@ -547,7 +550,7 @@ impl ResolverQuery {
                     if exist_child == true {
                         zone = zone.get_child(label.to_string()).0;
                         last_label = label.clone();
-                        continue;
+                        continue;uses it
                     }
                 }
 
@@ -574,6 +577,7 @@ impl ResolverQuery {
 
         let mut rr_vec = Vec::<ResourceRecord>::new();
 
+        // If the resolver uses cache, it is used to search for the desired data
         if USE_CACHE == true {
             let mut cache = self.get_cache();
 

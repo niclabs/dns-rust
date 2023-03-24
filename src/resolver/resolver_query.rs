@@ -550,7 +550,7 @@ impl ResolverQuery {
                     if exist_child == true {
                         zone = zone.get_child(label.to_string()).0;
                         last_label = label.clone();
-                        continue;uses it
+                        continue;
                     }
                 }
 

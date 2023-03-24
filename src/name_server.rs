@@ -3709,6 +3709,21 @@ mod name_server_test{
     }
 
     //ToDo: Revisar
-    
+    #[test]
+    fn answer_found(){
+        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+        let mut all_answers = Vec::new();
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let resource_record = ResourceRecord::new(soa_rdata);
+        all_answers.push(resource_record);
+
+        assert_eq!(all_answers.len(), 1);
+
+        let answer_message = NameServer::answer_found(dns_message, all_answers);
+
+        assert_eq!(answer_message.get_answer().len(), 1);
+        assert!(!answer_message.get_header().get_aa());
+        assert_eq!(answer_message.get_header().get_ancount(), 1);
+    }
 
 }

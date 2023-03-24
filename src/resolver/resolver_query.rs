@@ -4,6 +4,7 @@ use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
 use crate::name_server::NameServer;
+use crate::name_server::zone_node::NSNode;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
@@ -437,20 +438,7 @@ impl ResolverQuery {
 
                     // We were looking for the first node
                     if sname_without_zone_label == "".to_string() {
-                        let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
-                        let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
-                        let soa_minimun_ttl = match soa_rr.get_rdata() {
-                            Rdata::SomeSoaRdata(val) => val.get_minimum(),
-                            _ => unreachable!(),
-                        };
-
-                        // Sets TTL to max between RR ttl and SOA min.
-                        for rr in rrs_by_type.iter_mut() {
-                            let rr_ttl = rr.get_ttl();
-
-                            rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
-                        }
-
+                        let rrs_by_type = self.get_first_node_rrs_by_type(main_zone_nodes);
                         return Ok(rrs_by_type);
                     }
 
@@ -614,6 +602,24 @@ impl ResolverQuery {
 
         return Ok(rr_vec);
     }
+
+    /// Returns the RRs by types when the node we're looking for is SOA
+    fn get_first_node_rrs_by_type(&mut self, main_zone_nodes: NSNode) -> Vec<ResourceRecord> {
+        let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
+        let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
+        let soa_minimun_ttl = match soa_rr.get_rdata() {
+            Rdata::SomeSoaRdata(val) => val.get_minimum(),
+            _ => unreachable!(),
+        };
+
+        // Sets TTL to max between RR ttl and SOA min.
+        for rr in rrs_by_type.iter_mut() {
+            let rr_ttl = rr.get_ttl();
+
+            rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+        }
+        return rrs_by_type;
+}
 }
 
 // Util for TCP and UDP

@@ -1618,18 +1618,7 @@ impl NameServer {
 
             // If answers were found
             if all_answers.len() > 0 {
-                // Set answers
-                msg.set_answer(all_answers);
-
-                // Set AA to 0
-                let mut header = msg.get_header();
-                header.set_aa(false);
-                msg.set_header(header);
-
-                // Update header coutners
-                msg.update_header_counters();
-
-                return msg;
+                return NameServer::answer_found(msg, all_answers);
             } else {
                 return NameServer::step_4(
                     msg,
@@ -1679,6 +1668,20 @@ impl NameServer {
         }
     }
 
+    fn answer_found(mut msg: DnsMessage, all_answers: Vec<ResourceRecord>) -> DnsMessage{
+        // Set answers
+        msg.set_answer(all_answers);
+
+        // Set AA to 0
+        let mut header = msg.get_header();
+        header.set_aa(false);
+        msg.set_header(header);
+
+        // Update header coutners
+        msg.update_header_counters();
+
+        return msg;
+    }
     /// RFC 1034 - Step 3.a:
     /// Step when the whole of QNAME is matched
     pub fn step_3a(
@@ -2515,6 +2518,7 @@ impl NameServer {
 #[cfg(test)]
 
 mod name_server_test{
+    use std::net::TcpStream;
     use std::sync::mpsc;
     use crate::name_server::HashMap;
     use chrono::Utc;
@@ -3703,5 +3707,8 @@ mod name_server_test{
 
         assert!(dns_message_answer.get_header().get_ra());
     }
+
+    //ToDo: Revisar
+    
 
 }

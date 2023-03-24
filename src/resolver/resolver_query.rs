@@ -604,7 +604,9 @@ impl ResolverQuery {
         return Ok(rr_vec);
     }
 
-    /// Returns the RRs by types when the node we're looking for is SOA
+    /// Returns a vector of the RRs matched by the QTYPE of the desired information
+    /// when we're looking for the first node.
+    /// Sets the TTL to the maximun between the RRs' TTL and SOA min.
     fn get_first_node_rrs_by_type(&mut self, main_zone_nodes: NSNode) -> Vec<ResourceRecord> {
         let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
         let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
@@ -613,14 +615,14 @@ impl ResolverQuery {
             _ => unreachable!(),
         };
 
-        // Sets TTL to max between RR ttl and SOA min.
+        // Sets TTL to max between RR TTL and SOA min.
         for rr in rrs_by_type.iter_mut() {
             let rr_ttl = rr.get_ttl();
 
             rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
         }
         return rrs_by_type;
-}
+    }
 }
 
 // Util for TCP and UDP

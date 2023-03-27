@@ -1893,7 +1893,7 @@ impl NameServer {
         }
     }
 
-    //function whe * label does not exist
+    //function when * label does not exist
     fn label_does_not_exist(mut msg: DnsMessage, current_node: NSNode) -> DnsMessage {
         let mut header = msg.get_header();
         let rr = current_node.get_value()[0].clone();

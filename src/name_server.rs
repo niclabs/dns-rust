@@ -1668,6 +1668,8 @@ impl NameServer {
         }
     }
 
+
+    //function used when the answer is found in step_2 described in RFC 1034
     fn answer_found(mut msg: DnsMessage, all_answers: Vec<ResourceRecord>) -> DnsMessage{
         // Set answers
         msg.set_answer(all_answers);

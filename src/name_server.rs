@@ -3835,4 +3835,20 @@ mod name_server_test{
         assert_eq!(header.get_rcode(), 3);
         assert!(header.get_aa());        
     }
+
+    //ToDo:Revisar
+    #[test]
+    #[should_panic]
+    fn label_does_not_exist_unreachable(){
+        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+        let mut current_node = NSNode::new();
+
+        let mut value: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        value.push(resource_record);
+        current_node.set_value(value);
+
+        let _answer_message = NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
+    }
 }

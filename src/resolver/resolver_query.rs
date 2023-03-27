@@ -4888,7 +4888,8 @@ mod resolver_query_tests {
     value.push(resource_record2);
     ns_zone.set_value(value);
  
-    let _expected = resolver_query.get_first_node_rrs_by_type(ns_zone);
+    let expected = resolver_query.get_first_node_rrs_by_type(ns_zone);
+    assert_eq!(expected.len(), 1);   
    }
 
 }

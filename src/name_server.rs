@@ -2522,6 +2522,7 @@ impl NameServer {
 mod name_server_test{
     use std::net::TcpStream;
     use std::sync::mpsc;
+    use crate::domain_name;
     use crate::name_server::HashMap;
     use chrono::Utc;
 
@@ -3726,6 +3727,41 @@ mod name_server_test{
         assert_eq!(answer_message.get_answer().len(), 1);
         assert!(!answer_message.get_header().get_aa());
         assert_eq!(answer_message.get_header().get_ancount(), 1);
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn remove_from_cache(){
+        let domain_name = String::from("test.com");
+        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let resource_record = ResourceRecord::new(soa_rdata);
+        let (tx_resolver_udp, _tx_resolver_recv_udp) = mpsc::channel::<(String, ResourceRecord)>();
+        let (tx_resolver_tcp, _tx_resolver_recv_tcp) = mpsc::channel::<(String, ResourceRecord)>();
+        let (tx_ns_udp, _tx_ns_recv_udp) = mpsc::channel::<(String, ResourceRecord)>();
+        let (tx_ns_tcp, _tx_ns_recv_tcp) = mpsc::channel::<(String, ResourceRecord)>();
+
+        NameServer::remove_from_cache(domain_name.clone(), 
+                                    resource_record.clone(), 
+                                    tx_resolver_udp, 
+                                    tx_resolver_tcp, 
+                                    tx_ns_udp, 
+                                    tx_ns_tcp);
+        
+        let (name_1, rr_1) = _tx_resolver_recv_udp.recv().unwrap();
+        assert_eq!(name_1.clone(), domain_name.clone());
+        assert_eq!(rr_1.clone().get_name(), resource_record.clone().get_name());
+
+        let (name_2, rr_2) = _tx_resolver_recv_tcp.recv().unwrap();
+        assert_eq!(name_2.clone(), domain_name.clone());
+        assert_eq!(rr_2.clone().get_name(), resource_record.clone().get_name());
+
+        let (name_3, rr_3) = _tx_ns_recv_udp.recv().unwrap();
+        assert_eq!(name_3.clone(), domain_name.clone());
+        assert_eq!(rr_3.clone().get_name(), resource_record.clone().get_name());
+
+        let (name_4, rr_4) = _tx_ns_recv_tcp.recv().unwrap();
+        assert_eq!(name_4.clone(), domain_name.clone());
+        assert_eq!(rr_4.clone().get_name(), resource_record.clone().get_name());
     }
 
 }

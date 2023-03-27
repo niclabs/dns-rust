@@ -4,6 +4,7 @@ use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::name_server::zone::NSZone;
 use crate::name_server::NameServer;
+use crate::name_server::zone_node::NSNode;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
@@ -407,6 +408,9 @@ impl ResolverQuery {
     }
 
     // Looks for local info in name server zone and cache
+    /// Returns the RRs from the local information.
+    /// Searches the cache and the name server for the desired data, to be
+    /// used in Step 1.
     pub fn look_for_local_info(&mut self) -> Result<Vec<ResourceRecord>, &'static str> {
         let s_type = match utils::get_string_stype(self.get_stype()) {
             Ok(s) => s,
@@ -416,10 +420,11 @@ impl ResolverQuery {
         let s_name = self.get_sname();
         let s_class = self.get_sclass();
 
-        // Class is *
+        // If QCLASS=* is used, then authoritative answers won't be available
         if s_class == 255 {
             let mut all_answers = Vec::new();
 
+            // When QCLASS=*, all classes must be matched
             for (class, _hashzone) in self.get_ns_data().iter() {
                 let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
                     self.get_ns_data(),
@@ -434,20 +439,7 @@ impl ResolverQuery {
 
                     // We were looking for the first node
                     if sname_without_zone_label == "".to_string() {
-                        let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
-                        let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
-                        let soa_minimun_ttl = match soa_rr.get_rdata() {
-                            Rdata::SomeSoaRdata(val) => val.get_minimum(),
-                            _ => unreachable!(),
-                        };
-
-                        // Sets TTL to max between RR ttl and SOA min.
-                        for rr in rrs_by_type.iter_mut() {
-                            let rr_ttl = rr.get_ttl();
-
-                            rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
-                        }
-
+                        let rrs_by_type = self.get_first_node_rrs_by_type(main_zone_nodes);
                         return Ok(rrs_by_type);
                     }
 
@@ -496,7 +488,10 @@ impl ResolverQuery {
             if all_answers.len() > 0 {
                 return Ok(all_answers);
             }
-        } else {
+        } 
+
+        // If QCLASS of the search request is not *
+        else {
             let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
                 self.get_ns_data(),
                 s_name.clone(),
@@ -571,6 +566,7 @@ impl ResolverQuery {
 
         let mut rr_vec = Vec::<ResourceRecord>::new();
 
+        // If the resolver uses cache, it is used to search for the desired data
         if USE_CACHE == true {
             let mut cache = self.get_cache();
 
@@ -606,6 +602,26 @@ impl ResolverQuery {
         }
 
         return Ok(rr_vec);
+    }
+
+    /// Returns a vector of the RRs matched by the QTYPE of the desired information
+    /// when we're looking for the first node.
+    /// Sets the TTL to the maximun between the RRs' TTL and SOA min.
+    fn get_first_node_rrs_by_type(&mut self, main_zone_nodes: NSNode) -> Vec<ResourceRecord> {
+        let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
+        let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
+        let soa_minimun_ttl = match soa_rr.get_rdata() {
+            Rdata::SomeSoaRdata(val) => val.get_minimum(),
+            _ => unreachable!("holamecai"),
+        };
+
+        // Sets TTL to max between RR TTL and SOA min.
+        for rr in rrs_by_type.iter_mut() {
+            let rr_ttl = rr.get_ttl();
+
+            rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+        }
+        return rrs_by_type;
     }
 }
 
@@ -693,6 +709,8 @@ impl ResolverQuery {
         socket.send_to(msg, ip_address).expect("failed to send message");
     }
 
+    /// See if the answer is in local information, and if so it returns it to the client.
+    /// If no local information is found, Step 2 and Step 3 are run and returns None.
     pub fn step_1_udp(
         &mut self,
         socket: UdpSocket,
@@ -2057,6 +2075,7 @@ mod resolver_query_tests {
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::name_server::zone::NSZone;
+    use crate::name_server::zone_node::NSNode;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use crate::resolver::UdpSocket;
@@ -4734,6 +4753,67 @@ mod resolver_query_tests {
         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
         let _dns = resolver.step_3_tcp(update_slist_tcp_recv);      
    }
+   #[test]
+   #[should_panic]
+   fn  get_first_node_rrs_by_type_unreachable(){
+    // Channels
+    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    let (tx_update_query, _rx_update_query) = mpsc::channel();
+    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+    let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+    let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+    let mut resolver_query = ResolverQuery::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+        tx_update_query,
+        tx_delete_query,
+        DnsMessage::new(),
+        tx_update_cache_udp,
+        tx_update_cache_tcp,
+        tx_update_cache_ns_udp,
+        tx_update_cache_ns_tcp,
+        tx_update_slist_tcp,
+        tx_update_self_slist,
+    );
+    resolver_query.set_sname("test.com".to_string());
 
+        let mut main_zone_nodes = NSNode::new();
+        let mut value: Vec<ResourceRecord> = Vec::new();
+        let ns_rdata1 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr1 = ResourceRecord::new(ns_rdata1);
+        rr1.set_type_code(6);
+
+        let ns_rdata2 = Rdata::SomeNsRdata(NsRdata::new());
+        let mut rr2 = ResourceRecord::new(ns_rdata2);
+        rr2.set_type_code(6);
+
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut rr3 = ResourceRecord::new(a_rdata);
+        rr3.set_type_code(1);
+
+        value.push(rr1);
+        value.push(rr2);
+        value.push(rr3);
+        main_zone_nodes.set_value(value);
+        let _expected = resolver_query.get_first_node_rrs_by_type(main_zone_nodes);
+   }
+   
 
 }

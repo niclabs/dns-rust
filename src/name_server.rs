@@ -1889,26 +1889,31 @@ impl NameServer {
             return NameServer::step_6(msg, cache, zones_by_class);
         } else {
             // * label does not exists
-            let mut header = msg.get_header();
-            let rr = current_node.get_value()[0].clone();
-            let qname = msg.get_question().get_qname();
-
-            let canonical_name = match rr.get_rdata() {
-                Rdata::SomeCnameRdata(val) => val.get_cname(),
-                _ => unreachable!(),
-            };
-
-            if qname.get_name() != canonical_name.get_name() {
-                header.set_rcode(3);
-                if msg.get_answer().len() == 0 {
-                    header.set_aa(true);
-                }
-            }
-
-            msg.set_header(header);
-
-            return msg;
+            return NameServer::label_does_not_exist(msg, current_node);
         }
+    }
+
+    //function whe * label does not exist
+    fn label_does_not_exist(mut msg: DnsMessage, current_node: NSNode) -> DnsMessage {
+        let mut header = msg.get_header();
+        let rr = current_node.get_value()[0].clone();
+        let qname = msg.get_question().get_qname();
+
+        let canonical_name = match rr.get_rdata() {
+            Rdata::SomeCnameRdata(val) => val.get_cname(),
+            _ => unreachable!(),
+        };
+
+        if qname.get_name() != canonical_name.get_name() {
+            header.set_rcode(3);
+            if msg.get_answer().len() == 0 {
+                header.set_aa(true);
+            }
+        }
+
+        msg.set_header(header);
+
+        return msg;
     }
 
     /// RFC 1034 - Step 4:

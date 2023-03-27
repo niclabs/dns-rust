@@ -612,9 +612,8 @@ impl ResolverQuery {
         let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
         let soa_minimun_ttl = match soa_rr.get_rdata() {
             Rdata::SomeSoaRdata(val) => val.get_minimum(),
-            _ => unreachable!("holamecai"),
+            _ => unreachable!(),
         };
-
         // Sets TTL to max between RR TTL and SOA min.
         for rr in rrs_by_type.iter_mut() {
             let rr_ttl = rr.get_ttl();
@@ -2072,6 +2071,7 @@ mod resolver_query_tests {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::rdata::Rdata;
+    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::name_server::zone::NSZone;
@@ -4794,11 +4794,11 @@ mod resolver_query_tests {
     );
     resolver_query.set_sname("test.com".to_string());
 
-        let mut main_zone_nodes = NSNode::new();
-        let mut value: Vec<ResourceRecord> = Vec::new();
-        let ns_rdata1 = Rdata::SomeNsRdata(NsRdata::new());
-        let mut rr1 = ResourceRecord::new(ns_rdata1);
-        rr1.set_type_code(6);
+    let mut main_zone_nodes = NSNode::new();
+    let mut value: Vec<ResourceRecord> = Vec::new();
+    let ns_rdata1 = Rdata::SomeNsRdata(NsRdata::new());
+    let mut rr1 = ResourceRecord::new(ns_rdata1);
+     rr1.set_type_code(6);
 
         let ns_rdata2 = Rdata::SomeNsRdata(NsRdata::new());
         let mut rr2 = ResourceRecord::new(ns_rdata2);
@@ -4815,5 +4815,80 @@ mod resolver_query_tests {
         let _expected = resolver_query.get_first_node_rrs_by_type(main_zone_nodes);
    }
    
+   #[test]
+   fn  get_first_node_rrs_by_type(){
+    // Channels
+    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    let (tx_update_query, _rx_update_query) = mpsc::channel();
+    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+    let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+    let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+    let mut resolver_query = ResolverQuery::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+        tx_update_query,
+        tx_delete_query,
+        DnsMessage::new(),
+        tx_update_cache_udp,
+        tx_update_cache_tcp,
+        tx_update_cache_ns_udp,
+        tx_update_cache_ns_tcp,
+        tx_update_slist_tcp,
+        tx_update_self_slist,
+    );
+    resolver_query.set_sname("test.com".to_string());
+
+    let mut ns_zone = NSNode::new();
+    
+    let name = String::from("example.com");
+    ns_zone.set_name(name);
+
+    let mut value = Vec::<ResourceRecord>::new();
+    let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+    let mut mname_domain_name = DomainName::new();
+    let domain_name_name = String::from("ns.primaryserver.com");
+    mname_domain_name.set_name(domain_name_name);
+
+    let mut rname_domain_name = DomainName::new();
+    let rname_name = String::from("admin.example.com");
+    rname_domain_name.set_name(rname_name);
+
+    match soa_rdata {
+        Rdata::SomeSoaRdata(ref mut val) => {
+            val.set_mname(mname_domain_name);
+            val.set_rname(rname_domain_name);
+            val.set_serial(1111111111 as u32)
+        }
+        _ => unreachable!(),
+    }
+    let mut resource_record = ResourceRecord::new(soa_rdata.clone());
+    resource_record.set_type_code(6);
+    resource_record.set_ttl(5642);
+    let mut resource_record2 = ResourceRecord::new(soa_rdata.clone());
+    resource_record2.set_type_code(0);
+    resource_record2.set_ttl(56);
+    value.push(resource_record);
+    value.push(resource_record2);
+    ns_zone.set_value(value);
+ 
+    let _expected = resolver_query.get_first_node_rrs_by_type(ns_zone);
+   }
 
 }

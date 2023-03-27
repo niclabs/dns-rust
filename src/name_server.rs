@@ -3805,4 +3805,34 @@ mod name_server_test{
         assert!(!header.get_aa());
     }
 
+    //ToDo: Revisar
+    #[test]
+    fn label_does_not_exist_not_equals_names(){
+        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+        let mut current_node = NSNode::new();
+
+        let mut cname_rdata = CnameRdata::new();
+        let name = String::from("not_test.com");
+        let mut cname = cname_rdata.get_cname();
+        cname.set_name(name);
+        cname_rdata.set_cname(cname);
+
+        let rdata = Rdata::SomeCnameRdata(cname_rdata);
+        let mut value: Vec<ResourceRecord> = Vec::new();
+        let resource_record = ResourceRecord::new(rdata);
+        value.push(resource_record);
+        current_node.set_value(value);
+
+        let answer_message = NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
+
+        let qname = answer_message.clone().get_question().get_qname();
+        let expected = dns_message.clone().get_question().get_qname();
+
+        assert_eq!(qname, expected);
+
+        let header = answer_message.clone().get_header();
+
+        assert_eq!(header.get_rcode(), 3);
+        assert!(header.get_aa());        
+    }
 }

@@ -1575,7 +1575,7 @@ impl NameServer {
     /// ancestor to QNAME.  If such a zone is found, go to step 3,
     /// otherwise step 4.
     pub fn step_2(
-        mut msg: DnsMessage,
+        mut _msg: DnsMessage,
         zones_by_class: HashMap<u16, HashMap<String, NSZone>>,
         cache: DnsCache,
         tx_delete_resolver_udp: Sender<(String, ResourceRecord)>,
@@ -1583,8 +1583,8 @@ impl NameServer {
         tx_delete_ns_udp: Sender<(String, ResourceRecord)>,
         tx_delete_ns_tcp: Sender<(String, ResourceRecord)>,
     ) -> DnsMessage {
-        let qname = msg.get_question().get_qname().get_name();
-        let qclass = msg.get_question().get_qclass();
+        let qname = _msg.get_question().get_qname().get_name();
+        let qclass = _msg.get_question().get_qclass();
 
         // Class is *
         if qclass == 255 {
@@ -1602,7 +1602,7 @@ impl NameServer {
                     let new_msg = NameServer::search_in_zone(
                         zone,
                         qname.clone(),
-                        msg.clone(),
+                        _msg.clone(),
                         zones_by_class.clone(),
                         cache.clone(),
                         tx_delete_resolver_udp.clone(),
@@ -1618,10 +1618,10 @@ impl NameServer {
 
             // If answers were found
             if all_answers.len() > 0 {
-                return NameServer::answer_found(msg, all_answers);
+                return NameServer::answer_found(_msg, all_answers);
             } else {
                 return NameServer::step_4(
-                    msg,
+                    _msg,
                     cache,
                     zones_by_class,
                     tx_delete_resolver_udp,
@@ -1645,7 +1645,7 @@ impl NameServer {
                 return NameServer::search_in_zone(
                     zone,
                     qname.clone(),
-                    msg.clone(),
+                    _msg.clone(),
                     zones_by_class,
                     cache,
                     tx_delete_resolver_udp,
@@ -1656,7 +1656,7 @@ impl NameServer {
             } else {
                 // Step 4 RFC 1034
                 return NameServer::step_4(
-                    msg,
+                    _msg,
                     cache,
                     zones_by_class,
                     tx_delete_resolver_udp,

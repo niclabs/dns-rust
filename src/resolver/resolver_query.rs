@@ -4880,8 +4880,10 @@ mod resolver_query_tests {
     }
     let mut resource_record = ResourceRecord::new(soa_rdata.clone());
     resource_record.set_type_code(6);
+    resource_record.set_ttl(5642);
     let mut resource_record2 = ResourceRecord::new(soa_rdata.clone());
-    resource_record2.set_type_code(6);
+    resource_record2.set_type_code(0);
+    resource_record2.set_ttl(56);
     value.push(resource_record);
     value.push(resource_record2);
     ns_zone.set_value(value);

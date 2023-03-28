@@ -69,6 +69,7 @@ pub fn send_client_query(transport: &str ,resolver_ip_port: &str,query_msg:DnsMe
         let socket = UdpSocket::bind(CLIENT_IP_PORT).expect("No connection");
         let msg_to_bytes = query_msg.to_bytes();
 
+        println!("***resolver*********** {}",resolver_ip_port);
         match socket.send_to(&msg_to_bytes, resolver_ip_port){
             Err(_) => panic!("Error sending query"),
             Ok(_) => (),

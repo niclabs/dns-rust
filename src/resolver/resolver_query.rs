@@ -622,6 +622,27 @@ impl ResolverQuery {
         }
         return rrs_by_type;
     }
+
+    /// Returns a vector of the RRs matched by the QTYPE of the desired information
+    /// from the last label of the zone.
+    /// Sets the TTL to the maximun between the RRs' TTL and SOA min.
+    fn get_zone_nodes_rrs_by_type(&mut self, main_zone_nodes: NSNode, zone_nodes: NSNode) -> Vec<ResourceRecord> {
+        let mut rrs_by_type = zone_nodes.get_rrs_by_type(self.get_stype());
+
+        let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
+        let soa_minimun_ttl = match soa_rr.get_rdata() {
+            Rdata::SomeSoaRdata(val) => val.get_minimum(),
+            _ => unreachable!(),
+        };
+
+        // Sets TTL to max between RR ttl and SOA min.
+        for rr in rrs_by_type.iter_mut() {
+            let rr_ttl = rr.get_ttl();
+
+            rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
+        }
+        return rrs_by_type;
+    }
 }
 
 // Util for TCP and UDP

@@ -492,19 +492,7 @@ impl ResolverQuery {
 
                 // We were looking for the first node
                 if sname_without_zone_label == "".to_string() {
-                    let mut rrs_by_type = main_zone_nodes.get_rrs_by_type(self.get_stype());
-                    let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
-                    let soa_minimun_ttl = match soa_rr.get_rdata() {
-                        Rdata::SomeSoaRdata(val) => val.get_minimum(),
-                        _ => unreachable!(),
-                    };
-
-                    // Sets TTL to max between RR ttl and SOA min.
-                    for rr in rrs_by_type.iter_mut() {
-                        let rr_ttl = rr.get_ttl();
-
-                        rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
-                    }
+                    let rrs_by_type = self.get_first_node_rrs_by_type(main_zone_nodes);
 
                     return Ok(rrs_by_type);
                 }
@@ -531,20 +519,7 @@ impl ResolverQuery {
                 }
 
                 if last_label == zone.get_name() {
-                    let mut rrs_by_type = zone.get_rrs_by_type(self.get_stype());
-
-                    let soa_rr = main_zone_nodes.get_rrs_by_type(6)[0].clone();
-                    let soa_minimun_ttl = match soa_rr.get_rdata() {
-                        Rdata::SomeSoaRdata(val) => val.get_minimum(),
-                        _ => unreachable!(),
-                    };
-
-                    // Sets TTL to max between RR ttl and SOA min.
-                    for rr in rrs_by_type.iter_mut() {
-                        let rr_ttl = rr.get_ttl();
-
-                        rr.set_ttl(cmp::max(rr_ttl, soa_minimun_ttl));
-                    }
+                    let rrs_by_type = self.get_zone_nodes_rrs_by_type(main_zone_nodes, zone);
 
                     return Ok(rrs_by_type);
                 }

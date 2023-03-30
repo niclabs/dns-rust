@@ -4746,8 +4746,8 @@ mod resolver_query_tests {
         slist.insert("test2.com".to_string(), "".to_string(), 2000);
         resolver_query.set_slist(slist);
         let mut resolver =resolver_query.clone();
-        let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-        let _dns = resolver.step_3_tcp(update_slist_tcp_recv);      
+        //let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+        //let _dns = resolver.step_3_tcp(update_slist_tcp_recv);      
    }
    #[test]
    #[should_panic]

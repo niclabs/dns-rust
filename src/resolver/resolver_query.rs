@@ -526,43 +526,15 @@ impl ResolverQuery {
             }
         }
 
-        let mut rr_vec = Vec::<ResourceRecord>::new();
+        let rr_vec = Vec::<ResourceRecord>::new();
 
         // If the resolver uses cache, it is used to search for the desired data
         if USE_CACHE == true {
-            let mut cache = self.get_cache();
-
-            let cache_answer = cache.get(s_name.clone(), s_type);
-            let mut rrs_cache_answer = Vec::new();
-
-            if s_class != 255 {
-                for rr in cache_answer {
-                    let rr_class = rr.get_resource_record().get_class();
-
-                    if rr_class == s_class {
-                        rrs_cache_answer.push(rr);
-                    }
-                }
-            }
-
-            if rrs_cache_answer.len() > 0 {
-                for answer in rrs_cache_answer.iter() {
-                    let mut rr = answer.get_resource_record();
-                    let rr_ttl = rr.get_ttl();
-                    let relative_ttl = rr_ttl - self.get_timestamp();
-
-                    if relative_ttl > 0 {
-                        rr.set_ttl(relative_ttl);
-                        rr_vec.push(rr);
-                    }
-                }
-
-                if rr_vec.len() < rrs_cache_answer.len() {
-                    self.remove_from_cache(s_name, rrs_cache_answer[0].get_resource_record());
-                }
-            }
+            let rr_vec_cache = self.search_cache(s_name.clone(), s_type, s_class);
+            if rr_vec_cache.len() > 0 {
+                return Ok(rr_vec_cache);
+            } 
         }
-
         return Ok(rr_vec);
     }
 
@@ -605,6 +577,48 @@ impl ResolverQuery {
         }
         return rrs_by_type;
     }
+
+    /// Returns the RRs of the desired information found on the cache. 
+    /// Sets the TTL to the corresponding value and removes from cache if needed.
+    fn search_cache(&mut self, s_name: String, s_type: String, s_class: u16) -> Vec<ResourceRecord> {
+        let mut rr_vec = Vec::<ResourceRecord>::new();
+        let asterisk_s_class = 255;
+
+        let mut cache = self.get_cache();
+        let cache_answer = cache.get(s_name.clone(), s_type);
+        let mut rrs_cache_answer = Vec::new();
+        
+        // The desired QCLASS in not *, then not all classes need to be matched
+        if s_class != asterisk_s_class {
+            for rr in cache_answer {
+                let rr_class = rr.get_resource_record().get_class();
+    
+                if rr_class == s_class {
+                    rrs_cache_answer.push(rr);
+                }
+            }
+        }
+        
+        // An answer was matched
+        if rrs_cache_answer.len() > 0 {
+            for answer in rrs_cache_answer.iter() {
+                let mut rr = answer.get_resource_record();
+                let rr_ttl = rr.get_ttl();
+                let relative_ttl = rr_ttl - self.get_timestamp();
+    
+                if relative_ttl > 0 {
+                    rr.set_ttl(relative_ttl);
+                    rr_vec.push(rr);
+                }
+            }
+    
+            if rr_vec.len() < rrs_cache_answer.len() {
+                self.remove_from_cache(s_name, rrs_cache_answer[0].get_resource_record());
+            }
+        }
+        return rr_vec;
+    }
+    
 }
 
 // Util for TCP and UDP

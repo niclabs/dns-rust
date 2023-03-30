@@ -1,3 +1,5 @@
+use std::process::Command;
+
 mod common;
 
 use dns_rust::{
@@ -32,8 +34,54 @@ fn tcp_query() {
     qtype_a_example(transport_protocol);
 }
 
-// fn nonet_query()) {
-// }
+#[test]
+fn nonet_query() {
+    //TODO: to run,the terminal must be with super user priviliges
+    //to do that ->  sudo -i 
+
+    Command::new("tc")
+                            .arg("qdisc")
+                            .arg("add")
+                            .arg("dev")
+                            .arg("wlp0s20f3")
+                            .arg("root")
+                            .arg("netem")
+                            .arg("loss")
+                            .arg("100%")
+                            .spawn().expect("error");
+
+    let show_tc = Command::new("tc")
+                            .arg("qdisc")
+                            .arg("show")
+                            .arg("dev")
+                            .arg("wlp0s20f3")
+                            .spawn().expect("error");
+
+
+    //tc qdisc add dev wlp0s20f3 root netem loss 100%
+
+    // println!("loss*******{:?}",add_loss);
+    println!("trafic status: {:?}",show_tc);
+
+
+    //test 
+    //FIXME: is not working, keeps waiting
+    //qtype_a_example("TCP");
+
+
+    Command::new("tc")
+            .arg("qdisc")
+            .arg("del")
+            .arg("dev")
+            .arg("wlp0s20f3")
+            .arg("root")
+            .arg("netem")
+            .arg("loss")
+            .arg("100%")
+            .spawn().expect("error");
+
+
+}
 
 // fn nonet_timeout_query()) {
 // }
@@ -46,6 +94,7 @@ fn tcp_query() {
 
 
 fn qtype_a_example(transport_protocol:&str) {
+    //TODO: put by default UDP
 
     let google_resolver = "8.8.8.8:53"; 
 

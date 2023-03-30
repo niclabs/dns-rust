@@ -1,46 +1,43 @@
-use dns_rust::client::config::CLIENT_IP_PORT;
-use dns_rust::client::create_client_query;
-use dns_rust::message::question;
-use dns_rust::message::rdata::Rdata;
-use dns_rust::name_server::NameServer;
-use dns_rust::resolver::slist::Slist;
-use dns_rust::resolver::Resolver;
-use dns_rust::{
-    client,
-    config::RESOLVER_IP_PORT,
-    config::{CHECK_MASTER_FILES, MASTER_FILES, NAME_SERVER_IP, SBELT_ROOT_IPS},
-    name_server::{master_file::MasterFile, zone::NSZone},
-    resolver,
-};
-use std::net::UdpSocket;
-use std::sync::mpsc;
-use std::{collections::HashMap, fs, thread, time};
-use dns_rust::message::DnsMessage;
-use std::vec::Vec;
+// use dns_rust::client::config::CLIENT_IP_PORT;
+// use dns_rust::client::create_client_query;
+// use dns_rust::message::question;
+// use dns_rust::message::rdata::Rdata;
+// use dns_rust::name_server::NameServer;
+// use dns_rust::resolver::slist::Slist;
+// use dns_rust::resolver::Resolver;
+// use dns_rust::{
+//     client,
+//     config::RESOLVER_IP_PORT,
+//     config::{CHECK_MASTER_FILES, MASTER_FILES, NAME_SERVER_IP, SBELT_ROOT_IPS},
+//     name_server::{master_file::MasterFile, zone::NSZone},
+//     resolver,
+// };
+// use std::net::UdpSocket;
+// use std::sync::mpsc;
+//use std::{collections::HashMap, fs, thread, time};
+// use dns_rust::message::DnsMessage;
+// use std::vec::Vec;
 
 
 
+// Gets a Vec of host names from a external file
+// fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
+//     // Read file content
+//     let contents = fs::read_to_string(path).expect("Should have been able to read the file");
 
+//     // Split file content
+//     let splitted_content: Vec<&str> = contents.split("\n").collect();
 
+//     // Create a vec of host names
+//     let mut host_names_vec: Vec<String> = Vec::new();
+//     // Extract host names from file
+//     for host_name in splitted_content {
+//         host_names_vec.push(host_name.to_string())
+//     }
 
-/// Gets a Vec of host names from a external file
-fn get_host_names_from_zone_file(path: &str) -> Vec<String> {
-    // Read file content
-    let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-
-    // Split file content
-    let splitted_content: Vec<&str> = contents.split("\n").collect();
-
-    // Create a vec of host names
-    let mut host_names_vec: Vec<String> = Vec::new();
-    // Extract host names from file
-    for host_name in splitted_content {
-        host_names_vec.push(host_name.to_string())
-    }
-
-    // Return all host names from file
-    return host_names_vec;
-}
+//     // Return all host names from file
+//     return host_names_vec;
+// }
 
 // #[test]
 // fn validate_rfc_master_files() {

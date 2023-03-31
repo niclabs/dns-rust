@@ -601,7 +601,6 @@ impl ResolverQuery {
             for answer in rrs_cache_answer.iter() {
                 let mut rr = answer.get_resource_record();
                 let rr_ttl = rr.get_ttl();
-                let rr_ts= self.get_timestamp();
                 let relative_ttl = rr_ttl - self.get_timestamp();
                 
                 if relative_ttl > 0 {
@@ -4811,7 +4810,7 @@ mod resolver_query_tests {
    }
    
    #[test]
-   fn  get_first_node_rrs_by_type(){
+   fn get_first_node_rrs_by_type(){
     // Channels
     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -4996,7 +4995,134 @@ mod resolver_query_tests {
     // Verify that the correct record is returned
 }
 
+#[test]
+fn get_tx_delete_query() {
+    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    let (tx_update_query, _rx_update_query) = mpsc::channel();
+    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+    let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+    let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+    let resolver_query = ResolverQuery::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+        tx_update_query,
+        tx_delete_query.clone(),
+        DnsMessage::new(),
+        tx_update_cache_udp,
+        tx_update_cache_tcp,
+        tx_update_cache_ns_udp,
+        tx_update_cache_ns_tcp,
+        tx_update_slist_tcp,
+        tx_update_self_slist,
+    );
+    let tx_delete_query_copy = resolver_query.get_tx_delete_query();
+    //assert_eq!(&tx_delete_query, &tx_delete_query_copy);
 
+}
+
+#[test]
+   fn get_zone_nodes_rrs_by_type(){
+    // Channels
+    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    let (tx_update_query, _rx_update_query) = mpsc::channel();
+    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+    let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+    let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+    let mut resolver_query = ResolverQuery::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+        tx_update_query,
+        tx_delete_query,
+        DnsMessage::new(),
+        tx_update_cache_udp,
+        tx_update_cache_tcp,
+        tx_update_cache_ns_udp,
+        tx_update_cache_ns_tcp,
+        tx_update_slist_tcp,
+        tx_update_self_slist,
+    );
+    resolver_query.set_sname("test.com".to_string());
+
+    let mut ns_zone = NSNode::new();
+    
+    let name = String::from("example.com");
+    ns_zone.set_name(name);
+
+    let mut value = Vec::<ResourceRecord>::new();
+    let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+    let mut mname_domain_name = DomainName::new();
+    let domain_name_name = String::from("ns.primaryserver.com");
+    mname_domain_name.set_name(domain_name_name);
+
+    let mut rname_domain_name = DomainName::new();
+    let rname_name = String::from("admin.example.com");
+    rname_domain_name.set_name(rname_name);
+
+    match soa_rdata {
+        Rdata::SomeSoaRdata(ref mut val) => {
+            val.set_mname(mname_domain_name);
+            val.set_rname(rname_domain_name);
+            val.set_serial(1111111111 as u32)
+        }
+        _ => unreachable!(),
+    }
+    let mut resource_record = ResourceRecord::new(soa_rdata.clone());
+    resource_record.set_type_code(6);
+    resource_record.set_ttl(5642);
+    let mut resource_record2 = ResourceRecord::new(soa_rdata.clone());
+    resource_record2.set_type_code(0);
+    resource_record2.set_ttl(56);
+    value.push(resource_record);
+    value.push(resource_record2);
+    let mut value2 = value.clone();
+    ns_zone.set_value(value);
+    let ns_zone2 = ns_zone.clone();
+    let ns_zone4 = ns_zone.clone();
+    value2.pop();
+    let mut ns_zone3 = ns_zone.clone();
+    ns_zone3.set_value(value2);
+   
+    let expected = resolver_query.get_zone_nodes_rrs_by_type(ns_zone,ns_zone2);
+    let expected2 = resolver_query.get_zone_nodes_rrs_by_type(ns_zone4, ns_zone3);
+   
+    assert_eq!(expected.len(), 1); 
+    assert_eq!(expected2.len(),0);
+    
+   }
 
 
 }

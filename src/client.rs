@@ -23,7 +23,10 @@ pub fn run_client() {
     let now = Instant::now();
 
     // Create dns message and send it to the resolver
-    let mut dns_message = create_client_query(HOST_NAME, TRANSPORT, QTYPE, QCLASS , RESOLVER_IP_PORT);
+    let dns_message_query = create_client_query(HOST_NAME, QTYPE, QCLASS );
+
+    //send query and get response
+    let mut dns_message = send_client_query(TRANSPORT,RESOLVER_IP_PORT,dns_message_query);
 
     // Print received values
     dns_message.print_dns_message();
@@ -32,9 +35,9 @@ pub fn run_client() {
     println!("Elapsed: {:.2?}", elapsed);
 }
 
-/// Create dns message and send it to the resolver
-pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qclass: u16 , resolver_ip_port: &str) -> DnsMessage {
-
+///Create dns message query 
+pub fn create_client_query(host_name: &str, qtype: u16, qclass:u16 ) -> DnsMessage {
+    
     // Create random generator
     let mut rng = thread_rng();
 
@@ -43,7 +46,20 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
 
     // Create query msg
     let query_msg =
-        DnsMessage::new_query_message(host_name.to_string(), qtype, qclass, 0, false, query_id);
+        DnsMessage::new_query_message(host_name.to_string(), 
+                                      qtype, 
+                                      qclass, 
+                                      0, 
+                                      false, 
+                                      query_id);
+
+    return query_msg;    
+
+
+}
+
+///Send Dns query  to the resolver
+pub fn send_client_query(transport: &str ,resolver_ip_port: &str,query_msg:DnsMessage ) -> DnsMessage {
 
     // Create response buffer
     let mut dns_message = DnsMessage::new();
@@ -53,6 +69,7 @@ pub fn create_client_query(host_name: &str , transport: &str , qtype: u16 , qcla
         let socket = UdpSocket::bind(CLIENT_IP_PORT).expect("No connection");
         let msg_to_bytes = query_msg.to_bytes();
 
+        println!("***resolver*********** {}",resolver_ip_port);
         match socket.send_to(&msg_to_bytes, resolver_ip_port){
             Err(_) => panic!("Error sending query"),
             Ok(_) => (),

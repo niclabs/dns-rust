@@ -3913,4 +3913,42 @@ mod name_server_test{
         assert_eq!(answer_msg.get_answer().len(), 1);
         assert_eq!(answer_msg.get_answer()[0].get_type_code(), 5);
     }
+
+    //ToDo: Revisar
+    #[test]
+    fn look_for_type_records(){
+        let mut rrs = Vec::<ResourceRecord>::new();
+        //type_code = 1
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record_1 = ResourceRecord::new(a_rdata);
+        let name = String::from("test");
+        let mut domain_name_1 = resource_record_1.get_name();
+        domain_name_1.set_name(name.clone());
+        resource_record_1.set_name(domain_name_1.clone());
+
+        rrs.push(resource_record_1);
+
+        //type_code = 5
+        let cname_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
+        let mut resource_record_2 = ResourceRecord::new(cname_rdata);
+        resource_record_2.set_name(domain_name_1.clone());
+
+        rrs.push(resource_record_2);
+
+        //type_code = 1
+        let a_rdata_2 = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record_3 = ResourceRecord::new(a_rdata_2);
+        let name_2 = String::from("not_test");
+        let mut domain_name_3 = resource_record_3.get_name();
+        domain_name_3.set_name(name_2);
+        resource_record_3.set_name(domain_name_3);
+
+        rrs.push(resource_record_3);
+
+        let answer_rrs = NameServer::look_for_type_records(name.clone(), rrs, 1);
+        assert_eq!(answer_rrs.len(), 1);
+        assert_eq!(answer_rrs[0].get_type_code(), 1);
+        assert_eq!(answer_rrs[0].get_name().get_name(), name.clone());
+
+    }
 }

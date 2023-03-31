@@ -2525,13 +2525,8 @@ impl NameServer {
 #[cfg(test)]
 
 mod name_server_test{
-    use std::net::TcpStream;
     use std::sync::mpsc;
-    use crate::domain_name;
-    use crate::message::header;
-    use crate::message::rdata::cname_rdata;
     use crate::message::rdata::cname_rdata::CnameRdata;
-    use crate::message::resource_record;
     use crate::name_server::HashMap;
     use chrono::Utc;
 

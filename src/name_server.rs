@@ -2525,13 +2525,8 @@ impl NameServer {
 #[cfg(test)]
 
 mod name_server_test{
-    use std::net::TcpStream;
     use std::sync::mpsc;
-    use crate::domain_name;
-    use crate::message::header;
-    use crate::message::rdata::cname_rdata;
     use crate::message::rdata::cname_rdata::CnameRdata;
-    use crate::message::resource_record;
     use crate::name_server::HashMap;
     use chrono::Utc;
 
@@ -3912,5 +3907,102 @@ mod name_server_test{
 
         assert_eq!(answer_msg.get_answer().len(), 1);
         assert_eq!(answer_msg.get_answer()[0].get_type_code(), 5);
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn look_for_type_records(){
+        let mut rrs = Vec::<ResourceRecord>::new();
+        //type_code = 1
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record_1 = ResourceRecord::new(a_rdata);
+        let name = String::from("test");
+        let mut domain_name_1 = resource_record_1.get_name();
+        domain_name_1.set_name(name.clone());
+        resource_record_1.set_name(domain_name_1.clone());
+
+        rrs.push(resource_record_1);
+
+        //type_code = 5
+        let cname_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
+        let mut resource_record_2 = ResourceRecord::new(cname_rdata);
+        resource_record_2.set_name(domain_name_1.clone());
+
+        rrs.push(resource_record_2);
+
+        //type_code = 1
+        let a_rdata_2 = Rdata::SomeARdata(ARdata::new());
+        let mut resource_record_3 = ResourceRecord::new(a_rdata_2);
+        let name_2 = String::from("not_test");
+        let mut domain_name_3 = resource_record_3.get_name();
+        domain_name_3.set_name(name_2);
+        resource_record_3.set_name(domain_name_3);
+
+        rrs.push(resource_record_3);
+
+        let answer_rrs = NameServer::look_for_type_records(name.clone(), rrs, 1);
+        assert_eq!(answer_rrs.len(), 1);
+        assert_eq!(answer_rrs[0].get_type_code(), 1);
+        assert_eq!(answer_rrs[0].get_name().get_name(), name.clone());
+
+    }
+
+    //ToDo: Revisar
+    #[test]
+    #[ignore = "panic at label * does not exist"]
+    fn controlled_query_test(){
+        let (tx_delete_resolver_udp, _tx_resolver_recv_udp) = mpsc::channel::<(String, ResourceRecord)>();
+        let (tx_delete_resolver_tcp, _tx_resolver_recv_tcp) = mpsc::channel::<(String, ResourceRecord)>();
+        let (tx_delete_ns_udp, _tx_ns_recv_udp) = mpsc::channel::<(String, ResourceRecord)>();
+        let (tx_delete_ns_tcp, _tx_ns_recv_tcp) = mpsc::channel::<(String, ResourceRecord)>();
+
+        let cache = DnsCache::new();
+
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let file_name = "test.txt".to_string();
+        let origin = "example".to_string();
+        let ip = "192.80.24.11".to_string();
+
+        name_server.add_zone_from_master_file(file_name, origin, ip, true);
+        let _zones_by_class = name_server.get_zones_by_class();
+
+        let dns_message = DnsMessage::new_query_message(String::from("dcc.uchile.cl."),
+                                                                     1, 
+                                                                     1, 
+                                                                     0, 
+                                                                     false, 
+                                                                     1);
+
+        let _response_message = NameServer::step_2(dns_message, 
+            _zones_by_class, 
+            cache, 
+            tx_delete_resolver_udp, 
+            tx_delete_resolver_tcp, 
+            tx_delete_ns_udp, 
+            tx_delete_ns_tcp); 
     }
 }

@@ -1,3 +1,5 @@
+
+use if_addrs::{get_if_addrs, Interface};
 // use std::sync::mpsc;
 // use dns_rust::{
 //     config::RESOLVER_IP_PORT,
@@ -8,6 +10,19 @@
 // };
 
 
+
+pub fn get_interface() -> Result<Interface,&'static str> {
+
+    if let Ok(addrs) = get_if_addrs() {
+        let default_interface = addrs
+            .iter()
+            .find(|&addr| !addr.is_loopback())
+            .ok_or("No interface found")?;
+        return Ok(default_interface.clone());
+    }
+
+    return Err("No interface found");
+}
 
 
 // pub fn run_resolver() {

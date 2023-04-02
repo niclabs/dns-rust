@@ -9,6 +9,7 @@ use dns_rust::{
             rdata::Rdata},
 };
 
+
 //Thist client is tested with the google resolver -> 8.8.8.8:53
 
 
@@ -39,11 +40,15 @@ fn nonet_query() {
     //TODO: to run,the terminal must be with super user priviliges
     //to do that ->  sudo -i 
 
+    let interface_name = common::get_interface()
+                                        .unwrap().name;
+
+
     Command::new("tc")
                             .arg("qdisc")
                             .arg("add")
                             .arg("dev")
-                            .arg("wlp0s20f3")
+                            .arg(interface_name.clone())
                             .arg("root")
                             .arg("netem")
                             .arg("loss")
@@ -54,7 +59,7 @@ fn nonet_query() {
                             .arg("qdisc")
                             .arg("show")
                             .arg("dev")
-                            .arg("wlp0s20f3")
+                            .arg(interface_name.clone())
                             .spawn().expect("error");
 
 
@@ -73,7 +78,7 @@ fn nonet_query() {
             .arg("qdisc")
             .arg("del")
             .arg("dev")
-            .arg("wlp0s20f3")
+            .arg(interface_name)
             .arg("root")
             .arg("netem")
             .arg("loss")

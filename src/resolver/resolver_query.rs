@@ -2073,7 +2073,7 @@ mod resolver_query_tests {
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use crate::resolver::UdpSocket;
-    use crate::rr_cache::RRCache;
+    //use crate::rr_cache::RRCache;
     use chrono::Utc;
     use std::collections::HashMap;
     use std::sync::mpsc::{self, Receiver};
@@ -4743,7 +4743,7 @@ mod resolver_query_tests {
         slist.insert("test.com".to_string(), "".to_string(), 5000);
         slist.insert("test2.com".to_string(), "".to_string(), 2000);
         resolver_query.set_slist(slist);
-        let mut resolver =resolver_query.clone();
+        let _resolver =resolver_query.clone();
         //let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
         //let _dns = resolver.step_3_tcp(update_slist_tcp_recv);      
    }
@@ -4888,7 +4888,7 @@ mod resolver_query_tests {
 
    #[test]
     fn get_tx_update_query() {
-        let (tx, _) = std::sync::mpsc::channel::<ResolverQuery>();
+        let (_tx, _) = std::sync::mpsc::channel::<ResolverQuery>();
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
@@ -4925,7 +4925,7 @@ mod resolver_query_tests {
         tx_update_self_slist,
     );
     let tx_update_query_copy = resolver_query.get_tx_update_query();
-    let copy= tx_update_query_copy.clone();
+    //let _copy= tx_update_query_copy.clone();
     //assert_eq!(&tx, &tx_update_query_copy)
     }
 
@@ -5032,8 +5032,8 @@ fn get_tx_delete_query() {
         tx_update_slist_tcp,
         tx_update_self_slist,
     );
-    let tx_delete_query_copy = resolver_query.get_tx_delete_query();
-    //assert_eq!(&tx_delete_query, &tx_delete_query_copy);
+    let _tx_delete_query_copy = resolver_query.get_tx_delete_query();
+    //assert_eq!(&tx_delete_query, &_tx_delete_query_copy);
 
 }
 
@@ -5124,6 +5124,46 @@ fn get_tx_delete_query() {
     
    }
 
+   #[test]
+
+   fn send_internal_queries_for_slist_tcp(){
+    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    let (tx_update_query, _rx_update_query) = mpsc::channel();
+    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+    let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+    let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+    let resolver_query = ResolverQuery::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+        tx_update_query,
+        tx_delete_query.clone(),
+        DnsMessage::new(),
+        tx_update_cache_udp,
+        tx_update_cache_tcp,
+        tx_update_cache_ns_udp,
+        tx_update_cache_ns_tcp,
+        tx_update_slist_tcp,
+        tx_update_self_slist,
+    );
+
+   }
 
 }
 

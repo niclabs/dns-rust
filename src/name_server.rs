@@ -2080,7 +2080,7 @@ impl NameServer {
                         name_ns.clone(),
                         qclass.clone(),
                     );
-
+                    println!("BOOL: {}", zone.get_zone_nodes().get_subzone());
                     //if zone is a redirection we add rr glue in additional
                     if zone.get_zone_nodes().get_subzone() == true {
                         let glue_rrs = zone.get_glue_rrs();
@@ -2525,9 +2525,11 @@ impl NameServer {
 #[cfg(test)]
 
 mod name_server_test{
+    use std::arch::x86_64::_MM_FROUND_TO_POS_INF;
     use std::sync::mpsc;
     use crate::message::rdata::cname_rdata::CnameRdata;
     use crate::message::rdata::mx_rdata::MxRdata;
+    use crate::message::rdata::ns_rdata::NsRdata;
     use crate::name_server::HashMap;
     use chrono::Utc;
 
@@ -4038,6 +4040,68 @@ mod name_server_test{
         mx_rdata.set_exchange(mx_name);
 
         let rdata = Rdata::SomeMxRdata(mx_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        new_answer.push(resource_record);
+        dns_message.set_answer(new_answer);
+
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (update_refresh_zone_udp, _rx_update_refresh_zone_udp) = mpsc::channel();
+        let (update_refresh_zone_tcp, _rx_update_refresh_zone_tcp) = mpsc::channel();
+        let (update_zone_udp_resolver, _tx_update_zone_udp_resolver) = mpsc::channel();
+        let (update_zone_tcp_resolver, _tx_update_zone_tcp_resolver) = mpsc::channel();
+
+        let mut name_server = NameServer::new(
+            true,
+            delete_sender_udp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp, 
+            add_sender_ns_tcp, 
+            delete_sender_ns_tcp, 
+            update_refresh_zone_udp,
+            update_refresh_zone_tcp,
+            update_zone_udp_resolver,
+            update_zone_tcp_resolver,
+        );
+
+        let file_name = "test.txt".to_string();
+        let origin = "example".to_string();
+        let ip = "192.80.24.11".to_string();
+
+        name_server.add_zone_from_master_file(file_name, origin, ip, true);
+        let _zones_by_class = name_server.get_zones_by_class();
+
+        let answer_msg = NameServer::step_6(dns_message, cache, _zones_by_class);
+
+        assert_eq!(answer_msg.get_additional().len(), 0);
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn step_6_ns_false_no_cache(){
+        let cache = DnsCache::new();
+        let name = String::from("dcc.uchile.cl.");
+
+        let mut ns_data = NsRdata::new();
+        let mut ns_name = ns_data.get_nsdname();
+        ns_name.set_name(name.clone());
+        ns_data.set_nsdname(ns_name);
+
+        let mut dns_message = DnsMessage::new_query_message(String::from("dcc.uchile.cl."),
+                                                                     1, 
+                                                                     1, 
+                                                                     0, 
+                                                                     false, 
+                                                                     1);
+        
+        let mut new_answer = dns_message.get_answer();
+
+        let rdata = Rdata::SomeNsRdata(ns_data);
         let resource_record = ResourceRecord::new(rdata);
         new_answer.push(resource_record);
         dns_message.set_answer(new_answer);

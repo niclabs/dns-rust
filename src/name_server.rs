@@ -4009,11 +4009,10 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    #[ignore = "Should be something in additional ..."]
-    fn step_6_mx_with_aa_false(){
+    fn step_6_mx_with_aa_trues(){
         
         let mut cache = DnsCache::new();
-        let name = String::from("test.com");
+        let name = String::from("dcc.uchile.cl.");
         let a_rdata = ARdata::new();
         let rdata = Rdata::SomeARdata(a_rdata);
         let cache_rr = ResourceRecord::new(rdata);
@@ -4027,6 +4026,10 @@ mod name_server_test{
                                                                      false, 
                                                                      1);
         
+        let mut header = dns_message.get_header();
+        header.set_aa(true);
+        dns_message.set_header(header);
+
         let mut new_answer = dns_message.get_answer();
         let mut mx_rdata = MxRdata::new();
         
@@ -4073,6 +4076,6 @@ mod name_server_test{
 
         let answer_msg = NameServer::step_6(dns_message, cache, _zones_by_class);
 
-        assert_eq!(answer_msg.get_additional().len(), 1);
+        assert_eq!(answer_msg.get_additional().len(), 0);
     }
 }

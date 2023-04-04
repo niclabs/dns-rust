@@ -5117,7 +5117,6 @@ fn get_tx_delete_query() {
    }
 
    #[test]
-
    fn send_internal_queries_for_slist_tcp(){
     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -5173,9 +5172,9 @@ fn get_tx_delete_query() {
         resolver_query  
             .get_slist()
             .get_first()
-            .get(&"name".to_string())
+            .get(&"ip_address".to_string())
             .unwrap(),
-        &"VENERA.ISI.EDU".to_string()
+        &"".to_string()
     );
     resolver_query.send_internal_queries_for_slist_tcp(slist_copy);
 
@@ -5183,15 +5182,84 @@ fn get_tx_delete_query() {
         resolver_query  
             .get_slist()
             .get_first()
-            .get(&"name".to_string())
+            .get(&"ip_address".to_string())
             .unwrap(),
-        &"VENERA.ISI.EDU".to_string()
+        &"".to_string()
     );
-
-    
-
-
    }
+
+   #[test]
+   fn send_internal_queries_for_slist_udp(){
+    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+    let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+    let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+    let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+    let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    let (tx_update_query, _rx_update_query) = mpsc::channel();
+    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+    let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+    let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+    let mut resolver_query = ResolverQuery::new(
+        add_sender_udp,
+        delete_sender_udp,
+        add_sender_tcp,
+        delete_sender_tcp,
+        add_sender_ns_udp,
+        delete_sender_ns_udp,
+        add_sender_ns_tcp,
+        delete_sender_ns_tcp,
+        tx_update_query,
+        tx_delete_query.clone(),
+        DnsMessage::new(),
+        tx_update_cache_udp,
+        tx_update_cache_tcp,
+        tx_update_cache_ns_udp,
+        tx_update_cache_ns_tcp,
+        tx_update_slist_tcp,
+        tx_update_self_slist,
+    );
+    
+    resolver_query.set_sname("test.com".to_string());
+    let mut slist = Slist::new();
+    let mut first_element = HashMap::new();
+    let name = "VENERA.ISI.EDU".to_string();
+    let ip_address = "128.9.0.32".to_string();
+    let response_time = 5000;
+ 
+    first_element.insert("name".to_string(), name);
+    first_element.insert("ip_address".to_string(), ip_address);
+    first_element.insert("response_time".to_string(), response_time.to_string()); 
+    slist.insert("VENERA.ISI.EDU".to_string(), "".to_string(), 5000);
+    
+    let slist_copy = slist.clone();
+    resolver_query.set_slist(slist);
+    let socket = UdpSocket::bind("127.0.0.1:34252").expect("couldn't bind to address");
+    assert_eq!(
+        resolver_query  
+            .get_slist()
+            .get_first()
+            .get(&"ip_address".to_string())
+            .unwrap(),
+        &"".to_string()
+    );
+    resolver_query.send_internal_queries_for_slist_udp(slist_copy, socket);
+    assert_eq!(
+        resolver_query  
+            .get_slist()
+            .get_first()
+            .get(&"ip_address".to_string())
+            .unwrap(),
+        &"".to_string()
+    );
+   }
+
 
 }
 

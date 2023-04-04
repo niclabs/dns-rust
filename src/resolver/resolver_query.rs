@@ -426,49 +426,23 @@ impl ResolverQuery {
 
             // When QCLASS=*, all classes must be matched
             for (class, _hashzone) in self.get_ns_data().iter() {
-                let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
-                    self.get_ns_data(),
-                    s_name.clone(),
-                    *class,
-                );
+                let (rrs_result, is_first_node) = self.search_name_server(
+                    s_name.clone(), 
+                    *class);
+                
+                let mut rrs_by_type = match rrs_result {
+                    Ok(rr) => rr,
+                    Err(e) => return Err(e),
+                };
 
-                let main_zone_nodes = main_zone.get_zone_nodes();
+                // We were looking for the first node
+                if is_first_node {
+                    return Ok(rrs_by_type);
+                }
 
-                if available == true {
-                    let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
-
-                    // We were looking for the first node
-                    if sname_without_zone_label == "".to_string() {
-                        let rrs_by_type = self.get_first_node_rrs_by_type(main_zone_nodes);
-                        return Ok(rrs_by_type);
-                    }
-
-                    // Delete last dot
-                    sname_without_zone_label.pop().unwrap();
-
-                    let mut labels: Vec<&str> = sname_without_zone_label.split(".").collect();
-
-                    labels.reverse();
-
-                    let mut last_label = "";
-
-                    let mut zone_nodes = main_zone.clone().get_zone_nodes();
-
-                    for label in labels {
-                        let exist_child = zone_nodes.exist_child(label.to_string());
-
-                        if exist_child == true {
-                            zone_nodes = zone_nodes.get_child(label.to_string()).0;
-                            last_label = label.clone();
-                            continue;
-                        }
-                    }
-
-                    if last_label == zone_nodes.get_name() {
-                        let mut rrs_by_type = self.get_zone_nodes_rrs_by_type(main_zone_nodes, zone_nodes);
-
-                        all_answers.append(&mut rrs_by_type);
-                    }
+                // We got an answer from the Name Server
+                if !rrs_by_type.is_empty() {
+                    all_answers.append(&mut rrs_by_type);
                 }
             }
 

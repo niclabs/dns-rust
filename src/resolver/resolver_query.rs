@@ -5169,9 +5169,27 @@ fn get_tx_delete_query() {
     
     let slist_copy = slist.clone();
     resolver_query.set_slist(slist);
-
+    assert_eq!(
+        resolver_query  
+            .get_slist()
+            .get_first()
+            .get(&"name".to_string())
+            .unwrap(),
+        &"VENERA.ISI.EDU".to_string()
+    );
     resolver_query.send_internal_queries_for_slist_tcp(slist_copy);
+
+    assert_eq!(
+        resolver_query  
+            .get_slist()
+            .get_first()
+            .get(&"name".to_string())
+            .unwrap(),
+        &"VENERA.ISI.EDU".to_string()
+    );
+
     
+
 
    }
 

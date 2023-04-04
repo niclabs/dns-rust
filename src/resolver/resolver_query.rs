@@ -5135,7 +5135,7 @@ fn get_tx_delete_query() {
     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    let resolver_query = ResolverQuery::new(
+    let mut resolver_query = ResolverQuery::new(
         add_sender_udp,
         delete_sender_udp,
         add_sender_tcp,
@@ -5154,6 +5154,24 @@ fn get_tx_delete_query() {
         tx_update_slist_tcp,
         tx_update_self_slist,
     );
+    
+    resolver_query.set_sname("test.com".to_string());
+    let mut slist = Slist::new();
+    let mut first_element = HashMap::new();
+    let name = "VENERA.ISI.EDU".to_string();
+    let ip_address = "128.9.0.32".to_string();
+    let response_time = 5000;
+ 
+    first_element.insert("name".to_string(), name);
+    first_element.insert("ip_address".to_string(), ip_address);
+    first_element.insert("response_time".to_string(), response_time.to_string()); 
+    slist.insert("VENERA.ISI.EDU".to_string(), "".to_string(), 5000);
+    
+    let slist_copy = slist.clone();
+    resolver_query.set_slist(slist);
+
+    resolver_query.send_internal_queries_for_slist_tcp(slist_copy);
+    
 
    }
 

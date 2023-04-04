@@ -5277,7 +5277,6 @@ fn get_tx_delete_query() {
     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    let tx_update_self_slist_copy = tx_update_self_slist.clone();
     let mut resolver_query = ResolverQuery::new(
         add_sender_udp,
         delete_sender_udp,

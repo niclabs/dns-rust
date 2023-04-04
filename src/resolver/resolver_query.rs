@@ -578,6 +578,57 @@ impl ResolverQuery {
         return rrs_by_type;
     }
 
+	/// Returns a `Result` containing a vector of ResourceRecord structures representing the RRs from the local information,
+    /// or an error message if the search fails.
+    /// 
+    /// Searches for local information in the name server according to the given parameters.
+    fn search_name_server(&mut self, s_name: String, class: u16) -> (Result<Vec<ResourceRecord>, &'static str>, bool) {
+        let (main_zone, available) = NameServer::search_nearest_ancestor_zone(
+            self.get_ns_data(),
+            s_name.clone(),
+            class,
+        );
+    
+        let main_zone_nodes = main_zone.get_zone_nodes();
+        
+        if available == true {
+            let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
+        
+            // We were looking for the first node
+            if sname_without_zone_label == "".to_string() {
+                let rrs_by_type = self.get_first_node_rrs_by_type(main_zone_nodes);
+                return (Ok(rrs_by_type), true);
+            }
+        
+            // Delete last dot
+            sname_without_zone_label.pop().unwrap();
+        
+            let mut labels: Vec<&str> = sname_without_zone_label.split(".").collect();
+        
+            labels.reverse();
+        
+            let mut last_label = "";
+            let mut zone_nodes = main_zone.clone().get_zone_nodes();
+        
+            for label in labels {
+                let exist_child = zone_nodes.exist_child(label.to_string());
+        
+                if exist_child == true {
+                    zone_nodes = zone_nodes.get_child(label.to_string()).0;
+                    last_label = label.clone();
+                    continue;
+                }
+            }
+        
+            if last_label == zone_nodes.get_name() {
+                let rrs_by_type = self.get_zone_nodes_rrs_by_type(main_zone_nodes, zone_nodes);
+        
+                return (Ok(rrs_by_type), false);
+            }
+        }
+        (Ok(Vec::new()), false)
+    }
+
     /// Returns the RRs of the desired information found on the cache. 
     /// Sets the TTL to the corresponding value and removes from cache if needed.
     fn search_cache(&mut self, s_name: String, s_type: String, s_class: u16) -> Vec<ResourceRecord> {

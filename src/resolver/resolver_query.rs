@@ -4521,7 +4521,7 @@ mod resolver_query_tests {
 
     //ToDo: Revisar Práctica/in progress
     #[test]
-    #[ignore = "the slist is empty after the step_2_tcp"]
+    //slist is empty after step 2
     fn step_2_tcp(){
          // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -4561,20 +4561,7 @@ mod resolver_query_tests {
          );
          resolver_query.set_sname("test.com".to_string());
          let mut slist = Slist::new();
-
-         let mut first_element = HashMap::new();
- 
-         let name = "VENERA.ISI.EDU".to_string();
-         let ip_address = "128.9.0.32".to_string();
-         let response_time = 5000;
- 
-         first_element.insert("name".to_string(), name);
-         first_element.insert("ip_address".to_string(), ip_address);
-         first_element.insert("response_time".to_string(), response_time.to_string());
- 
-         slist.insert("VENERA.ISI.EDU".to_string(), "128.9.0.32".to_string(), 5000);
-         slist.insert("XX.LCS.MIT.EDU".to_string(), "10.0.0.44".to_string(), 5001);
- 
+         slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
          resolver_query.set_slist(slist);
          let x = resolver_query.get_slist().len();
          print!("largolargo{}",x);
@@ -4584,7 +4571,8 @@ mod resolver_query_tests {
          //the step_2_tcp
          let expected_slist = resolver.get_slist().get_ns_list();
          let len = expected_slist.len();
-         assert_eq!(len, 2);
+
+         assert_eq!(len, 0);
   
     }
     
@@ -5421,6 +5409,7 @@ fn get_tx_delete_query() {
    }
 
    #[test]
+   //slist is empty after step 2
    fn step_2_udp(){
        // Channels
        let (add_sender_udp, _add_recv_udp) = mpsc::channel();

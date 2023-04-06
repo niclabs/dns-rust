@@ -474,7 +474,7 @@ impl ResolverQuery {
             let rr_vec_cache = self.search_cache(s_name.clone(), s_type, s_class);
             if rr_vec_cache.len() > 0 {
                 return Ok(rr_vec_cache);
-            } 
+            }
         }
         return Ok(rr_vec);
     }
@@ -534,7 +534,7 @@ impl ResolverQuery {
         
         if available == true {
             let mut sname_without_zone_label = s_name.replace(&main_zone.get_name(), "");
-        
+            
             // We were looking for the first node
             if sname_without_zone_label == "".to_string() {
                 let rrs_by_type = self.get_first_node_rrs_by_type(main_zone_nodes);
@@ -5536,6 +5536,92 @@ fn get_tx_delete_query() {
        let len = expected_slist.len();
        assert_eq!(len, 0);
     }
+
+    #[test]
+    #[ignore = "TODO: stack overflow at NameServer::search_nearest_ancestor_zone"]
+    // Fail: stack overflow at NameServer::search_nearest_ancestor_zone
+    fn search_name_server_first_node() {
+         // Test that the correct RRs is returned from the name server
+         // Channels needed to create Resolver Query structure
+         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+         let (tx_update_query, _rx_update_query) = mpsc::channel();
+         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+         let mut resolver_query = ResolverQuery::new(
+             add_sender_udp,
+             delete_sender_udp,
+             add_sender_tcp,
+             delete_sender_tcp,
+             add_sender_ns_udp,
+             delete_sender_ns_udp,
+             add_sender_ns_tcp,
+             delete_sender_ns_tcp,
+             tx_update_query,
+             tx_delete_query,
+             DnsMessage::new(),
+             tx_update_cache_udp,
+             tx_update_cache_tcp,
+             tx_update_cache_ns_udp,
+             tx_update_cache_ns_tcp,
+             tx_update_slist_tcp,
+             tx_update_self_slist,
+         );
+         let name = "test.com".to_string();
+         resolver_query.set_sname(name.clone());
+ 
+         // Create the RRs
+         let ip_address: [u8; 4] = [127, 0, 0, 0];
+         let mut a_rdata = ARdata::new();
+         a_rdata.set_address(ip_address);
+         let rdata = Rdata::SomeARdata(a_rdata);
+         let rr = ResourceRecord::new(rdata);
+         let mut rr_vec = Vec::<ResourceRecord>::new();
+         rr_vec.push(rr);
+
+         // NS Zone with the information we're trying to retrieve:
+         // ns_data: HashMap<u16, HashMap<String, NSZone>>,
+        let mut nszone = NSZone::new();
+        let mut nsnode = NSNode::new();
+        nsnode.set_name(name.clone());
+        nsnode.set_value(rr_vec.clone());
+        nszone.set_zone_nodes(nsnode);
+        nszone.set_class(1);
+
+        let expected_rr_vec = rr_vec.clone();
+
+        let mut hash_string_and_nszone = HashMap::<String, NSZone>::new();
+        hash_string_and_nszone.insert(name.clone(), nszone);
+        let mut ns_data = HashMap::<u16, HashMap<String, NSZone>>::new();
+        ns_data.insert(0, hash_string_and_nszone);
+
+        resolver_query.set_ns_data(ns_data);
+
+        let (result, is_first_node) = resolver_query.search_name_server(
+                name.clone(), 
+                0
+            );
+        
+        let rr_by_type = match result {
+            Ok(rr) => rr,
+            _ => unreachable!(),
+        };
+
+        assert!(is_first_node);
+        assert_eq!(rr_by_type, expected_rr_vec);
+    }
+
 }
 
 

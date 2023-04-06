@@ -4899,7 +4899,7 @@ mod resolver_query_tests {
         tx_update_slist_tcp,
         tx_update_self_slist,
     );
-    let tx_update_query_copy = resolver_query.get_tx_update_query();
+    let _tx_update_query_copy = resolver_query.get_tx_update_query();
     //let _copy= tx_update_query_copy.clone();
     //assert_eq!(&tx, &tx_update_query_copy)
     }

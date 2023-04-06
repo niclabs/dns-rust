@@ -5291,6 +5291,79 @@ fn get_tx_delete_query() {
     }
 
     #[test]
+    fn step_1_udp_no_local_info(){
+         // Channels
+         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+         let (tx_update_query, _rx_update_query) = mpsc::channel();
+         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+         let mut resolver_query = ResolverQuery::new(
+             add_sender_udp,
+             delete_sender_udp,
+             add_sender_tcp,
+             delete_sender_tcp,
+             add_sender_ns_udp,
+             delete_sender_ns_udp,
+             add_sender_ns_tcp,
+             delete_sender_ns_tcp,
+             tx_update_query,
+             tx_delete_query,
+             DnsMessage::new(),
+             tx_update_cache_udp,
+             tx_update_cache_tcp,
+             tx_update_cache_ns_udp,
+             tx_update_cache_ns_tcp,
+             tx_update_slist_tcp,
+             tx_update_self_slist,
+         );
+         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+         let mut cache = DnsCache::new();
+         cache.set_max_size(2);
+         resolver_query.set_cache(cache);
+         resolver_query.set_sclass(1);
+         resolver_query.set_timestamp(1);
+         let ip_address: [u8; 4] = [127, 0, 0, 0];
+         let mut a_rdata = ARdata::new();
+         a_rdata.set_address(ip_address);
+         let rdata = Rdata::SomeARdata(a_rdata);
+         let mut rr = ResourceRecord::new(rdata);
+         rr.set_class(1);
+         rr.set_ttl(2);
+         let mut rr2 = rr.clone();
+         rr2.set_class(2);
+         rr2.set_ttl(2);
+         let domain_name = String::from("127.0.0.0");
+         let domain_name2 = String::from("127.0.1.0");
+         resolver_query.add_to_cache(domain_name.clone(), rr.clone());
+         resolver_query.add_to_cache(domain_name2.clone(), rr2.clone());
+         let socket = UdpSocket::bind("127.0.0.1:34000").expect("couldn't bind to address");
+         resolver_query.set_sname("test.com".to_string());
+         resolver_query.set_query_id_update_slist(123);
+         
+         let (resp1, resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
+         
+         assert_eq!(None, resp1 );
+         
+         let dnsmess = resp2.unwrap();
+         let rcode = dnsmess.get_header().get_rcode();
+
+         assert_eq!(4, rcode);
+
+    }
+
+    #[test]
     fn step_1_udp(){
          // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -5350,11 +5423,13 @@ fn get_tx_delete_query() {
          resolver_query.add_to_cache(domain_name2.clone(), rr2.clone());
          let socket = UdpSocket::bind("127.0.0.1:34000").expect("couldn't bind to address");
          resolver_query.set_sname("test.com".to_string());
-         let mut query_msg = resolver_query.create_query_message();
-         query_msg.set_query_id(123 as u16);
-         let expected = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
+         resolver_query.set_query_id_update_slist(123);
+         let (resp1, resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
+         
         
+
     }
+    
 
     #[test]
     fn step_2_udp_empty(){
@@ -5395,7 +5470,7 @@ fn get_tx_delete_query() {
             tx_update_self_slist,
         );
         resolver_query.set_sname("test.com".to_string());
-        let mut slist = Slist::new();
+        let slist = Slist::new();
         resolver_query.set_slist(slist);
         let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
         resolver_query.step_2_udp(socket);

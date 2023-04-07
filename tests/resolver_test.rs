@@ -1,3 +1,12 @@
+    
+mod common;
+extern crate pnet;
+use pnet::packet::ip::IpNextHeaderProtocols;
+use pnet::packet::Packet;
+use pnet::transport::TransportChannelType::Layer4;
+use pnet::transport::TransportProtocol::Ipv4;
+use pnet::transport::{transport_channel,tcp_packet_iter};
+
 // use dns_rust::client::config::CLIENT_IP_PORT;
 // use dns_rust::client::create_client_query;
 // use dns_rust::message::question;
@@ -112,3 +121,53 @@
 //     }
 // }
 
+#[test]
+fn get_resolver_packets_tcp(){
+    println!("******************************");
+    let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Tcp));
+
+    //channel 
+    let (_,mut rx) = match transport_channel(4096, protocol) {
+        Ok((tx,rx)) => (tx,rx),
+        Err(e) => panic!("Error: creating the transport channel: {}",e),
+        
+    };
+    // Packets from layer 4 TCP
+    let mut iter = tcp_packet_iter(&mut rx);
+    loop {
+        match iter.next() {
+            Ok((packet, _)) => {
+                
+                //
+                let source = packet.get_source(); //caso sale del resolver
+                let destination = packet.get_destination(); //caso llega respuesta al resolver
+                let payload = packet.payload();
+                
+
+                match (source,destination){
+                    (_,58396) => {
+                        println!("\n DNS: Response to Resolver");
+                        println!("payload: {:?}",payload);
+
+                        },
+                    (53,_) => {
+                        println!("\n DNS: Sent Query by Resolver");
+                        println!("payload: {:?}",payload);
+                        
+                    },
+                    
+                    _  =>  {println!("\n Other TCP message");
+                }
+                }
+
+
+
+            }
+            Err(e) => {
+                // If an error occurs, we can handle it here
+                panic!("An error occurred while reading: {}", e);
+            }
+        }
+    }
+
+}

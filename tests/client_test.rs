@@ -36,6 +36,7 @@ fn tcp_query() {
 }
 
 #[test]
+#[ignore]
 fn nonet_query() {
     //TODO: to run,the terminal must be with super user priviliges
     //to do that ->  sudo -i 

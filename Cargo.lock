@@ -3,6 +3,15 @@
 version = 3
 
 [[package]]
+name = "aho-corasick"
+version = "0.7.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc936419f96fa211c1b9166887b38e5e40b19958e5b895be7c1f93adec7071ac"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -40,6 +49,7 @@ dependencies = [
  "bytes",
  "chrono",
  "if-addrs",
+ "pnet",
  "rand",
 ]
 
@@ -55,6 +65,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "glob"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
 name = "if-addrs"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -65,10 +81,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "libc"
-version = "0.2.107"
+name = "ipnetwork"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbe5e23404da5b4f555ef85ebed98fb4083e55a00c317800bc2a50ede9f3d219"
+checksum = "bf466541e9d546596ee94f9f69590f89473455f88372423e0008fc1a7daf100e"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.141"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3304a64d199bb964be99741b7a14d26972741915b3649639149b2479bb46f4b5"
+
+[[package]]
+name = "memchr"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
+
+[[package]]
+name = "no-std-net"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43794a0ace135be66a25d3ae77d41b91615fb68ae937f904090203e81f755b65"
 
 [[package]]
 name = "num-integer"
@@ -90,10 +127,119 @@ dependencies = [
 ]
 
 [[package]]
+name = "pnet"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd959a8268165518e2bf5546ba84c7b3222744435616381df3c456fe8d983576"
+dependencies = [
+ "ipnetwork",
+ "pnet_base",
+ "pnet_datalink",
+ "pnet_packet",
+ "pnet_sys",
+ "pnet_transport",
+]
+
+[[package]]
+name = "pnet_base"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "872e46346144ebf35219ccaa64b1dffacd9c6f188cd7d012bd6977a2a838f42e"
+dependencies = [
+ "no-std-net",
+]
+
+[[package]]
+name = "pnet_datalink"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c302da22118d2793c312a35fb3da6846cb0fab6c3ad53fd67e37809b06cdafce"
+dependencies = [
+ "ipnetwork",
+ "libc",
+ "pnet_base",
+ "pnet_sys",
+ "winapi",
+]
+
+[[package]]
+name = "pnet_macros"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a780e80005c2e463ec25a6e9f928630049a10b43945fea83207207d4a7606f4"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn",
+]
+
+[[package]]
+name = "pnet_macros_support"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6d932134f32efd7834eb8b16d42418dac87086347d1bc7d142370ef078582bc"
+dependencies = [
+ "pnet_base",
+]
+
+[[package]]
+name = "pnet_packet"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bde678bbd85cb1c2d99dc9fc596e57f03aa725f84f3168b0eaf33eeccb41706"
+dependencies = [
+ "glob",
+ "pnet_base",
+ "pnet_macros",
+ "pnet_macros_support",
+]
+
+[[package]]
+name = "pnet_sys"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "faf7a58b2803d818a374be9278a1fe8f88fce14b936afbe225000cfcd9c73f16"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
+name = "pnet_transport"
+version = "0.33.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "813d1c0e4defbe7ee22f6fe1755f122b77bfb5abe77145b1b5baaf463cab9249"
+dependencies = [
+ "libc",
+ "pnet_base",
+ "pnet_packet",
+ "pnet_sys",
+]
+
+[[package]]
 name = "ppv-lite86"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed0cfbc8191465bed66e1718596ee0b0b35d5ee1f41c5df2189d0fe8bde535ba"
+
+[[package]]
+name = "proc-macro2"
+version = "1.0.56"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+dependencies = [
+ "unicode-ident",
+]
+
+[[package]]
+name = "quote"
+version = "1.0.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc"
+dependencies = [
+ "proc-macro2",
+]
 
 [[package]]
 name = "rand"
@@ -136,6 +282,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex"
+version = "1.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b1f693b24f6ac912f4893ef08244d70b6067480d2f1a46e950c9691e6749d1d"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-syntax",
+]
+
+[[package]]
+name = "regex-syntax"
+version = "0.6.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
+
+[[package]]
+name = "serde"
+version = "1.0.159"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c04e8343c3daeec41f58990b9d77068df31209f2af111e059e9fe9646693065"
+
+[[package]]
+name = "syn"
+version = "1.0.109"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
 name = "time"
 version = "0.1.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -144,6 +324,12 @@ dependencies = [
  "libc",
  "winapi",
 ]
+
+[[package]]
+name = "unicode-ident"
+version = "1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5464a87b239f13a63a501f2701565754bae92d243d4bb7eb12f6d57d2269bf4"
 
 [[package]]
 name = "wasi"

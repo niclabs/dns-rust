@@ -7,6 +7,28 @@ use pnet::transport::TransportChannelType::Layer4;
 use pnet::transport::TransportProtocol::Ipv4;
 use pnet::transport::{transport_channel,tcp_packet_iter};
 
+use std::sync::mpsc::channel;
+use std::thread;
+use std::time::Duration;
+// use dns_rust::{
+//     config::RESOLVER_IP_PORT,
+//     // config::{CHECK_MASTER_FILES, MASTER_FILES, NAME_SERVER_IP, SBELT_ROOT_IPS},
+//     config::{ SBELT_ROOT_IPS},
+//     // name_server::{master_file::MasterFile, zone::NSZone},
+//     resolver::{Resolver},
+// };
+//config for resolver
+use dns_rust::config::{
+    RESOLVER_IP_PORT, SBELT_ROOT_IPS,
+};
+
+use crate::common::run_resolver_for_testing;
+use dns_rust::{self, client};
+
+
+
+
+
 // use dns_rust::client::config::CLIENT_IP_PORT;
 // use dns_rust::client::create_client_query;
 // use dns_rust::message::question;
@@ -122,18 +144,34 @@ use pnet::transport::{transport_channel,tcp_packet_iter};
 // }
 
 #[test]
+#[ignore]
 fn get_resolver_packets_tcp(){
-    println!("******************************");
-    let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Tcp));
+    //must be run with sudo privileges
 
-    //channel 
+    //Run Resolver
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS)
+    });
+
+    //config for catching packets
+    let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Tcp));
     let (_,mut rx) = match transport_channel(4096, protocol) {
         Ok((tx,rx)) => (tx,rx),
         Err(e) => panic!("Error: creating the transport channel: {}",e),
-        
     };
-    // Packets from layer 4 TCP
     let mut iter = tcp_packet_iter(&mut rx);
+
+    //channel to stop test
+    let (tx_stop,rx_stop) = channel();
+
+    //Run Client
+    thread::spawn(move || {
+        thread::sleep(Duration::from_secs(1));
+        client::run_client();
+        tx_stop.send(()).unwrap();        
+    });
+    
+    //Loop for catchinng packets
     loop {
         match iter.next() {
             Ok((packet, _)) => {
@@ -146,17 +184,17 @@ fn get_resolver_packets_tcp(){
 
                 match (source,destination){
                     (_,58396) => {
-                        println!("\n DNS: Response to Resolver");
+                        println!("\n DNS: Response to Resolver------------------------------------------------------------");
                         println!("payload: {:?}",payload);
 
                         },
                     (53,_) => {
-                        println!("\n DNS: Sent Query by Resolver");
+                        println!("\n DNS: Sent Query by Resolver-----------------------------------------------------------");
                         println!("payload: {:?}",payload);
                         
                     },
                     
-                    _  =>  {println!("\n Other TCP message");
+                    _  =>  {println!("\n Other TCP message------------------------------------------------------------------");
                 }
                 }
 
@@ -167,6 +205,11 @@ fn get_resolver_packets_tcp(){
                 // If an error occurs, we can handle it here
                 panic!("An error occurred while reading: {}", e);
             }
+        }
+        //finish loop if client is finish
+        match rx_stop.try_recv() {
+            Ok(_) => break,
+            Err(_) => {},   
         }
     }
 

@@ -5712,6 +5712,119 @@ fn get_tx_delete_query() {
         assert_eq!(rr_vec, expected_rr_vec);
     }
 
+    #[test]
+    #[ignore = "TODO: stack overflow at NameServer::search_nearest_ancestor_zone"]
+    fn look_for_local_info_match_all_classes() {
+        // Channels needed to create Resolver Query structure
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+        let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+        let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+        let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+        let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            add_sender_ns_udp,
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_cache_ns_udp,
+            tx_update_cache_ns_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        let name = "test.com".to_string();
+        resolver_query.set_sname(name.clone());
+        resolver_query.set_sclass(255);
+        resolver_query.set_stype(1);
+ 
+        // We need to create RRs for different classes 
+        // Create the RRs
+        let ip_address_1: [u8; 4] = [127, 0, 0, 0];
+        let ip_address_2: [u8; 4] = [127, 0, 7, 0];
+        let mut a_rdata_1 = ARdata::new();
+        let mut a_rdata_2 = ARdata::new();
+        a_rdata_1.set_address(ip_address_1);
+        a_rdata_2.set_address(ip_address_2);
+        let rdata_1 = Rdata::SomeARdata(a_rdata_1);
+        let rdata_2 = Rdata::SomeARdata(a_rdata_2);
+        let mut rr_1 = ResourceRecord::new(rdata_1);
+        let mut rr_2 = ResourceRecord::new(rdata_2);
+        rr_1.set_class(1 as u16);
+        rr_2.set_class(2 as u16);
+        
+        let mut rr_vec_1 = Vec::<ResourceRecord>::new();
+        rr_vec_1.push(rr_1.clone());
+        let mut rr_vec_2 = Vec::<ResourceRecord>::new();
+        rr_vec_2.push(rr_2.clone());
+
+        // NS Zone with the information we're trying to retrieve:
+        // ns_data: HashMap<u16, HashMap<String, NSZone>>,
+        let mut nszone_class_1 = NSZone::new();
+        let mut nszone_class_2 = NSZone::new();
+        let mut nsnode_class_1 = NSNode::new();
+        let mut nsnode_class_2 = NSNode::new();
+        nsnode_class_1.set_name(name.clone());
+        nsnode_class_2.set_name(name.clone());
+        nsnode_class_1.set_value(rr_vec_1.clone());
+        nsnode_class_2.set_value(rr_vec_2.clone());
+
+        nszone_class_1.set_zone_nodes(nsnode_class_1);
+        nszone_class_1.set_class(1);
+        nszone_class_2.set_zone_nodes(nsnode_class_2);
+        nszone_class_2.set_class(2);
+
+        // let expected_rr_vec = rr_vec.clone();
+
+        let mut hash_string_and_nszone_1 = HashMap::<String, NSZone>::new();
+        hash_string_and_nszone_1.insert(name.clone(), nszone_class_1);
+
+        let mut hash_string_and_nszone_2 = HashMap::<String, NSZone>::new();
+        hash_string_and_nszone_2.insert(name.clone(), nszone_class_2);
+
+        // Insert ns data with different classes but same sname and stype
+        let mut ns_data = HashMap::<u16, HashMap<String, NSZone>>::new();
+        ns_data.insert(1, hash_string_and_nszone_1.clone()); 
+        ns_data.insert(2, hash_string_and_nszone_2.clone()); 
+        resolver_query.set_ns_data(ns_data);
+
+        // Add cache
+        let mut cache = DnsCache::new();
+        cache.set_max_size(2);
+        resolver_query.set_cache(cache);
+        resolver_query.set_sclass(1);
+        resolver_query.set_timestamp(1);
+        let domain_name = String::from("127.0.0.0");
+        resolver_query.add_to_cache(domain_name.clone(), rr_1.clone());
+
+        let rr_result = resolver_query.look_for_local_info();
+
+        let rr_vec = match rr_result {
+            Ok(rr) => rr,
+            _ => unreachable!(),
+        };
+
+        // assert_eq!(rr_vec, expected_rr_vec);
+    }
+
 }
 
 

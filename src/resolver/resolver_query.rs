@@ -4557,7 +4557,7 @@ mod resolver_query_tests {
              tx_update_slist_tcp,
              tx_update_self_slist,
          );
-         
+         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
          resolver_query.set_sname("test.com".to_string());
          let mut query_msg = resolver_query.create_query_message();
          query_msg.set_query_id(123 as u16);

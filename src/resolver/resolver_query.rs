@@ -4519,6 +4519,55 @@ mod resolver_query_tests {
          assert_eq!(name, String::from(""));
     }
 
+    #[test]
+    fn step_1_tcp(){
+         // Channels
+         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
+         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
+         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
+         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+         let (tx_update_query, _rx_update_query) = mpsc::channel();
+         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
+         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+         let mut resolver_query = ResolverQuery::new(
+             add_sender_udp,
+             delete_sender_udp,
+             add_sender_tcp,
+             delete_sender_tcp,
+             add_sender_ns_udp,
+             delete_sender_ns_udp,
+             add_sender_ns_tcp,
+             delete_sender_ns_tcp,
+             tx_update_query,
+             tx_delete_query,
+             DnsMessage::new(),
+             tx_update_cache_udp,
+             tx_update_cache_tcp,
+             tx_update_cache_ns_udp,
+             tx_update_cache_ns_tcp,
+             tx_update_slist_tcp,
+             tx_update_self_slist,
+         );
+         
+         resolver_query.set_sname("test.com".to_string());
+         let mut query_msg = resolver_query.create_query_message();
+         query_msg.set_query_id(123 as u16);
+         let expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
+         let name = expected.get_question().get_qname().get_name();
+         
+         assert_eq!(expected.get_query_id(), 0);
+         assert_eq!(name, String::from(""));
+    }
+
     //ToDo: Revisar Práctica/in progress
     #[test]
     //slist is empty after step 2
@@ -4563,8 +4612,7 @@ mod resolver_query_tests {
          let mut slist = Slist::new();
          slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
          resolver_query.set_slist(slist);
-         let x = resolver_query.get_slist().len();
-         print!("largolargo{}",x);
+
          resolver_query.step_2_tcp();
          let resolver =resolver_query.clone();
          //the test fail when we try to do the get first, probably the slist is empty after

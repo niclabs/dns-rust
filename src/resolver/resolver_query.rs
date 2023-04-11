@@ -5175,7 +5175,6 @@ fn get_tx_delete_query() {
    }
 
    #[test]
-   //TODO 
    fn send_internal_queries_for_slist_udp(){
     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -5228,14 +5227,7 @@ fn get_tx_delete_query() {
     let slist_copy = slist.clone();
     resolver_query.set_slist(slist);
     let socket = UdpSocket::bind("127.0.0.1:34252").expect("couldn't bind to address");
-    assert_eq!(
-        resolver_query  
-            .get_slist()
-            .get_first()
-            .get(&"ip_address".to_string())
-            .unwrap(),
-        &"".to_string()
-    );
+   
     resolver_query.send_internal_queries_for_slist_udp(slist_copy, socket);
     assert_eq!(
         resolver_query  

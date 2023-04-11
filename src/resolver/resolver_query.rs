@@ -5281,6 +5281,19 @@ fn get_tx_delete_query() {
     let (tx_update_self_slist_copy, _rx_update_self_slist_copy) = mpsc::channel();
    
     resolver_query.set_tx_update_self_slist(tx_update_self_slist_copy);
+    let res_send = resolver_query.get_tx_update_self_slist();
+    let mut slist = Slist::new();
+    slist.insert("VENERA.ISI.EDU".to_string(), "128.9.0.32".to_string(), 5000);
+    res_send.send(slist).unwrap();
+    let mut slist_rec = _rx_update_self_slist_copy.recv().unwrap();
+    let expec_first = slist_rec.len();
+
+    assert_eq!(1, expec_first);
+    
+    slist_rec.delete("VENERA.ISI.EDU".to_string());
+
+    assert_eq!(0, slist_rec.len());
+
     }
 
     #[test]

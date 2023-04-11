@@ -5141,6 +5141,7 @@ fn get_tx_delete_query() {
     
     resolver_query.set_sname("test.com".to_string());
     let mut slist = Slist::new();
+    let mut slist_copy = Slist::new();
     let mut first_element = HashMap::new();
     let name = "VENERA.ISI.EDU".to_string();
     let ip_address = "128.9.0.32".to_string();
@@ -5150,8 +5151,8 @@ fn get_tx_delete_query() {
     first_element.insert("ip_address".to_string(), ip_address);
     first_element.insert("response_time".to_string(), response_time.to_string()); 
     slist.insert("VENERA.ISI.EDU".to_string(), "".to_string(), 5000);
-    
-    let slist_copy = slist.clone();
+    slist.insert("VENERA.ISI.EDU".to_string(), "128.9.0.32".to_string(), 5000);
+    slist_copy = slist.clone();
     resolver_query.set_slist(slist);
     assert_eq!(
         resolver_query  
@@ -5348,7 +5349,7 @@ fn get_tx_delete_query() {
          let domain_name2 = String::from("127.0.1.0");
          resolver_query.add_to_cache(domain_name.clone(), rr.clone());
          resolver_query.add_to_cache(domain_name2.clone(), rr2.clone());
-         let socket = UdpSocket::bind("127.0.0.1:34000").expect("couldn't bind to address");
+         let socket = UdpSocket::bind("127.0.0.1:24000").expect("couldn't bind to address");
          resolver_query.set_sname("test.com".to_string());
          resolver_query.set_query_id_update_slist(123);
          
@@ -5473,7 +5474,7 @@ fn get_tx_delete_query() {
         resolver_query.set_sname("test.com".to_string());
         let slist = Slist::new();
         resolver_query.set_slist(slist);
-        let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
+        let socket = UdpSocket::bind("127.0.0.1:10400").expect("couldn't bind to address");
         resolver_query.step_2_udp(socket);
         let resolver =resolver_query.clone();
         //the test fail when we try to do the get first, probably the slist is empty after
@@ -5536,7 +5537,7 @@ fn get_tx_delete_query() {
        let len = expected_slist.len();
        assert_eq!(len, 0);
     }
-
+    
     #[test]
     #[ignore = "TODO: stack overflow at NameServer::search_nearest_ancestor_zone"]
     // Fail: stack overflow at NameServer::search_nearest_ancestor_zone
@@ -5598,7 +5599,7 @@ fn get_tx_delete_query() {
         nsnode.set_value(rr_vec.clone());
         nszone.set_zone_nodes(nsnode);
         nszone.set_class(1);
-
+    
         let expected_rr_vec = rr_vec.clone();
 
         let mut hash_string_and_nszone = HashMap::<String, NSZone>::new();

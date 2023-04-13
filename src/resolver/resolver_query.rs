@@ -6150,6 +6150,12 @@ fn get_tx_delete_query() {
          let mut header = dns_message.get_header();
          header.set_rcode(0);
          header.set_aa(false);
+         let mut question = dns_message.get_question();
+         let mut qname = question.get_qname();
+         qname.set_name("newname.com".to_string());
+         question.set_qname(qname);
+         dns_message.set_question(question);
+
          dns_message.set_header(header);
 
     } 

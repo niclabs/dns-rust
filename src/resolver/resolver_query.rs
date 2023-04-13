@@ -6102,7 +6102,6 @@ fn get_tx_delete_query() {
              msg.get_question().get_qname().get_name(),
              "*test.com".to_string()
          );
-
     }
 
     #[test]
@@ -6153,8 +6152,7 @@ fn get_tx_delete_query() {
          header.set_aa(false);
          dns_message.set_header(header);
 
-
-    }
+    } 
 
     #[test]
     fn step_4a_aa_false_with_cache(){

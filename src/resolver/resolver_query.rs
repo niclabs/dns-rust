@@ -665,11 +665,12 @@ impl ResolverQuery {
                         }
                     }
                 } else {
+                    
                     let exist_in_cache = self.exist_cache_data(
                         msg.get_question().get_qname().get_name(),
                         answer[0].clone(),
                     );
-
+                    
                     if exist_in_cache == false {
                         for an in answer.iter_mut() {
                             if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
@@ -1705,6 +1706,7 @@ impl ResolverQuery {
         domain_name: String,
         resource_record: ResourceRecord,
     ) -> bool {
+        
         let mut cache = self.get_cache();
         let rr_type = resource_record.get_string_type();
 
@@ -6155,9 +6157,9 @@ fn get_tx_delete_query() {
          qname.set_name("newname.com".to_string());
          question.set_qname(qname);
          dns_message.set_question(question);
-
          dns_message.set_header(header);
 
+         //let msg = resolver_query.step_4a(dns_message);
     } 
 
     #[test]

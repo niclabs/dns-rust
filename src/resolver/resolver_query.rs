@@ -6154,12 +6154,19 @@ fn get_tx_delete_query() {
          header.set_aa(false);
          let mut question = dns_message.get_question();
          let mut qname = question.get_qname();
-         qname.set_name("newname.com".to_string());
+         qname.set_name("*nname.com".to_string());
          question.set_qname(qname);
          dns_message.set_question(question);
          dns_message.set_header(header);
 
-         //let msg = resolver_query.step_4a(dns_message);
+         let msg = resolver_query.step_4a(dns_message); // fail in exist cache when the name searched doesn't contains a "*"
+         assert_eq!(msg.get_header().get_rd(), true);
+         assert_eq!(msg.get_question().get_qtype(), 1);
+         assert_eq!(msg.get_question().get_qclass(), 1);
+         assert_eq!(
+             msg.get_question().get_qname().get_name(),
+             "*nname.com".to_string()
+         );
     } 
 
     #[test]

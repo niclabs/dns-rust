@@ -228,9 +228,8 @@ mod utils_test {
     }
 
     #[test]
-    fn is_reverse_query_num(){
+    fn is_reverse_query_num() {
         let num_str = String::from("100");
         assert_eq!(is_reverse_query(num_str), false);
     }
-
 }

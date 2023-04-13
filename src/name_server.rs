@@ -1433,8 +1433,7 @@ impl NameServer {
 
         if zone.get_name() != "" && zone.get_active() == true {
             return (zone, available);
-        } 
-        else {
+        } else {
             let dot_position = qname.find(".").unwrap_or(0);
             if dot_position > 0 {
                 qname.replace_range(..dot_position + 1, "");
@@ -1668,9 +1667,8 @@ impl NameServer {
         }
     }
 
-
     //function used when the answer is found in step_2 described in RFC 1034
-    fn answer_found(mut msg: DnsMessage, all_answers: Vec<ResourceRecord>) -> DnsMessage{
+    fn answer_found(mut msg: DnsMessage, all_answers: Vec<ResourceRecord>) -> DnsMessage {
         // Set answers
         msg.set_answer(all_answers);
 
@@ -1824,6 +1822,7 @@ impl NameServer {
                         let new_ns_name = name_ns[..index - 1].to_string();
                         let _labels: Vec<&str> = new_ns_name.split(".").collect();
                         let mut a_glue_rrs;
+
                         // Gets the rrs from the zone
                         let glue_rrs = subzone_node.clone().get_value();
 
@@ -2523,31 +2522,29 @@ impl NameServer {
 
 #[cfg(test)]
 
-mod name_server_test{
-    use std::arch::x86_64::_MM_FROUND_TO_POS_INF;
-    use std::sync::mpsc;
+mod name_server_test {
     use crate::message::rdata::cname_rdata::CnameRdata;
     use crate::message::rdata::mx_rdata::MxRdata;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::name_server::HashMap;
     use chrono::Utc;
+    use std::sync::mpsc;
 
     use super::NameServer;
-    use crate::name_server::zone::NSZone;
-    use crate::name_server::ResourceRecord;
-    use crate::name_server::Rdata;
-    use crate::message::rdata::a_rdata::ARdata;
-    use crate::name_server::DnsCache;
-    use crate::name_server::ZoneRefresh;
     use crate::domain_name::DomainName;
+    use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::soa_rdata::SoaRdata;
-    use crate::name_server::NSNode;
     use crate::message::DnsMessage;
-
+    use crate::name_server::zone::NSZone;
+    use crate::name_server::DnsCache;
+    use crate::name_server::NSNode;
+    use crate::name_server::Rdata;
+    use crate::name_server::ResourceRecord;
+    use crate::name_server::ZoneRefresh;
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn constructor_test(){
+    fn constructor_test() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2564,9 +2561,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2583,7 +2580,7 @@ mod name_server_test{
 
     //ToDo:Revisar Práctica 1
     #[test]
-    fn set_and_get_zones_by_class(){
+    fn set_and_get_zones_by_class() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2600,9 +2597,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2633,7 +2630,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn set_and_get_cache(){
+    fn set_and_get_cache() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2650,9 +2647,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2680,7 +2677,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn set_and_get_primary_server(){
+    fn set_and_get_primary_server() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2697,9 +2694,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2715,7 +2712,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn set_and_get_queries_id_for_soa_rr(){
+    fn set_and_get_queries_id_for_soa_rr() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2732,9 +2729,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2753,7 +2750,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn set_and_get_queries_id(){
+    fn set_and_get_queries_id() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2770,9 +2767,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2797,7 +2794,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn set_and_get_refresh_zone_data(){
+    fn set_and_get_refresh_zone_data() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2814,9 +2811,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2869,7 +2866,7 @@ mod name_server_test{
 
     //ToDo: Revisar Prácitca 1
     #[test]
-    fn get_delete_channel_udp(){
+    fn get_delete_channel_udp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2886,9 +2883,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2905,14 +2902,14 @@ mod name_server_test{
         let (name, rr_result) = delete_rcv_udp_.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
-        created with the get fn used*/ 
+        created with the get fn used*/
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_delete_channel_tcp(){
+    fn get_delete_channel_tcp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2929,9 +2926,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2948,14 +2945,14 @@ mod name_server_test{
         let (name, rr_result) = delete_rcv_tcp_.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
-        created with the get fn used*/ 
+        created with the get fn used*/
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_delete_channel_ns_udp(){
+    fn get_delete_channel_ns_udp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -2972,9 +2969,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -2991,14 +2988,14 @@ mod name_server_test{
         let (name, rr_result) = delete_rcv_ns_udp_.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
-        created with the get fn used*/ 
+        created with the get fn used*/
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_delete_channel_ns_tcp(){
+    fn get_delete_channel_ns_tcp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3015,9 +3012,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3034,14 +3031,14 @@ mod name_server_test{
         let (name, rr_result) = delete_rcv_ns_tcp_.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
-        created with the get fn used*/ 
+        created with the get fn used*/
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_add_channel_ns_udp(){
+    fn get_add_channel_ns_udp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3058,9 +3055,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3077,14 +3074,14 @@ mod name_server_test{
         let (name, rr_result) = add_rcv_ns_udp_.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
-        created with the get fn used*/ 
+        created with the get fn used*/
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_add_channel_ns_tcp(){
+    fn get_add_channel_ns_tcp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3101,9 +3098,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3120,14 +3117,14 @@ mod name_server_test{
         let (name, rr_result) = add_rcv_ns_tcp_.recv().unwrap();
 
         /*if the message was correctly sent it should work with the variable
-        created with the get fn used*/ 
+        created with the get fn used*/
         assert_eq!(name, String::from("test"));
         assert_eq!(rr_result.get_name(), rr.clone().get_name());
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_update_refresh_zone_udp(){
+    fn get_update_refresh_zone_udp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3144,9 +3141,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3195,7 +3192,10 @@ mod name_server_test{
         assert_eq!(res_zone_refresh.get_zone().get_name(), expected_name);
         let expected_ip = String::from("200.89.76.36");
 
-        assert_eq!(res_zone_refresh.get_ip_address_for_refresh_zone(), expected_ip);
+        assert_eq!(
+            res_zone_refresh.get_ip_address_for_refresh_zone(),
+            expected_ip
+        );
         assert_eq!(res_zone_refresh.get_serial(), 1111111111 as u32);
         assert_eq!(res_zone_refresh.get_refresh(), 0 as u32);
         assert_eq!(res_zone_refresh.get_retry(), 0 as u32);
@@ -3207,7 +3207,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_update_refresh_zone_tcp(){
+    fn get_update_refresh_zone_tcp() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3224,9 +3224,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3275,7 +3275,10 @@ mod name_server_test{
         assert_eq!(res_zone_refresh.get_zone().get_name(), expected_name);
         let expected_ip = String::from("200.89.76.36");
 
-        assert_eq!(res_zone_refresh.get_ip_address_for_refresh_zone(), expected_ip);
+        assert_eq!(
+            res_zone_refresh.get_ip_address_for_refresh_zone(),
+            expected_ip
+        );
         assert_eq!(res_zone_refresh.get_serial(), 1111111111 as u32);
         assert_eq!(res_zone_refresh.get_refresh(), 0 as u32);
         assert_eq!(res_zone_refresh.get_retry(), 0 as u32);
@@ -3287,7 +3290,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_update_zone_udp_resolver(){
+    fn get_update_zone_udp_resolver() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3304,9 +3307,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3328,13 +3331,19 @@ mod name_server_test{
         let res_nszone = update_zone_udp_rcv.recv().unwrap();
 
         assert_eq!(res_nszone.get_name(), String::from("example.com"));
-        assert_eq!(res_nszone.get_zone_nodes().get_name(), nsnode.clone().get_name());
-        assert_eq!(res_nszone.get_ip_address_for_refresh_zone(), String::from("127.0.0.0"));
+        assert_eq!(
+            res_nszone.get_zone_nodes().get_name(),
+            nsnode.clone().get_name()
+        );
+        assert_eq!(
+            res_nszone.get_ip_address_for_refresh_zone(),
+            String::from("127.0.0.0")
+        );
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_update_zone_tcp_resolver(){
+    fn get_update_zone_tcp_resolver() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3351,9 +3360,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3375,13 +3384,19 @@ mod name_server_test{
         let res_nszone = update_zone_tcp_rcv.recv().unwrap();
 
         assert_eq!(res_nszone.get_name(), String::from("example.com"));
-        assert_eq!(res_nszone.get_zone_nodes().get_name(), nsnode.clone().get_name());
-        assert_eq!(res_nszone.get_ip_address_for_refresh_zone(), String::from("127.0.0.0"));
+        assert_eq!(
+            res_nszone.get_zone_nodes().get_name(),
+            nsnode.clone().get_name()
+        );
+        assert_eq!(
+            res_nszone.get_ip_address_for_refresh_zone(),
+            String::from("127.0.0.0")
+        );
     }
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn add_zone_from_master_file(){
+    fn add_zone_from_master_file() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3398,9 +3413,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3423,7 +3438,7 @@ mod name_server_test{
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn search_nearest_ancestor_zone_no_class_in_it(){
+    fn search_nearest_ancestor_zone_no_class_in_it() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3440,9 +3455,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3451,7 +3466,8 @@ mod name_server_test{
 
         let zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, must_be_false) = NameServer::search_nearest_ancestor(zones_by_class, String::from("Not_in.org"), 3);
+        let (_zone, must_be_false) =
+            NameServer::search_nearest_ancestor(zones_by_class, String::from("Not_in.org"), 3);
 
         assert!(!must_be_false);
         assert_eq!(_zone.get_ip_address_for_refresh_zone(), String::from(""));
@@ -3459,7 +3475,7 @@ mod name_server_test{
 
     // TODD: Completar test
     #[test]
-    fn search_nearest_ancestor_zone_with_dot(){
+    fn search_nearest_ancestor_zone_with_dot() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3476,9 +3492,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3492,7 +3508,11 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("dcc.uchile.cl."), 1);
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(
+            _zones_by_class,
+            String::from("dcc.uchile.cl."),
+            1,
+        );
 
         assert!(_boolean);
         assert_eq!(String::from("uchile.cl."), _zone.get_name());
@@ -3500,7 +3520,7 @@ mod name_server_test{
 
     //ToDo: Revisar Test
     #[test]
-    fn search_nearest_ancestor_with_dot(){
+    fn search_nearest_ancestor_with_dot() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3517,9 +3537,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3533,7 +3553,8 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor(_zones_by_class, String::from("dcc.uchile.cl."), 1);
+        let (_zone, _boolean) =
+            NameServer::search_nearest_ancestor(_zones_by_class, String::from("dcc.uchile.cl."), 1);
 
         assert!(_boolean);
         assert_eq!(String::from("uchile.cl."), _zone.get_name());
@@ -3542,7 +3563,7 @@ mod name_server_test{
     //ToDo: Revisar
     #[test]
     #[ignore = "TODO: bug in fn search_nearest_ancestor, investigating..."]
-    fn search_nearest_ancestor_zone_without_dot(){
+    fn search_nearest_ancestor_zone_without_dot() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3559,9 +3580,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3575,7 +3596,11 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("dcc.uchile.cl"), 1);
+        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(
+            _zones_by_class,
+            String::from("dcc.uchile.cl"),
+            1,
+        );
 
         assert!(_boolean);
         assert_eq!(String::from("uchile.cl."), _zone.get_name());
@@ -3583,7 +3608,7 @@ mod name_server_test{
 
     #[test]
     #[ignore = "TODO: bug in fn search_nearest_ancestor, investigating..."]
-    fn search_nearest_ancestor_without_dot(){
+    fn search_nearest_ancestor_without_dot() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3600,9 +3625,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3616,16 +3641,16 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor(_zones_by_class, String::from("dcc.uchile.cl"), 1);
+        let (_zone, _boolean) =
+            NameServer::search_nearest_ancestor(_zones_by_class, String::from("dcc.uchile.cl"), 1);
 
         assert!(_boolean);
         assert_eq!(String::from("uchile.cl."), _zone.get_name());
     }
 
-
     //ToDo: Revisar
     #[test]
-    fn search_nearest_ancestor_search_root(){
+    fn search_nearest_ancestor_search_root() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3642,9 +3667,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3658,7 +3683,8 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor(_zones_by_class, String::from("."), 1);
+        let (_zone, _boolean) =
+            NameServer::search_nearest_ancestor(_zones_by_class, String::from("."), 1);
 
         assert!(!_boolean);
         assert_eq!(String::from(""), _zone.get_name());
@@ -3667,7 +3693,7 @@ mod name_server_test{
     //ToDo: Revisar
     #[test]
     #[ignore = "TODO: bug in fn search_nearest_ancestor, investigating..."]
-    fn search_nearest_ancestor_zone_search_root(){
+    fn search_nearest_ancestor_zone_search_root() {
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
@@ -3684,9 +3710,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3700,7 +3726,8 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let (_zone, _boolean) = NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("."), 1);
+        let (_zone, _boolean) =
+            NameServer::search_nearest_ancestor_zone(_zones_by_class, String::from("."), 1);
 
         assert!(!_boolean);
         assert_eq!(String::from(""), _zone.get_name());
@@ -3708,10 +3735,11 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    fn set_ra(){
-        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+    fn set_ra() {
+        let dns_message =
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
         assert!(!dns_message.get_header().get_ra());
-        
+
         let dns_message_answer = NameServer::set_ra(dns_message, true);
 
         assert!(dns_message_answer.get_header().get_ra());
@@ -3719,8 +3747,9 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    fn answer_found(){
-        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+    fn answer_found() {
+        let dns_message =
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
         let mut all_answers = Vec::new();
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
@@ -3737,7 +3766,7 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    fn remove_from_cache(){
+    fn remove_from_cache() {
         let domain_name = String::from("test.com");
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
@@ -3746,13 +3775,15 @@ mod name_server_test{
         let (tx_ns_udp, _tx_ns_recv_udp) = mpsc::channel::<(String, ResourceRecord)>();
         let (tx_ns_tcp, _tx_ns_recv_tcp) = mpsc::channel::<(String, ResourceRecord)>();
 
-        NameServer::remove_from_cache(domain_name.clone(), 
-                                    resource_record.clone(), 
-                                    tx_resolver_udp, 
-                                    tx_resolver_tcp, 
-                                    tx_ns_udp, 
-                                    tx_ns_tcp);
-        
+        NameServer::remove_from_cache(
+            domain_name.clone(),
+            resource_record.clone(),
+            tx_resolver_udp,
+            tx_resolver_tcp,
+            tx_ns_udp,
+            tx_ns_tcp,
+        );
+
         let (name_1, rr_1) = _tx_resolver_recv_udp.recv().unwrap();
         assert_eq!(name_1.clone(), domain_name.clone());
         assert_eq!(rr_1.clone().get_name(), resource_record.clone().get_name());
@@ -3772,8 +3803,9 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    fn label_does_not_exist_equals_names(){
-        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+    fn label_does_not_exist_equals_names() {
+        let dns_message =
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
         let mut current_node = NSNode::new();
 
         let mut cname_rdata = CnameRdata::new();
@@ -3788,7 +3820,8 @@ mod name_server_test{
         value.push(resource_record);
         current_node.set_value(value);
 
-        let answer_message = NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
+        let answer_message =
+            NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
 
         let qname = answer_message.clone().get_question().get_qname();
         let expected = dns_message.clone().get_question().get_qname();
@@ -3804,8 +3837,9 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    fn label_does_not_exist_not_equals_names(){
-        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+    fn label_does_not_exist_not_equals_names() {
+        let dns_message =
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
         let mut current_node = NSNode::new();
 
         let mut cname_rdata = CnameRdata::new();
@@ -3820,7 +3854,8 @@ mod name_server_test{
         value.push(resource_record);
         current_node.set_value(value);
 
-        let answer_message = NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
+        let answer_message =
+            NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
 
         let qname = answer_message.clone().get_question().get_qname();
         let expected = dns_message.clone().get_question().get_qname();
@@ -3830,14 +3865,15 @@ mod name_server_test{
         let header = answer_message.clone().get_header();
 
         assert_eq!(header.get_rcode(), 3);
-        assert!(header.get_aa());        
+        assert!(header.get_aa());
     }
 
     //ToDo:Revisar
     #[test]
     #[should_panic]
-    fn label_does_not_exist_unreachable(){
-        let dns_message = DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+    fn label_does_not_exist_unreachable() {
+        let dns_message =
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
         let mut current_node = NSNode::new();
 
         let mut value: Vec<ResourceRecord> = Vec::new();
@@ -3846,19 +3882,16 @@ mod name_server_test{
         value.push(resource_record);
         current_node.set_value(value);
 
-        let _answer_message = NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
+        let _answer_message =
+            NameServer::label_does_not_exist(dns_message.clone(), current_node.clone());
     }
 
     //ToDo: Revisar
     #[test]
-    fn step_6_nothing_in_cache_no_additionals(){
-        let mut dns_message = DnsMessage::new_query_message(String::from("dcc.uchile.cl."),
-                                                                     1, 
-                                                                     1, 
-                                                                     0, 
-                                                                     false, 
-                                                                     1);
-        
+    fn step_6_nothing_in_cache_no_additionals() {
+        let mut dns_message =
+            DnsMessage::new_query_message(String::from("dcc.uchile.cl."), 1, 1, 0, false, 1);
+
         let mut new_answer = dns_message.get_answer();
         let mut cname_rdata = CnameRdata::new();
         let name = String::from("test.com");
@@ -3889,9 +3922,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3913,7 +3946,7 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    fn look_for_type_records(){
+    fn look_for_type_records() {
         let mut rrs = Vec::<ResourceRecord>::new();
         //type_code = 1
         let a_rdata = Rdata::SomeARdata(ARdata::new());
@@ -3946,15 +3979,16 @@ mod name_server_test{
         assert_eq!(answer_rrs.len(), 1);
         assert_eq!(answer_rrs[0].get_type_code(), 1);
         assert_eq!(answer_rrs[0].get_name().get_name(), name.clone());
-
     }
 
     //ToDo: Revisar
     #[test]
     #[ignore = "panic at label * does not exist"]
-    fn controlled_query_test(){
-        let (tx_delete_resolver_udp, _tx_resolver_recv_udp) = mpsc::channel::<(String, ResourceRecord)>();
-        let (tx_delete_resolver_tcp, _tx_resolver_recv_tcp) = mpsc::channel::<(String, ResourceRecord)>();
+    fn controlled_query_test() {
+        let (tx_delete_resolver_udp, _tx_resolver_recv_udp) =
+            mpsc::channel::<(String, ResourceRecord)>();
+        let (tx_delete_resolver_tcp, _tx_resolver_recv_tcp) =
+            mpsc::channel::<(String, ResourceRecord)>();
         let (tx_delete_ns_udp, _tx_ns_recv_udp) = mpsc::channel::<(String, ResourceRecord)>();
         let (tx_delete_ns_tcp, _tx_ns_recv_tcp) = mpsc::channel::<(String, ResourceRecord)>();
 
@@ -3976,9 +4010,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -3992,26 +4026,23 @@ mod name_server_test{
         name_server.add_zone_from_master_file(file_name, origin, ip, true);
         let _zones_by_class = name_server.get_zones_by_class();
 
-        let dns_message = DnsMessage::new_query_message(String::from("dcc.uchile.cl."),
-                                                                     1, 
-                                                                     1, 
-                                                                     0, 
-                                                                     false, 
-                                                                     1);
+        let dns_message =
+            DnsMessage::new_query_message(String::from("dcc.uchile.cl."), 1, 1, 0, false, 1);
 
-        let _response_message = NameServer::step_2(dns_message, 
-            _zones_by_class, 
-            cache, 
-            tx_delete_resolver_udp, 
-            tx_delete_resolver_tcp, 
-            tx_delete_ns_udp, 
-            tx_delete_ns_tcp); 
+        let _response_message = NameServer::step_2(
+            dns_message,
+            _zones_by_class,
+            cache,
+            tx_delete_resolver_udp,
+            tx_delete_resolver_tcp,
+            tx_delete_ns_udp,
+            tx_delete_ns_tcp,
+        );
     }
 
     //ToDo: Revisar
     #[test]
-    fn step_6_mx_with_aa_trues(){
-        
+    fn step_6_mx_with_aa_trues() {
         let mut cache = DnsCache::new();
         let name = String::from("dcc.uchile.cl.");
         let a_rdata = ARdata::new();
@@ -4020,20 +4051,16 @@ mod name_server_test{
 
         cache.add(name.clone(), cache_rr);
 
-        let mut dns_message = DnsMessage::new_query_message(String::from("dcc.uchile.cl."),
-                                                                     1, 
-                                                                     1, 
-                                                                     0, 
-                                                                     false, 
-                                                                     1);
-        
+        let mut dns_message =
+            DnsMessage::new_query_message(String::from("dcc.uchile.cl."), 1, 1, 0, false, 1);
+
         let mut header = dns_message.get_header();
         header.set_aa(true);
         dns_message.set_header(header);
 
         let mut new_answer = dns_message.get_answer();
         let mut mx_rdata = MxRdata::new();
-        
+
         let mut mx_name = mx_rdata.get_exchange();
         mx_name.set_name(name);
         mx_rdata.set_exchange(mx_name);
@@ -4059,9 +4086,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -4082,7 +4109,7 @@ mod name_server_test{
 
     //ToDo: Revisar
     #[test]
-    fn step_6_ns_false_no_cache(){
+    fn step_6_ns_false_no_cache() {
         let cache = DnsCache::new();
         let name = String::from("dcc.uchile.cl.");
 
@@ -4091,13 +4118,9 @@ mod name_server_test{
         ns_name.set_name(name.clone());
         ns_data.set_nsdname(ns_name);
 
-        let mut dns_message = DnsMessage::new_query_message(String::from("dcc.uchile.cl."),
-                                                                     1, 
-                                                                     1, 
-                                                                     0, 
-                                                                     false, 
-                                                                     1);
-        
+        let mut dns_message =
+            DnsMessage::new_query_message(String::from("dcc.uchile.cl."), 1, 1, 0, false, 1);
+
         let mut new_answer = dns_message.get_answer();
 
         let rdata = Rdata::SomeNsRdata(ns_data);
@@ -4121,9 +4144,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,
@@ -4141,12 +4164,11 @@ mod name_server_test{
 
         assert_eq!(answer_msg.get_additional().len(), 0);
     }
-    
+
     //ToDo: Revisar
     //Question: The length should be 1 because in cache i have the data that should be added
     #[test]
-    fn step_6_mx_with_aa_false(){
-        
+    fn step_6_mx_with_aa_false() {
         let mut cache = DnsCache::new();
         let name = String::from("dcc.uchile.cl.");
         let a_rdata = ARdata::new();
@@ -4155,16 +4177,12 @@ mod name_server_test{
 
         cache.add(name.clone(), cache_rr);
 
-        let mut dns_message = DnsMessage::new_query_message(String::from("dcc.uchile.cl."),
-                                                                     1, 
-                                                                     1, 
-                                                                     0, 
-                                                                     false, 
-                                                                     1);
+        let mut dns_message =
+            DnsMessage::new_query_message(String::from("dcc.uchile.cl."), 1, 1, 0, false, 1);
 
         let mut new_answer = dns_message.get_answer();
         let mut mx_rdata = MxRdata::new();
-        
+
         let mut mx_name = mx_rdata.get_exchange();
         mx_name.set_name(name);
         mx_rdata.set_exchange(mx_name);
@@ -4190,9 +4208,9 @@ mod name_server_test{
             delete_sender_udp,
             delete_sender_tcp,
             add_sender_ns_udp,
-            delete_sender_ns_udp, 
-            add_sender_ns_tcp, 
-            delete_sender_ns_tcp, 
+            delete_sender_ns_udp,
+            add_sender_ns_tcp,
+            delete_sender_ns_tcp,
             update_refresh_zone_udp,
             update_refresh_zone_tcp,
             update_zone_udp_resolver,

@@ -217,7 +217,7 @@ mod question_test {
     fn to_bytes_correct_val() {
         let mut domain_name = DomainName::new();
         let mut question = Question::new();
-        
+
         domain_name.set_name(String::from("test.com"));
         question.set_qname(domain_name);
         question.set_qtype(5);
@@ -236,7 +236,7 @@ mod question_test {
         let question = Question::new();
         let expected_question_to_bytes: Vec<u8> = Vec::new();
 
-        let real_question_to_bytes = question.to_bytes();      
+        let real_question_to_bytes = question.to_bytes();
         assert_eq!(real_question_to_bytes, expected_question_to_bytes);
     }
 

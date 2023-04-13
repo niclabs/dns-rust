@@ -55,7 +55,7 @@ impl NSZone {
         ns_zone.set_name(top_node_name.clone());
         ns_zone.set_ip_address_for_refresh_zone(ip_address_for_refresh_zone);
         ns_zone.set_class_str(master_file_parsed.get_class_default());
-        
+
         // Sets top node info
         let mut top_node = NSNode::new();
         top_node.set_name(top_node_name.clone());
@@ -208,7 +208,6 @@ mod zone_test {
     use crate::message::DnsMessage;
     use crate::name_server::zone::NSZone;
     use crate::name_server::zone_node::NSNode;
-    use crate::message::DnsMessage;
 
     #[test]
     fn constructor() {
@@ -331,7 +330,7 @@ mod zone_test {
         let mut resource_record = ResourceRecord::new(a_rdata);
         let mut resource_record_ = ResourceRecord::new(a_rdata_);
         let mut name_server = resource_record.get_name();
-        let mut name_server_= resource_record_.get_name();
+        let mut name_server_ = resource_record_.get_name();
 
         name_server.set_name("example_name".to_string());
         name_server_.set_name("example_namessss".to_string());
@@ -378,7 +377,6 @@ mod zone_test {
     }
 
     #[test]
-    //TODO revisar práctica 1
     #[should_panic]
     fn set_class_str() {
         let mut nszone = NSZone::new();

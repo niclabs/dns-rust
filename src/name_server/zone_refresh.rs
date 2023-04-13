@@ -212,13 +212,13 @@ mod zone_refresh_test {
 
         let zone_refresh = ZoneRefresh::new(ns_zone);
         let some_timestamp = Utc::now().timestamp() as u32;
-        
+
         let expected_name = String::from("example.com");
         assert_eq!(zone_refresh.zone.get_name(), expected_name);
-        
+
         let expected_ip = String::from("200.89.76.36");
         assert_eq!(zone_refresh.ip_address_for_refresh_zone, expected_ip);
-        
+
         let zero = 0 as u32;
         assert_eq!(zone_refresh.refresh, zero);
         assert_eq!(zone_refresh.retry, zero);
@@ -258,7 +258,7 @@ mod zone_refresh_test {
         let expected_name1 = String::from("example.com");
         let real_name1 = zone_refresh.get_zone().get_name();
         assert_eq!(real_name1, expected_name1);
-        
+
         zone_refresh.set_zone(ns_zone_2);
         let expected_name2 = String::from("");
         let real_name2 = zone_refresh.get_zone().get_name();
@@ -292,7 +292,7 @@ mod zone_refresh_test {
     fn set_and_get_serial() {
         let mut ns_zone = NSZone::new();
         let mut value = Vec::<ResourceRecord>::new();
-        
+
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
         value.push(resource_record);
@@ -370,7 +370,7 @@ mod zone_refresh_test {
         let mut zone_refresh = ZoneRefresh::new(ns_zone);
         let zero = 0 as u32;
         assert_eq!(zone_refresh.get_expire(), zero);
-        
+
         let number = 4000000 as u32;
         zone_refresh.set_expire(number.clone());
         assert_eq!(zone_refresh.get_expire(), number);
@@ -491,7 +491,7 @@ mod zone_refresh_test {
             _ => unreachable!(),
         }
         let resource_record_2 = ResourceRecord::new(soa_rdata_2);
-        
+
         rr_value_1.push(resource_record_1);
         rr_value_2.push(resource_record_2);
 
@@ -523,7 +523,7 @@ mod zone_refresh_test {
         let mut rr_value = Vec::<ResourceRecord>::new();
         let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
         let resource_record = ResourceRecord::new(soa_rdata);
-        
+
         rr_value.push(resource_record);
 
         ns_zone.get_zone_nodes().set_value(rr_value.clone());

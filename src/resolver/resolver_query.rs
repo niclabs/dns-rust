@@ -4812,10 +4812,10 @@ mod resolver_query_tests {
          resolver_query.add_to_cache(domain_name.clone(), rr_1.clone());
          let socket = UdpSocket::bind("127.0.0.1:34000").expect("couldn't bind to address");
 
-         let (resp1, resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
+         let (_resp1, _resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
          
-         //assert_eq!(expected.get_query_id(), 0);
-         //assert_eq!(name, String::from("test.com"));
+         //assert_eq!(_resp1, None);
+         //assert_eq!(_resp2, None);
     }
 
     //ToDo: Revisar Práctica/in progress

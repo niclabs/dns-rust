@@ -4626,9 +4626,9 @@ mod resolver_query_tests {
     
         
 
-         let mut query_msg = resolver_query.create_query_message();
+         let query_msg = resolver_query.create_query_message();
          let expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
-         let name_expected = expected.get_question().get_qname().get_name();
+         let _name_expected = expected.get_question().get_qname().get_name();
          
          //assert_eq!(expected.get_query_id(), 0);
          //assert_eq!(name, String::from("test.com"));

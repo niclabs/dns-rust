@@ -4171,14 +4171,16 @@ mod name_server_test {
     fn step_6_mx_with_aa_false() {
         let mut cache = DnsCache::new();
         let name = String::from("dcc.uchile.cl.");
-        let a_rdata = ARdata::new();
+        let address = [192 as u8, 80 as u8, 24 as u8, 11 as u8];
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let cache_rr = ResourceRecord::new(rdata);
         
         cache.add(name.clone(), cache_rr);
 
         let mut dns_message =
-            DnsMessage::new_query_message(String::from("dcc.uchile.cl."), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(String::from("dcc.uchile.cl."), 15, 1, 0, false, 1);
 
         let mut new_answer = dns_message.get_answer();
         let mut mx_rdata = MxRdata::new();

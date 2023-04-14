@@ -4174,7 +4174,7 @@ mod name_server_test {
         let a_rdata = ARdata::new();
         let rdata = Rdata::SomeARdata(a_rdata);
         let cache_rr = ResourceRecord::new(rdata);
-
+        
         cache.add(name.clone(), cache_rr);
 
         let mut dns_message =

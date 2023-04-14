@@ -5,8 +5,7 @@ mod common;
 use dns_rust::{
     client::{create_client_query,
             send_client_query},
-    message::{DnsMessage,
-            rdata::Rdata},
+    message::{DnsMessage},
 };
 
 
@@ -21,8 +20,8 @@ fn udp_query() {
     //values query
     let transport_protocol = "UDP";
 
-    //test
-    qtype_a_example(transport_protocol);
+    //test with google resolver
+    qtype_a_example_google_resolver(transport_protocol);
 }
 
 #[test]
@@ -31,9 +30,152 @@ fn tcp_query() {
     //values query
     let transport_protocol = "TCP";
 
-    //test
-    qtype_a_example(transport_protocol);
+    //test with google resolver
+    qtype_a_example_google_resolver(transport_protocol);
 }
+
+#[test]
+fn non_existent_type(){
+
+    //values query
+    let google_resolver = "8.8.8.8:53"; 
+    let transport_protocol = "TCP";
+    let domain_name = "example.com";
+
+    // create client query
+    let client_query: DnsMessage = create_client_query(domain_name,
+                                                           13,
+                                                           1);
+
+    // send query and get response
+    let dns_response = send_client_query(transport_protocol,
+                                        google_resolver,
+                                                client_query);
+
+    common::qtype_hinfo_example_no_answer(dns_response);
+    
+}
+
+#[test]
+#[ignore]
+fn invalid_domain(){
+
+    //values query
+    let domain_name = "exam¿ple.com";
+    let google_resolver = "8.8.8.8:53"; 
+    let transport_protocol = "TCP";
+
+    // create client query
+    let client_query: DnsMessage = create_client_query(domain_name,
+                                                           13,
+                                                           1);
+
+    // send query and get response
+    let dns_response = send_client_query(transport_protocol,
+                                        google_resolver,
+                                                client_query);
+
+    //Header
+    let header = dns_response.get_header();
+    let rcode = header.get_rcode(); 
+    
+    //Format Error
+    assert_eq!(rcode, 1);
+}
+
+#[test]
+#[should_panic]
+#[ignore]
+fn qtype_asterisk_example(){
+    //Not implemented type RRSIG and is in answer 
+    //revisar whireshark
+
+    //values query
+    let domain_name_example = "example.com";
+    let google_resolver = "8.8.8.8:53"; 
+    let transport_protocol = "TCP";
+
+    // create client query
+    let client_query_example: DnsMessage = create_client_query(domain_name_example,
+                                                           255,
+                                                           1);
+
+
+    // send query and get response
+    let dns_response_example = send_client_query(transport_protocol,
+                                            google_resolver,
+                                                client_query_example);
+
+    common::qtype_asterisk_example(dns_response_example); 
+}
+
+#[test]
+#[ignore]
+fn qtype_asterisk_test(){
+    //Not implemented type RRSIG and is in answer
+
+    //values query
+    let domain_name_test = "test";
+    let google_resolver = "8.8.8.8:53"; 
+    let transport_protocol = "TCP";
+
+    // create client query
+    let client_query_test: DnsMessage = create_client_query(domain_name_test,
+        255,
+        1);
+
+    // send query and get response
+    let dns_response_test = send_client_query(transport_protocol,
+                                                google_resolver,
+                                                client_query_test);
+
+    common::qtype_asterisk_test(dns_response_test);   
+}
+
+#[test]
+#[ignore]
+fn qtype_mx_example(){
+    
+    //values query
+    let domain_name = "example.com";
+    let google_resolver = "8.8.8.8:53"; 
+    let transport_protocol = "TCP";
+
+    // create client query
+    let client_query: DnsMessage = create_client_query(domain_name,
+                                                15,
+                                                1);
+
+    // // send query and get response FIXME: se cae aca
+    let dns_response_test = send_client_query(transport_protocol,
+                                                google_resolver,
+                                                client_query);
+
+    common::qtype_mx_example(dns_response_test);   
+}
+
+#[test]
+fn qtype_ns_example(){
+    //falla ves mor medio a veces 
+    
+    //values query
+    let domain_name = "example.com";
+    let google_resolver = "8.8.8.8:53"; 
+    let transport_protocol = "TCP";
+
+    // create client query
+    let client_query: DnsMessage = create_client_query(domain_name,
+                                                2,
+                                                1);
+
+    //send query and get response FIXME: se cae aca
+    let dns_response_test = send_client_query(transport_protocol,
+                                                google_resolver,
+                                                client_query);
+
+    common::qtype_ns_example(dns_response_test);   
+}
+
 
 #[test]
 #[ignore]
@@ -89,17 +231,7 @@ fn nonet_query() {
 
 }
 
-// fn nonet_timeout_query()) {
-// }
-
-// fn test_timeout_query_udp() {
-// }
-
-// fn test_timeout_query_tcp() {
-// }
-
-
-fn qtype_a_example(transport_protocol:&str) {
+fn qtype_a_example_google_resolver(transport_protocol:&str) {
     //TODO: put by default UDP
 
     let google_resolver = "8.8.8.8:53"; 
@@ -110,28 +242,9 @@ fn qtype_a_example(transport_protocol:&str) {
                                                            1);
 
     //send query and get response
-    let mut dns_response = send_client_query(transport_protocol,
+    let dns_response = send_client_query(transport_protocol,
                                         google_resolver,
                                                 client_query);
-
-    dns_response.print_dns_message();
-    
-    //header values
-    let header = dns_response.get_header();
-    let answers = dns_response.get_answer();
-    let answer_count = header.get_ancount();
-
-    if answer_count > 0 {
-        println!("si recibio answer");
-        let answer = &answers[0];
-        let ip = match answer.get_rdata() {
-            Rdata::SomeARdata(val) => val.get_string_address(),
-            _ => "".to_string(),
-        };
-
-        assert_eq!(ip, "93.184.216.34");
-    } else {
-        println!("no answers")
-    }
-
+    //testing response 
+    common::qtype_a_example(dns_response);
 }

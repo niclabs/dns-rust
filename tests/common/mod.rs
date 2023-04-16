@@ -311,7 +311,7 @@ pub fn qtype_mx_example(dns_response: DnsMessage){
 }
 
 pub fn qtype_ns_example(dns_response: DnsMessage){
-    //FIXME:falla ves por medio
+    //FIXME:falla aveces cuando corro el cliente con el resolver de google
 
     //Dns Message
     let header = dns_response.get_header();
@@ -322,8 +322,10 @@ pub fn qtype_ns_example(dns_response: DnsMessage){
     let rd = header.get_rd();
     let ancount = header.get_ancount();
     let nscount = header.get_nscount();
+    let rcode = header.get_rcode();
 
-    assert_eq!(rd, false);    
+    assert_eq!(rd, false); 
+    assert_eq!(rcode,0);   
     assert_eq!(op_code, 0);
     assert_eq!(ancount,2);
     assert_eq!(nscount,0);
@@ -377,29 +379,410 @@ pub fn qtype_ns_example(dns_response: DnsMessage){
 
 }
 
+pub fn qtype_cname_example(dns_response: DnsMessage){
+    //TODO: No esta hecho 
 
-//TODO: preguntar a javi si es necesario hacer todos???
 
-// pub fn qtype_cname_example(dns_response: DnsMessage){
-// }
+    // //dns message
+    // let header = dns_response.get_header();
+    // let question = dns_response.get_question();
+    // let answers = dns_response.get_answer();
+    // // let authority  = dns_response.get_authority();
 
-// pub fn qtype_soa_example(dns_response: DnsMessage){
-// }
+    // //Header Section
+    // let qr = header.get_qr();
+    // let op_code = header.get_op_code();
+    // let rcode = header.get_rcode();
+    // let ancount = header.get_ancount();
+    // let nscount = header.get_nscount();
+    // let qdcount = header.get_qdcount();
+    // // let arcount = header.get_arcount();
 
-// pub fn qtype_wks_example(dns_response: DnsMessage){
-// }    
+    // //aveces falla con 2
+    // assert_eq!(rcode, 0); //FIXME: 2 -> name server failure ??? a veces retorna ????
+    // assert_eq!(ancount,2);
+    // assert_eq!(qr,true);
+    // assert_eq!(op_code,0);
+    // assert_eq!(nscount,1);
+    // assert_eq!(qdcount,1);
+    
 
-// pub fn qtype_ptr_example(dns_response: DnsMessage){
-// }  
+    // //Question Section
+    // let qname = question.get_qname().get_name();
+    // let qtype = question.get_qtype();
+    // let qclass = question.get_qclass();
+
+    // assert_eq!(qname, "example.com");
+    // assert_eq!(qclass, 1);
+    // assert_eq!(qtype, 16);
+
+    // //Answer Section
+    // let answer_len = answers.len();
+    // assert_eq!(answer_len, 2);
+
+
+    // if answer_len > 0 {
+    //     println!("si recibio answer");
+    //     let answer = &answers[0];
+    //     let text = match answer.get_rdata() {
+    //         Rdata::SomeARdata(val) => val.get_string_address(),
+    //         _ => "".to_string(),
+    //     };
+
+    //     assert!(text == "" || text== "1");
+    // } else {
+    //     println!("no answers")
+    // }
+    
+
+}
+
+pub fn qtype_soa_example(dns_response: DnsMessage){
+
+    //dns message
+    let header = dns_response.get_header();
+    let question = dns_response.get_question();
+    let answers = dns_response.get_answer();
+    // let authority  = dns_response.get_authority();
+
+    //Header Section
+    let qr = header.get_qr();
+    let op_code = header.get_op_code();
+    let rcode = header.get_rcode();
+    let ancount = header.get_ancount();
+    // let nscount = header.get_nscount();
+    // let qdcount = header.get_qdcount();
+    // let arcount = header.get_arcount();
+
+    //aveces falla con 2
+    assert_eq!(rcode, 0); //FIXME: 2 -> name server failure ??? a veces retorna ???? para el client_test
+    assert_eq!(ancount,1);
+    assert_eq!(qr,true);
+    assert_eq!(op_code,0);
+    
+
+    //Question Section
+    let qname = question.get_qname().get_name();
+    let qtype = question.get_qtype();
+    let qclass = question.get_qclass();
+
+    assert_eq!(qname, "example.com");
+    assert_eq!(qclass, 1);
+    assert_eq!(qtype, 6);
+
+    //Answer Section
+    let answer_len = answers.len();
+    assert_eq!(answer_len, 1);
+
+    //Answer Section
+    let answers = dns_response.get_answer();
+    
+    for answer in answers {
+        match answer.get_rdata() {
+            Rdata::SomeSoaRdata(val) => {
+                let mname  = val.get_mname().get_name();
+                let rname  = val.get_rname().get_name();
+                let refresh = val.get_refresh();
+                let retry = val.get_retry();
+                let expire = val.get_expire();
+                let minimun = val.get_minimum();
+                
+                assert_eq!(mname,"ns.icann.org");
+                assert_eq!(rname,"noc.dns.icann.org");
+                assert_eq!(refresh,7200);
+                assert_eq!(retry,3600);   
+                assert_eq!(expire,1209600);
+                assert_eq!(minimun,3600);
+            }
+            _ => {
+                "".to_string();
+            }
+        };
+    }
+    
+
+    // ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 23223
+    // ;; flags: qr rd ra ad; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+    
+    // ;; OPT PSEUDOSECTION:
+    // ; EDNS: version: 0, flags:; udp: 512
+    // ;; QUESTION SECTION:
+    // ;example.com.			IN	SOA
+    
+    // ;; ANSWER SECTION:
+    // example.com.		3600	IN	SOA	ns.icann.org. noc.dns.icann.org. 2022091258 7200 3600 1209600 3600
+    
+    // ;; Query time: 152 msec
+    // ;; SERVER: 8.8.8.8#53(8.8.8.8)
+    // ;; WHEN: dom abr 16 14:11:18 -04 2023
+    // ;; MSG SIZE  rcvd: 96
+    
+
+}
+
+pub fn qtype_wks_example(dns_response: DnsMessage){
+    //TODO: No esta hecho 
+
+    // //dns message
+    // let header = dns_response.get_header();
+    // let question = dns_response.get_question();
+    // let answers = dns_response.get_answer();
+    // // let authority  = dns_response.get_authority();
+
+    // //Header Section
+    // let qr = header.get_qr();
+    // let op_code = header.get_op_code();
+    // let rcode = header.get_rcode();
+    // let ancount = header.get_ancount();
+    // let nscount = header.get_nscount();
+    // let qdcount = header.get_qdcount();
+    // // let arcount = header.get_arcount();
+
+    
+    // assert_eq!(rcode, 0); 
+    // assert_eq!(ancount,2);
+    // assert_eq!(qr,true);
+    // assert_eq!(op_code,0);
+    // assert_eq!(nscount,1);
+    // assert_eq!(qdcount,1);
+    
+
+    // //Question Section
+    // let qname = question.get_qname().get_name();
+    // let qtype = question.get_qtype();
+    // let qclass = question.get_qclass();
+
+    // assert_eq!(qname, "example.com");
+    // assert_eq!(qclass, 1);
+    // assert_eq!(qtype, 16);
+
+    // //Answer Section
+    // let answer_len = answers.len();
+    // assert_eq!(answer_len, 2);
+
+
+}    
+
+ pub fn qtype_ptr_example(dns_response: DnsMessage){
+
+    //TODO: No esta hecho 
+
+    // //dns message
+    // let header = dns_response.get_header();
+    // let question = dns_response.get_question();
+    // let answers = dns_response.get_answer();
+    // // let authority  = dns_response.get_authority();
+
+    // //Header Section
+    // let qr = header.get_qr();
+    // let op_code = header.get_op_code();
+    // let rcode = header.get_rcode();
+    // let ancount = header.get_ancount();
+    // let nscount = header.get_nscount();
+    // let qdcount = header.get_qdcount();
+    // // let arcount = header.get_arcount();
+
+    // //aveces falla con 2
+    // assert_eq!(rcode, 0); 
+    // assert_eq!(ancount,2);
+    // assert_eq!(qr,true);
+    // assert_eq!(op_code,0);
+    // assert_eq!(nscount,1);
+    // assert_eq!(qdcount,1);
+    
+
+    // //Question Section
+    // let qname = question.get_qname().get_name();
+    // let qtype = question.get_qtype();
+    // let qclass = question.get_qclass();
+
+    // assert_eq!(qname, "example.com");
+    // assert_eq!(qclass, 1);
+    // assert_eq!(qtype, 16);
+
+    // //Answer Section
+    // let answer_len = answers.len();
+    // assert_eq!(answer_len, 2);
+
+
+ }  
+
+pub fn qtype_hinfo_example(dns_response: DnsMessage){
+    //TODO: No está hecha
+
+
+    //dns message
+    // let header = dns_response.get_header();
+    // let question = dns_response.get_question();
+    // let answers = dns_response.get_answer();
+    // let authority  = dns_response.get_authority();
+
+    //Header Section
+    // let qr = header.get_qr();
+    // let op_code = header.get_op_code();
+    // let rcode = header.get_rcode();
+    // let ancount = header.get_ancount();
+    // let nscount = header.get_nscount();
+    // let qdcount = header.get_qdcount();
+    // let arcount = header.get_arcount();
+
+    // //aveces falla con 2
+    // assert_eq!(rcode, 0); //FIXME: 2 -> name server failure ??? a veces retorna ????
+    // assert_eq!(ancount,2);
+    // assert_eq!(qr,true);
+    // assert_eq!(op_code,0);
+    // assert_eq!(nscount,1);
+    // assert_eq!(qdcount,1);
+    
+
+    //Question Section
+    // let qname = question.get_qname().get_name();
+    // let qtype = question.get_qtype();
+    // let qclass = question.get_qclass();
+
+    // assert_eq!(qname, "???");
+    // assert_eq!(qclass, 1);
+    // assert_eq!(qtype, ??);
+
+    //Answer Section
+    // let answer_len = answers.len();
+    // assert_eq!(answer_len, ??);
+
+    
+
+}  
 
 // pub fn qtype_hinfo_example(dns_response: DnsMessage){
+   //FIXME:aveces falla , con el error rcode = 2 server failure ???
+
+
+    // //dns message
+    // let header = dns_response.get_header();
+    // let question = dns_response.get_question();
+    // let answers = dns_response.get_answer();
+    // // let authority  = dns_response.get_authority();
+
+    // //Header Section
+    // let qr = header.get_qr();
+    // let op_code = header.get_op_code();
+    // let rcode = header.get_rcode();
+    // let ancount = header.get_ancount();
+    // let nscount = header.get_nscount();
+    // let qdcount = header.get_qdcount();
+    // // let arcount = header.get_arcount();
+
+    // //aveces falla con 2
+    // assert_eq!(rcode, 0); //FIXME: 2 -> name server failure ??? a veces retorna ????
+    // assert_eq!(ancount,2);
+    // assert_eq!(qr,true);
+    // assert_eq!(op_code,0);
+    // assert_eq!(nscount,1);
+    // assert_eq!(qdcount,1);
+    
+
+    // //Question Section
+    // let qname = question.get_qname().get_name();
+    // let qtype = question.get_qtype();
+    // let qclass = question.get_qclass();
+
+    // assert_eq!(qname, "example.com");
+    // assert_eq!(qclass, 1);
+    // assert_eq!(qtype, 16);
+
+    // //Answer Section
+    // let answer_len = answers.len();
+    // assert_eq!(answer_len, 2);
+
+
+    // if answer_len > 0 {
+    //     println!("si recibio answer");
+    //     let answer = &answers[0];
+    //     let text = match answer.get_rdata() {
+    //         Rdata::SomeARdata(val) => val.get_string_address(),
+    //         _ => "".to_string(),
+    //     };
+
+    //     assert!(text == "" || text== "1");
+    // } else {
+    //     println!("no answers")
+    // }
+    
+
 // }  
 
-// pub fn qtype_minfo_example(dns_response: DnsMessage){
-// }  
+pub fn qtype_txt_example(dns_response: DnsMessage){
+    //FIXME:aveces falla , con el error rcode = 2 server failure ???
 
-// pub fn qtype_txt_example(dns_response: DnsMessage){
-// }  
+
+    //dns message
+    let header = dns_response.get_header();
+    let question = dns_response.get_question();
+    let answers = dns_response.get_answer();
+    // let authority  = dns_response.get_authority();
+
+    //Header Section
+    let qr = header.get_qr();
+    let op_code = header.get_op_code();
+    let rcode = header.get_rcode();
+    let ancount = header.get_ancount();
+    let nscount = header.get_nscount();
+    let qdcount = header.get_qdcount();
+    // let arcount = header.get_arcount();
+
+    //aveces falla con 2
+    assert_eq!(rcode, 0); //FIXME: 2 -> name server failure ??? a veces retorna ????
+    assert_eq!(ancount,2);
+    assert_eq!(qr,true);
+    assert_eq!(op_code,0);
+    assert_eq!(nscount,1);
+    assert_eq!(qdcount,1);
+    
+
+    //Question Section
+    let qname = question.get_qname().get_name();
+    let qtype = question.get_qtype();
+    let qclass = question.get_qclass();
+
+    assert_eq!(qname, "example.com");
+    assert_eq!(qclass, 1);
+    assert_eq!(qtype, 16);
+
+    //Answer Section
+    let answer_len = answers.len();
+    assert_eq!(answer_len, 2);
+
+
+    if answer_len > 0 {
+        println!("si recibio answer");
+        let answer = &answers[0];
+        let text = match answer.get_rdata() {
+            Rdata::SomeARdata(val) => val.get_string_address(),
+            _ => "".to_string(),
+        };
+
+        assert!(text == "v=spf1 -all" || text== "wgyf8z8cgvm2qmxpnbnldrcltvk4xqfn");
+    } else {
+        println!("no answers")
+    }
+    
+    // ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 54163
+    // ;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+    
+    // ;; OPT PSEUDOSECTION:
+    // ; EDNS: version: 0, flags:; udp: 512
+    // ;; QUESTION SECTION:
+    // ;example.com.			IN	TXT
+    
+    // ;; ANSWER SECTION:
+    // example.com.		18291	IN	TXT	"v=spf1 -all"
+    // example.com.		18291	IN	TXT	"wgyf8z8cgvm2qmxpnbnldrcltvk4xqfn"
+    
+    // ;; Query time: 7 msec
+    // ;; SERVER: 8.8.8.8#53(8.8.8.8)
+    // ;; WHEN: dom abr 16 13:38:47 -04 2023
+    // ;; MSG SIZE  rcvd: 109
+    
+}  
 
 pub fn get_interface() -> Result<Interface,&'static str> {
 

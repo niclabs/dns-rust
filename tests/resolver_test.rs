@@ -148,7 +148,7 @@ fn qtype_a_example(){
     let transport_protocol = "TCP";
 
     //run resolver 
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
 
     });
@@ -168,8 +168,6 @@ fn qtype_a_example(){
     //test
     common::qtype_a_example(dns_response);
 
-    handle.join().unwrap();
-
 }
 
 
@@ -179,7 +177,7 @@ fn non_existent_type(){
     let transport_protocol = "TCP";
 
     //run resolver 
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
 
     });
@@ -197,7 +195,6 @@ fn non_existent_type(){
                                         client_query);
     
     common::qtype_hinfo_example_no_answer(dns_response);
-    handle.join().unwrap(); 
     
 }
 
@@ -296,7 +293,7 @@ fn qtype_asterisk_example(){
     let transport_protocol = "TCP";
 
     //run resolver 
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
     });
 
@@ -315,7 +312,6 @@ fn qtype_asterisk_example(){
     
     common::qtype_asterisk_example(dns_response); 
 
-    handle.join().unwrap(); 
 }
 
 #[test]
@@ -328,7 +324,7 @@ fn qtype_asterisk_test(){
     let transport_protocol = "TCP";
 
     //run resolver 
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
     });
 
@@ -346,8 +342,6 @@ fn qtype_asterisk_test(){
 
     common::qtype_asterisk_test(dns_response); 
 
-    handle.join().unwrap();  
-
 }
 
 #[test]
@@ -360,7 +354,7 @@ fn qtype_ns_example(){
     let transport_protocol = "TCP";
 
     //run resolver 
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
     });
 
@@ -391,7 +385,7 @@ fn qtype_mx_example(){
     let transport_protocol = "TCP";
 
     //run resolver 
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
     });
 
@@ -409,9 +403,71 @@ fn qtype_mx_example(){
 
     common::qtype_ns_example(dns_response); 
 
-    handle.join().unwrap();  
     
 }
+
+
+#[test]
+fn qtype_soa_example(){
+
+    //values query
+    let domain_name_test = "example.com";
+    let transport_protocol = "TCP";
+
+    //run resolver 
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+    });
+
+    thread::sleep(Duration::from_secs(1));
+
+    // create client query
+    let client_query: DnsMessage = create_client_query(domain_name_test,
+                                        6,
+                                        1);
+
+    // send query and get response
+    let dns_response = send_client_query(transport_protocol,
+                                    RESOLVER_IP_PORT,
+                                    client_query);
+
+    common::qtype_soa_example(dns_response); 
+
+    
+}
+
+
+
+#[test]
+#[ignore]
+fn qtype_txt_example(){
+    let transport_protocol = "TCP";
+
+    //run resolver 
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+
+    });
+    thread::sleep(Duration::from_secs(1));
+
+    // create client query
+    let client_query: DnsMessage = create_client_query("example.com",
+                                    16,
+                                    1);
+
+    //send query and get response
+    let dns_response = send_client_query(transport_protocol,
+                                        RESOLVER_IP_PORT,
+                                        client_query);
+    // dns_response.print_dns_message();
+
+    //test
+    common::qtype_txt_example(dns_response);
+
+    
+
+}
+
 
 #[test]
 #[ignore]
@@ -423,7 +479,7 @@ fn query_udp_tcp_to_same_resolver(){
     let transport_protocol_tcp  = "TCP";
 
     //run resolver 
-    let handle = thread::spawn(move || {
+    thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
     });
 
@@ -449,8 +505,6 @@ fn query_udp_tcp_to_same_resolver(){
 
     common::qtype_a_example(dns_response_udp);
     common::qtype_a_example(dns_response_tcp);
-    handle.join().unwrap();  
-
 
 }
 

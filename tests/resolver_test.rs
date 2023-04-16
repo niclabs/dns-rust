@@ -1,13 +1,14 @@
     
 mod common;
-extern crate pnet;
-use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::Packet;
-use pnet::transport::TransportChannelType::Layer4;
-use pnet::transport::TransportProtocol::Ipv4;
-use pnet::transport::{transport_channel,tcp_packet_iter, self};
+use std::net::{UdpSocket,ToSocketAddrs};
+// extern crate pnet;
+// use pnet::packet::ip::IpNextHeaderProtocols;
+// use pnet::packet::Packet;
+// use pnet::transport::TransportChannelType::Layer4;
+// use pnet::transport::TransportProtocol::Ipv4;
+// use pnet::transport::{transport_channel,tcp_packet_iter, self};
 
-use std::sync::mpsc::channel;
+// use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
 
@@ -508,84 +509,152 @@ fn query_udp_tcp_to_same_resolver(){
 
 }
 
+fn creation_dns_query(type_query:u16)-> Vec<u8>{
+    //TODO:ver si funciona
 
+    //id
+    let id:u16 = rand::random();
 
+    //mask of bits to configure options flags
+    let flags: u16 = 0b0000000100000000; 
 
+    let qd_count:u16 = 1;
+    let qname = "example.com".as_bytes();
+    let qname_len = qname.len() as u8;
+    let qtype:u16 = type_query; //A
+    let qclass:u16 = 1; //IN
+
+    // Creamos el cuerpo de la pregunta DNS
+    let mut question_bytes = Vec::new();
+    question_bytes.push(qname_len);
+    question_bytes.extend_from_slice(qname);
+    question_bytes.extend_from_slice(&qtype.to_be_bytes());
+    question_bytes.extend_from_slice(&qclass.to_be_bytes());
+
+    // Creamos el mensaje DNS completo
+    let mut message_bytes = Vec::new();
+    message_bytes.extend_from_slice(&id.to_be_bytes());
+    message_bytes.extend_from_slice(&flags.to_be_bytes());
+    message_bytes.extend_from_slice(&qd_count.to_be_bytes());
+    message_bytes.extend(&question_bytes);
+
+    // Mostramos el mensaje DNS en formato de bytes
+    println!("{:?}", message_bytes);
+
+    return message_bytes;
+    
+}
 
 #[test]
-#[ignore]
-fn get_resolver_packets_tcp(){
-    //must be run with sudo privileges
+fn test_use_creation_dns_query(){
 
-    //Run Resolver
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS)
-    });
+    // let server_to_send = "127.0.0.1:53";
+    // let transport_protocol = "TCP";
 
-    //config for catching packets
-    let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Tcp));
+    // //run resolver 
+    // thread::spawn(move || {
+    //     run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
 
-    //create transport channel
-    let (_,mut rx) = match transport_channel(4096, protocol) {
-        Ok((tx,rx)) => (tx,rx),
-        Err(e) => panic!("Error: creating the transport channel: {}",e),
-    };
+    // });
+    // thread::sleep(Duration::from_secs(1));
 
-    let mut iter = tcp_packet_iter(&mut rx);
+    // // create client query
+    // let type_query:u16 = 1;
 
-    //channel to stop test
-    let (tx_stop,rx_stop) = channel();
+    // //DNS query
+    // let client_query =  creation_dns_query(type_query);
 
-    //Run Client
-    thread::spawn(move || {
-        thread::sleep(Duration::from_secs(1));
-        client::run_client();
-        tx_stop.send(()).unwrap();        
-    });
+    // let socket = UdpSocket::bind("127.0.0.1:8001")?;
+
+    // //enviamos mensaje
+    // socket.send_to(&client_query, &server_to_send)?;
+
+    // //response query
+    // let mut response_buffer = [Ou8,512];
+    // let (response_size, _)= socket.recv_from(&mut response_buffer)?;
+
+    // //test
+    // common::qtype_a_example(dns_response);
+
     
-    //Loop for catchinng packets
-    loop {
-        match iter.next() {
-            Ok((packet, _)) => {
-                
-                //
-                let source = packet.get_source(); //caso sale del resolver
-                let destination = packet.get_destination(); //caso llega respuesta al resolver
-                let payload = packet.payload();
-                
-
-                match (source,destination){
-                    (_,58396) => {
-                        println!("\n DNS: Response to Resolver------------------------------------------------------------");
-                        println!("payload: {:?}",payload);
-
-                        },
-                    (53,_) => {
-                        println!("\n DNS: Sent Query by Resolver-----------------------------------------------------------");
-                        println!("payload: {:?}",payload);
-                        
-                    },
-                    
-                    _  =>  {println!("\n Other TCP message------------------------------------------------------------------");
-                }
-                }
-
-
-
-            }
-            Err(e) => {
-                // If an error occurs, we can handle it here
-                panic!("An error occurred while reading: {}", e);
-            }
-        }
-        //finish loop if client is finish
-        match rx_stop.try_recv() {
-            Ok(_) => break,
-            Err(_) => {},   
-        }
     }
 
-}
+   
+
+// #[test]
+// #[ignore]
+// fn get_resolver_packets_tcp(){
+//     //must be run with sudo privileges
+
+//     //Run Resolver
+//     thread::spawn(move || {
+//         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS)
+//     });
+
+//     //config for catching packets
+//     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Tcp));
+
+//     //create transport channel
+//     let (_,mut rx) = match transport_channel(4096, protocol) {
+//         Ok((tx,rx)) => (tx,rx),
+//         Err(e) => panic!("Error: creating the transport channel: {}",e),
+//     };
+
+//     let mut iter = tcp_packet_iter(&mut rx);
+
+//     //channel to stop test
+//     let (tx_stop,rx_stop) = channel();
+
+//     //Run Client
+//     thread::spawn(move || {
+//         thread::sleep(Duration::from_secs(1));
+//         client::run_client();
+//         tx_stop.send(()).unwrap();        
+//     });
+    
+//     //Loop for catchinng packets
+//     loop {
+//         match iter.next() {
+//             Ok((packet, _)) => {
+                
+//                 //
+//                 let source = packet.get_source(); //caso sale del resolver
+//                 let destination = packet.get_destination(); //caso llega respuesta al resolver
+//                 let payload = packet.payload();
+                
+
+//                 match (source,destination){
+//                     (_,58396) => {
+//                         println!("\n DNS: Response to Resolver------------------------------------------------------------");
+//                         println!("payload: {:?}",payload);
+
+//                         },
+//                     (53,_) => {
+//                         println!("\n DNS: Sent Query by Resolver-----------------------------------------------------------");
+//                         println!("payload: {:?}",payload);
+                        
+//                     },
+                    
+//                     _  =>  {println!("\n Other TCP message------------------------------------------------------------------");
+//                 }
+//                 }
+
+
+
+//             }
+//             Err(e) => {
+//                 // If an error occurs, we can handle it here
+//                 panic!("An error occurred while reading: {}", e);
+//             }
+//         }
+//         //finish loop if client is finish
+//         match rx_stop.try_recv() {
+//             Ok(_) => break,
+//             Err(_) => {},   
+//         }
+//     }
+
+// }
 
 
 

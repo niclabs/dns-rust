@@ -670,11 +670,11 @@ impl ResolverQuery {
                             self.add_to_cache(an.get_name().get_name(), an.clone());
                         }
                     }
-                } else {
+                } else { 
                     let exist_in_cache = self.exist_cache_data(
                         msg.get_question().get_qname().get_name(),
                         answer[0].clone(),
-                    );
+                    ); 
 
                     if exist_in_cache == false {
                         for an in answer.iter_mut() {
@@ -4225,7 +4225,7 @@ mod resolver_query_tests {
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn initialize() {
+                                                                                                                                                                                                                                              fn initialize() {
         //Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -6130,12 +6130,32 @@ mod resolver_query_tests {
         resolver_query.set_stype(1);
         resolver_query.set_sclass(1);
         let mut dns_message = resolver_query.create_query_message();
+        let mut a_rdata_1 = ARdata::new();
+        let mut a_rdata_2 = ARdata::new();
+        let ip_address_1: [u8; 4] = [127, 0, 0, 0];
+        let ip_address_2: [u8; 4] = [127, 0, 7, 0];
+        a_rdata_1.set_address(ip_address_1);
+        a_rdata_2.set_address(ip_address_2);
+        let rdata_1 = Rdata::SomeARdata(a_rdata_1);
+        let rdata_2 = Rdata::SomeARdata(a_rdata_2);
+        let mut rr_1 = ResourceRecord::new(rdata_1);
+        let mut rr_2 = ResourceRecord::new(rdata_2);
+        rr_1.set_class(1 as u16);
+        rr_1.set_type_code(1);
+        rr_1.set_ttl(888);
+        rr_2.set_class(2 as u16);
+        let mut rr_vec_1 = Vec::<ResourceRecord>::new();
+        rr_vec_1.push(rr_1.clone());
+        let mut rr_vec_2 = Vec::<ResourceRecord>::new();
+        rr_vec_2.push(rr_2.clone());
+        dns_message.add_answers(rr_vec_1);
+        dns_message.add_answers(rr_vec_2);
         let mut header = dns_message.get_header();
         header.set_rcode(0);
         header.set_aa(false);
         let mut question = dns_message.get_question();
         let mut qname = question.get_qname();
-        qname.set_name("*nname.com".to_string());
+        qname.set_name("nname.com".to_string());
         question.set_qname(qname);
         dns_message.set_question(question);
         dns_message.set_header(header);
@@ -6146,7 +6166,7 @@ mod resolver_query_tests {
         assert_eq!(msg.get_question().get_qclass(), 1);
         assert_eq!(
             msg.get_question().get_qname().get_name(),
-            "*nname.com".to_string()
+            "nname.com".to_string()
         );
     }
 

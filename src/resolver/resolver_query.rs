@@ -5972,6 +5972,9 @@ mod resolver_query_tests {
         let mut rr_vec_2 = Vec::<ResourceRecord>::new();
         rr_vec_2.push(rr_2.clone());
 
+        let mut expected_rr_vec = rr_vec_1.clone();
+        expected_rr_vec.append(&mut rr_vec_2.clone());
+
         // NS Zone with the information we're trying to retrieve:
         // ns_data: HashMap<u16, HashMap<String, NSZone>>,
         let mut nszone_class_1 = NSZone::new();
@@ -5987,8 +5990,6 @@ mod resolver_query_tests {
         nszone_class_1.set_class(1);
         nszone_class_2.set_zone_nodes(nsnode_class_2);
         nszone_class_2.set_class(2);
-
-        // let expected_rr_vec = rr_vec.clone();
 
         let mut hash_string_and_nszone_1 = HashMap::<String, NSZone>::new();
         hash_string_and_nszone_1.insert(name.clone(), nszone_class_1);
@@ -6018,7 +6019,7 @@ mod resolver_query_tests {
             _ => unreachable!(),
         };
 
-        // assert_eq!(rr_vec, expected_rr_vec);
+        assert_eq!(rr_vec, expected_rr_vec);
     }
 
     #[test]

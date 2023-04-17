@@ -4170,6 +4170,7 @@ mod name_server_test {
     #[test]
     fn step_6_mx_with_aa_false() {
         let mut cache = DnsCache::new();
+        cache.set_max_size(1 as u32);
         let name = String::from("dcc.uchile.cl.");
         let address = [192 as u8, 80 as u8, 24 as u8, 11 as u8];
         let mut a_rdata = ARdata::new();
@@ -4228,6 +4229,6 @@ mod name_server_test {
 
         let answer_msg = NameServer::step_6(dns_message, cache, _zones_by_class);
 
-        assert_eq!(answer_msg.get_additional().len(), 0);
+        assert_eq!(answer_msg.get_additional().len(), 1);
     }
 }

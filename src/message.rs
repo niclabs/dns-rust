@@ -1026,4 +1026,27 @@ mod message_test {
         //since the new additional is added to the answer lets check if something was added
         assert_eq!(dns_query_message.get_answer().len(), 1);
     }
+
+    //ToDo: Revisar
+    #[test]
+    fn new_response_message(){
+        let new_response = DnsMessage::new_response_message(String::from("test.com"), 2, 1, 1, true, 1);
+
+        let header = new_response.get_header();
+        let id = header.get_id();
+        let op_code = header.get_op_code();
+        let rd = header.get_rd();
+
+        let question = new_response.get_question();
+        let qname = question.get_qname().get_name();
+        let qtype = question.get_qtype();
+        let qclass = question.get_qclass();
+
+        assert_eq!(id, 1);
+        assert_eq!(op_code, 1);
+        assert!(rd);
+        assert_eq!(qname, String::from("test.com"));
+        assert_eq!(qtype, 2);
+        assert_eq!(qclass, 1);
+    }
 }

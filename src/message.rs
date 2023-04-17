@@ -1049,4 +1049,124 @@ mod message_test {
         assert_eq!(qtype, 2);
         assert_eq!(qclass, 1);
     }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_a(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 1, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("A"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_ns(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 2, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("NS"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_cname(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 5, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("CNAME"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_soa(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 6, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("SOA"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_wks(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 11, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("WKS"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_ptr(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 12, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("PTR"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_hinfo(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 13, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("HINFO"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_minfo(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 14, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("MINFO"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_mx(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 15, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("MX"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn get_question_qtype_txt(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 16, 1, 1, true, 1);
+
+        let qtype = dns_message.get_question_qtype();
+
+        assert_eq!(qtype, String::from("TXT"));
+    }
+
+    //ToDo: Revisar
+    #[test]
+    #[should_panic]
+    fn get_question_qtype_unreachable(){
+        let name = String::from("value");
+        let dns_message = DnsMessage::new_query_message(name, 99, 1, 1, true, 1);
+
+        let _qtype = dns_message.get_question_qtype();
+    }
 }

@@ -180,3 +180,80 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
         especific_rdata
     }
 }
+/*#[cfg(test)]
+mod resolver_query_tests {
+    use crate::message::resource_record::{FromBytes, ToBytes};
+    use crate::message::rdata::Rdata;
+    use super:: a_ch_rdata::AChRdata;
+    use super::a_rdata::ARdata;
+    use super::cname_rdata::CnameRdata;
+    use super::hinfo_rdata::HinfoRdata;
+    use super::mx_rdata::MxRdata;
+    use super::ns_rdata::NsRdata;
+    use super::ptr_rdata::PtrRdata;
+    use super::soa_rdata::SoaRdata;
+    use super::txt_rdata::TxtRdata;
+
+    #[test]
+    fn to_bytes_rdata(){
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        a_rdata.to_bytes();
+    }
+
+    #[test]
+    fn to_bytes_cname(){
+        let a_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
+        a_rdata.to_bytes();
+    }
+
+    #[test]
+    fn to_bytes_hinfo(){
+        let a_rdata = Rdata::SomeHinfoRdata(HinfoRdata::new());
+        a_rdata.to_bytes();
+    }
+
+    #[test]
+    fn to_bytes_achrdata(){
+        let a_rdata = Rdata::SomeAChRdata(AChRdata::new());
+        a_rdata.to_bytes();
+    }
+    
+    #[test]
+    fn to_bytes_mxrdata(){
+        let a_rdata = Rdata::SomeMxRdata(MxRdata::new());
+        a_rdata.to_bytes();
+    }
+
+    #[test]
+    fn to_bytes_nsrdata(){
+        let a_rdata = Rdata::SomeNsRdata(NsRdata::new());
+        a_rdata.to_bytes();
+    }
+
+    #[test]
+    fn to_bytes_ptrrdata(){
+        let a_rdata = Rdata::SomePtrRdata(PtrRdata::new());
+        a_rdata.to_bytes();
+    }
+    
+    #[test]
+    fn to_bytes_soardata(){
+        let a_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        a_rdata.to_bytes();
+    }
+
+    #[test]
+    fn to_bytes_txtrdata(){
+        let mut txt: Vec<String> = Vec::new();
+
+        let string = String::from("panconpalta");
+        txt.push(string);
+
+        let a_rdata = Rdata::SomeTxtRdata(TxtRdata::new(txt));
+        a_rdata.to_bytes();
+    }
+
+
+
+
+}*/

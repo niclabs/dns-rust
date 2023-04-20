@@ -8,7 +8,6 @@ use crate::message::header::Header;
 use crate::message::question::Question;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
-use crate::name_server::zone::NSZone;
 use rand::thread_rng;
 use rand::Rng;
 use std::vec::Vec;
@@ -128,16 +127,17 @@ impl DnsMessage {
         dns_message
     }
 
-    pub fn soa_rr_query_msg(zone: NSZone) -> Self {
-        let mut rng = thread_rng();
-        let msg_id = rng.gen();
+    //function never used
+    // pub fn soa_rr_query_msg(zone: NSZone) -> Self {
+    //     let mut rng = thread_rng();
+    //     let msg_id = rng.gen();
 
-        let zone_name = zone.get_name();
+    //     let zone_name = zone.get_name();
 
-        let msg = DnsMessage::new_query_message(zone_name, 6, 1, 0, false, msg_id);
+    //     let msg = DnsMessage::new_query_message(zone_name, 6, 1, 0, false, msg_id);
 
-        msg
-    }
+    //     msg
+    // }
 
     pub fn format_error_msg() -> Self {
         let mut msg = DnsMessage::new();
@@ -603,12 +603,10 @@ mod message_test {
     use crate::message::header::Header;
     use crate::message::question::Question;
     use crate::message::rdata::a_rdata::ARdata;
-    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
-    use crate::name_server::zone::NSZone;
 
     #[test]
     fn constructor_test() {
@@ -821,50 +819,6 @@ mod message_test {
             assert_eq!(*value, real_bytes[i]);
             i += 1;
         }
-    }
-
-    //ToDo: Revisar Práctica 1
-    #[test]
-    fn soa_rr_query_msg_test() {
-        let mut ns_zone = NSZone::new();
-
-        let origin = String::from("example.com");
-        ns_zone.set_name(origin);
-        ns_zone.set_ip_address_for_refresh_zone(String::from("200.89.76.36"));
-
-        let mut value = Vec::<ResourceRecord>::new();
-
-        let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
-        let mut mname_domain_name = DomainName::new();
-        mname_domain_name.set_name(String::from("ns.primaryserver.com"));
-        let mut rname_domain_name = DomainName::new();
-        rname_domain_name.set_name(String::from("admin.example.com"));
-        match soa_rdata {
-            Rdata::SomeSoaRdata(ref mut val) => {
-                val.set_mname(mname_domain_name);
-                val.set_rname(rname_domain_name);
-                val.set_serial(1111111111 as u32)
-            }
-            _ => unreachable!(),
-        }
-
-        let resource_record = ResourceRecord::new(soa_rdata);
-        //zone from the constructor test in zone_refresh.rs
-        value.push(resource_record);
-        let mut top_node = ns_zone.get_zone_nodes();
-        top_node.set_value(value);
-        ns_zone.set_zone_nodes(top_node);
-
-        let dns_message = DnsMessage::soa_rr_query_msg(ns_zone);
-
-        assert_eq!(
-            dns_message.get_question().get_qname().get_name(),
-            String::from("example.com")
-        );
-        assert_eq!(dns_message.get_question().get_qtype(), 6);
-        assert_eq!(dns_message.get_question().get_qclass(), 1);
-        assert_eq!(dns_message.get_header().get_op_code(), 0);
-        assert_eq!(dns_message.get_header().get_rd(), false);
     }
 
     //ToDo: Revisar Práctica 1

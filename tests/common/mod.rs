@@ -19,17 +19,17 @@ pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips: [&str;3])
     let (delete_sender_udp, delete_recv_udp) = mpsc::channel();
     let (add_sender_tcp, add_recv_tcp) = mpsc::channel();
     let (delete_sender_tcp, delete_recv_tcp) = mpsc::channel();
-    let (add_sender_ns_udp, _) = mpsc::channel();
-    let (delete_sender_ns_udp, _) = mpsc::channel();
-    let (add_sender_ns_tcp, _) = mpsc::channel();
-    let (delete_sender_ns_tcp, _) = mpsc::channel();
+    // let (add_sender_ns_udp, _) = mpsc::channel();
+    // let (delete_sender_ns_udp, _) = mpsc::channel();
+    // let (add_sender_ns_tcp, _) = mpsc::channel();
+    // let (delete_sender_ns_tcp, _) = mpsc::channel();
     let (update_cache_sender_udp, rx_update_cache_udp) = mpsc::channel();
     let (update_cache_sender_tcp, rx_update_cache_tcp) = mpsc::channel();
-    let (update_cache_sender_ns_udp, _) = mpsc::channel();
-    let (update_cache_sender_ns_tcp, _) = mpsc::channel();
+    // let (update_cache_sender_ns_udp, _) = mpsc::channel();
+    // let (update_cache_sender_ns_tcp, _) = mpsc::channel();
 
-    let (_, rx_update_zone_udp) = mpsc::channel();
-    let (_, rx_update_zone_tcp) = mpsc::channel();
+    // let (_, rx_update_zone_udp) = mpsc::channel();
+    // let (_, rx_update_zone_tcp) = mpsc::channel();
 
     
         // Resolver Initialize
@@ -38,14 +38,14 @@ pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips: [&str;3])
             delete_sender_udp.clone(),
             add_sender_tcp.clone(),
             delete_sender_tcp.clone(),
-            add_sender_ns_udp.clone(),
-            delete_sender_ns_udp.clone(),
-            add_sender_ns_tcp.clone(),
-            delete_sender_ns_tcp.clone(),
+            // add_sender_ns_udp.clone(),
+            // delete_sender_ns_udp.clone(),
+            // add_sender_ns_tcp.clone(),
+            // delete_sender_ns_tcp.clone(),
             update_cache_sender_udp.clone(),
             update_cache_sender_tcp.clone(),
-            update_cache_sender_ns_udp.clone(),
-            update_cache_sender_ns_tcp.clone(),
+            // update_cache_sender_ns_udp.clone(),
+            // update_cache_sender_ns_tcp.clone(),
         );
 
         resolver.set_initial_configuration(resolver_ip_port, sbelt_root_ips);
@@ -58,8 +58,8 @@ pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips: [&str;3])
             delete_recv_tcp,
             rx_update_cache_udp,
             rx_update_cache_tcp,
-            rx_update_zone_udp,
-            rx_update_zone_tcp,
+            // rx_update_zone_udp,
+            // rx_update_zone_tcp,
         );
    
 }

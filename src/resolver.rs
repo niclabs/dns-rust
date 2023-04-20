@@ -1048,56 +1048,49 @@ impl Resolver {
 
 }
 
- //#[cfg(test)]
-// mod resolver_test {
-//     use crate::dns_cache::DnsCache;
-//     use crate::message::rdata::a_rdata::ARdata;
-//     use crate::message::rdata::Rdata;
-//     use crate::message::resource_record::ResourceRecord;
-//     use crate::message::DnsMessage;
-//     // use crate::name_server::zone::NSZone;
-//     use crate::resolver::resolver_query::ResolverQuery;
-//     use crate::resolver::slist::Slist;
-//     use crate::resolver::Resolver;
-//     use std::collections::HashMap;
-//     use std::sync::mpsc;
+ #[cfg(test)]
+mod resolver_test {
+    use crate::dns_cache::DnsCache;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
+    use crate::message::DnsMessage;
+    // use crate::name_server::zone::NSZone;
+    use crate::resolver::resolver_query::ResolverQuery;
+    use crate::resolver::slist::Slist;
+    use crate::resolver::Resolver;
+    use std::collections::HashMap;
+    use std::sync::mpsc;
 
-//     #[test]
-//     fn constructor_test() {
-//         // Channels
-//         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-//         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-//         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-//         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-//         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-//         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-//         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-//         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    #[test]
+    fn constructor() {
+        // Channels
+        let (add_sender_udp, 
+            _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, 
+            _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, 
+            _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, 
+            _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, 
+            _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, 
+            _rx_update_cache_tcp) = mpsc::channel();
 
-//         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-//         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-//         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-//         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let resolver = Resolver::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+        );
 
-//         let resolver = Resolver::new(
-//             add_sender_udp,
-//             delete_sender_udp,
-//             add_sender_tcp,
-//             delete_sender_tcp,
-//             add_sender_ns_udp,
-//             delete_sender_ns_udp,
-//             add_sender_ns_tcp,
-//             delete_sender_ns_tcp,
-//             tx_update_cache_udp,
-//             tx_update_cache_tcp,
-//             tx_update_cache_ns_udp,
-//             tx_update_cache_ns_tcp,
-//         );
-
-//         assert_eq!(resolver.ip_address, "".to_string());
-//         assert_eq!(resolver.sbelt.get_ns_list().len(), 0);
-//         assert_eq!(resolver.cache.get_size(), 0);
-//     }
+        assert_eq!(resolver.ip_address, "".to_string());
+        assert_eq!(resolver.sbelt.get_ns_list().len(), 0);
+        assert_eq!(resolver.cache.get_size(), 0);
+    }
 
 //     #[test]
 //     fn set_and_get_ip_address() {
@@ -1798,4 +1791,4 @@ impl Resolver {
 //     //     created with the get fn used*/
 //     //     assert_eq!(msg_result, msg.clone());
 //     // }
- //}
+ }

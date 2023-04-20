@@ -1092,44 +1092,35 @@ mod resolver_test {
         assert_eq!(resolver.cache.get_size(), 0);
     }
 
-//     #[test]
-//     fn set_and_get_ip_address() {
-//         //Channels
-//         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-//         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-//         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-//         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-//         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-//         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-//         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-//         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    #[test]
+    fn set_and_get_ip_address() {
+        //Channels
+        let (add_sender_udp, 
+            _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, 
+            _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, 
+            _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, 
+            _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, 
+            _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, 
+            _rx_update_cache_tcp) = mpsc::channel();
 
-//         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-//         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-//         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-//         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-
-//         let mut resolver = Resolver::new(
-//             add_sender_udp,
-//             delete_sender_udp,
-//             add_sender_tcp,
-//             delete_sender_tcp,
-//             add_sender_ns_udp,
-//             delete_sender_ns_udp,
-//             add_sender_ns_tcp,
-//             delete_sender_ns_tcp,
-//             tx_update_cache_udp,
-//             tx_update_cache_tcp,
-//             tx_update_cache_ns_udp,
-//             tx_update_cache_ns_tcp,
-//         );
-
-//         assert_eq!(resolver.get_ip_address(), "".to_string());
-
-//         resolver.set_ip_address("127.0.0.1".to_string());
-
-//         assert_eq!(resolver.get_ip_address(), "127.0.0.1".to_string());
-//     }
+        let mut resolver = Resolver::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+        );
+        
+        assert_eq!(resolver.get_ip_address(), "".to_string());
+        resolver.set_ip_address("127.0.0.1".to_string());
+        assert_eq!(resolver.get_ip_address(), "127.0.0.1".to_string());
+    }
 
 //     #[test]
 //     fn set_and_get_sbelt() {

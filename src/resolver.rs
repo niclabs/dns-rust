@@ -1155,10 +1155,7 @@ mod resolver_test {
         5000);
         resolver.set_sbelt(sbelt);
 
-        // let sbelt_expected = sbelt.clone();
-
         assert_eq!(resolver.get_sbelt().get_ns_list().len(), 1);
-        // assert_eq!(resolver.get_sbelt(), sbelt_expected);
     }
 
 //     #[test]

@@ -1,5 +1,3 @@
-
-use if_addrs::{get_if_addrs, Interface};
 use std::sync::mpsc;
 use dns_rust::{
 //     config::RESOLVER_IP_PORT,
@@ -12,7 +10,7 @@ use dns_rust::{
 };
 
 
-
+#[allow(dead_code)]
 pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips: [&str;3]) {
     // Channels
     let (add_sender_udp, add_recv_udp) = mpsc::channel();
@@ -784,15 +782,3 @@ pub fn qtype_txt_example(dns_response: DnsMessage){
     
 }  
 
-pub fn get_interface() -> Result<Interface,&'static str> {
-
-    if let Ok(addrs) = get_if_addrs() {
-        let default_interface = addrs
-            .iter()
-            .find(|&addr| !addr.is_loopback())
-            .ok_or("No interface found")?;
-        return Ok(default_interface.clone());
-    }
-
-    return Err("No interface found");
-}

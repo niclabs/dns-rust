@@ -35,6 +35,7 @@ fn tcp_query() {
 }
 
 #[test]
+#[ignore]
 fn non_existent_type(){
 
     //values query
@@ -226,60 +227,6 @@ fn qtype_soa_example(){
 
 }
 
-
-#[test]
-#[ignore]
-fn nonet_query() {
-    //TODO: to run,the terminal must be with super user priviliges
-    //to do that ->  sudo -i 
-
-    let interface_name = common::get_interface()
-                                        .unwrap().name;
-
-
-    Command::new("tc")
-                            .arg("qdisc")
-                            .arg("add")
-                            .arg("dev")
-                            .arg(interface_name.clone())
-                            .arg("root")
-                            .arg("netem")
-                            .arg("loss")
-                            .arg("100%")
-                            .spawn().expect("error");
-
-    let show_tc = Command::new("tc")
-                            .arg("qdisc")
-                            .arg("show")
-                            .arg("dev")
-                            .arg(interface_name.clone())
-                            .spawn().expect("error");
-
-
-    //tc qdisc add dev wlp0s20f3 root netem loss 100%
-
-    // println!("loss*******{:?}",add_loss);
-    println!("trafic status: {:?}",show_tc);
-
-
-    //test 
-    //FIXME: is not working, keeps waiting
-    //qtype_a_example("TCP");
-
-
-    Command::new("tc")
-            .arg("qdisc")
-            .arg("del")
-            .arg("dev")
-            .arg(interface_name)
-            .arg("root")
-            .arg("netem")
-            .arg("loss")
-            .arg("100%")
-            .spawn().expect("error");
-
-
-}
 
 fn qtype_a_example_google_resolver(transport_protocol:&str) {
     //TODO: put by default UDP

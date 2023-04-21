@@ -253,6 +253,15 @@ mod a_ch_rdata_test {
         assert_eq!(ach_rdata.get_domain_name().get_name(), String::from("test.com"));
         assert_eq!(ach_rdata.get_ch_address(), 10 as u16);
     }
+
+    //ToDo: Revisar 
+    #[test]
+    #[should_panic]
+    fn from_bytes_format_error(){
+        let data_bytes: [u8; 0] = [];
+
+        let _ach_rdata = AChRdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+    }
     /*#[test]
     fn rr_from_master_file_test() {
         let ach_rr = AChRdata::rr_from_master_file("204.13.100.3".split_whitespace(), 0, 0,"admin.googleplex".to_string(), "edu".to_string());

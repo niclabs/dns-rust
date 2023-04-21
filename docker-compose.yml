@@ -1,0 +1,13 @@
+version: "4"
+services:
+  resolver:
+    build: .
+    image: dns-rust:latest
+    ports:
+      - "58396:58396"
+    network_mode: "host"
+    command: cargo run -- -r
+  test:
+    build: .
+    image: dns-rust:latest
+    command: cargo test

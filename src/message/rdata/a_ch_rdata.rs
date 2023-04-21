@@ -215,6 +215,33 @@ mod a_ch_rdata_test {
             String::from("test.com")
         );
     }
+    
+    //ToDO: Revisar 
+    #[test]
+    fn to_bytes(){
+        let mut domain_name = DomainName::new();
+        let name = String::from("test.com");
+        domain_name.set_name(name.clone());
+
+        let mut ach_rdata = AChRdata::new();
+        ach_rdata.set_ch_address(10);
+        ach_rdata.set_domain_name(domain_name);
+
+        let data_bytes = ach_rdata.to_bytes();
+
+        assert_eq!(data_bytes[0], 4);
+        assert_eq!(data_bytes[1], 116);
+        assert_eq!(data_bytes[2], 101);
+        assert_eq!(data_bytes[3], 115);
+        assert_eq!(data_bytes[4], 116);
+        assert_eq!(data_bytes[5], 3);
+        assert_eq!(data_bytes[6], 99);
+        assert_eq!(data_bytes[7], 111);
+        assert_eq!(data_bytes[8], 109);
+        assert_eq!(data_bytes[9], 0);
+        assert_eq!(data_bytes[10], 0);
+        assert_eq!(data_bytes[11], 10);
+    }
 
     /*#[test]
     fn rr_from_master_file_test() {

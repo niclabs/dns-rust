@@ -151,6 +151,7 @@ impl HinfoRdata {
 
 #[cfg(test)]
 mod hinfo_rdata_test {
+    use crate::message::rdata::Rdata;
     use crate::message::rdata::hinfo_rdata::HinfoRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -209,8 +210,23 @@ mod hinfo_rdata_test {
         assert_eq!(hinfo_rdata.get_os(), String::from("os"));
     }
 
-    /*#[test]
+    #[test]
     fn rr_from_master_file_test(){
+        let hinfo_rr = HinfoRdata::rr_from_master_file("ryzen ubuntu".split_whitespace(), 
+        15, 1, 
+        String::from("dcc.cl"));
 
-    }*/
+        let hinfo_rdata = hinfo_rr.get_rdata();
+
+        assert_eq!(hinfo_rr.get_class(), 1);
+        assert_eq!(hinfo_rr.get_name().get_name(), "dcc.cl");
+        assert_eq!(hinfo_rr.get_ttl(), 15);
+        assert_eq!(hinfo_rr.get_type_code(), 13);
+        
+        let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));
+        match hinfo_rdata {
+            Rdata::SomeHinfoRdata(val) => assert_eq!((val.get_cpu(), val.get_os()), (expected_cpu_os)),
+            _ => {}
+        }
+    }
 }

@@ -151,7 +151,7 @@ impl AChRdata {
 mod a_ch_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_ch_rdata::AChRdata;
-    use crate::message::rdata::ARdata;
+    use crate::message::rdata::{ARdata, Rdata};
     use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
@@ -262,20 +262,26 @@ mod a_ch_rdata_test {
 
         let _ach_rdata = AChRdata::from_bytes(&data_bytes, &data_bytes).unwrap();
     }
-    /*#[test]
+    
+    //ToDo: Revisar 
+    #[test]
     fn rr_from_master_file_test() {
-        let ach_rr = AChRdata::rr_from_master_file("204.13.100.3".split_whitespace(), 0, 0,"admin.googleplex".to_string(), "edu".to_string());
+        let ach_rr = AChRdata::rr_from_master_file(
+            "204.13.100.3 10".split_whitespace(), 
+            0, 3,
+            "admin.googleplex".to_string(), 
+            "edu".to_string());
 
         assert_eq!(ach_rr.get_class(), 3);
-        assert_eq!(ach_rr.get_name().get_name(), String::from("dcc.cl"));
+        assert_eq!(ach_rr.get_name().get_name(), String::from("admin.googleplex"));
         assert_eq!(ach_rr.get_type_code(), 1);
         assert_eq!(ach_rr.get_ttl(), 0);
-        assert_eq!(ach_rr.get_rdlength(), 4);
+        assert_eq!(ach_rr.get_rdlength(), 16);
 
-        let mut ach_rdata = ach_rr.get_rdata();
+        let ach_rdata = ach_rr.get_rdata();
         match ach_rdata {
             Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
             _ => {}
         }
-    }*/
+    }
 }

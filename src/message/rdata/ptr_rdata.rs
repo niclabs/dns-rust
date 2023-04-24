@@ -125,6 +125,7 @@ impl PtrRdata {
 #[cfg(test)]
 mod ptr_rdata_test {
     use crate::domain_name::DomainName;
+    use crate::message::rdata::Rdata;
     use crate::message::rdata::ptr_rdata::PtrRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -181,5 +182,27 @@ mod ptr_rdata_test {
             ptr_rdata.get_ptrdname().get_name(),
             String::from("test.test2.com")
         );
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn rr_from_master_file(){
+        let ptr_rdata_rr = PtrRdata::rr_from_master_file("dcc".split_whitespace(),
+         35, 1, 
+         String::from("uchile.cl"), 
+         String::from("uchile.cl"));
+
+         assert_eq!(ptr_rdata_rr.get_class(), 1);
+         assert_eq!(ptr_rdata_rr.get_ttl(), 35);
+         assert_eq!(ptr_rdata_rr.get_name().get_name(), String::from("uchile.cl"));
+         assert_eq!(ptr_rdata_rr.get_rdlength(), 5);
+         assert_eq!(ptr_rdata_rr.get_type_code(), 12);
+         
+         let ptr_rr_rdata = ptr_rdata_rr.get_rdata();
+         match ptr_rr_rdata {
+            Rdata::SomePtrRdata(val) => assert_eq!(val.get_ptrdname().get_name(), 
+            String::from("dcc.uchile.cl")),
+            _ => {}
+        }
     }
 }

@@ -158,6 +158,7 @@ impl MxRdata {
 #[cfg(test)]
 mod mx_rdata_test {
     use crate::domain_name::DomainName;
+    use crate::message::rdata::Rdata;
     use crate::message::rdata::mx_rdata::MxRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -222,9 +223,24 @@ mod mx_rdata_test {
         assert_eq!(mx_rdata.get_exchange().get_name(), String::from("test.com"));
     }
 
-    /*#[test]
-
+    //ToDo: Revisar
+    #[test]
     fn rr_from_master_file_test(){
+        let mxrdata_rr = MxRdata::rr_from_master_file("3 dcc".split_whitespace(), 
+        20, 1, 
+        String::from("uchile.cl"), 
+        String::from("uchile.cl"));
 
-    }*/
+        assert_eq!(mxrdata_rr.get_class(), 1);
+        assert_eq!(mxrdata_rr.get_ttl(), 20);
+        assert_eq!(mxrdata_rr.get_name().get_name(), String::from("uchile.cl"));
+        assert_eq!(mxrdata_rr.get_rdlength(), 7);
+        
+        let mx_rr_rdata = mxrdata_rr.get_rdata();
+        match mx_rr_rdata {
+            Rdata::SomeMxRdata(val) => assert_eq!((val.get_exchange().get_name(), val.get_preference()), 
+            (String::from("dcc.uchile.cl"), 3)),
+            _ => {}
+        }
+    }
 }

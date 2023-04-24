@@ -210,6 +210,7 @@ mod hinfo_rdata_test {
         assert_eq!(hinfo_rdata.get_os(), String::from("os"));
     }
 
+    //ToDo: Revisar
     #[test]
     fn rr_from_master_file_test(){
         let hinfo_rr = HinfoRdata::rr_from_master_file("ryzen ubuntu".split_whitespace(), 

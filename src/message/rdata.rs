@@ -245,8 +245,23 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_achrdata(){
-        let a_rdata = Rdata::SomeAChRdata(AChRdata::new());
-        a_rdata.to_bytes();
+        let mut domain_name = DomainName::new();
+        let name = String::from("test.com");
+        domain_name.set_name(name.clone());
+
+        let mut ach_rdata = AChRdata::new();
+        ach_rdata.set_ch_address(10);
+        ach_rdata.set_domain_name(domain_name);
+
+        let bytes_to_test = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 10];
+
+        let a_rdata = Rdata::SomeAChRdata(ach_rdata);
+        let bytes = a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
     
     #[test]

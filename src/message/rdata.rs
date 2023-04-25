@@ -180,8 +180,9 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
         especific_rdata
     }
 }
-/*#[cfg(test)]
+#[cfg(test)]
 mod resolver_query_tests {
+    use crate::domain_name::DomainName;
     use crate::message::resource_record::{FromBytes, ToBytes};
     use crate::message::rdata::Rdata;
     use super:: a_ch_rdata::AChRdata;
@@ -197,63 +198,179 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_rdata(){
         let a_rdata = Rdata::SomeARdata(ARdata::new());
-        a_rdata.to_bytes();
+        let bytes= a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        expected_bytes.push(0);
+        expected_bytes.push(0);
+        expected_bytes.push(0);
+        expected_bytes.push(0);
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
     fn to_bytes_cname(){
-        let a_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
-        a_rdata.to_bytes();
+        let mut cname_rdata = CnameRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("cname"));
+        cname_rdata.set_cname(domain_name);
+
+        let bytes_to_test: [u8; 7] = [5, 99, 110, 97, 109, 101, 0];
+        let a_rdata = Rdata::SomeCnameRdata(cname_rdata);
+        let bytes = a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
     fn to_bytes_hinfo(){
-        let a_rdata = Rdata::SomeHinfoRdata(HinfoRdata::new());
-        a_rdata.to_bytes();
+        let mut hinfo_rdata = HinfoRdata::new();
+
+        hinfo_rdata.set_cpu(String::from("cpu"));
+        hinfo_rdata.set_os(String::from("os"));
+
+        let bytes_to_test: [u8; 7] = [99, 112, 117, 0, 111, 115, 0];
+
+        let a_rdata = Rdata::SomeHinfoRdata(hinfo_rdata);
+        let bytes = a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
     fn to_bytes_achrdata(){
-        let a_rdata = Rdata::SomeAChRdata(AChRdata::new());
-        a_rdata.to_bytes();
+        let mut domain_name = DomainName::new();
+        let name = String::from("test.com");
+        domain_name.set_name(name.clone());
+
+        let mut ach_rdata = AChRdata::new();
+        ach_rdata.set_ch_address(10);
+        ach_rdata.set_domain_name(domain_name);
+
+        let bytes_to_test = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 10];
+
+        let a_rdata = Rdata::SomeAChRdata(ach_rdata);
+        let bytes = a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
     
     #[test]
     fn to_bytes_mxrdata(){
-        let a_rdata = Rdata::SomeMxRdata(MxRdata::new());
-        a_rdata.to_bytes();
+        let mut mx_rdata = MxRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        mx_rdata.set_exchange(domain_name);
+        mx_rdata.set_preference(128);
+
+        let bytes_to_test: [u8; 12] = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0];
+        let a_rdata = Rdata::SomeMxRdata(mx_rdata);
+        let bytes = a_rdata.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
     fn to_bytes_nsrdata(){
-        let a_rdata = Rdata::SomeNsRdata(NsRdata::new());
-        a_rdata.to_bytes();
+        let mut domain_name = DomainName::new();
+
+        let bytes_to_test: Vec<u8> = vec![
+            4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
+        ];
+        domain_name.set_name(String::from("test.test2.com"));
+
+        let mut ns_rdatas = NsRdata::new();
+        ns_rdatas.set_nsdname(domain_name);
+
+        let ns_rdata = Rdata::SomeNsRdata(ns_rdatas);
+        let bytes = ns_rdata.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
     fn to_bytes_ptrrdata(){
-        let a_rdata = Rdata::SomePtrRdata(PtrRdata::new());
-        a_rdata.to_bytes();
+        let mut domain_name = DomainName::new();
+        let bytes_to_test: Vec<u8> = vec![
+            4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
+        ];
+        domain_name.set_name(String::from("test.test2.com"));
+
+        let mut ptr_rdatas = PtrRdata::new();
+        ptr_rdatas.set_ptrdname(domain_name);
+        let ptr_rdata = Rdata::SomePtrRdata(ptr_rdatas);
+        let bytes = ptr_rdata.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
     
     #[test]
     fn to_bytes_soardata(){
-        let a_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
-        a_rdata.to_bytes();
+        let mut soa_rdata = SoaRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        soa_rdata.set_mname(domain_name.clone());
+        soa_rdata.set_rname(domain_name);
+        soa_rdata.set_serial(512);
+        soa_rdata.set_refresh(8);
+        soa_rdata.set_retry(4);
+        soa_rdata.set_expire(2);
+        soa_rdata.set_minimum(1);
+
+        let bytes_to_test: [u8; 40] = [
+            4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0,
+            0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1,
+        ];
+
+        let soa_rdatas = Rdata::SomeSoaRdata(soa_rdata);
+        let bytes = soa_rdatas.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
     fn to_bytes_txtrdata(){
-        let mut txt: Vec<String> = Vec::new();
+        let text = vec!["dcc test".to_string()];
+        let txt_rdata = TxtRdata::new(text);
 
-        let string = String::from("panconpalta");
-        txt.push(string);
+        let bytes_to_test = [8, 100, 99, 99, 32, 116, 101, 115, 116];
 
-        let a_rdata = Rdata::SomeTxtRdata(TxtRdata::new(txt));
-        a_rdata.to_bytes();
+        let txt_rdatas = Rdata::SomeTxtRdata(txt_rdata);
+        let bytes = txt_rdatas.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
-
-
-
-
-}*/
+}

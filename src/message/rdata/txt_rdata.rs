@@ -122,6 +122,7 @@ impl TxtRdata {
 
 #[cfg(test)]
 mod txt_rdata_test {
+    use crate::message::rdata::Rdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -161,5 +162,28 @@ mod txt_rdata_test {
         let txt_rdata = TxtRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(txt_rdata.get_text(), vec!["dcc test".to_string()]);
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn rr_from_master_file_test(){
+        let txtrdata_rr = TxtRdata::rr_from_master_file("dcc uchile cl".split_whitespace(),
+         25, 1,
+        String::from("uchile.cl"));
+
+        assert_eq!(txtrdata_rr.get_class(), 1);
+        assert_eq!(txtrdata_rr.get_ttl(), 25);
+        assert_eq!(txtrdata_rr.get_rdlength(), 3);
+        assert_eq!(txtrdata_rr.get_name().get_name(), String::from("uchile.cl"));
+
+        let txt_rr_rdata = txtrdata_rr.get_rdata();
+        let mut expected_text: Vec<String> = Vec::new();
+        expected_text.push(String::from("dcc"));
+        expected_text.push(String::from("uchile"));
+        expected_text.push(String::from("cl"));
+        match txt_rr_rdata {
+            Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text(), expected_text),
+            _ => {}
+        }
     }
 }

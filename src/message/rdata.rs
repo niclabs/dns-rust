@@ -227,8 +227,20 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_hinfo(){
-        let a_rdata = Rdata::SomeHinfoRdata(HinfoRdata::new());
-        a_rdata.to_bytes();
+        let mut hinfo_rdata = HinfoRdata::new();
+
+        hinfo_rdata.set_cpu(String::from("cpu"));
+        hinfo_rdata.set_os(String::from("os"));
+
+        let bytes_to_test: [u8; 7] = [99, 112, 117, 0, 111, 115, 0];
+
+        let a_rdata = Rdata::SomeHinfoRdata(hinfo_rdata);
+        let bytes = a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]

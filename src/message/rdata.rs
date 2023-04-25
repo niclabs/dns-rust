@@ -329,8 +329,32 @@ mod resolver_query_tests {
     
     #[test]
     fn to_bytes_soardata(){
-        let a_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
-        a_rdata.to_bytes();
+        let mut soa_rdata = SoaRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        soa_rdata.set_mname(domain_name.clone());
+        soa_rdata.set_rname(domain_name);
+        soa_rdata.set_serial(512);
+        soa_rdata.set_refresh(8);
+        soa_rdata.set_retry(4);
+        soa_rdata.set_expire(2);
+        soa_rdata.set_minimum(1);
+
+        let bytes_to_test: [u8; 40] = [
+            4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0,
+            0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1,
+        ];
+
+        let soa_rdatas = Rdata::SomeSoaRdata(soa_rdata);
+        let bytes = soa_rdatas.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]

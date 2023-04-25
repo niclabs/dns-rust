@@ -1324,53 +1324,6 @@ mod resolver_test {
 
     //ToDo: Revisar Práctica 1
     // #[test]
-    // fn get_delete_sender_ns_udp() {
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    //     let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    //     let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    //     let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    //     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-
-    //     let resolver = Resolver::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         add_sender_ns_udp,
-    //         delete_sender_ns_udp,
-    //         add_sender_ns_tcp,
-    //         delete_sender_ns_tcp,
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_cache_ns_udp,
-    //         tx_update_cache_ns_tcp,
-    //     );
-
-    //     let delete_sender_ns_udp_test = resolver.get_delete_sender_ns_udp();
-    //     let delete_rcv_ns_upd = _delete_recv_ns_udp;
-    //     let a_rdata = Rdata::SomeARdata(ARdata::new());
-    //     let rr = ResourceRecord::new(a_rdata);
-    //     let msg = (String::from("test"), rr.clone());
-
-    //     delete_sender_ns_udp_test.send(msg).unwrap();
-    //     let (name, rr_result) = delete_rcv_ns_upd.recv().unwrap();
-
-    //     /*if the message was correctly sent it should work with the variable
-    //     created with the get fn used*/
-    //     assert_eq!(name, String::from("test"));
-    //     assert_eq!(rr_result.get_name(), rr.clone().get_name());
-    // }
-
-    //ToDo: Revisar Práctica 1
-    // #[test]
     // fn get_delete_sender_ns_tcp() {
     //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
     //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();

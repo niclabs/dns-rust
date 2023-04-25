@@ -180,8 +180,9 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
         especific_rdata
     }
 }
-/*#[cfg(test)]
+#[cfg(test)]
 mod resolver_query_tests {
+    use crate::domain_name::DomainName;
     use crate::message::resource_record::{FromBytes, ToBytes};
     use crate::message::rdata::Rdata;
     use super:: a_ch_rdata::AChRdata;
@@ -197,13 +198,31 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_rdata(){
         let a_rdata = Rdata::SomeARdata(ARdata::new());
-        a_rdata.to_bytes();
+        let bytes= a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        expected_bytes.push(0);
+        expected_bytes.push(0);
+        expected_bytes.push(0);
+        expected_bytes.push(0);
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
     fn to_bytes_cname(){
-        let a_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
-        a_rdata.to_bytes();
+        let mut cname_rdata = CnameRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("cname"));
+        cname_rdata.set_cname(domain_name);
+
+        let bytes_to_test: [u8; 7] = [5, 99, 110, 97, 109, 101, 0];
+        let a_rdata = Rdata::SomeCnameRdata(cname_rdata);
+        let bytes = a_rdata.to_bytes();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
@@ -256,4 +275,4 @@ mod resolver_query_tests {
 
 
 
-}*/
+}

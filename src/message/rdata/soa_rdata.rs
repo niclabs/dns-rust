@@ -693,8 +693,8 @@ mod soa_rdata_test {
          String::from("1112"), 
          String::from("7600"), 
          String::from("3500"), 
-         String::from("14000")];
-         
+         String::from("14000")]; //List with all the values we expect
+
          match soa_rr_rdata {
             Rdata::SomeSoaRdata(val) => assert_eq!([val.get_mname().get_name(), 
             val.get_rname().get_name(), 

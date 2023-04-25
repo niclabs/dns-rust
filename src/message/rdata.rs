@@ -359,13 +359,19 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_txtrdata(){
-        let mut txt: Vec<String> = Vec::new();
+        let text = vec!["dcc test".to_string()];
+        let txt_rdata = TxtRdata::new(text);
 
-        let string = String::from("panconpalta");
-        txt.push(string);
+        let bytes_to_test = [8, 100, 99, 99, 32, 116, 101, 115, 116];
 
-        let a_rdata = Rdata::SomeTxtRdata(TxtRdata::new(txt));
-        a_rdata.to_bytes();
+        let txt_rdatas = Rdata::SomeTxtRdata(txt_rdata);
+        let bytes = txt_rdatas.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
 

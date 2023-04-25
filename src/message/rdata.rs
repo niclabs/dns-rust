@@ -288,7 +288,7 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_nsrdata(){
         let mut domain_name = DomainName::new();
-        
+
         let bytes_to_test: Vec<u8> = vec![
             4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
         ];
@@ -309,8 +309,22 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_ptrrdata(){
-        let a_rdata = Rdata::SomePtrRdata(PtrRdata::new());
-        a_rdata.to_bytes();
+        let mut domain_name = DomainName::new();
+        let bytes_to_test: Vec<u8> = vec![
+            4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
+        ];
+        domain_name.set_name(String::from("test.test2.com"));
+
+        let mut ptr_rdatas = PtrRdata::new();
+        ptr_rdatas.set_ptrdname(domain_name);
+        let ptr_rdata = Rdata::SomePtrRdata(ptr_rdatas);
+        let bytes = ptr_rdata.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
     
     #[test]

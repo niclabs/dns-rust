@@ -1353,54 +1353,48 @@ mod resolver_test {
 
         update_cache_udp_test.send(msg.clone()).unwrap();
         let msg_result = rcv_update_cache_udp.recv().unwrap();
-        
+
         /*if the message was correctly sent it should work with the variable
         created with the get fn used*/
         assert_eq!(msg_result, msg.clone());
     }
 
-//     //ToDo: Revisar Práctica 1
-//     #[test]
-//     fn get_update_cache_tcp() {
-//         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-//         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-//         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-//         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-//         let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-//         let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-//         let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-//         let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
+    //ToDo: Revisar Práctica 1
+    #[test]
+    fn get_update_cache_tcp() {
+        let (add_sender_udp, 
+            _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, 
+            _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, 
+            _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, 
+            _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, 
+            _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, 
+            _rx_update_cache_tcp) = mpsc::channel();
 
-//         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-//         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-//         let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-//         let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
+        let resolver = Resolver::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+        );
 
-//         let resolver = Resolver::new(
-//             add_sender_udp,
-//             delete_sender_udp,
-//             add_sender_tcp,
-//             delete_sender_tcp,
-//             add_sender_ns_udp,
-//             delete_sender_ns_udp,
-//             add_sender_ns_tcp,
-//             delete_sender_ns_tcp,
-//             tx_update_cache_udp,
-//             tx_update_cache_tcp,
-//             tx_update_cache_ns_udp,
-//             tx_update_cache_ns_tcp,
-//         );
+        let update_cache_tcp_test = resolver.get_update_cache_tcp();
+        let rcv_update_cache_tcp = _rx_update_cache_tcp;
+        let msg = (String::from("test1"), String::from("test2"), 1);
+        update_cache_tcp_test.send(msg.clone()).unwrap();
 
-//         let update_cache_tcp_test = resolver.get_update_cache_tcp();
-//         let rcv_update_cache_tcp = _rx_update_cache_tcp;
-//         let msg = (String::from("test1"), String::from("test2"), 1);
-//         update_cache_tcp_test.send(msg.clone()).unwrap();
-
-//         let msg_result = rcv_update_cache_tcp.recv().unwrap();
-//         /*if the message was correctly sent it should work with the variable
-//         created with the get fn used*/
-//         assert_eq!(msg_result, msg.clone());
-//     }
+        let msg_result = rcv_update_cache_tcp.recv().unwrap();
+        
+        /*if the message was correctly sent it should work with the variable
+        created with the get fn used*/
+        assert_eq!(msg_result, msg.clone());
+    }
 
 //     //ToDo: Revisar Práctica 1
 //     // #[test]

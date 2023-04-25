@@ -1882,7 +1882,6 @@ mod resolver_query_tests {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::ns_rdata::NsRdata;
-    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
@@ -1891,7 +1890,6 @@ mod resolver_query_tests {
     use crate::resolver::UdpSocket;
     //use crate::rr_cache::RRCache;
     use chrono::Utc;
-    use std::collections::HashMap;
     use std::sync::mpsc::{self};
 
     #[test]

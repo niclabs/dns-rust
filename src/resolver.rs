@@ -1054,12 +1054,8 @@ mod resolver_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::message::DnsMessage;
-    // use crate::name_server::zone::NSZone;
-    use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use crate::resolver::Resolver;
-    use std::collections::HashMap;
     use std::sync::mpsc;
 
     #[test]

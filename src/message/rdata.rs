@@ -373,8 +373,4 @@ mod resolver_query_tests {
         }
         assert_eq!(bytes, expected_bytes);
     }
-
-
-
-
 }

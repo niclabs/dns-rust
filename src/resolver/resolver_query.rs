@@ -3332,43 +3332,44 @@ mod resolver_query_tests {
         resolver_query.send_udp_query(&msg, ip_address, socket)
     }
 
-    // //ToDo: Revisar Práctica/in progress
-    // #[test]
-    // fn step_1_tcp_no_local_info() {
-    //     // Channels
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (tx_update_query, _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    //     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    //     let mut resolver_query = ResolverQuery::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         tx_update_query,
-    //         tx_delete_query,
-    //         DnsMessage::new(),
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
-    //     let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-    //     resolver_query.set_sname("test.com".to_string());
-    //     let mut query_msg = resolver_query.create_query_message();
-    //     query_msg.set_query_id(123 as u16);
-    //     let expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
-    //     let name = expected.get_question().get_qname().get_name();
+    //ToDo: Revisar Práctica/in progress
+    #[test]
+    fn step_1_tcp_no_local_info() {
+        // Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        let (_update_slist_tcp_sender, 
+            update_slist_tcp_recv) = mpsc::channel();
+        resolver_query.set_sname("test.com".to_string());
+        let mut query_msg = resolver_query.create_query_message();
+        query_msg.set_query_id(123 as u16);
+        let expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
+        let name = expected.get_question().get_qname().get_name();
 
-    //     assert_eq!(expected.get_query_id(), 0);
-    //     assert_eq!(name, String::from(""));
-    // }
+        assert_eq!(expected.get_query_id(), 0);
+        assert_eq!(name, String::from(""));
+    }
 
     // #[test]
     // #[ignore = "TODO: stack overflow at NameServer::search_nearest_ancestor_zone"]

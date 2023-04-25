@@ -266,8 +266,23 @@ mod resolver_query_tests {
     
     #[test]
     fn to_bytes_mxrdata(){
-        let a_rdata = Rdata::SomeMxRdata(MxRdata::new());
-        a_rdata.to_bytes();
+        let mut mx_rdata = MxRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        mx_rdata.set_exchange(domain_name);
+        mx_rdata.set_preference(128);
+
+        let bytes_to_test: [u8; 12] = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0];
+        let a_rdata = Rdata::SomeMxRdata(mx_rdata);
+        let bytes = a_rdata.to_bytes();
+
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for byte in bytes_to_test{
+            expected_bytes.push(byte);
+        }
+        assert_eq!(bytes, expected_bytes);
     }
 
     #[test]

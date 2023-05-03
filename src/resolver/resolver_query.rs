@@ -3407,6 +3407,7 @@ mod resolver_query_tests {
         let mut slist = Slist::new();
         slist.insert("test.com".to_string(), "".to_string(), 5000);
         resolver_query.set_slist(slist);
+        println!("SLIST LEN: {}", resolver_query.get_slist().len());
 
         resolver_query.set_index_to_choose(1);
 

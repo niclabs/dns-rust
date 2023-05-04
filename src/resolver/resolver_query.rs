@@ -3515,6 +3515,7 @@ mod resolver_query_tests {
 
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
+        //a_rdata.set_address([198, 41, 0, 4]); IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
 
         let r_data = Rdata::SomeARdata(a_rdata);
 

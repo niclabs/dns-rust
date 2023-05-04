@@ -3494,7 +3494,7 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        resolver_query.set_sname("test.test2.com".to_string());
+        resolver_query.set_sname("example.com".to_string());
         resolver_query.set_rd(true);
         resolver_query.set_stype(1);
         resolver_query.set_sclass(1);
@@ -3503,7 +3503,7 @@ mod resolver_query_tests {
         cache.set_max_size(4);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name("test2.com".to_string());
+        domain_name.set_name("example.com".to_string());
 
         let mut ns_rdata = NsRdata::new();
         ns_rdata.set_nsdname(domain_name);
@@ -3521,8 +3521,8 @@ mod resolver_query_tests {
         let mut a_resource_record = ResourceRecord::new(r_data);
         a_resource_record.set_type_code(1);
 
-        cache.add("test2.com".to_string(), ns_resource_record);
-        cache.add("test2.com".to_string(), a_resource_record);
+        cache.add("example.com".to_string(), ns_resource_record);
+        cache.add("example.com".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
 
         let query_msg = resolver_query.create_query_message();

@@ -3372,7 +3372,7 @@ mod resolver_query_tests {
     }
 
     #[test]
-    #[ignore = "Connection refused error"]
+    #[ignore = "Investigating posible errors ..."]
     fn step_1_tcp() {
         // Channels
         /* let (add_sender_udp, _add_recv_udp) = mpsc::channel();

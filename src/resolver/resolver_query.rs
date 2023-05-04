@@ -3372,7 +3372,7 @@ mod resolver_query_tests {
     }
 
     #[test]
-    #[ignore = "Connection refused error"]
+    #[ignore = "Investigating posible errors ..."]
     fn step_1_tcp() {
         // Channels
         /* let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -3514,9 +3514,9 @@ mod resolver_query_tests {
         ns_resource_record.set_type_code(2);
 
         let mut a_rdata = ARdata::new();
-        a_rdata.set_address([8, 8, 8, 8]);
-        //a_rdata.set_address([192, 33, 4, 12]);
-        //a_rdata.set_address([198, 41, 0, 4]); IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
+        a_rdata.set_address([8, 8, 8, 8]); //IP THAT works but it is google resolver ip
+        //a_rdata.set_address([192, 33, 4, 12]); //IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
+        //a_rdata.set_address([198, 41, 0, 4]); //IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
 
         let r_data = Rdata::SomeARdata(a_rdata);
 

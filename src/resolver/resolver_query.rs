@@ -3514,9 +3514,9 @@ mod resolver_query_tests {
         ns_resource_record.set_type_code(2);
 
         let mut a_rdata = ARdata::new();
-        a_rdata.set_address([8, 8, 8, 8]);
-        //a_rdata.set_address([192, 33, 4, 12]);
-        //a_rdata.set_address([198, 41, 0, 4]); IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
+        a_rdata.set_address([8, 8, 8, 8]); //IP THAT works but it is google resolver
+        //a_rdata.set_address([192, 33, 4, 12]); //IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
+        //a_rdata.set_address([198, 41, 0, 4]); //IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
 
         let r_data = Rdata::SomeARdata(a_rdata);
 

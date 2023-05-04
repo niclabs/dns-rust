@@ -3494,7 +3494,7 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        resolver_query.set_sname("example.com".to_string());
+        resolver_query.set_sname("eol.uchile.cl".to_string());
         resolver_query.set_rd(true);
         resolver_query.set_stype(1);
         resolver_query.set_sclass(1);
@@ -3503,7 +3503,7 @@ mod resolver_query_tests {
         cache.set_max_size(4);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name("example.com".to_string());
+        domain_name.set_name("eol.uchile.cl".to_string());
 
         let mut ns_rdata = NsRdata::new();
         ns_rdata.set_nsdname(domain_name);
@@ -3514,7 +3514,8 @@ mod resolver_query_tests {
         ns_resource_record.set_type_code(2);
 
         let mut a_rdata = ARdata::new();
-        a_rdata.set_address([127, 0, 0, 1]);
+        a_rdata.set_address([8, 8, 8, 8]);
+        //a_rdata.set_address([192, 33, 4, 12]);
         //a_rdata.set_address([198, 41, 0, 4]); IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
 
         let r_data = Rdata::SomeARdata(a_rdata);
@@ -3522,8 +3523,8 @@ mod resolver_query_tests {
         let mut a_resource_record = ResourceRecord::new(r_data);
         a_resource_record.set_type_code(1);
 
-        cache.add("example.com".to_string(), ns_resource_record);
-        cache.add("example.com".to_string(), a_resource_record);
+        cache.add("eol.uchile.cl".to_string(), ns_resource_record);
+        cache.add("eol.uchile.cl".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
 
         let query_msg = resolver_query.create_query_message();
@@ -3536,6 +3537,7 @@ mod resolver_query_tests {
         //assert_eq!(name, String::from("test.com"));
 
         let msg = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
+        msg.clone().print_dns_message();
 
     }
 

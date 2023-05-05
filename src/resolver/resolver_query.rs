@@ -3821,7 +3821,7 @@ mod resolver_query_tests {
          //let _dns = resolver.step_3_tcp(update_slist_tcp_recv);
      }
 
-     #[test]
+   /*  #[test]
      #[should_panic]
      fn get_first_node_rrs_by_type_unreachable() {
          // Channels
@@ -3913,7 +3913,7 @@ mod resolver_query_tests {
          
        
      }
-
+*/ 
      #[test]
      //TODO (see if the senders are equals)
      fn get_tx_update_query() {

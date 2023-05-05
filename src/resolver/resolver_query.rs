@@ -2718,7 +2718,7 @@ mod resolver_query_tests {
         cache.add("test2.com".to_string(), ns_resource_record);
         cache.add("test2.com".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
-        let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
+        let socket = UdpSocket::bind("127.0.0.1:30000").expect("couldn't bind to address");
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
 
         let mut sbelt = Slist::new();

@@ -1,33 +1,28 @@
     
 mod common;
-use std::net::{UdpSocket,ToSocketAddrs};
-// extern crate pnet;
-// use pnet::packet::ip::IpNextHeaderProtocols;
-// use pnet::packet::Packet;
-// use pnet::transport::TransportChannelType::Layer4;
-// use pnet::transport::TransportProtocol::Ipv4;
-// use pnet::transport::{transport_channel,tcp_packet_iter, self};
-
 // use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
+use std::net::{UdpSocket, TcpStream, SocketAddr};
+use std::io::{Read, Write};
+use hex;
+use std::str::FromStr;
+
+
 
 use dns_rust::{
-    client::{create_client_query,
-            send_client_query},
-    message::DnsMessage,
+    client::{config::TIMEOUT},
+    // resolver
 };
 
 //config for resolver
 use dns_rust::config::{
-    RESOLVER_IP_PORT, SBELT_ROOT_IPS,
+    RESOLVER_IP_PORT, SBELT_ROOT_IPS
 };
 
 use crate::common::run_resolver_for_testing;
-use dns_rust::{self, client, domain_name};
+use dns_rust::{self,};
 
-
-//FIXME: use client not from our library
 
 // use dns_rust::client::config::CLIENT_IP_PORT;
 // use dns_rust::client::create_client_query;
@@ -143,521 +138,381 @@ use dns_rust::{self, client, domain_name};
 //     }
 // }
 
-#[test]
+
 #[ignore]
+#[test]
 fn qtype_a_example(){
-    let transport_protocol = "TCP";
+    //FIXME: Resvisar resolver nuestro
 
-    //run resolver 
+    let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000010001000029100000000000000c000a000841d49cc746f76992".to_string();
+    let resolver = "8.8.8.8:53";
+
+    // run resolver 
     thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
 
     });
     thread::sleep(Duration::from_secs(1));
 
-    // create client query
-    let client_query: DnsMessage = create_client_query("example.com",
-                                    1,
-                                    1);
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_a_example_bytes(dns_response_udp);
+    common::qtype_a_example_bytes(dns_response_tcp); 
 
-    //send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                        RESOLVER_IP_PORT,
-                                        client_query);
-    // dns_response.print_dns_message();
-
-    //test
-    common::qtype_a_example(dns_response);
-
-}
-
-
-#[test]
-#[ignore]
-fn non_existent_type(){
-    let transport_protocol = "TCP";
-
-    //run resolver 
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-
-    });
-
-    thread::sleep(Duration::from_secs(1));
-    
-    // create client query
-    let client_query: DnsMessage = create_client_query("example.com",
-                                    13,
-                                    1);
-    
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                        RESOLVER_IP_PORT,
-                                        client_query);
-    
-    common::qtype_hinfo_example_no_answer(dns_response);
-    
-}
-
-#[test]
-fn invalid_domain(){
-
-    let transport_protocol = "TCP";
-    let domain_name = "exam¿ple.com";
-
-    //run resolver 
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-
-    });
-
-    thread::sleep(Duration::from_secs(1));
-
-
-    // create client query
-    let client_query: DnsMessage = create_client_query(domain_name,
-        13,
-        1);
-    println!("query creada");
-
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                    RESOLVER_IP_PORT,
-                                    client_query);
-    
-                                    println!("query response");
-
-    
-    
-    //Header
-    let header = dns_response.get_header();
-    let rcode = header.get_rcode(); 
-    
-    //Format Error
-    assert_eq!(rcode, 1);
-    
-
-}
-
-#[test]
-#[ignore]
-fn query_answer_in_cache(){
-    //FIXME: fails resolver in update of cache
-
-    //query values
-    let transport_protocol = "TCP";
-    let domain_name = "example.com";
-
-    //run resolver 
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-    });
-
-    thread::sleep(Duration::from_secs(1));
-
-
-    // create client query
-    let client_query: DnsMessage = create_client_query(domain_name,
-        13,
-        1);
-
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                    RESOLVER_IP_PORT,
-                                    client_query.clone());
-    thread::sleep(Duration::from_secs(1));    
-    let second_dns_response = send_client_query(transport_protocol,
-                                        RESOLVER_IP_PORT,
-                                        client_query);
-    
-    common::qtype_a_example(second_dns_response);
-
-    //Header
-    let header = dns_response.get_header();
-    let aa = header.get_aa(); 
-    
-    //Format Error
-    assert_eq!(aa, true);
-
-}
-
-#[test]
-#[should_panic]
-#[ignore]
-fn qtype_asterisk_example(){
-    //Not implemented type RRSIG and is in answer 
-    //se van a caer porq desde nuestro cliente ya se cae
-    //revisar whireshark
-
-    //values query
-    let domain_name_example = "example.com";
-    let transport_protocol = "TCP";
-
-    //run resolver 
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-    });
-
-    thread::sleep(Duration::from_secs(1));
-
-
-    // create client query
-    let client_query: DnsMessage = create_client_query(domain_name_example,
-        13,
-        1);
-
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                    RESOLVER_IP_PORT,
-                                    client_query);
-    
-    common::qtype_asterisk_example(dns_response); 
-
-}
-
-#[test]
-#[ignore]
-fn qtype_asterisk_test(){
-    //se van a caer porq desde nuestro cliente ya se cae
-
-    //values query
-    let domain_name_test = "test";
-    let transport_protocol = "TCP";
-
-    //run resolver 
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-    });
-
-    thread::sleep(Duration::from_secs(1));
-
-    // create client query
-    let client_query: DnsMessage = create_client_query(domain_name_test,
-                                        13,
-                                        1);
-
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                    RESOLVER_IP_PORT,
-                                    client_query);
-
-    common::qtype_asterisk_test(dns_response); 
-
+    //OUR RESOLVER
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_a_example_bytes(dns_response_udp);
+    // common::qtype_a_example_bytes(dns_response_tcp); 
+  
+   
 }
 
 #[test]
 #[ignore]
 fn qtype_ns_example(){
-    //FIXME: resolver fails
 
-    //values query
-    let domain_name_test = "example.com";
-    let transport_protocol = "TCP";
+    let string_hex_query = "360f01200001000000000001076578616d706c6503636f6d0000020001000029100000000000000c000a000839f2559f0a6070a7".to_string();
+    let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-    });
 
+    });
     thread::sleep(Duration::from_secs(1));
 
-    // create client query
-    let client_query: DnsMessage = create_client_query(domain_name_test,
-                                        2,
-                                        1);
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_ns_example_bytes(dns_response_udp);
+    common::qtype_ns_example_bytes(dns_response_tcp); 
 
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                    RESOLVER_IP_PORT,
-                                    client_query);
+    //OUR RESOLVER
+    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_ns_example_bytes(dns_response_udp);
+    // common::qtype_ns_example_bytes(dns_response_tcp); 
 
-    common::qtype_ns_example(dns_response); 
-    
 }
+
+
+#[ignore]
+#[test]
+fn qtype_soa_example(){
+    //FIXME: Se cae resolver 
+
+    let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000060001000029100000000000000c000a0008970b6afc9f3385d2".to_string();
+    let resolver = "8.8.8.8:53";
+
+    //run resolver 
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+
+    });
+    thread::sleep(Duration::from_secs(1));
+  
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_soa_example_bytes(dns_response_udp);
+    common::qtype_soa_example_bytes(dns_response_tcp); 
+
+    //OUR RESOLVER
+    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_soa_example_bytes(dns_response_udp);
+    // common::qtype_soa_example_bytes(dns_response_tcp); 
+}
+
+//TODO: Falta hacerlo
+// fn qtype_wks(){
+// }
+
+//TODO: Falta hacerlo
+// fn qtype_ptr(){
+// }
+
+
+#[ignore]
+#[test]
+fn qtype_hinfo_example(){
+    //FIXME: Se cae resolver 
+    // let string_hex_query = "b5bb01200001000000000001076578616d706c6503636f6d00000d0001000029100000000000000c000a00082ad20ef6d3683682".to_string();        
+    let string_hex_query = "a8eb01200001000000000001076578616d706c6503636f6d00000d0001000029100000000000000c000a00084216f8e4db92ceea".to_string();
+    let resolver = "8.8.8.8:53";
+
+    //run resolver 
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+
+    });
+    thread::sleep(Duration::from_secs(1));
+  
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_hinfo_example_bytes(dns_response_udp);
+    common::qtype_hinfo_example_bytes(dns_response_tcp); 
+
+    //OUR RESOLVER
+    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_soa_example_bytes(dns_response_udp);
+    // common::qtype_soa_example_bytes(dns_response_tcp); 
+
+}
+
+
 
 
 #[test]
 #[ignore]
 fn qtype_mx_example(){
     //FIXME: fais but becouse of our client, see a library for clreate client query
-
-    //values query
-    let domain_name_test = "example.com";
-    let transport_protocol = "TCP";
+    let string_hex_query = "ff6e01200001000000000001076578616d706c6503636f6d00000f0001000029100000000000000c000a00084ff21bafb4566efd".to_string();
+    let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
     });
-
     thread::sleep(Duration::from_secs(1));
 
-    // create client query
-    let client_query: DnsMessage = create_client_query(domain_name_test,
-                                        15,
-                                        1);
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_mx_example_bytes(dns_response_udp);
+    common::qtype_mx_example_bytes(dns_response_tcp); 
 
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                    RESOLVER_IP_PORT,
-                                    client_query);
-
-    common::qtype_ns_example(dns_response); 
-
+    //OUR RESOLVER
+    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_soa_example_bytes(dns_response_udp);
+    // common::qtype_soa_example_bytes(dns_response_tcp); 
+    
     
 }
 
-
-#[test]
-fn qtype_soa_example(){
-
-    //values query
-    let domain_name_test = "example.com";
-    let transport_protocol = "TCP";
-
-    //run resolver 
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-    });
-
-    thread::sleep(Duration::from_secs(1));
-
-    // create client query
-    let client_query: DnsMessage = create_client_query(domain_name_test,
-                                        6,
-                                        1);
-
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                    RESOLVER_IP_PORT,
-                                    client_query);
-
-    common::qtype_soa_example(dns_response); 
-
-    
-}
-
-
-
-#[test]
 #[ignore]
+#[test]
 fn qtype_txt_example(){
-    let transport_protocol = "TCP";
+    //FIXME: 
+
+    let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000100001000029100000000000000c000a000841d49cc746f76992".to_string();
+    let resolver = "8.8.8.8:53";
 
     //run resolver 
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+
+    });
+    thread::sleep(Duration::from_secs(1));  
+    
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_txt_example_bytes(dns_response_udp);
+    common::qtype_txt_example_bytes(dns_response_tcp); 
+
+    //OUR RESOLVER
+    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_soa_example_bytes(dns_response_udp);
+    // common::qtype_soa_example_bytes(dns_response_tcp); 
+
+}
+
+#[ignore]
+#[test]
+fn qtype_cname(){
+    //FIXME: 
+
+    let string_hex_query = "0cee01200001000000000001046d61696c057961686f6f03636f6d0000050001000029100000000000000c000a000803346ab484433bc3".to_string();
+    let resolver = "8.8.8.8:53";
+
+    //run resolver 
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+
+    });
+    thread::sleep(Duration::from_secs(1));  
+    
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_cname_bytes(dns_response_udp);
+    common::qtype_cname_bytes(dns_response_tcp); 
+
+    //OUR RESOLVER
+    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_cname_bytes(dns_response_udp);
+    // common::qtype_cname_bytes(dns_response_tcp); 
+
+}
+
+
+#[ignore]
+#[test]
+fn answer_in_cache(){
+    //FIXME: Resvisar resolver nuestro
+
+    let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000010001000029100000000000000c000a000841d49cc746f76992".to_string();
+    let resolver = "8.8.8.8:53";
+
+    // run resolver 
     thread::spawn(move || {
         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
 
     });
     thread::sleep(Duration::from_secs(1));
 
-    // create client query
-    let client_query: DnsMessage = create_client_query("example.com",
-                                    16,
-                                    1);
+    //GOOGLE RESOLVER
+    let _ = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let second_dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let _ = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    let second_dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
 
-    //send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                        RESOLVER_IP_PORT,
-                                        client_query);
-    // dns_response.print_dns_message();
+    common::qtype_a_example_bytes_cache(second_dns_response_udp);
+    common::qtype_a_example_bytes_cache(second_dns_response_tcp); 
 
-    //test
-    common::qtype_txt_example(dns_response);
-
-    
-
+    //OUR RESOLVER
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_a_example_bytes(dns_response_udp);
+    // common::qtype_a_example_bytes(dns_response_tcp); 
 }
 
+#[test]
+fn nonexistentdomain(){
+        //FIXME: Resvisar resolver nuestro
+
+        let string_hex_query = "eb7801200001000000000001116e6f6e6578697374656e74646f6d61696e0000010001000029100000000000000c000a0008f76b9ff5fb2cba0a".to_string();
+        let resolver = "8.8.8.8:53";
+    
+        // run resolver 
+        thread::spawn(move || {
+            run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+    
+        });
+        thread::sleep(Duration::from_secs(1));
+    
+        //GOOGLE RESOLVER
+        let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+        let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    
+        common::nonexistentdomain_bytes(dns_response_udp);
+        common::nonexistentdomain_bytes(dns_response_tcp); 
+    
+        //OUR RESOLVER
+        // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+        // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+        // common::qtype_a_example_bytes(dns_response_udp);
+        // common::qtype_a_example_bytes(dns_response_tcp); 
+
+}
 
 #[test]
 #[ignore]
-fn query_udp_tcp_to_same_resolver(){
+fn qtype_any_example(){
+    //FIXME:
 
-    //values query
-    let domain_name = "example.com";
-    let transport_protocol_udp  = "UDP";
-    let transport_protocol_tcp  = "TCP";
-
+    let string_hex_query ="003530880120000100000000000108657878616d706c6503636f6d0000ff0001000029100000000000000c000a0008011eb8ed12565cdf".to_string();
+    let resolver = "8.8.8.8:53";
     //run resolver 
-    thread::spawn(move || {
-        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-    });
-
-    // create client query udp
-    let client_query_udp: DnsMessage = create_client_query(domain_name,
-                                        2,
-                                        1);
-
-    // send query and get response udp
-    let dns_response_udp = send_client_query(transport_protocol_udp,
-                                        RESOLVER_IP_PORT,
-                                        client_query_udp);
-
-    // create client query tcp
-    let client_query_tcp: DnsMessage = create_client_query(domain_name,
-                                        2,
-                                        1);
-
-    // send query and get response tcp
-    let dns_response_tcp = send_client_query(transport_protocol_tcp,
-                                        RESOLVER_IP_PORT,
-                                        client_query_tcp);
-
-    common::qtype_a_example(dns_response_udp);
-    common::qtype_a_example(dns_response_tcp);
-
-}
-
-fn creation_dns_query(type_query:u16)-> Vec<u8>{
-    //TODO:ver si funciona
-
-    //id
-    let id:u16 = rand::random();
-
-    //mask of bits to configure options flags
-    let flags: u16 = 0b0000000100000000; 
-
-    let qd_count:u16 = 1;
-    let qname = "example.com".as_bytes();
-    let qname_len = qname.len() as u8;
-    let qtype:u16 = type_query; //A
-    let qclass:u16 = 1; //IN
-
-    // Creamos el cuerpo de la pregunta DNS
-    let mut question_bytes = Vec::new();
-    question_bytes.push(qname_len);
-    question_bytes.extend_from_slice(qname);
-    question_bytes.extend_from_slice(&qtype.to_be_bytes());
-    question_bytes.extend_from_slice(&qclass.to_be_bytes());
-
-    // Creamos el mensaje DNS completo
-    let mut message_bytes = Vec::new();
-    message_bytes.extend_from_slice(&id.to_be_bytes());
-    message_bytes.extend_from_slice(&flags.to_be_bytes());
-    message_bytes.extend_from_slice(&qd_count.to_be_bytes());
-    message_bytes.extend(&question_bytes);
-
-    // Mostramos el mensaje DNS en formato de bytes
-    println!("{:?}", message_bytes);
-
-    return message_bytes;
-    
-}
-
-#[test]
-fn test_use_creation_dns_query(){
-
-    // let server_to_send = "127.0.0.1:53";
-    // let transport_protocol = "TCP";
-
-    // //run resolver 
     // thread::spawn(move || {
     //     run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
-
     // });
+
     // thread::sleep(Duration::from_secs(1));
 
-    // // create client query
-    // let type_query:u16 = 1;
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
 
-    // //DNS query
-    // let client_query =  creation_dns_query(type_query);
+    common::qtype_any_example_bytes(dns_response_udp);
+    common::qtype_any_example_bytes(dns_response_tcp); 
 
-    // let socket = UdpSocket::bind("127.0.0.1:8001")?;
+    //OUR RESOLVER
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_any_example_bytes(dns_response_udp);
+    // common::qtype_any_example_bytes(dns_response_tcp); 
+}
 
-    // //enviamos mensaje
-    // socket.send_to(&client_query, &server_to_send)?;
 
-    // //response query
-    // let mut response_buffer = [Ou8,512];
-    // let (response_size, _)= socket.recv_from(&mut response_buffer)?;
 
-    // //test
-    // common::qtype_a_example(dns_response);
+///Sends DNS query by UDP to address of resolver given and reruns the response
+fn send_get_message_from_resolver_udp(hex_string: String,resolver_addr:&str) -> Vec<u8> {
+    let bytes = hex::decode(hex_string).unwrap();
 
+    let socket = UdpSocket::bind("0.0.0.0:0").expect("No connection");
+    socket.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+
+    let server_addr = SocketAddr::from_str(resolver_addr).expect("Invalid address");
+    socket
+        .send_to(&bytes, server_addr)
+        .unwrap_or_else(|e| panic!("Error during send: {}", e));
+    println!("Query Sent");
+
+
+    let mut msg = [0; 512];
+    socket
+        .recv_from(&mut msg)
+        .unwrap_or_else(|e| panic!("Error recv: {}", e));
+    println!("Response Receive");
+
+    drop(socket);
+
+    msg.to_vec()
+}
+
+//TODO: trunceted response
+
+///Sends DNS query by TCP to address of resolver given and returns the response
+fn send_get_message_from_resolver_tcp(hex_string: String, resolver_addr: &str) -> Vec<u8> {
+    let bytes = hex::decode(hex_string).unwrap();
     
+    let mut stream = TcpStream::connect(resolver_addr).expect("No connection");
+    
+    //add length of stream
+    let msg_length: u16 = bytes.len() as u16;
+    let tcp_bytes_length = [(msg_length >> 8) as u8, msg_length as u8];
+    let full_msg = [&tcp_bytes_length, bytes.as_slice()].concat();
+
+    match stream.set_read_timeout(Some(Duration::from_millis(TIMEOUT * 1000))) {
+        Err(_) => panic!("Error setting read timeout for socket"),
+        Ok(_) => (),
     }
 
-   
+    match stream.write(&full_msg) {
+        Err(_) => panic!("Error: could not write to stream"),
+        Ok(_) => (),
+    }
 
-// #[test]
-// #[ignore]
-// fn get_resolver_packets_tcp(){
-//     //must be run with sudo privileges
+    let mut received_msg = [0; 2];
+        let number_of_bytes = stream.read(&mut received_msg).expect("No data received");
 
-//     //Run Resolver
-//     thread::spawn(move || {
-//         run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS)
-//     });
+        if number_of_bytes == 0 {
+            return Vec::new();
+        }
 
-//     //config for catching packets
-//     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Tcp));
+        let mut tcp_msg_len = (received_msg[0] as u16) << 8 | received_msg[1] as u16;
+        let mut vec_msg: Vec<u8> = Vec::new();
 
-//     //create transport channel
-//     let (_,mut rx) = match transport_channel(4096, protocol) {
-//         Ok((tx,rx)) => (tx,rx),
-//         Err(e) => panic!("Error: creating the transport channel: {}",e),
-//     };
+        while tcp_msg_len > 0 {
+            let mut msg = [0; 512];
+            let number_of_bytes_msg = stream.read(&mut msg).expect("No data received");
+            tcp_msg_len = tcp_msg_len - number_of_bytes_msg as u16;
+            vec_msg.append(&mut msg.to_vec());
+        }
 
-//     let mut iter = tcp_packet_iter(&mut rx);
+        //FIXME: arreglar como esta esta funcion y cerar socket
+        return Some(vec_msg).unwrap().to_vec();
 
-//     //channel to stop test
-//     let (tx_stop,rx_stop) = channel();
-
-//     //Run Client
-//     thread::spawn(move || {
-//         thread::sleep(Duration::from_secs(1));
-//         client::run_client();
-//         tx_stop.send(()).unwrap();        
-//     });
-    
-//     //Loop for catchinng packets
-//     loop {
-//         match iter.next() {
-//             Ok((packet, _)) => {
-                
-//                 //
-//                 let source = packet.get_source(); //caso sale del resolver
-//                 let destination = packet.get_destination(); //caso llega respuesta al resolver
-//                 let payload = packet.payload();
-                
-
-//                 match (source,destination){
-//                     (_,58396) => {
-//                         println!("\n DNS: Response to Resolver------------------------------------------------------------");
-//                         println!("payload: {:?}",payload);
-
-//                         },
-//                     (53,_) => {
-//                         println!("\n DNS: Sent Query by Resolver-----------------------------------------------------------");
-//                         println!("payload: {:?}",payload);
-                        
-//                     },
-                    
-//                     _  =>  {println!("\n Other TCP message------------------------------------------------------------------");
-//                 }
-//                 }
-
-
-
-//             }
-//             Err(e) => {
-//                 // If an error occurs, we can handle it here
-//                 panic!("An error occurred while reading: {}", e);
-//             }
-//         }
-//         //finish loop if client is finish
-//         match rx_stop.try_recv() {
-//             Ok(_) => break,
-//             Err(_) => {},   
-//         }
-//     }
-
-// }
-
-
-
+}
 
 
 

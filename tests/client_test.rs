@@ -1,15 +1,12 @@
-use std::process::Command;
-
 mod common;
 
 use dns_rust::{
     client::{create_client_query,
             send_client_query},
-    message::{DnsMessage},
+    message::{DnsMessage, },
 };
 
 
-//Thist client is tested with the google resolver -> 8.8.8.8:53
 
 
 #[test]
@@ -37,6 +34,7 @@ fn tcp_query() {
 #[test]
 #[ignore]
 fn non_existent_type(){
+    //FIXME: it does not work as dig
 
     //values query
     let google_resolver = "8.8.8.8:53"; 
@@ -87,9 +85,8 @@ fn invalid_domain(){
 #[test]
 #[should_panic]
 #[ignore]
-fn qtype_asterisk_example(){
-    //Not implemented type RRSIG and is in answer 
-    //revisar whireshark
+fn qtype_any_example(){
+    //FIXME:
 
     //values query
     let domain_name_example = "example.com";
@@ -107,12 +104,12 @@ fn qtype_asterisk_example(){
                                             google_resolver,
                                                 client_query_example);
 
-    common::qtype_asterisk_example(dns_response_example); 
+    common::qtype_any_example(dns_response_example); 
 }
 
 #[test]
 #[ignore]
-fn qtype_asterisk_test(){
+fn qtype_any_test(){
     //Not implemented type RRSIG and is in answer
 
     //values query
@@ -130,7 +127,7 @@ fn qtype_asterisk_test(){
                                                 google_resolver,
                                                 client_query_test);
 
-    common::qtype_asterisk_test(dns_response_test);   
+    common::qtype_any_test(dns_response_test);   
 }
 
 #[test]
@@ -147,18 +144,18 @@ fn qtype_mx_example(){
                                                 15,
                                                 1);
 
-    // // send query and get response FIXME: se cae aca
+    //send query and get response FIXME:
     let dns_response_test = send_client_query(transport_protocol,
                                                 google_resolver,
                                                 client_query);
-
+    
     common::qtype_mx_example(dns_response_test);   
 }
 
 #[test]
 #[ignore]
 fn qtype_ns_example(){
-    //FIXME:falla aveces ??? 
+    //FIXME: fail sometimes
     
     //values query
     let domain_name = "example.com";
@@ -176,6 +173,28 @@ fn qtype_ns_example(){
                                                 client_query);
 
     common::qtype_ns_example(dns_response_test);   
+}
+#[test]
+#[ignore]
+fn qtype_cname(){
+    //FIXME: 
+    
+    //values query
+    let domain_name = "mail.yahoo.com";
+    let google_resolver = "8.8.8.8:53"; 
+    let transport_protocol = "TCP";
+
+    // create client query
+    let client_query: DnsMessage = create_client_query(domain_name,
+                                                2,
+                                                1);
+
+    //send query and get response FIXME: se cae aca
+    let dns_response_test = send_client_query(transport_protocol,
+                                                google_resolver,
+                                                client_query);
+
+    common::qtype_cname(dns_response_test);   
 }
 
 #[test]
@@ -245,3 +264,4 @@ fn qtype_a_example_google_resolver(transport_protocol:&str) {
     //testing response 
     common::qtype_a_example(dns_response);
 }
+

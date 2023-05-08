@@ -507,9 +507,7 @@ impl ResolverQuery {
         let mut cache = self.get_cache();
         let cache_answer = cache.get(s_name.clone(), s_type);
         let mut rrs_cache_answer = Vec::new();
-        let x = cache_answer.len();
-
-        print!("el largo de cache answer es .{x}. y s_class es .{s_class}.");
+        
         // The desired QCLASS in not *, then not all classes need to be matched
         if s_class != asterisk_s_class {
             for rr in cache_answer {

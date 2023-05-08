@@ -2704,7 +2704,7 @@ mod resolver_query_tests {
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
         let mut domain_name = DomainName::new();
-        domain_name.set_name("test2.com".to_string());
+        domain_name.set_name("test.com".to_string());
         let mut ns_rdata = NsRdata::new();
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);

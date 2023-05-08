@@ -3659,7 +3659,7 @@ mod resolver_query_tests {
      }
 
      #[test]
-     #[ignore = "Searching posible error's"]
+     #[ignore = "Searching posible errors"]
      fn step_1_udp() {
          /* // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();

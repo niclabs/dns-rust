@@ -3771,6 +3771,7 @@ mod resolver_query_tests {
     let mut a_rdata = ARdata::new();
 
     a_rdata.set_address([127, 0, 0, 1]);
+    //a_rdata.set_address([192, 33, 4, 12]);
     let r_data = Rdata::SomeARdata(a_rdata);
     let mut a_resource_record = ResourceRecord::new(r_data);
     a_resource_record.set_type_code(1);

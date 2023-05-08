@@ -230,15 +230,38 @@ fn qtype_soa_example(){
 // fn qtype_wks(){
 // }
 
-//TODO: Falta hacerlo
-// fn qtype_ptr(){
-// }
+#[ignore]
+#[test]
+fn qtype_ptr(){
+    let string_hex_query = "037801200001000000000001013801380138013807696e2d61646472046172706100000c000100002904d000000000000c000a00084c9879796ef71bec".to_string();
+    let resolver = "8.8.8.8:53";
+
+    //run resolver 
+    thread::spawn(move || {
+        run_resolver_for_testing(RESOLVER_IP_PORT,SBELT_ROOT_IPS);
+
+    });
+    thread::sleep(Duration::from_secs(1));
+  
+    //GOOGLE RESOLVER
+    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    common::qtype_ptr_bytes(dns_response_udp);
+    common::qtype_ptr_bytes(dns_response_tcp); 
+
+    //OUR RESOLVER
+    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_ptr_bytes(dns_response_udp);
+    // common::qtype_ptr_bytes(dns_response_tcp); 
+
+}
 
 
 #[ignore]
 #[test]
 fn qtype_hinfo_example(){
-    //FIXME: Se cae resolver 
+
     // let string_hex_query = "b5bb01200001000000000001076578616d706c6503636f6d00000d0001000029100000000000000c000a00082ad20ef6d3683682".to_string();        
     let string_hex_query = "a8eb01200001000000000001076578616d706c6503636f6d00000d0001000029100000000000000c000a00084216f8e4db92ceea".to_string();
     let resolver = "8.8.8.8:53";
@@ -259,8 +282,8 @@ fn qtype_hinfo_example(){
     //OUR RESOLVER
     // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
     //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
-    // common::qtype_soa_example_bytes(dns_response_udp);
-    // common::qtype_soa_example_bytes(dns_response_tcp); 
+    // common::qtype_hinfo_example_bytes(dns_response_udp);
+    // common::qtype_hinfo_example_bytes(dns_response_tcp); 
 
 }
 
@@ -289,8 +312,8 @@ fn qtype_mx_example(){
     //OUR RESOLVER
     // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
     //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
-    // common::qtype_soa_example_bytes(dns_response_udp);
-    // common::qtype_soa_example_bytes(dns_response_tcp); 
+    // common::qtype_mx_example_bytes(dns_response_udp);
+    // common::qtype_mx_example_bytes(dns_response_tcp); 
     
     
 }
@@ -319,8 +342,8 @@ fn qtype_txt_example(){
     //OUR RESOLVER
     // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
     //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
-    // common::qtype_soa_example_bytes(dns_response_udp);
-    // common::qtype_soa_example_bytes(dns_response_tcp); 
+    // common::qtype_txt_example_bytes(dns_response_udp);
+    // common::qtype_txt_example_bytes(dns_response_tcp); 
 
 }
 
@@ -409,8 +432,8 @@ fn nonexistentdomain(){
         //OUR RESOLVER
         // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
         // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
-        // common::qtype_a_example_bytes(dns_response_udp);
-        // common::qtype_a_example_bytes(dns_response_tcp); 
+        // common::nonexistentdomain_bytes(dns_response_udp);
+        // common::nonexistentdomain_bytes(dns_response_tcp); 
 
 }
 
@@ -513,6 +536,7 @@ fn send_get_message_from_resolver_tcp(hex_string: String, resolver_addr: &str) -
         return Some(vec_msg).unwrap().to_vec();
 
 }
+
 
 
 

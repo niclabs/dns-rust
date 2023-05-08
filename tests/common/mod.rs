@@ -374,6 +374,55 @@ pub fn qtype_soa_example_bytes(dns_response: Vec<u8>){
 }
 
 #[allow(dead_code)]
+pub fn qtype_ptr_bytes(dns_response: Vec<u8>){
+
+    //HEADER SECTION
+    let id = u16::from_be_bytes([dns_response[0], dns_response[1]]); 
+    // let flags = u16::from_be_bytes([dns_response[2], dns_response[3]]); 
+    let qdcount = u16::from_be_bytes([dns_response[4], dns_response[5]]);
+    let ancount = u16::from_be_bytes([dns_response[6], dns_response[7]]);
+    let nscount = u16::from_be_bytes([dns_response[8], dns_response[9]]);
+    let arcount = u16::from_be_bytes([dns_response[10], dns_response[11]]);
+    
+    assert_eq!(id ,888);
+    assert_eq!(qdcount ,1);
+    assert_eq!(ancount ,1);
+    assert_eq!(nscount ,0);
+    assert_eq!(arcount ,1);
+    println!("ASSERTS HEADER OK\n");
+
+    //QUESTION SECTION
+    let (qname, index_end_qname) = get_domain_name(dns_response.clone(), 12);   
+    let type_question = u16::from_be_bytes([dns_response[index_end_qname],
+                                                 dns_response[index_end_qname+1]]);
+    let class_question = u16::from_be_bytes([dns_response[index_end_qname+2], 
+                                                 dns_response[index_end_qname+3]]);
+  
+    assert_eq!(qname,"8.8.8.8.in-addr.arpa.");
+    assert_eq!(type_question,12);
+    assert_eq!(class_question,1);
+    println!("ASSERTS QUESTION OK\n");
+
+
+    //ANSWER SECTION
+    let (name,index_end_name) = get_domain_name(dns_response.clone(), index_end_qname+4 );
+    
+    let type_answer = u16::from_be_bytes([dns_response[index_end_name+1], dns_response[index_end_name+2]]);
+    let class_answer = u16::from_be_bytes([dns_response[index_end_name+3], dns_response[index_end_name+4]]);
+    let ttl_answer = u32::from_be_bytes([dns_response[index_end_name+5],dns_response[index_end_name+6],dns_response[index_end_name+7],dns_response[index_end_name+8]]); 
+    let rdlength_answer = u16::from_be_bytes([dns_response[index_end_name+9],dns_response[index_end_name+10]]); 
+    let (ptrdname,_) = get_domain_name(dns_response.clone(),index_end_name+11); 
+
+    assert_eq!(name, "8.8.8.8.in-addr.arpa.");
+    assert_eq!(type_answer,12);
+    assert_eq!(class_answer,1);
+    assert!(ttl_answer <= 1209600);
+    assert_eq!(rdlength_answer,12);
+    assert_eq!(ptrdname,"dns.google.");
+
+
+}
+#[allow(dead_code)]
 pub fn qtype_hinfo_example_bytes(dns_response: Vec<u8>){
 
     //HEADER SECTION
@@ -426,7 +475,7 @@ pub fn qtype_hinfo_example_bytes(dns_response: Vec<u8>){
     assert_eq!(class_answer,1);
     assert!(ttl_answer <= 1209600);
     assert_eq!(rdlength_answer,44);
-    assert_eq!(serial,2022091268);
+    assert_eq!(serial,2022091276);
     assert_eq!(refresh,7200);
     assert_eq!(retry,3600);
     assert_eq!(expire,1209600);
@@ -570,13 +619,13 @@ pub fn qtype_a_example(dns_response: DnsMessage){
 #[allow(dead_code)]
 pub fn qtype_hinfo_example_no_answer(dns_response: DnsMessage){
 
-    //dns message
+    //DNS MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
     let answers = dns_response.get_answer();
     let authority  = dns_response.get_authority();
 
-    //Header Section
+    //HEADER SECTION
     let qr = header.get_qr();
     let op_code = header.get_op_code();
     let rcode = header.get_rcode();
@@ -589,7 +638,7 @@ pub fn qtype_hinfo_example_no_answer(dns_response: DnsMessage){
     assert_eq!(op_code,0);
     assert_eq!(nscount,1);
 
-    //Question Section
+    //QUESTION SECTION
     let qname = question.get_qname().get_name();
     let qtype = question.get_qtype();
     let qclass = question.get_qclass();
@@ -598,11 +647,11 @@ pub fn qtype_hinfo_example_no_answer(dns_response: DnsMessage){
     assert_eq!(qclass, 1);
     assert_eq!(qtype, 13);
 
-    //Answer Section
+    //ANSWER SECTION
     let answer_len = answers.len();
     assert_eq!(answer_len, 0);
     
-    //Authority Section   
+    //AUTHORITY SECTION  
     let authority_len = authority.len();
     let soa_name = authority[0].get_name().get_name();
     
@@ -628,12 +677,12 @@ pub fn qtype_hinfo_example_no_answer(dns_response: DnsMessage){
 #[allow(dead_code)]
 pub fn qtype_any_example(dns_response: DnsMessage){
 
-    //dns message
+    //DNS MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
     let answers = dns_response.get_answer();
 
-    //Header Section
+    //HEADER SECTION
     let qr = header.get_qr();
     let op_code = header.get_op_code();
     let rcode = header.get_rcode();
@@ -646,7 +695,7 @@ pub fn qtype_any_example(dns_response: DnsMessage){
     assert_eq!(nscount,0);
     assert_eq!(ancount,2); 
 
-    //Question Section
+    //QUESTION SECTION
     let qname = question.get_qname().get_name();
     let qtype = question.get_qtype();
     let qclass = question.get_qclass();
@@ -656,7 +705,7 @@ pub fn qtype_any_example(dns_response: DnsMessage){
     assert_eq!(qclass, 1);
     assert_eq!(qtype, 255);
 
-    //Answer Section
+    //ANSWER SECTION
     let answer_len = answers.len();
     assert_eq!(answer_len, 2);
     
@@ -683,15 +732,14 @@ pub fn qtype_any_example(dns_response: DnsMessage){
 
 #[allow(dead_code)]
 pub fn qtype_any_test(dns_response: DnsMessage){
-    //TODO:revisar con whireshark
 
-    //dns message
+    //DNA MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
     let answers = dns_response.get_answer();
     let authority  = dns_response.get_authority();
 
-    //Header Section
+    //HEADER SECTION
     let qr = header.get_qr();
     let op_code = header.get_op_code();
     let rcode = header.get_rcode();
@@ -705,7 +753,7 @@ pub fn qtype_any_test(dns_response: DnsMessage){
     assert_eq!(nscount,0);
     assert_eq!(ancount,0);
 
-    //Question Section
+    //QUESTION SECTION
     let qname = question.get_qname().get_name();
     let qtype = question.get_qtype();
     let qclass = question.get_qclass();
@@ -715,11 +763,11 @@ pub fn qtype_any_test(dns_response: DnsMessage){
     assert_eq!(qclass, 1);
     assert_eq!(qtype, 255);
 
-    //Answer Section
+    //ANSWER SECTION
     let answer_len = answers.len();
     assert_eq!(answer_len, 0);
     
-    //Authority Section   
+    //AUTHORITY SECTION 
     let authority_len = authority.len();
     let soa_name = authority[0].get_name().get_name();
     
@@ -745,11 +793,12 @@ pub fn qtype_any_test(dns_response: DnsMessage){
 
 #[allow(dead_code)]
 pub fn qtype_mx_example(dns_response: DnsMessage){
-    //Dns Message
+    
+    //DNS MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
 
-    //Header
+    //HEADER SECTION
     let op_code = header.get_op_code();
     let rd = header.get_rd();
     let ancount = header.get_ancount();
@@ -760,7 +809,7 @@ pub fn qtype_mx_example(dns_response: DnsMessage){
     assert_eq!(ancount,1);
     assert_eq!(nscount,1);
 
-    //Question Section
+    //QUESTION SECTION
     let qname = question.get_qname().get_name();
     let qtype = question.get_qtype();
     let qclass = question.get_qclass();
@@ -769,7 +818,7 @@ pub fn qtype_mx_example(dns_response: DnsMessage){
     assert_eq!(qclass, 1);
     assert_eq!(qtype, 15);
 
-    //Authority Section
+    //AUTHOORITY SECTION
     let authority_count = header.get_nscount();
     assert_eq!(authority_count, 0);
 
@@ -793,13 +842,12 @@ pub fn qtype_mx_example(dns_response: DnsMessage){
 
 #[allow(dead_code)]
 pub fn qtype_ns_example(dns_response: DnsMessage){
-    //FIXME:falla aveces cuando corro el cliente con el resolver de google
 
-    //Dns Message
+    //DNS MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
 
-    //Header
+    //HEADER SECTION
     let op_code = header.get_op_code();
     let rd = header.get_rd();
     let ancount = header.get_ancount();
@@ -812,7 +860,7 @@ pub fn qtype_ns_example(dns_response: DnsMessage){
     assert_eq!(ancount,2);
     assert_eq!(nscount,0);
 
-    //Question Section
+    //QUESTION SECTION
     let qname = question.get_qname().get_name();
     let qtype = question.get_qtype();
     let qclass = question.get_qclass();
@@ -821,11 +869,11 @@ pub fn qtype_ns_example(dns_response: DnsMessage){
     assert_eq!(qclass, 1);
     assert_eq!(qtype, 2);
 
-    //Authority Section
+    //AUTHORITY SECTION
     let authority_count = header.get_nscount();
     assert_eq!(authority_count, 0);
 
-    //Answer Section
+    //ANSWERS SECTION
     let answers = dns_response.get_answer();
     for answer in answers {
         match answer.get_rdata() {
@@ -862,7 +910,7 @@ pub fn qtype_ns_example(dns_response: DnsMessage){
 #[allow(dead_code)]
 pub fn qtype_soa_example(dns_response: DnsMessage){
 
-    //dns message
+    //DNS MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
     let answers = dns_response.get_answer();
@@ -883,7 +931,7 @@ pub fn qtype_soa_example(dns_response: DnsMessage){
     assert_eq!(op_code,0);
     
 
-    //Question Section
+    //QUESTION SECTION
     let qname = question.get_qname().get_name();
     let qtype = question.get_qtype();
     let qclass = question.get_qclass();
@@ -892,11 +940,9 @@ pub fn qtype_soa_example(dns_response: DnsMessage){
     assert_eq!(qclass, 1);
     assert_eq!(qtype, 6);
 
-    //Answer Section
+    //ANSWER SECTION
     let answer_len = answers.len();
     assert_eq!(answer_len, 1);
-
-    //Answer Section
     let answers = dns_response.get_answer();
     
     for answer in answers {
@@ -945,7 +991,7 @@ pub fn qtype_hinfo_example(dns_response: DnsMessage){
    //FIXME:aveces falla , con el error rcode = 2 server failure ???
 
 
-    //dns message
+    //DNS MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
     let answers = dns_response.get_answer();
@@ -1077,7 +1123,7 @@ pub fn qtype_txt_example(dns_response: DnsMessage){
 //     //TODO: No está hecha
 
 
-//     //dns message
+//     //DNS MESSAGE
 //     let header = dns_response.get_header();
 //     let question = dns_response.get_question();
 //     let answers = dns_response.get_answer();
@@ -1120,7 +1166,7 @@ pub fn qtype_txt_example(dns_response: DnsMessage){
 
     //TODO: No esta hecho 
 
-    // //dns message
+    // //DNS MESSAGE
     // let header = dns_response.get_header();
     // let question = dns_response.get_question();
     // let answers = dns_response.get_answer();
@@ -1163,7 +1209,7 @@ pub fn qtype_txt_example(dns_response: DnsMessage){
 // pub fn qtype_wks_example(dns_response: DnsMessage){
     //TODO: No esta hecho 
 
-    // //dns message
+    // //DNS MESSAGE
     // let header = dns_response.get_header();
     // let question = dns_response.get_question();
     // let answers = dns_response.get_answer();
@@ -1206,7 +1252,7 @@ pub fn qtype_txt_example(dns_response: DnsMessage){
 pub fn qtype_cname(dns_response: DnsMessage){
     //FIXME:
 
-    //dns message
+    //DNS MESSAGE
     let header = dns_response.get_header();
     let question = dns_response.get_question();
     let answers = dns_response.get_answer();

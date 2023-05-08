@@ -3784,7 +3784,7 @@ mod resolver_query_tests {
     let mut sbelt = Slist::new();
     sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
     let (_resp1, _resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
-    assert_eq!(_resp1, None) //Expected None
+    assert_eq!(_resp1, None) //Expected None because we have no local info to return so we get a tuple of (None, None)
      }
 
     // //ToDo: Revisar Práctica/in progress

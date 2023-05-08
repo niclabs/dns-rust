@@ -3659,7 +3659,7 @@ mod resolver_query_tests {
      }
 
      #[test]
-     #[ignore = "TODO: stack overflow at NameServer::search_nearest_ancestor_zone"]
+     #[ignore = "Divisor by 0"]
      fn step_1_udp() {
          // Channels
          let (add_sender_udp, _add_recv_udp) = mpsc::channel();

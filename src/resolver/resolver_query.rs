@@ -507,7 +507,7 @@ impl ResolverQuery {
         let mut cache = self.get_cache();
         let cache_answer = cache.get(s_name.clone(), s_type);
         let mut rrs_cache_answer = Vec::new();
-        
+
         // The desired QCLASS in not *, then not all classes need to be matched
         if s_class != asterisk_s_class {
             for rr in cache_answer {
@@ -2652,7 +2652,7 @@ mod resolver_query_tests {
         a_resource_record.set_type_code(1);
         cache.add("test2.com".to_string(), ns_resource_record);
         resolver_query.set_cache(cache);
-        let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
+        let socket = UdpSocket::bind("127.0.0.1:33333").expect("couldn't bind to address");
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
 
         let mut sbelt = Slist::new();
@@ -4485,109 +4485,86 @@ mod resolver_query_tests {
     //     assert_eq!(1, expected_vec.len());
     // }
 
-    // #[test]
-    // fn step_2_udp_empty() {
-    //     // Channels
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    //     let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    //     let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    //     let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-    //     let (tx_update_query, _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    //     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-    //     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    //     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    //     let mut resolver_query = ResolverQuery::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         add_sender_ns_udp,
-    //         delete_sender_ns_udp,
-    //         add_sender_ns_tcp,
-    //         delete_sender_ns_tcp,
-    //         tx_update_query,
-    //         tx_delete_query,
-    //         DnsMessage::new(),
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_cache_ns_udp,
-    //         tx_update_cache_ns_tcp,
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
-    //     resolver_query.set_sname("test.com".to_string());
-    //     let slist = Slist::new();
-    //     resolver_query.set_slist(slist);
-    //     let socket = UdpSocket::bind("127.0.0.1:10400").expect("couldn't bind to address");
-    //     resolver_query.step_2_udp(socket);
-    //     let resolver = resolver_query.clone();
-    //     //the test fail when we try to do the get first, probably the slist is empty after
-    //     //the step_2_tcp
-    //     let expected_slist = resolver.get_slist().get_ns_list();
-    //     let len = expected_slist.len();
-    //     assert_eq!(len, 0);
-    // }
+     #[test]
+     fn step_2_udp_empty() {
+         // Channels
+         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+         let (tx_update_query, _rx_update_query) = mpsc::channel();
+         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+         let mut resolver_query = ResolverQuery::new(
+             add_sender_udp,
+             delete_sender_udp,
+             add_sender_tcp,
+             delete_sender_tcp,
+             tx_update_query,
+             tx_delete_query,
+             DnsMessage::new(),
+             tx_update_cache_udp,
+             tx_update_cache_tcp,
+             tx_update_slist_tcp,
+             tx_update_self_slist,
+         );         
+         resolver_query.set_sname("test.com".to_string());
+         let slist = Slist::new();
+         resolver_query.set_slist(slist);
+         let socket = UdpSocket::bind("127.0.0.1:10400").expect("couldn't bind to address");
+         resolver_query.step_2_udp(socket);
+         let resolver = resolver_query.clone();
+         //the test fail when we try to do the get first, probably the slist is empty after
+         //the step_2_tcp
+         let expected_slist = resolver.get_slist().get_ns_list();
+         let len = expected_slist.len();
+         assert_eq!(len, 0);
+     }
 
-    // #[test]
-    // //slist is empty after step 2
-    // fn step_2_udp() {
-    //     // Channels
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    //     let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    //     let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    //     let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-    //     let (tx_update_query, _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    //     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-    //     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    //     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    //     let mut resolver_query = ResolverQuery::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         add_sender_ns_udp,
-    //         delete_sender_ns_udp,
-    //         add_sender_ns_tcp,
-    //         delete_sender_ns_tcp,
-    //         tx_update_query,
-    //         tx_delete_query,
-    //         DnsMessage::new(),
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_cache_ns_udp,
-    //         tx_update_cache_ns_tcp,
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
-    //     resolver_query.set_sname("test.com".to_string());
-    //     let mut slist = Slist::new();
-    //     slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
-    //     resolver_query.set_slist(slist);
-    //     let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
-    //     resolver_query.step_2_udp(socket);
-    //     let resolver = resolver_query.clone();
-    //     //the test fail when we try to do the get first, probably the slist is empty after
-    //     //the step_2_tcp
-    //     let expected_slist = resolver.get_slist().get_ns_list();
-    //     let len = expected_slist.len();
-    //     assert_eq!(len, 0);
-    // }
+     #[test]
+     //slist is empty after step 2
+     fn step_2_udp() {
+         // Channels
+         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+         let (tx_update_query, _rx_update_query) = mpsc::channel();
+         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+         let mut resolver_query = ResolverQuery::new(
+             add_sender_udp,
+             delete_sender_udp,
+             add_sender_tcp,
+             delete_sender_tcp,
+             tx_update_query,
+             tx_delete_query,
+             DnsMessage::new(),
+             tx_update_cache_udp,
+             tx_update_cache_tcp,
+             tx_update_slist_tcp,
+             tx_update_self_slist,
+         );       
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+         let mut slist = Slist::new();
+         slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+         resolver_query.set_slist(slist);
+         let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
+         resolver_query.step_2_udp(socket);
+         let resolver = resolver_query.clone();
+         //the test fail when we try to do the get first, probably the slist is empty after
+         //the step_2_tcp
+         let expected_slist = resolver.get_slist().get_ns_list();
+         let len = expected_slist.len();
+         println!("el largo es .{len}.");
+         assert_eq!(len, 0);
+     }
 
     // #[test]
     // #[ignore = "TODO: stack overflow at NameServer::search_nearest_ancestor_zone"]

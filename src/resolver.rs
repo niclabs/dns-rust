@@ -591,6 +591,47 @@ impl Resolver {
         }
     }
 
+    /// Retrieves DNS messages received from an UDP socket and their respective origin addresses.
+    ///
+    /// Given an UDP socket and a HashMap of DNS messages, this function returns the DNS messages
+    /// that were received along with their address of origin.
+    /// 
+    /// In case of a format error in the DNS message, a response is sent.
+    fn receive_udp_msg_value(
+        &mut self, 
+        socket: UdpSocket, 
+        messages: HashMap<u16, DnsMessage>) -> (DnsMessage, String) {
+        println!("{}", "Waiting msg");
+
+        // We receive the msg
+        let dns_message_option =
+            Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
+        let dns_message;
+        let src_address;
+
+        println!("{}", "Message recv");
+
+        match dns_message_option {
+            Some(val) => {
+                dns_message = val.0;
+                src_address = val.1;
+            }
+            None => {
+                (dns_message, src_address) = (DnsMessage::new(), "".to_string());
+            }
+        }
+
+        // Format Error
+        if dns_message.get_header().get_rcode() == 1 {
+            Resolver::send_answer_by_udp(
+                dns_message.clone(),
+                src_address.clone(),
+                &socket.try_clone().unwrap(),
+            );
+        }
+        return (dns_message, src_address);
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

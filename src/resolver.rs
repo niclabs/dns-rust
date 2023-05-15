@@ -1088,11 +1088,14 @@ impl Resolver {
  #[cfg(test)]
 mod resolver_test {
     use crate::dns_cache::DnsCache;
+    use crate::message::DnsMessage;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::resolver::slist::Slist;
     use crate::resolver::Resolver;
+    use std::collections::HashMap;
+    use std::net::UdpSocket;
     use std::sync::mpsc;
 
     #[test]
@@ -1427,5 +1430,41 @@ mod resolver_test {
         /*if the message was correctly sent it should work with the variable
         created with the get fn used*/
         assert_eq!(msg_result, msg.clone());
+    }
+
+    // ToDo: finish tests after testing receive_udp_msg
+    #[test]
+    #[ignore = "Stuck at receiving message in Resolver::receive_udp_msg."]
+    fn receive_udp_msg_value() {
+        // Create resolver channels
+        let (add_sender_udp, 
+            _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, 
+            _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, 
+            _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, 
+            _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, 
+            _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, 
+            _rx_update_cache_tcp) = mpsc::channel();
+            
+        let mut resolver = Resolver::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+        );
+
+        let host_address_and_port = "127.0.0.1:34254";
+        let socket = UdpSocket::bind(host_address_and_port).expect("Failed to bind host socket");
+        let messages = HashMap::<u16, DnsMessage>::new();
+        let (dns_message, src_address) = resolver.receive_udp_msg_value(socket.try_clone().unwrap(), messages.clone());
+        
+        assert_eq!(dns_message.get_answer().len(), 0);
+        assert!(!src_address.is_empty());
     }
  }

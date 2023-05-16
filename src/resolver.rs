@@ -1497,4 +1497,37 @@ mod resolver_test {
         assert_eq!(dns_message.get_query_id(), 1);
         assert_eq!(dns_message.get_question().get_qname().to_string(), String::from("test.com"));
     }
+
+    #[test]
+    fn receive_udp_msg_with_existing_msg() {
+        let mut messages = HashMap::<u16, DnsMessage>::new();
+        let dns_message_to_send =
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+        messages.insert(1, dns_message_to_send.clone()); 
+
+        let origin_port_address = "127.0.0.1:34254";
+        let socket_origin = UdpSocket::bind(origin_port_address).expect("Failed to bind host socket");
+        
+        // Send a message to the origin socket
+        let socket_to_send_msg = UdpSocket::bind("127.0.0.1:4242").expect("Failed to bind host socket");
+        let _result = socket_to_send_msg.connect(origin_port_address);
+        socket_to_send_msg.send_to(&dns_message_to_send.to_bytes(), origin_port_address).expect("couldn't send data");
+   
+        let dns_message_option = Resolver::receive_udp_msg(socket_origin, messages);
+        
+        let dns_message;
+        let msg_origin_address;
+        match dns_message_option {
+            Some(value) => {
+                dns_message = value.0;
+                msg_origin_address = value.1;
+            }
+            None => {panic!("No message received")}
+
+        };
+
+        assert_eq!(dns_message.get_query_id(), 1);
+        assert_eq!(dns_message.get_question().get_qname().to_string(), String::from("test.com"));
+        assert_eq!(msg_origin_address, "127.0.0.1:4242");
+    }
  }

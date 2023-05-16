@@ -1469,7 +1469,7 @@ mod resolver_test {
     }
 
     #[test]
-    fn receive_udp_msg() {
+    fn receive_udp_msg_empty_messages() {
         let messages = HashMap::<u16, DnsMessage>::new();
         let origin_port_address = "127.0.0.1:34254";
         let socket_origin = UdpSocket::bind(origin_port_address).expect("Failed to bind host socket");
@@ -1484,11 +1484,11 @@ mod resolver_test {
         let dns_message_option = Resolver::receive_udp_msg(socket_origin, messages);
         
         let dns_message;
-        let _address;
+        let msg_origin_address;
         match dns_message_option {
             Some(value) => {
                 dns_message = value.0;
-                _address = value.1;
+                msg_origin_address = value.1;
             }
             None => {panic!("No message received")}
 
@@ -1496,6 +1496,7 @@ mod resolver_test {
 
         assert_eq!(dns_message.get_query_id(), 1);
         assert_eq!(dns_message.get_question().get_qname().to_string(), String::from("test.com"));
+        assert_eq!(msg_origin_address, "127.0.0.1:4242");
     }
 
     #[test]

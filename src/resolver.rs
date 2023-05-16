@@ -1432,9 +1432,7 @@ mod resolver_test {
         assert_eq!(msg_result, msg.clone());
     }
 
-    // ToDo: finish tests after testing receive_udp_msg
     #[test]
-    #[ignore = "Stuck at receiving message in Resolver::receive_udp_msg."]
     fn receive_udp_msg_value() {
         // Create resolver channels
         let (add_sender_udp, 
@@ -1460,12 +1458,22 @@ mod resolver_test {
         );
 
         let host_address_and_port = "127.0.0.1:34254";
-        let socket = UdpSocket::bind(host_address_and_port).expect("Failed to bind host socket");
+        let host_socket = UdpSocket::bind(host_address_and_port).expect("Failed to bind host socket");
         let messages = HashMap::<u16, DnsMessage>::new();
-        let (dns_message, src_address) = resolver.receive_udp_msg_value(socket.try_clone().unwrap(), messages.clone());
+
+        // Send a message to the origin host socket
+        let dns_query_message = 
+            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+        let socket_to_send_msg = UdpSocket::bind("127.0.0.1:4242").expect("Failed to bind host socket");
+        let _result = socket_to_send_msg.connect(host_address_and_port);
+        socket_to_send_msg.send_to(&dns_query_message.to_bytes(), host_address_and_port).expect("couldn't send data");
+
+        let (dns_message, src_address) = resolver.receive_udp_msg_value(host_socket.try_clone().unwrap(), messages.clone());
         
         assert_eq!(dns_message.get_answer().len(), 0);
-        assert!(!src_address.is_empty());
+        assert_eq!(dns_message.get_query_id(), 1);
+        assert_eq!(dns_message.get_question().get_qname().to_string(), String::from("test.com"));
+        assert_eq!(src_address, "127.0.0.1:4242");
     }
 
     #[test]

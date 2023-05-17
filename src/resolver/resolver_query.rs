@@ -3980,47 +3980,45 @@ mod resolver_query_tests {
          // Verify that the correct record is returned
      }
 
-    // #[test]
-    // //TODO (see if the senders are equals)
-    // fn get_tx_delete_query() {
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    //     let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    //     let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    //     let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-    //     let (tx_update_query, _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    //     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-    //     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    //     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    //     let resolver_query = ResolverQuery::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         add_sender_ns_udp,
-    //         delete_sender_ns_udp,
-    //         add_sender_ns_tcp,
-    //         delete_sender_ns_tcp,
-    //         tx_update_query,
-    //         tx_delete_query.clone(),
-    //         DnsMessage::new(),
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_cache_ns_udp,
-    //         tx_update_cache_ns_tcp,
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
-    //     let _tx_delete_query_copy = resolver_query.get_tx_delete_query();
-    //     //assert_eq!(&tx_delete_query, &_tx_delete_query_copy);
-    // }
+     #[test]
+     //TODO (see if the senders are equals)
+     fn get_tx_delete_query() {
+     // Channels
+     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+     let (tx_update_query, _rx_update_query) = mpsc::channel();
+     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+     let resolver_query = ResolverQuery::new(
+         add_sender_udp,
+         delete_sender_udp,
+         add_sender_tcp,
+         delete_sender_tcp, 
+         tx_update_query,
+         tx_delete_query,
+         DnsMessage::new(),
+         tx_update_cache_udp,
+         tx_update_cache_tcp,
+         tx_update_slist_tcp,
+         tx_update_self_slist,
+     );
+     let mut rq_copy = resolver_query.clone();
+     let address= "test_address".to_string();
+     rq_copy.set_src_address(address.clone());
+     let _tx_delete_query_copy = resolver_query.get_tx_delete_query();
+     let _rx_delete_query_copy = _rx_delete_query;
+     let msg = rq_copy;
+     _tx_delete_query_copy.send(msg).unwrap();
+     let rq_result = _rx_delete_query_copy.recv().unwrap();
+     assert_eq!(rq_result.get_src_address(),address.clone());
+
+
+    }
 
     // #[test]
     // fn get_zone_nodes_rrs_by_type() {

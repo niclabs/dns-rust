@@ -628,6 +628,33 @@ impl Resolver {
         return (dns_message, src_address);
     }
 
+    /// Updates the queries in the resolver.
+    ///
+    /// Given a references to a Receiver with the queries to update and a HashMap to
+    /// store the queries, this function iterates over each query that needs to be updated and 
+    /// updates the corresponding entries in the `queries_hash_by_id` HashMap.
+    fn update_queries(
+        &mut self, 
+        rx_update_query: & Receiver<ResolverQuery>, 
+        queries_hash_by_id: &mut HashMap<u16, ResolverQuery>) {
+        // Iterate in each query which needs to be updated
+        let mut queries_to_update = rx_update_query.try_iter();
+        let mut next_query_to_update = queries_to_update.next();
+
+        println!("Queries before update len: {}", queries_hash_by_id.len());
+
+        while next_query_to_update.is_none() == false {
+            println!("Queries to update");
+            let resolver_query_to_update = next_query_to_update.unwrap();
+            let id: u16 = resolver_query_to_update.get_main_query_id();
+            println!("Queries to update: {}", id);
+            queries_hash_by_id.insert(id, resolver_query_to_update);
+
+            next_query_to_update = queries_to_update.next();
+        }
+        println!("Queries len: {}", queries_hash_by_id.len());
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

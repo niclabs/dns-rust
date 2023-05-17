@@ -630,9 +630,9 @@ impl Resolver {
 
     /// Updates the queries in the resolver.
     ///
-    /// Given a references to a Receiver with the queries to update and a HashMap to
-    /// store the queries, this function iterates over each query that needs to be updated and 
-    /// updates the corresponding entries in the `queries_hash_by_id` HashMap.
+    /// Given a references to a Receiver with the queries to update and a HashMap which saves 
+    /// the queries in process, this function iterates over each query that needs to be 
+    /// updated and updates the corresponding entries in the `queries_hash_by_id` HashMap.
     fn update_queries(
         &mut self, 
         rx_update_query: & Receiver<ResolverQuery>, 
@@ -1123,7 +1123,9 @@ mod resolver_test {
     use crate::resolver::Resolver;
     use std::collections::HashMap;
     use std::net::UdpSocket;
-    use std::sync::mpsc;
+    use std::sync::mpsc::{self, Sender, Receiver};
+
+    use super::resolver_query::ResolverQuery;
 
     #[test]
     fn constructor() {

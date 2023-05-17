@@ -1568,4 +1568,41 @@ mod resolver_test {
         assert_eq!(dns_message.get_question().get_qname().to_string(), String::from("test.com"));
         assert_eq!(msg_origin_address, "127.0.0.1:4242");
     }
+
+    #[test]
+    fn update_queries_empy() {
+        // Create resolver channels
+        let (add_sender_udp, 
+            _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, 
+            _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, 
+            _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, 
+            _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, 
+            _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, 
+            _rx_update_cache_tcp) = mpsc::channel();
+
+        let mut resolver = Resolver::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+        );
+
+        // Hashmap to save the queries in process
+        let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+    
+        // Channel to update resolver queries from queries in progress
+        let (_tx_update_query, rx_update_query): 
+        (Sender<ResolverQuery>, Receiver<ResolverQuery>) = mpsc::channel();
+        resolver.update_queries(&rx_update_query, &mut queries_hash_by_id);
+        
+        // It should be empty since no query was given
+        assert!(queries_hash_by_id.is_empty());
+    }
  }

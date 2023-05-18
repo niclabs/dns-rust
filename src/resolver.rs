@@ -197,24 +197,25 @@ impl Resolver {
 
             self.update_queries(&rx_update_query, &mut queries_hash_by_id);
 
-            // Delete queries already answered ---- REFACTOR delete_answered_queries() 
-            let mut queries_to_delete = rx_delete_query.try_iter();
+            // // Delete queries already answered ---- REFACTOR delete_answered_queries() 
+            // let mut queries_to_delete = rx_delete_query.try_iter();
 
-            let mut next_query_value = queries_to_delete.next();
+            // let mut next_query_value = queries_to_delete.next();
 
-            while next_query_value.is_none() == false {
-                let resolver_query_to_delete = next_query_value.unwrap();
-                let id: u16 = resolver_query_to_delete.get_main_query_id();
+            // while next_query_value.is_none() == false {
+            //     let resolver_query_to_delete = next_query_value.unwrap();
+            //     let id: u16 = resolver_query_to_delete.get_main_query_id();
 
-                println!("Queries to delete: {}", id);
+            //     println!("Queries to delete: {}", id);
 
-                queries_hash_by_id.remove(&id);
+            //     queries_hash_by_id.remove(&id);
 
-                next_query_value = queries_to_delete.next();
-            }
+            //     next_query_value = queries_to_delete.next();
+            // }
 
-            println!("Queries len after delete: {}", queries_hash_by_id.len());
-            // ----- REFACTOR delete_answered_queries() until here
+            // println!("Queries len after delete: {}", queries_hash_by_id.len());
+            // // ----- REFACTOR delete_answered_queries() until here
+            self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
 
             // Delete from cache
 

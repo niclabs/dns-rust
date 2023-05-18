@@ -1697,4 +1697,68 @@ mod resolver_test {
             assert_eq!(host_name, query.get_last_query_hostname());
         }
     }
+
+    #[test]
+    fn delete_single_answered_query() {
+        // Create resolver channels
+        let (add_sender_udp, 
+            _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, 
+            _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, 
+            _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, 
+            _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, 
+            _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, 
+            _rx_update_cache_tcp) = mpsc::channel();
+
+        let mut resolver = Resolver::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+        );
+
+        // Channel to delete queries
+        let (tx_update_query, 
+            _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, 
+            rx_delete_query) = mpsc::channel();
+        let (tx_update_slist_tcp, 
+            _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, 
+            _rx_update_self_slist) = mpsc::channel();
+
+        let mut resolver_query = ResolverQuery::new(
+            resolver.get_add_sender_udp(),
+            resolver.get_delete_sender_udp(),
+            resolver.get_add_sender_tcp(),
+            resolver.get_delete_sender_tcp(),
+            tx_update_query.clone(),
+            tx_delete_query.clone(),
+            DnsMessage::new(),
+            resolver.get_update_cache_tcp(),
+            resolver.get_update_cache_tcp(),
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+
+        let host_name = String::from("test.com");
+        let query_id = resolver_query.get_main_query_id();
+        resolver_query.set_last_query_hostname(host_name.clone());
+
+        // Hashmap which saves the queries in process
+        let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+        queries_hash_by_id.insert(query_id.clone(), resolver_query.clone());
+
+        let _result = tx_delete_query.send(resolver_query);
+        
+        assert_eq!(queries_hash_by_id.len(), 1);   
+        resolver.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
+        assert_eq!(queries_hash_by_id.len(), 0);
+    }
  }

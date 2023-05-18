@@ -653,6 +653,30 @@ impl Resolver {
         println!("Queries len: {}", queries_hash_by_id.len());
     }
 
+    /// Deletes the queries that have been answered from the HashMap of queries.
+    ///
+    /// Given a reference to a Receiver of `ResolverQuery`(`rx_delete_query`), and a mutable 
+    /// reference to a HashMap of queries (`queries_hash_by_id`), this method iterates over 
+    /// the received queries and removes the ones that have been answered from the HashMap 
+    /// based on their ID.
+    fn delete_answered_queries(&mut self, 
+        rx_delete_query: & Receiver<ResolverQuery>, 
+        queries_hash_by_id: &mut HashMap<u16, ResolverQuery>) {
+        // Delete queries already answered
+        let mut queries_to_delete = rx_delete_query.try_iter();
+        let mut next_query_value = queries_to_delete.next();
+
+        while next_query_value.is_none() == false {
+            let resolver_query_to_delete = next_query_value.unwrap();
+            let id: u16 = resolver_query_to_delete.get_main_query_id();
+            println!("Queries to delete: {}", id);
+            queries_hash_by_id.remove(&id);
+
+            next_query_value = queries_to_delete.next();
+        }
+        println!("Queries length after delete: {}", queries_hash_by_id.len());
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

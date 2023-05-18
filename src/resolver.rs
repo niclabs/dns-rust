@@ -1641,30 +1641,37 @@ mod resolver_test {
         let (tx_update_self_slist, 
             _rx_update_self_slist) = mpsc::channel();
 
-        // DNS message to send
-        let dns_message_to_send =
-            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
-
-        let resolver_query = ResolverQuery::new(
+        let mut resolver_query = ResolverQuery::new(
             resolver.get_add_sender_udp(),
             resolver.get_delete_sender_udp(),
             resolver.get_add_sender_tcp(),
             resolver.get_delete_sender_tcp(),
             tx_update_query.clone(),
             tx_delete_query,
-            dns_message_to_send,
+            DnsMessage::new(),
             resolver.get_update_cache_tcp(),
             resolver.get_update_cache_tcp(),
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
 
+        let host_name = String::from("test.com");
+        let query_id = resolver_query.get_main_query_id();
+        resolver_query.set_last_query_hostname(host_name.clone());
+
         let _result = tx_update_query.send(resolver_query);
 
         // Hashmap to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
-        assert_eq!(queries_hash_by_id.len(), 0);        
+        assert_eq!(queries_hash_by_id.len(), 0);   
+             
         resolver.update_queries(&rx_update_query, &mut queries_hash_by_id);
         assert_eq!(queries_hash_by_id.len(), 1);
+
+        // Query added with correct ID
+        for (id, query) in queries_hash_by_id {
+            assert_eq!(id, query_id);
+            assert_eq!(host_name, query.get_last_query_hostname());
+        }
     }
  }

@@ -197,8 +197,7 @@ impl Resolver {
 
             self.update_queries(&rx_update_query, &mut queries_hash_by_id);
 
-            // Delete queries already answered
-
+            // Delete queries already answered ---- REFACTOR delete_answered_queries() 
             let mut queries_to_delete = rx_delete_query.try_iter();
 
             let mut next_query_value = queries_to_delete.next();
@@ -214,9 +213,8 @@ impl Resolver {
                 next_query_value = queries_to_delete.next();
             }
 
-            //
-
             println!("Queries len after delete: {}", queries_hash_by_id.len());
+            // ----- REFACTOR delete_answered_queries() until here
 
             // Delete from cache
 
@@ -1664,7 +1662,7 @@ mod resolver_test {
         // Hashmap to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
         assert_eq!(queries_hash_by_id.len(), 0);   
-             
+
         resolver.update_queries(&rx_update_query, &mut queries_hash_by_id);
         assert_eq!(queries_hash_by_id.len(), 1);
 

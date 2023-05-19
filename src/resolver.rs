@@ -77,7 +77,7 @@ impl Resolver {
 
         //set sbelt
         let mut sbelt = Slist::new();
-        for ip in sbelt_root_ips {
+        for &ip in sbelt_root_ips {
             sbelt.insert(".".to_string(), ip.to_string(), 5000);
         }
         self.set_sbelt(sbelt);

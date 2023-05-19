@@ -70,29 +70,27 @@ pub static CLIENT_IP_PORT: &'static str = "CLIENT_IP:CLIENT_PORT";
 
 ## Usage
 
-The library is build and run through `cargo` with the command:
+The library is built and run through `cargo` with the run the command `cargo run` followed by any necessary option. 
 
-```
-cargo run
-```
-
-When run it show the following menu:
-
-```
-Rustlang library for DNS
-Name server compatible with RFC 1034 and RFC 1035 only.
-To only check the validity of a Master file, enter MF.
-For other services, enter program to run: 
-   [C] Client
-   [R] Resolver
-   [N] Nameserver
-   [NR] Nameserver and Resolver
+```sh 
+cargo run -- [options]
 ```
 
-Here you can select whether to run a *client*, a *server*, a *nameserver* or a *nameserver* with a *resolver*. Note that if you want to run a resolver and a client in the same machine it is necessaryto run two instances of the library.
+Here you can specify whether to run: *client* or a *server*. Note that if you want to run a resolver and a client in the same machine it is necessary to run two instances of the library.
 
-In addition, the library allows you to validate a Master file, for this you need to enter the ``MF`` command as it says in the menu and the file specified in ```config.rs``` file will be check.
+### Options:
 
+| Argument | Description |
+|----------|-------------|
+|   `-c`   | Exceute a client that connects to the server and sends requests. |
+|   `-r`   | Runs a DNS resolver |
+
+### Example:
+For example, to execute a new client:
+
+```sh
+cargo run -- -c
+```
 ## Development features
 
 ### GitHub Actions
@@ -105,6 +103,6 @@ Coming soon.
 
 ## Contact
 
-Javiera B.
+Javiera Alegria.
 - github user @Javi801
 - email javi@niclabs.cl

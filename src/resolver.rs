@@ -72,7 +72,7 @@ impl Resolver {
     }
 
     /// Sets the initial IP, PORT and SBELT values.
-    pub fn set_initial_configuration(&mut self, resolver_ip_port: &str, sbelt_root_ips: [&str; 3]) {
+    pub fn set_initial_configuration(&mut self, resolver_ip_port: &str, sbelt_root_ips: &'static [&'static str]) {
         self.set_ip_address(resolver_ip_port.to_string());
 
         //set sbelt

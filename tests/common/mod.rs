@@ -13,7 +13,7 @@ use dns_rust::{
 
 
 
-pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips: [&str;3]) {
+pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips: &'static [&'static str]) {
     // Channels
     let (add_sender_udp, add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, delete_recv_udp) = mpsc::channel();

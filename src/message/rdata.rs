@@ -174,6 +174,15 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomeTxtRdata(rdata))
             }
             ////////////////////////////////////////////////////////////
+            //////////////// Replace the next line when type  OPT is implemented ////////////
+            41 => {
+                println!("OPT");
+                let rdata = TxtRdata::new(vec!["OPT".to_string()]);
+
+                Ok(Rdata::SomeTxtRdata(rdata))
+            }
+            //////////////////////////////////////////////////////////////
+
             _ => Err("Format Error"),
         };
 

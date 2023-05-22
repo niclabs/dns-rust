@@ -21,7 +21,7 @@ As this library is build it in rustlang, is mandatory to have [**Rust**](https:/
 ### Installation
 
 
-1. Clone the repo
+1. Clone the repository.
 
 ```
 git clone https://github.com/niclabs/dns-rust.git

@@ -1,0 +1,30 @@
+version: "4"
+services:
+  resolver:
+    build: .
+    image: dns-rust:latest
+    ports:
+      - "58396:58396"
+    network_mode: "dns"
+    command: cargo run -- -r
+  client:
+    build: .
+    image: dns-rust:latest
+    network_mode: "dns"
+    command: cargo run -- -c
+  tests:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - coverage:/home/dns-rust/coverage/
+    command: cargo test
+    image: dns-rust:test
+
+volumes:
+  coverage:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/coverage/
+      o: bind

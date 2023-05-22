@@ -1,0 +1,16 @@
+# Rust official image
+FROM rust:latest
+
+RUN rustup component add llvm-tools-preview \
+    && cargo install grcov 
+
+# Set working directory
+WORKDIR /home/dns-rust
+
+# Copy the project
+COPY . .
+
+RUN cargo clean \
+    && cargo test --no-run \
+    && grcov . --binary-path ./target/debug/ -s . -t html --branch --ignore-not-existing --ignore "*cargo*" -o ./coverage/html/ \
+    && grcov . --binary-path ./target/debug/ -s . --ignore-not-existing --ignore "\*cargo\*" -t lcov > coverage/lcov.info

@@ -236,7 +236,7 @@ impl Resolver {
             self.set_cache(cache);
             // delete_from_cache() ENDS
 
-            // REFACTOR update_response_time_cache()
+            // REFACTOR update_cache_response_time_udp()
             // Update response time cache
 
             let mut received_update = rx_update_cache_udp.try_iter();
@@ -252,7 +252,7 @@ impl Resolver {
             }
 
             self.set_cache(cache);
-            // update_response_time_cache() ENDS
+            // update_cache_response_time_udp() ENDS
 
             // Adding to Cache
 
@@ -699,6 +699,30 @@ impl Resolver {
         self.set_cache(cache);
     }
 
+    /// Updates the response time in the cache for the given host names received over UDP.
+    ///
+    /// This function takes a reference to a Receiver of tuples `(String, String, u32)` 
+    /// (`rx_update_cache_udp`). It iterates over the received host names, addresses, 
+    /// and response times and updates the corresponding entries in the cache.
+    fn update_cache_response_time_udp(
+        &mut self, 
+        rx_update_cache_udp: & Receiver<(String, String, u32)>) {
+        let mut received_update = rx_update_cache_udp.try_iter();
+        let mut next_value = received_update.next();
+        let mut cache = self.get_cache();
+
+        while next_value.is_none() == false {
+            let (host_name, address, response_time) = next_value.unwrap();
+            cache.update_response_time(
+                host_name, 
+                "A".to_string(), 
+                response_time, 
+                address);
+            next_value = received_update.next();
+        }
+        self.set_cache(cache);
+    }
+    
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

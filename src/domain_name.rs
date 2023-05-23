@@ -58,7 +58,7 @@ impl DomainName {
         let mut first_byte = bytes[0].clone();
         let mut domain_name_str = "".to_string();
         let mut no_domain_bytes = bytes.clone();
-
+       
         while first_byte != 0 {
             let bytes_len = no_domain_bytes.len();
             let msg_compresion = first_byte.clone() >> 6;
@@ -114,14 +114,14 @@ impl DomainName {
                 first_byte = no_domain_bytes[0].clone();
             }
         }
-
         if first_byte == 0 {
             no_domain_bytes = &no_domain_bytes[1..];
         }
 
-        //if domain_name_str.len() > 0 {
+        if domain_name_str.len() > 0 {
+            //remove last value 0
         domain_name_str.remove(domain_name_str.len() - 1);
-        //}
+        }
 
         // Check domain name restriction, max 255 octets
         let initial_bytes_len = bytes.len();

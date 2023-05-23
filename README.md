@@ -1,7 +1,7 @@
 # Rust implementation of DNS library
 
 This project aims to implement a DNS library in rustlang based on, and only on, DNS-related RFCs. 
-With this library it can be validate a masterfile and it can be build a DNS Client, and a DNS resolver.
+With this library it can be build a DNS Client, and a DNS resolver.
 
 Implementation in progress.
 

@@ -217,7 +217,8 @@ impl Resolver {
             // // ----- REFACTOR delete_answered_queries() until here
             self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
 
-            // Delete from cache
+            // REFACTOR delete_from_cache() BEGINS
+            // Delete from cache 
 
             let mut received_delete = rx_delete_udp.try_iter();
 
@@ -233,9 +234,9 @@ impl Resolver {
             }
 
             self.set_cache(cache);
+            // delete_from_cache() ENDS
 
-            //
-
+            // REFACTOR update_response_time_cache()
             // Update response time cache
 
             let mut received_update = rx_update_cache_udp.try_iter();
@@ -251,8 +252,7 @@ impl Resolver {
             }
 
             self.set_cache(cache);
-
-            //
+            // update_response_time_cache() ENDS
 
             // Adding to Cache
 

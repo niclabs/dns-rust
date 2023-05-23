@@ -1,7 +1,7 @@
 # Rust implementation of DNS library
 
 This project aims to implement a DNS library in rustlang based on, and only on, DNS-related RFCs. 
-With this library it can be validate a masterfile and it can be build a DNS Client, DNS Nameserver and a DNS resolver.
+With this library it can be build a DNS Client, and a DNS resolver.
 
 Implementation in progress.
 
@@ -21,78 +21,58 @@ As this library is build it in rustlang, is mandatory to have [**Rust**](https:/
 ### Installation
 
 
-1. Clone the repo
+1. Clone the repository.
 
 ```
 git clone https://github.com/niclabs/dns-rust.git
 ```
 
-2. Set resolver and name server configuration in `.../src/config.rs`. 
+1. Set resolver configuration in `.../src/config.rs`. 
 
    The resolver configuration is as follows:
 
    - Set the IP and PORT that will host and use the resolver.
 
-   ```
+   ```Rust
    pub static RESOLVER_IP_PORT: &'static str = "RESOLVER_IP:RESOLVER_PORT";
    ```
 
    - (Optional) Update ```SBELT_ROOT_IPS``` variable with the addresses of the root server and the host server in the SBelt.
    - (Optional) Update ```QUERIES_FOR_CLIENT_REQUEST``` variable with the number of queries before the resolver panic in a Temporary Error.
 
-   As for the name server:
-
-   - Set the IP and PORT that will host the name server:
-
-   ```
-   pub static NAME_SERVER_IP: &'static str = "NAME_SERVER_IP"
-   ```
-
-   - Set the Master file name and path, and the origin value if not specified in the Master file.
-
-   ```
-   pub static MASTER_FILES: [(&str,&str );1] = [("MASTER_FILE", "ORIGIN")];
-   ```
-
-   - (Optional) Update ``RECURSIVE_AVAILABLE`` variable if recursive name server is not available
-   - (Optional) Update `CHECK_MASTER_FILES` variable to not check the Master file validity.
-
-
-3. Set client configuration in `.../src/client/config.rs`.
+2. Set client configuration in `.../src/client/config.rs`.
 
    - Set the IP and PORT that host the resolver.
    - Set the IP and PORT where the client will run.
 
-``` 
-pub static RESOLVER_IP_PORT: &'static str = "RESOLVER_IP:RESOLVER_PORT";
-pub static CLIENT_IP_PORT: &'static str = "CLIENT_IP:CLIENT_PORT";
-```
+   ```Rust
+   pub static RESOLVER_IP_PORT: &'static str = "RESOLVER_IP:RESOLVER_PORT";
+   pub static CLIENT_IP_PORT: &'static str = "CLIENT_IP:CLIENT_PORT";
+   ```
 
 ## Usage
 
-The library is build and run through `cargo` with the command:
+The library is built and run through `cargo` with the run the command `cargo run` followed by any necessary option. 
 
-```
-cargo run
-```
-
-When run it show the following menu:
-
-```
-Rustlang library for DNS
-Name server compatible with RFC 1034 and RFC 1035 only.
-To only check the validity of a Master file, enter MF.
-For other services, enter program to run: 
-   [C] Client
-   [R] Resolver
-   [N] Nameserver
-   [NR] Nameserver and Resolver
+```sh 
+cargo run -- [options]
 ```
 
-Here you can select whether to run a *client*, a *server*, a *nameserver* or a *nameserver* with a *resolver*. Note that if you want to run a resolver and a client in the same machine it is necessaryto run two instances of the library.
+Here you can specify whether to run: *client* or a *server*. Note that if you want to run a resolver and a client in the same machine it is necessary to run two instances of the library.
 
-In addition, the library allows you to validate a Master file, for this you need to enter the ``MF`` command as it says in the menu and the file specified in ```config.rs``` file will be check.
+### Options:
 
+| Argument | Description |
+|----------|-------------|
+|   `-c`   | Exceute a client that connects to the server and sends requests. |
+|   `-r`   | Runs a DNS resolver |
+
+### Example:
+For example, to execute a new client:
+
+```sh
+cargo run -- -c
+```
 ## Development features
 
 ### GitHub Actions
@@ -105,6 +85,6 @@ Coming soon.
 
 ## Contact
 
-Javiera B.
+Javiera Alegria.
 - github user @Javi801
 - email javi@niclabs.cl

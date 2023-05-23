@@ -254,8 +254,8 @@ impl Resolver {
             self.set_cache(cache);
             // update_cache_response_time_udp() ENDS
 
+            // BEGIN REFACTOR---> add_to_cache_upd()
             // Adding to Cache
-
             let mut received_add = rx_add_udp.try_iter();
 
             let mut next_value = received_add.next();
@@ -269,7 +269,7 @@ impl Resolver {
             }
 
             self.set_cache(cache);
-            //
+            // ENDS REFACTOR---> add_to_cache_upd()
 
             // Check queries for timeout
 
@@ -723,6 +723,26 @@ impl Resolver {
         self.set_cache(cache);
     }
     
+    /// Adds received domain name and Resource Records to the cache from a UDP source.
+    ///
+    /// This function takes a reference to a Receiver of tuples (String, ResourceRecord)` 
+    /// (`rx_add_udp`). It iterates over the received Resource Records and adds them to
+    /// the cache.
+    fn add_to_cache_upd(
+        &mut self, 
+        rx_add_udp: & Receiver<(String, ResourceRecord)>) {
+        let mut received_add = rx_add_udp.try_iter();
+        let mut next_value = received_add.next();
+        let mut cache = self.get_cache();
+
+        while next_value.is_none() == false {
+            let (name, rr) = next_value.unwrap();
+            cache.add(name, rr);
+            next_value = received_add.next();
+        }
+        self.set_cache(cache);
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

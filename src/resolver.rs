@@ -678,6 +678,27 @@ impl Resolver {
         println!("Queries length after delete: {}", queries_hash_by_id.len());
     }
 
+    /// Deletes entries from the cache based on received queries.
+    ///
+    /// This function takes a reference to a Receiver of tuples `(String, ResourceRecord)`. 
+    /// It iterates over the received queries (UDP messages) and removes the 
+    /// corresponding entries from the cache.
+    fn delete_from_cache(
+        &mut self, 
+        rx_delete_udp: & Receiver<(String, ResourceRecord)>) {
+        let mut received_delete = rx_delete_udp.try_iter();
+        let mut next_value = received_delete.next();
+        let mut cache = self.get_cache();
+
+        while next_value.is_none() == false {
+            let (name, rr) = next_value.unwrap();
+            let rr_type = rr.get_string_type();
+            cache.remove(name, rr_type);
+            next_value = received_delete.next();
+        }
+        self.set_cache(cache);
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

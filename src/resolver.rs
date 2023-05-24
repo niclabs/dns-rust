@@ -125,7 +125,7 @@ impl Resolver {
         let tx_add_udp = self.get_tx_add_cache_udp();
         let tx_delete_udp = self.get_tx_delete_cache_udp();
         let tx_add_tcp = self.get_tx_add_cache_tcp();
-        let tx_delete_tcp = self.get_delete_sender_tcp();
+        let tx_delete_tcp = self.get_tx_delete_cache_tcp();
         let tx_update_cache_udp = self.get_update_cache_udp();
         let tx_update_cache_tcp = self.get_update_cache_tcp();
 
@@ -642,7 +642,7 @@ impl Resolver {
         let tx_add_udp = self.get_tx_add_cache_udp();
         let tx_delete_udp = self.get_tx_delete_cache_udp();
         let tx_add_tcp = self.get_tx_add_cache_tcp();
-        let tx_delete_tcp = self.get_delete_sender_tcp();
+        let tx_delete_tcp = self.get_tx_delete_cache_tcp();
         let tx_update_cache_udp = self.get_update_cache_udp();
         let tx_update_cache_tcp = self.get_update_cache_tcp();
 
@@ -1050,7 +1050,7 @@ impl Resolver {
     }
 
     // Get the owner's query address
-    pub fn get_delete_sender_tcp(&self) -> Sender<(String, ResourceRecord)> {
+    pub fn get_tx_delete_cache_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.tx_delete_cache_tcp.clone()
     }
 
@@ -1322,7 +1322,7 @@ mod resolver_test {
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_delete_sender_tcp() {
+    fn get_tx_delete_cache_tcp() {
         let (add_sender_udp, 
             _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, 
@@ -1345,7 +1345,7 @@ mod resolver_test {
             tx_update_cache_tcp,
         );
 
-        let delete_sender_tcp_test = resolver.get_delete_sender_tcp();
+        let delete_sender_tcp_test = resolver.get_tx_delete_cache_tcp();
         let delete_rcv_tcp = _delete_recv_tcp;
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
@@ -1618,7 +1618,7 @@ mod resolver_test {
             resolver.get_tx_add_cache_udp(),
             resolver.get_tx_delete_cache_udp(),
             resolver.get_tx_add_cache_tcp(),
-            resolver.get_delete_sender_tcp(),
+            resolver.get_tx_delete_cache_tcp(),
             tx_update_query.clone(),
             tx_delete_query,
             DnsMessage::new(),
@@ -1687,7 +1687,7 @@ mod resolver_test {
             resolver.get_tx_add_cache_udp(),
             resolver.get_tx_delete_cache_udp(),
             resolver.get_tx_add_cache_tcp(),
-            resolver.get_delete_sender_tcp(),
+            resolver.get_tx_delete_cache_tcp(),
             tx_update_query.clone(),
             tx_delete_query.clone(),
             DnsMessage::new(),

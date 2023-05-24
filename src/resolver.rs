@@ -146,33 +146,10 @@ impl Resolver {
 
         // Receives messages
         loop {
-            // BEFORE REFACTOR
-            // println!("{}", "Waiting msg");
-            // // We receive the msg
-            // let dns_message_option =
-            //     Resolver::receive_udp_msg(socket.try_clone().unwrap(), messages.clone());
-            // let dns_message;
-            // let src_address;
-            // println!("{}", "Message recv");
-            // match dns_message_option {
-            //     Some(val) => {
-            //         dns_message = val.0;
-            //         src_address = val.1;
-            //     }
-            //     None => {
-            //         (dns_message, src_address) = (DnsMessage::new(), "".to_string());
-            //     }
-            // }
-            // // Format Error
-            // if dns_message.get_header().get_rcode() == 1 {
-            //     Resolver::send_answer_by_udp(
-            //         dns_message.clone(),
-            //         src_address.clone(),
-            //         &socket.try_clone().unwrap(),
-            //     );
-            // }
-
-            let (dns_message, src_address) = self.receive_udp_msg_value(socket.try_clone().unwrap(), messages.clone());
+            let (dns_message, src_address) = self.receive_udp_msg_value(
+                socket.try_clone().unwrap(), 
+                messages.clone()
+            );
 
             // BEFORE REFACTOR
             // // Updates queries

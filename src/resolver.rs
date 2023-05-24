@@ -88,7 +88,7 @@ impl Resolver {
         rx_add_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_add_cache_tcp: Receiver<(String, ResourceRecord)>,
-        rx_delete_tcp: Receiver<(String, ResourceRecord)>,
+        rx_delete_cache_tcp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_udp: Receiver<(String, String, u32)>,
         rx_update_cache_tcp: Receiver<(String, String, u32)>,
     ) {
@@ -103,7 +103,7 @@ impl Resolver {
 
         self.run_resolver_tcp(
             rx_add_cache_tcp,
-            rx_delete_tcp,
+            rx_delete_cache_tcp,
             rx_update_cache_tcp
         );
     }
@@ -632,7 +632,7 @@ impl Resolver {
     fn run_resolver_tcp(
         &mut self,
         rx_add_cache_tcp: Receiver<(String, ResourceRecord)>,
-        rx_delete_tcp: Receiver<(String, ResourceRecord)>,
+        rx_delete_cache_tcp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_tcp: Receiver<(String, String, u32)>
     ) {
         // Vector to save the queries in process
@@ -668,7 +668,7 @@ impl Resolver {
                     
                     // Delete from cache
 
-                    let mut received_delete = rx_delete_tcp.try_iter();
+                    let mut received_delete = rx_delete_cache_tcp.try_iter();
 
                     let mut next_value = received_delete.next();
 

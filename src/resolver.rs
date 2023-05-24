@@ -85,7 +85,7 @@ impl Resolver {
 
     pub fn run_resolver(
         &mut self,
-        rx_add_udp: Receiver<(String, ResourceRecord)>,
+        rx_add_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_udp: Receiver<(String, ResourceRecord)>,
         rx_add_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_tcp: Receiver<(String, ResourceRecord)>,
@@ -95,7 +95,7 @@ impl Resolver {
         let mut resolver_copy = self.clone();
         thread::spawn(move || {
             resolver_copy.run_resolver_udp(
-                rx_add_udp,
+                rx_add_cache_udp,
                 rx_delete_udp,
                 rx_update_cache_udp
             );
@@ -111,7 +111,7 @@ impl Resolver {
     // Runs a udp resolver
     fn run_resolver_udp(
         &mut self,
-        rx_add_udp: Receiver<(String, ResourceRecord)>,
+        rx_add_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_udp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_udp: Receiver<(String, String, u32)>
     ) {
@@ -154,7 +154,7 @@ impl Resolver {
             self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
             self.delete_from_cache(&rx_delete_udp);
             self.update_cache_response_time_udp(&rx_update_cache_udp);
-            self.add_to_cache_upd(&rx_add_udp);
+            self.add_to_cache_upd(&rx_add_cache_udp);
 
             // Check queries for timeout
 
@@ -611,12 +611,12 @@ impl Resolver {
     /// Adds received domain name and Resource Records to the cache from a UDP source.
     ///
     /// This function takes a reference to a Receiver of tuples (String, ResourceRecord)` 
-    /// (`rx_add_udp`). It iterates over the received Resource Records and adds them to
+    /// (`rx_add_cache_udp`). It iterates over the received Resource Records and adds them to
     /// the cache.
     fn add_to_cache_upd(
         &mut self, 
-        rx_add_udp: & Receiver<(String, ResourceRecord)>) {
-        let mut received_add = rx_add_udp.try_iter();
+        rx_add_cache_udp: & Receiver<(String, ResourceRecord)>) {
+        let mut received_add = rx_add_cache_udp.try_iter();
         let mut next_value = received_add.next();
         let mut cache = self.get_cache();
 

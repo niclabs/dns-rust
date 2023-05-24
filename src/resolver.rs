@@ -1770,4 +1770,70 @@ mod resolver_test {
         resolver.delete_from_cache(&rx_delete_cache_udp);
         assert_eq!(resolver.get_cache().get_size(), 0);
     }
+
+    #[test]
+    fn update_cache_response_time_udp() {
+        // Create resolver channels
+        let (tx_add_cache_udp, 
+            _rx_add_cache_udp) = mpsc::channel();
+        let (tx_delete_cache_udp, 
+            _rx_delete_cache_udp) = mpsc::channel();
+        let (tx_add_cache_tcp, 
+            _rx_add_cache_tcp) = mpsc::channel();
+        let (tx_delete_cache_tcp, 
+            _rx_delete_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_time_udp, 
+            rx_update_cache_time_udp) = mpsc::channel();
+        let (tx_update_cache_time_tcp, 
+            _rx_update_cache_time_tcp) = mpsc::channel();
+
+        let mut resolver = Resolver::new(
+            tx_add_cache_udp,
+            tx_delete_cache_udp.clone(),
+            tx_add_cache_tcp,
+            tx_delete_cache_tcp,
+            tx_update_cache_time_udp.clone(),
+            tx_update_cache_time_tcp,
+        );
+
+        // Set the Resource Records to the Resolver's cache
+        let domain_name = "dcc.uchile.cl.".to_string();
+        let mut a_rdata = ARdata::new();
+        let ip_address: [u8; 4] = [127, 0, 0, 1];
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(1);
+
+        let mut cache = DnsCache::new();
+        cache.set_max_size(5);
+        cache.add(domain_name.clone(), resource_record.clone());
+        resolver.set_cache(cache);
+        assert_eq!(resolver.get_cache().get_size(), 1);
+
+        let old_response_time = resolver.get_cache().get_response_time(
+            domain_name.clone(),
+            String::from("A"),
+            String::from("127.0.0.1"),
+        );
+        assert_eq!(old_response_time, 5000 as u32);
+
+        let response_time_to_update = 4000 as u32;
+
+        // Send response time to update
+        let _result = tx_update_cache_time_udp.send(
+            (domain_name.clone(), 
+            String::from("127.0.0.1"), 
+            response_time_to_update)
+        );
+
+        resolver.update_cache_response_time_udp(&rx_update_cache_time_udp);
+
+        let new_response_time = resolver.get_cache().get_response_time(
+            domain_name.clone(),
+            String::from("A"),
+            String::from("127.0.0.1"),
+        );
+        assert_eq!(new_response_time, (old_response_time+response_time_to_update)/2);
+    }
  }

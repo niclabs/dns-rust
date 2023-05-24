@@ -154,23 +154,7 @@ impl Resolver {
             self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
             self.delete_from_cache(&rx_delete_udp);
             self.update_cache_response_time_udp(&rx_update_cache_udp);
-
-            // BEGIN REFACTOR---> add_to_cache_upd()
-            // Adding to Cache
-            let mut received_add = rx_add_udp.try_iter();
-
-            let mut next_value = received_add.next();
-
-            let mut cache = self.get_cache();
-
-            while next_value.is_none() == false {
-                let (name, rr) = next_value.unwrap();
-                cache.add(name, rr);
-                next_value = received_add.next();
-            }
-
-            self.set_cache(cache);
-            // ENDS REFACTOR---> add_to_cache_upd()
+            self.add_to_cache_upd(&rx_add_udp);
 
             // Check queries for timeout
 

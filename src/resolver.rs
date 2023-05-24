@@ -34,7 +34,7 @@ pub struct Resolver {
     // Channel to share cache data between threads
     tx_delete_cache_udp: Sender<(String, ResourceRecord)>,
     // Channel to share cache data between threads
-    add_sender_tcp: Sender<(String, ResourceRecord)>,
+    tx_add_cache_tcp: Sender<(String, ResourceRecord)>,
     // Channel to share cache data between threads
     delete_sender_tcp: Sender<(String, ResourceRecord)>,
     // Channel to update response time in cache data in name server and resolver
@@ -48,7 +48,7 @@ impl Resolver {
     pub fn new(
         tx_add_cache_udp: Sender<(String, ResourceRecord)>,
         tx_delete_cache_udp: Sender<(String, ResourceRecord)>,
-        add_sender_tcp: Sender<(String, ResourceRecord)>,
+        tx_add_cache_tcp: Sender<(String, ResourceRecord)>,
         delete_sender_tcp: Sender<(String, ResourceRecord)>,
         update_cache_sender_udp: Sender<(String, String, u32)>,
         update_cache_sender_tcp: Sender<(String, String, u32)>,
@@ -62,7 +62,7 @@ impl Resolver {
             cache: cache,
             tx_add_cache_udp: tx_add_cache_udp,
             tx_delete_cache_udp: tx_delete_cache_udp,
-            add_sender_tcp: add_sender_tcp,
+            tx_add_cache_tcp: tx_add_cache_tcp,
             delete_sender_tcp: delete_sender_tcp,
             update_cache_sender_udp: update_cache_sender_udp,
             update_cache_sender_tcp: update_cache_sender_tcp,
@@ -1041,7 +1041,7 @@ impl Resolver {
 
     // Get the owner's query address
     pub fn get_add_sender_tcp(&self) -> Sender<(String, ResourceRecord)> {
-        self.add_sender_tcp.clone()
+        self.tx_add_cache_tcp.clone()
     }
 
     // Get the owner's query address

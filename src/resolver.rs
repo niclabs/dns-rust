@@ -628,6 +628,34 @@ impl Resolver {
         self.set_cache(cache);
     }
 
+    /// Check queries for a timeout.
+    ///
+    /// This function iterates over the provided `queries_hash_by_id` HashMap, which contains each query 
+    /// with its id as the key, and checks each query for a possible timeout. If a query has timed out, 
+    /// it performs the necessary steps to handle the timeout.
+    fn check_queries_timeout(
+        &mut self, 
+        queries_hash_by_id: HashMap<u16, ResolverQuery>, 
+        socket: UdpSocket) {
+        for (_key, value) in queries_hash_by_id {
+            let mut query = value.clone();
+
+            let timeout = query.get_timeout();
+            let last_query_timestamp = query.get_last_query_timestamp();
+            let time_now = Utc::now();
+            let timestamp_ms = time_now.timestamp_millis() as u64;
+
+            println!("Query to {}", query.get_sname());
+
+            let (_tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+
+            if timestamp_ms > (timeout as u64 + last_query_timestamp) {
+                println!("Timeout!!!!!!!!");
+                query.step_3_udp(socket.try_clone().unwrap(), rx_update_self_slist);
+            }
+        }
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

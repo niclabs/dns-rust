@@ -90,7 +90,7 @@ impl Resolver {
         rx_add_cache_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_cache_tcp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_time_udp: Receiver<(String, String, u32)>,
-        rx_update_cache_tcp: Receiver<(String, String, u32)>,
+        rx_update_cache_time_tcp: Receiver<(String, String, u32)>,
     ) {
         let mut resolver_copy = self.clone();
         thread::spawn(move || {
@@ -104,7 +104,7 @@ impl Resolver {
         self.run_resolver_tcp(
             rx_add_cache_tcp,
             rx_delete_cache_tcp,
-            rx_update_cache_tcp
+            rx_update_cache_time_tcp
         );
     }
 
@@ -633,7 +633,7 @@ impl Resolver {
         &mut self,
         rx_add_cache_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_cache_tcp: Receiver<(String, ResourceRecord)>,
-        rx_update_cache_tcp: Receiver<(String, String, u32)>
+        rx_update_cache_time_tcp: Receiver<(String, String, u32)>
     ) {
         // Vector to save the queries in process
         // let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
@@ -687,7 +687,7 @@ impl Resolver {
 
                     // Update response time cache
 
-                    let mut received_update = rx_update_cache_tcp.try_iter();
+                    let mut received_update = rx_update_cache_time_tcp.try_iter();
 
                     let mut next_value = received_update.next();
 
@@ -1114,7 +1114,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let resolver = Resolver::new(
             add_sender_udp,
@@ -1144,7 +1144,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1174,7 +1174,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1210,7 +1210,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1255,7 +1255,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let resolver = Resolver::new(
             add_sender_udp,
@@ -1294,7 +1294,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let resolver = Resolver::new(
             add_sender_udp,
@@ -1334,7 +1334,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let resolver = Resolver::new(
             add_sender_udp,
@@ -1374,7 +1374,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let resolver = Resolver::new(
             add_sender_udp,
@@ -1411,7 +1411,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let resolver = Resolver::new(
             add_sender_udp,
@@ -1423,7 +1423,7 @@ mod resolver_test {
         );
 
         let update_cache_tcp_test = resolver.get_tx_update_cache_time_tcp();
-        let rcv_update_cache_tcp = _rx_update_cache_tcp;
+        let rcv_update_cache_tcp = _rx_update_cache_time_tcp;
         let msg = (String::from("test1"), String::from("test2"), 1);
         update_cache_tcp_test.send(msg.clone()).unwrap();
 
@@ -1448,7 +1448,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
             
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1556,7 +1556,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1593,7 +1593,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1662,7 +1662,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,
@@ -1726,7 +1726,7 @@ mod resolver_test {
         let (tx_update_cache_udp, 
             _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
-            _rx_update_cache_tcp) = mpsc::channel();
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
         let mut resolver = Resolver::new(
             add_sender_udp,

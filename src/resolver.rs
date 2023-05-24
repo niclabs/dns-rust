@@ -152,25 +152,7 @@ impl Resolver {
             );
             self.update_queries(&rx_update_query, &mut queries_hash_by_id);
             self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
-
-            // REFACTOR delete_from_cache() BEGINS
-            // Delete from cache 
-
-            let mut received_delete = rx_delete_udp.try_iter();
-
-            let mut next_value = received_delete.next();
-
-            let mut cache = self.get_cache();
-
-            while next_value.is_none() == false {
-                let (name, rr) = next_value.unwrap();
-                let rr_type = rr.get_string_type();
-                cache.remove(name, rr_type);
-                next_value = received_delete.next();
-            }
-
-            self.set_cache(cache);
-            // delete_from_cache() ENDS
+            self.delete_from_cache(&rx_delete_udp);
 
             // REFACTOR update_cache_response_time_udp()
             // Update response time cache

@@ -126,7 +126,7 @@ impl Resolver {
         let tx_delete_udp = self.get_tx_delete_cache_udp();
         let tx_add_tcp = self.get_tx_add_cache_tcp();
         let tx_delete_tcp = self.get_tx_delete_cache_tcp();
-        let tx_update_cache_udp = self.get_update_cache_udp();
+        let tx_update_cache_udp = self.get_tx_update_cache_time_udp();
         let tx_update_cache_tcp = self.get_update_cache_tcp();
 
         // Channel to delete queries ids from queries already response
@@ -643,7 +643,7 @@ impl Resolver {
         let tx_delete_udp = self.get_tx_delete_cache_udp();
         let tx_add_tcp = self.get_tx_add_cache_tcp();
         let tx_delete_tcp = self.get_tx_delete_cache_tcp();
-        let tx_update_cache_udp = self.get_update_cache_udp();
+        let tx_update_cache_udp = self.get_tx_update_cache_time_udp();
         let tx_update_cache_tcp = self.get_update_cache_tcp();
 
         // Channel to delete queries ids from queries already response
@@ -1055,7 +1055,7 @@ impl Resolver {
     }
 
     // Gets the sender for updating cache
-    pub fn get_update_cache_udp(&self) -> Sender<(String, String, u32)> {
+    pub fn get_tx_update_cache_time_udp(&self) -> Sender<(String, String, u32)> {
         self.tx_update_cache_time_udp.clone()
     }
 
@@ -1362,7 +1362,7 @@ mod resolver_test {
 
     // ToDo: Revisar Práctica 1
     #[test]
-    fn get_update_cache_udp() {
+    fn get_tx_update_cache_time_udp() {
         let (add_sender_udp, 
             _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, 
@@ -1385,7 +1385,7 @@ mod resolver_test {
             tx_update_cache_tcp,
         );
 
-        let update_cache_udp_test = resolver.get_update_cache_udp();
+        let update_cache_udp_test = resolver.get_tx_update_cache_time_udp();
         let rcv_update_cache_udp = _rx_update_cache_udp;
         let msg = (String::from("test1"), String::from("test2"), 1);
 

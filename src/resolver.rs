@@ -127,7 +127,7 @@ impl Resolver {
         let tx_add_tcp = self.get_tx_add_cache_tcp();
         let tx_delete_tcp = self.get_tx_delete_cache_tcp();
         let tx_update_cache_udp = self.get_tx_update_cache_time_udp();
-        let tx_update_cache_tcp = self.get_update_cache_tcp();
+        let tx_update_cache_tcp = self.get_tx_update_cache_time_tcp();
 
         // Channel to delete queries ids from queries already response
         let (tx_delete_query, rx_delete_query): (Sender<ResolverQuery>, Receiver<ResolverQuery>) =
@@ -644,7 +644,7 @@ impl Resolver {
         let tx_add_tcp = self.get_tx_add_cache_tcp();
         let tx_delete_tcp = self.get_tx_delete_cache_tcp();
         let tx_update_cache_udp = self.get_tx_update_cache_time_udp();
-        let tx_update_cache_tcp = self.get_update_cache_tcp();
+        let tx_update_cache_tcp = self.get_tx_update_cache_time_tcp();
 
         // Channel to delete queries ids from queries already response
         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
@@ -1060,7 +1060,7 @@ impl Resolver {
     }
 
     // Gets the sender for updating cache
-    pub fn get_update_cache_tcp(&self) -> Sender<(String, String, u32)> {
+    pub fn get_tx_update_cache_time_tcp(&self) -> Sender<(String, String, u32)> {
         self.tx_update_cache_time_tcp.clone()
     }
 
@@ -1399,7 +1399,7 @@ mod resolver_test {
 
     //ToDo: Revisar Práctica 1
     #[test]
-    fn get_update_cache_tcp() {
+    fn get_tx_update_cache_time_tcp() {
         let (add_sender_udp, 
             _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, 
@@ -1422,7 +1422,7 @@ mod resolver_test {
             tx_update_cache_tcp,
         );
 
-        let update_cache_tcp_test = resolver.get_update_cache_tcp();
+        let update_cache_tcp_test = resolver.get_tx_update_cache_time_tcp();
         let rcv_update_cache_tcp = _rx_update_cache_tcp;
         let msg = (String::from("test1"), String::from("test2"), 1);
         update_cache_tcp_test.send(msg.clone()).unwrap();
@@ -1622,8 +1622,8 @@ mod resolver_test {
             tx_update_query.clone(),
             tx_delete_query,
             DnsMessage::new(),
-            resolver.get_update_cache_tcp(),
-            resolver.get_update_cache_tcp(),
+            resolver.get_tx_update_cache_time_tcp(),
+            resolver.get_tx_update_cache_time_tcp(),
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
@@ -1691,8 +1691,8 @@ mod resolver_test {
             tx_update_query.clone(),
             tx_delete_query.clone(),
             DnsMessage::new(),
-            resolver.get_update_cache_tcp(),
-            resolver.get_update_cache_tcp(),
+            resolver.get_tx_update_cache_time_tcp(),
+            resolver.get_tx_update_cache_time_tcp(),
             tx_update_slist_tcp,
             tx_update_self_slist,
         );

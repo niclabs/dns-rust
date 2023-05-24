@@ -86,7 +86,7 @@ impl Resolver {
     pub fn run_resolver(
         &mut self,
         rx_add_cache_udp: Receiver<(String, ResourceRecord)>,
-        rx_delete_udp: Receiver<(String, ResourceRecord)>,
+        rx_delete_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_add_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_tcp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_udp: Receiver<(String, String, u32)>,
@@ -96,7 +96,7 @@ impl Resolver {
         thread::spawn(move || {
             resolver_copy.run_resolver_udp(
                 rx_add_cache_udp,
-                rx_delete_udp,
+                rx_delete_cache_udp,
                 rx_update_cache_udp
             );
         });
@@ -112,7 +112,7 @@ impl Resolver {
     fn run_resolver_udp(
         &mut self,
         rx_add_cache_udp: Receiver<(String, ResourceRecord)>,
-        rx_delete_udp: Receiver<(String, ResourceRecord)>,
+        rx_delete_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_update_cache_udp: Receiver<(String, String, u32)>
     ) {
         // Hashmap to save the queries in process
@@ -152,7 +152,7 @@ impl Resolver {
             );
             self.update_queries(&rx_update_query, &mut queries_hash_by_id);
             self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
-            self.delete_from_cache(&rx_delete_udp);
+            self.delete_from_cache(&rx_delete_cache_udp);
             self.update_cache_response_time_udp(&rx_update_cache_udp);
             self.add_to_cache_upd(&rx_add_cache_udp);
 

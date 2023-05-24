@@ -153,24 +153,7 @@ impl Resolver {
             self.update_queries(&rx_update_query, &mut queries_hash_by_id);
             self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
             self.delete_from_cache(&rx_delete_udp);
-
-            // REFACTOR update_cache_response_time_udp()
-            // Update response time cache
-
-            let mut received_update = rx_update_cache_udp.try_iter();
-
-            let mut next_value = received_update.next();
-
-            let mut cache = self.get_cache();
-
-            while next_value.is_none() == false {
-                let (host_name, address, response_time) = next_value.unwrap();
-                cache.update_response_time(host_name, "A".to_string(), response_time, address);
-                next_value = received_update.next();
-            }
-
-            self.set_cache(cache);
-            // update_cache_response_time_udp() ENDS
+            self.update_cache_response_time_udp(&rx_update_cache_udp);
 
             // BEGIN REFACTOR---> add_to_cache_upd()
             // Adding to Cache

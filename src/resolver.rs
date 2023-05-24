@@ -40,7 +40,7 @@ pub struct Resolver {
     // Channel to update response time in cache data in name server and resolver
     tx_update_cache_time_udp: Sender<(String, String, u32)>,
     // Channel to update response time in cache data in name server and resolver
-    update_cache_sender_tcp: Sender<(String, String, u32)>,
+    tx_update_cache_time_tcp: Sender<(String, String, u32)>,
 }
 
 impl Resolver {
@@ -51,7 +51,7 @@ impl Resolver {
         tx_add_cache_tcp: Sender<(String, ResourceRecord)>,
         tx_delete_cache_tcp: Sender<(String, ResourceRecord)>,
         tx_update_cache_time_udp: Sender<(String, String, u32)>,
-        update_cache_sender_tcp: Sender<(String, String, u32)>,
+        tx_update_cache_time_tcp: Sender<(String, String, u32)>,
     ) -> Self {
         let mut cache = DnsCache::new();
         cache.set_max_size(1000);
@@ -65,7 +65,7 @@ impl Resolver {
             tx_add_cache_tcp: tx_add_cache_tcp,
             tx_delete_cache_tcp: tx_delete_cache_tcp,
             tx_update_cache_time_udp: tx_update_cache_time_udp,
-            update_cache_sender_tcp: update_cache_sender_tcp,
+            tx_update_cache_time_tcp: tx_update_cache_time_tcp,
         };
 
         resolver
@@ -1061,7 +1061,7 @@ impl Resolver {
 
     // Gets the sender for updating cache
     pub fn get_update_cache_tcp(&self) -> Sender<(String, String, u32)> {
-        self.update_cache_sender_tcp.clone()
+        self.tx_update_cache_time_tcp.clone()
     }
 
 }

@@ -29,7 +29,6 @@ pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips: &'static 
             update_cache_sender_udp.clone(),
             update_cache_sender_tcp.clone(),
         );
-
         resolver.set_initial_configuration(resolver_ip_port, sbelt_root_ips);
 
         // Run Resolver

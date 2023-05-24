@@ -155,26 +155,7 @@ impl Resolver {
             self.delete_from_cache(&rx_delete_cache_udp);
             self.update_cache_response_time_udp(&rx_update_cache_time_udp);
             self.add_to_cache_upd(&rx_add_cache_udp);
-
-            // Check queries for timeout
-
-            for (_key, val) in queries_hash_by_id.clone() {
-                let mut query = val.clone();
-
-                let timeout = query.get_timeout();
-                let last_query_timestamp = query.get_last_query_timestamp();
-                let now = Utc::now();
-                let timestamp_ms = now.timestamp_millis() as u64;
-
-                println!("Query to {}", query.get_sname());
-
-                let (_tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
-
-                if timestamp_ms > (timeout as u64 + last_query_timestamp) {
-                    println!("Timeout!!!!!!!!");
-                    query.step_3_udp(socket.try_clone().unwrap(), rx_update_self_slist);
-                }
-            }
+            self.check_queries_timeout(queries_hash_by_id.clone(), socket.try_clone().unwrap());
 
             let resolver = self.clone();
 

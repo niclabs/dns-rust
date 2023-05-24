@@ -122,7 +122,7 @@ impl Resolver {
         let messages = HashMap::<u16, DnsMessage>::new();
 
         // Channels to send cache data between threads, resolvers and name server
-        let tx_add_udp = self.get_add_sender_udp();
+        let tx_add_udp = self.get_tx_add_cache_udp();
         let tx_delete_udp = self.get_delete_sender_udp();
         let tx_add_tcp = self.get_add_sender_tcp();
         let tx_delete_tcp = self.get_delete_sender_tcp();
@@ -639,7 +639,7 @@ impl Resolver {
         // let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
 
         // Channels to send data between threads, resolvers and name server
-        let tx_add_udp = self.get_add_sender_udp();
+        let tx_add_udp = self.get_tx_add_cache_udp();
         let tx_delete_udp = self.get_delete_sender_udp();
         let tx_add_tcp = self.get_add_sender_tcp();
         let tx_delete_tcp = self.get_delete_sender_tcp();
@@ -1035,7 +1035,7 @@ impl Resolver {
     }
 
     // Get the owner's query address
-    pub fn get_add_sender_udp(&self) -> Sender<(String, ResourceRecord)> {
+    pub fn get_tx_add_cache_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.tx_add_cache_udp.clone()
     }
 
@@ -1615,7 +1615,7 @@ mod resolver_test {
             _rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
-            resolver.get_add_sender_udp(),
+            resolver.get_tx_add_cache_udp(),
             resolver.get_delete_sender_udp(),
             resolver.get_add_sender_tcp(),
             resolver.get_delete_sender_tcp(),
@@ -1684,7 +1684,7 @@ mod resolver_test {
             _rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
-            resolver.get_add_sender_udp(),
+            resolver.get_tx_add_cache_udp(),
             resolver.get_delete_sender_udp(),
             resolver.get_add_sender_tcp(),
             resolver.get_delete_sender_tcp(),

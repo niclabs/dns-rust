@@ -150,28 +150,6 @@ impl Resolver {
                 socket.try_clone().unwrap(), 
                 messages.clone()
             );
-
-            // BEFORE REFACTOR
-            // // Updates queries
-            // let mut queries_to_update = rx_update_query.try_iter();
-            // let mut next_query_to_update = queries_to_update.next();
-
-            // println!("Queries before update len: {}", queries_hash_by_id.len());
-
-            // while next_query_to_update.is_none() == false {
-            //     println!("Queries to update");
-            //     let resolver_query_to_update = next_query_to_update.unwrap();
-
-            //     let id: u16 = resolver_query_to_update.get_main_query_id();
-
-            //     println!("Queries to update: {}", id);
-
-            //     queries_hash_by_id.insert(id, resolver_query_to_update);
-
-            //     next_query_to_update = queries_to_update.next();
-            // }
-            // println!("Queries len: {}", queries_hash_by_id.len());
-
             self.update_queries(&rx_update_query, &mut queries_hash_by_id);
 
             // // Delete queries already answered ---- REFACTOR delete_answered_queries() 

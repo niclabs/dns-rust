@@ -1836,4 +1836,67 @@ mod resolver_test {
         );
         assert_eq!(new_response_time, (old_response_time+response_time_to_update)/2);
     }
+
+    #[test]
+    fn add_to_cache_upd() {
+        // Create resolver channels
+        let (tx_add_cache_udp, 
+            rx_add_cache_udp) = mpsc::channel();
+        let (tx_delete_cache_udp, 
+            _rx_delete_cache_udp) = mpsc::channel();
+        let (tx_add_cache_tcp, 
+            _rx_add_cache_tcp) = mpsc::channel();
+        let (tx_delete_cache_tcp, 
+            _rx_delete_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_time_udp, 
+            _rx_update_cache_time_udp) = mpsc::channel();
+        let (tx_update_cache_time_tcp, 
+            _rx_update_cache_time_tcp) = mpsc::channel();
+
+        let mut resolver = Resolver::new(
+            tx_add_cache_udp.clone(),
+            tx_delete_cache_udp,
+            tx_add_cache_tcp,
+            tx_delete_cache_tcp,
+            tx_update_cache_time_udp,
+            tx_update_cache_time_tcp,
+        );
+
+        // Set the Resource Records to the Resolver's cache
+        let domain_name_1 = "dcc.uchile.cl.".to_string();
+        let mut a_rdata_1 = ARdata::new();
+        let ip_address_1: [u8; 4] = [127, 0, 0, 0];
+        a_rdata_1.set_address(ip_address_1);
+        let rdata_1 = Rdata::SomeARdata(a_rdata_1);
+        let mut resource_record_1 = ResourceRecord::new(rdata_1);
+        resource_record_1.set_type_code(1);
+
+        let mut cache = DnsCache::new();
+        cache.set_max_size(5);
+        cache.add(domain_name_1.clone(), resource_record_1.clone());
+        resolver.set_cache(cache);
+        assert_eq!(resolver.get_cache().get_size(), 1);
+
+        // Send a new Resource Record to add to the cache
+        let domain_name_to_add = "example.com.".to_string();
+        let domain_name_ref = &domain_name_to_add;
+        let mut a_rdata_to_add = ARdata::new();
+        let ip_address_to_add: [u8; 4] = [127, 0, 0, 0];
+        a_rdata_to_add.set_address(ip_address_to_add);
+        let rdata_to_add = Rdata::SomeARdata(a_rdata_to_add);
+        let mut resource_record_to_add = ResourceRecord::new(rdata_to_add);
+        resource_record_to_add.set_type_code(1);
+
+        let _result = tx_add_cache_udp.send(
+            (domain_name_to_add.clone(), 
+            resource_record_to_add)
+        );
+        resolver.add_to_cache_upd(&rx_add_cache_udp);
+
+        assert_eq!(resolver.get_cache().get_size(), 2);
+
+        for (_type, cache) in resolver.get_cache().get_cache() {
+            assert!(cache.contains_key(domain_name_ref));
+        }
+    }
  }

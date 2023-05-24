@@ -1711,4 +1711,63 @@ mod resolver_test {
         resolver.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
         assert_eq!(queries_hash_by_id.len(), 0);
     }
+
+    #[test]
+    fn delete_from_cache() {
+        // Create resolver channels
+        let (add_sender_udp, 
+            _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, 
+            delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, 
+            _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, 
+            _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_cache_udp, 
+            _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, 
+            _rx_update_cache_tcp) = mpsc::channel();
+
+        let mut resolver = Resolver::new(
+            add_sender_udp,
+            delete_sender_udp.clone(),
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+        );
+        // Set the Resource Records to the Resolver's cache
+        let domain_name_1 = "dcc.uchile.cl.".to_string();
+        let mut a_rdata_1 = ARdata::new();
+        let ip_address_1: [u8; 4] = [127, 0, 0, 0];
+        a_rdata_1.set_address(ip_address_1);
+        let rdata_1 = Rdata::SomeARdata(a_rdata_1);
+        let mut resource_record_1 = ResourceRecord::new(rdata_1);
+        resource_record_1.set_type_code(1);
+
+        let domain_name_2 = "example.com.".to_string();
+        let mut a_rdata_2 = ARdata::new();
+        let ip_address_2: [u8; 4] = [127, 0, 0, 0];
+        a_rdata_2.set_address(ip_address_2);
+        let rdata_2 = Rdata::SomeARdata(a_rdata_2);
+        let mut resource_record_2 = ResourceRecord::new(rdata_2);
+        resource_record_2.set_type_code(1);
+
+        let mut cache = DnsCache::new();
+        cache.set_max_size(5);
+        cache.add(domain_name_1.clone(), resource_record_1.clone());
+        cache.add(domain_name_2.clone(), resource_record_2.clone());
+        resolver.set_cache(cache);
+
+        assert_eq!(resolver.get_cache().get_size(), 2);
+
+        // Send cache to delete
+        let _result = delete_sender_udp.send((domain_name_1, resource_record_1));
+        resolver.delete_from_cache(&delete_recv_udp);
+        assert_eq!(resolver.get_cache().get_size(), 1);
+
+        let _result = delete_sender_udp.send((domain_name_2, resource_record_2));
+        resolver.delete_from_cache(&delete_recv_udp);
+        assert_eq!(resolver.get_cache().get_size(), 0);
+    }
  }

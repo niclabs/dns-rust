@@ -30,7 +30,7 @@ pub struct Resolver {
     // Cache for the resolver
     cache: DnsCache,
     // Channel to share cache data between threads
-    add_sender_udp: Sender<(String, ResourceRecord)>,
+    tx_add_cache_udp: Sender<(String, ResourceRecord)>,
     // Channel to share cache data between threads
     delete_sender_udp: Sender<(String, ResourceRecord)>,
     // Channel to share cache data between threads
@@ -46,7 +46,7 @@ pub struct Resolver {
 impl Resolver {
     // Creates a new Resolver with default values
     pub fn new(
-        add_sender_udp: Sender<(String, ResourceRecord)>,
+        tx_add_cache_udp: Sender<(String, ResourceRecord)>,
         delete_sender_udp: Sender<(String, ResourceRecord)>,
         add_sender_tcp: Sender<(String, ResourceRecord)>,
         delete_sender_tcp: Sender<(String, ResourceRecord)>,
@@ -60,7 +60,7 @@ impl Resolver {
             ip_address: String::from(""),
             sbelt: Slist::new(),
             cache: cache,
-            add_sender_udp: add_sender_udp,
+            tx_add_cache_udp: tx_add_cache_udp,
             delete_sender_udp: delete_sender_udp,
             add_sender_tcp: add_sender_tcp,
             delete_sender_tcp: delete_sender_tcp,
@@ -1036,7 +1036,7 @@ impl Resolver {
 
     // Get the owner's query address
     pub fn get_add_sender_udp(&self) -> Sender<(String, ResourceRecord)> {
-        self.add_sender_udp.clone()
+        self.tx_add_cache_udp.clone()
     }
 
     // Get the owner's query address

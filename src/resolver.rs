@@ -89,7 +89,7 @@ impl Resolver {
         rx_delete_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_add_cache_tcp: Receiver<(String, ResourceRecord)>,
         rx_delete_cache_tcp: Receiver<(String, ResourceRecord)>,
-        rx_update_cache_udp: Receiver<(String, String, u32)>,
+        rx_update_cache_time_udp: Receiver<(String, String, u32)>,
         rx_update_cache_tcp: Receiver<(String, String, u32)>,
     ) {
         let mut resolver_copy = self.clone();
@@ -97,7 +97,7 @@ impl Resolver {
             resolver_copy.run_resolver_udp(
                 rx_add_cache_udp,
                 rx_delete_cache_udp,
-                rx_update_cache_udp
+                rx_update_cache_time_udp
             );
         });
 
@@ -113,7 +113,7 @@ impl Resolver {
         &mut self,
         rx_add_cache_udp: Receiver<(String, ResourceRecord)>,
         rx_delete_cache_udp: Receiver<(String, ResourceRecord)>,
-        rx_update_cache_udp: Receiver<(String, String, u32)>
+        rx_update_cache_time_udp: Receiver<(String, String, u32)>
     ) {
         // Hashmap to save the queries in process
         let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
@@ -153,7 +153,7 @@ impl Resolver {
             self.update_queries(&rx_update_query, &mut queries_hash_by_id);
             self.delete_answered_queries(&rx_delete_query, &mut queries_hash_by_id);
             self.delete_from_cache(&rx_delete_cache_udp);
-            self.update_cache_response_time_udp(&rx_update_cache_udp);
+            self.update_cache_response_time_udp(&rx_update_cache_time_udp);
             self.add_to_cache_upd(&rx_add_cache_udp);
 
             // Check queries for timeout
@@ -587,12 +587,12 @@ impl Resolver {
     /// Updates the response time in the cache for the given host names received over UDP.
     ///
     /// This function takes a reference to a Receiver of tuples `(String, String, u32)` 
-    /// (`rx_update_cache_udp`). It iterates over the received host names, addresses, 
+    /// (`rx_update_cache_time_udp`). It iterates over the received host names, addresses, 
     /// and response times and updates the corresponding entries in the cache.
     fn update_cache_response_time_udp(
         &mut self, 
-        rx_update_cache_udp: & Receiver<(String, String, u32)>) {
-        let mut received_update = rx_update_cache_udp.try_iter();
+        rx_update_cache_time_udp: & Receiver<(String, String, u32)>) {
+        let mut received_update = rx_update_cache_time_udp.try_iter();
         let mut next_value = received_update.next();
         let mut cache = self.get_cache();
 
@@ -1112,7 +1112,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1142,7 +1142,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1172,7 +1172,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1208,7 +1208,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1253,7 +1253,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1292,7 +1292,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1332,7 +1332,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1372,7 +1372,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1386,7 +1386,7 @@ mod resolver_test {
         );
 
         let update_cache_udp_test = resolver.get_tx_update_cache_time_udp();
-        let rcv_update_cache_udp = _rx_update_cache_udp;
+        let rcv_update_cache_udp = _rx_update_cache_time_udp;
         let msg = (String::from("test1"), String::from("test2"), 1);
 
         update_cache_udp_test.send(msg.clone()).unwrap();
@@ -1409,7 +1409,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1446,7 +1446,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
             
@@ -1554,7 +1554,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1591,7 +1591,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1660,7 +1660,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 
@@ -1724,7 +1724,7 @@ mod resolver_test {
         let (delete_sender_tcp, 
             _delete_recv_tcp) = mpsc::channel();
         let (tx_update_cache_udp, 
-            _rx_update_cache_udp) = mpsc::channel();
+            _rx_update_cache_time_udp) = mpsc::channel();
         let (tx_update_cache_tcp, 
             _rx_update_cache_tcp) = mpsc::channel();
 

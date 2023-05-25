@@ -161,7 +161,8 @@ impl Resolver {
 
             println!("{}", "Message parsed");
 
-            // We get the msg type, it can be query or answer
+            // Message type: QR field in Header that specifies whether this message is a 
+            // query (0), or a response/answer (1).
             let msg_type = dns_message.get_header().get_qr();
 
             println!("Msg type: {}", msg_type.clone());

@@ -538,13 +538,13 @@ impl ResolverQuery {
         let local_info = self.look_for_local_info();
 
         match local_info {
-            Ok(_) => {}
+            Ok(_) => {} 
             Err(_) => {
                 return (None, Some(DnsMessage::not_implemented_msg()));
             }
         }
 
-        if local_info.clone().unwrap().len() > 0 {
+        if local_info.clone().unwrap().len() > 0 { print!("localinfo greater tha 0");
             return (Some(local_info.clone().unwrap()), None);
         } else {
             self.step_2_udp(socket.try_clone().unwrap());
@@ -3398,7 +3398,7 @@ mod resolver_query_tests {
     }
 
      #[test]
-     fn step_1_udp_no_local_info() {
+     fn step_1_udp_error_local_info() {
          // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -3437,71 +3437,7 @@ mod resolver_query_tests {
      }
 
      #[test]
-     fn step_1_udp() {
-         /* // Channels
-         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-         let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-         let (tx_update_query, _rx_update_query) = mpsc::channel();
-         let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-         let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-         let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-         let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-         let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-         let mut resolver_query = ResolverQuery::new(
-             add_sender_udp,
-             delete_sender_udp,
-             add_sender_tcp,
-             delete_sender_tcp,
-             tx_update_query,
-             tx_delete_query,
-             DnsMessage::new(),
-             tx_update_cache_udp,
-             tx_update_cache_tcp,
-             tx_update_slist_tcp,
-             tx_update_self_slist,
-         );
-         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-         let name = "test.com".to_string();
-         resolver_query.set_sname(name.clone());
-         resolver_query.set_sclass(255);
-         resolver_query.set_stype(1);
-
-        // We need to create RRs for different classes
-        // Create the RRs
-         let ip_address_1: [u8; 4] = [127, 0, 0, 0];
-         let ip_address_2: [u8; 4] = [127, 0, 7, 0];
-         let mut a_rdata_1 = ARdata::new();
-         let mut a_rdata_2 = ARdata::new();
-         a_rdata_1.set_address(ip_address_1);
-         a_rdata_2.set_address(ip_address_2);
-         let rdata_1 = Rdata::SomeARdata(a_rdata_1);
-         let rdata_2 = Rdata::SomeARdata(a_rdata_2);
-         let mut rr_1 = ResourceRecord::new(rdata_1);
-         let mut rr_2 = ResourceRecord::new(rdata_2);
-         rr_1.set_class(1 as u16);
-         rr_2.set_class(2 as u16);
-
-         let mut rr_vec_1 = Vec::<ResourceRecord>::new();
-         rr_vec_1.push(rr_1.clone());
-         let mut rr_vec_2 = Vec::<ResourceRecord>::new();
-         rr_vec_2.push(rr_2.clone());
-
-         // Add cache
-         let mut cache = DnsCache::new();
-         cache.set_max_size(2);
-         resolver_query.set_cache(cache);
-         resolver_query.set_sclass(1);
-         resolver_query.set_timestamp(1);
-         let domain_name = String::from("127.0.0.0");
-         resolver_query.add_to_cache(domain_name.clone(), rr_1.clone());
-         let socket = UdpSocket::bind("127.0.0.1:34000").expect("couldn't bind to address");
-
-         let (_resp1, _resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
-
-    //     //assert_eq!(_resp1, None);
-    //     //assert_eq!(_resp2, None); */
+     fn step_1_udp_local_info_zero() {
     // Channels
     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();

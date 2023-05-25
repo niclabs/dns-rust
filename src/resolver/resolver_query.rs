@@ -3391,7 +3391,6 @@ mod resolver_query_tests {
         //assert_eq!(name, String::from("test.com"));
 
         let msg = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
-        println!("hola");
         msg.clone().print_dns_message();
         let id = msg.get_header().get_id();
         assert_eq!(12345,id);

@@ -544,7 +544,7 @@ impl ResolverQuery {
             }
         }
 
-        if local_info.clone().unwrap().len() > 0 { print!("localinfo greater tha 0");
+        if local_info.clone().unwrap().len() > 0 { 
             return (Some(local_info.clone().unwrap()), None);
         } else {
             self.step_2_udp(socket.try_clone().unwrap());
@@ -3335,7 +3335,6 @@ mod resolver_query_tests {
     #[test]
     fn step_1_tcp() {
         // Channels
-        // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
         let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
@@ -3432,74 +3431,129 @@ mod resolver_query_tests {
         let (rr_vec, dnsmsg)  = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
         assert_eq!(rr_vec, None);
         let dnsmessage = dnsmsg.unwrap();
-        assert_eq!(dnsmessage.get_header().get_rcode(),4);
-        
+        assert_eq!(dnsmessage.get_header().get_rcode(),4);   
      }
 
      #[test]
      fn step_1_udp_local_info_zero() {
-    // Channels
-    let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    let (tx_update_query, _rx_update_query) = mpsc::channel();
-    let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-    let mut resolver_query = ResolverQuery::new(
-        add_sender_udp,
-        delete_sender_udp,
-        add_sender_tcp,
-        delete_sender_tcp,
-        tx_update_query,
-        tx_delete_query,
-        DnsMessage::new(),
-        tx_update_cache_udp,
-        tx_update_cache_tcp,
-        tx_update_slist_tcp,
-        tx_update_self_slist,
-    );
-    resolver_query.set_sname("eol.uchile.cl".to_string());
-    resolver_query.set_rd(true);
-    resolver_query.set_stype(1);
-    resolver_query.set_sclass(1);
+        // Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        resolver_query.set_sname("eol.uchile.cl".to_string());
+        resolver_query.set_rd(true);
+        resolver_query.set_stype(1);
+        resolver_query.set_sclass(1);
 
-    let mut cache = DnsCache::new();
-    cache.set_max_size(4);
+        let mut cache = DnsCache::new();
+        cache.set_max_size(4);
 
-    let mut domain_name = DomainName::new();
-    domain_name.set_name("eol.uchile.cl".to_string());
+        let mut domain_name = DomainName::new();
+        domain_name.set_name("eol.uchile.cl".to_string());
 
-    let mut ns_rdata = NsRdata::new();
-    ns_rdata.set_nsdname(domain_name);
+        let mut ns_rdata = NsRdata::new();
+        ns_rdata.set_nsdname(domain_name);
 
-    let r_data = Rdata::SomeNsRdata(ns_rdata);
-    let mut ns_resource_record = ResourceRecord::new(r_data);
+        let r_data = Rdata::SomeNsRdata(ns_rdata);
+        let mut ns_resource_record = ResourceRecord::new(r_data);
 
-    ns_resource_record.set_type_code(2);
-    let mut a_rdata = ARdata::new();
+        ns_resource_record.set_type_code(2);
+        let mut a_rdata = ARdata::new();
 
-    a_rdata.set_address([127, 0, 0, 1]);
-    //a_rdata.set_address([192, 33, 4, 12]);
-    let r_data = Rdata::SomeARdata(a_rdata);
-    let mut a_resource_record = ResourceRecord::new(r_data);
-    a_resource_record.set_type_code(1);
-    cache.add("eol.uchile.cl".to_string(), ns_resource_record);
-    cache.add("eol.uchile.cl".to_string(), a_resource_record);
-    resolver_query.set_cache(cache);
-    let socket = UdpSocket::bind("127.0.0.1:34289").expect("couldn't bind to address");
-    assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
+        a_rdata.set_address([127, 0, 0, 1]);
+        //a_rdata.set_address([192, 33, 4, 12]);
+        let r_data = Rdata::SomeARdata(a_rdata);
+        let mut a_resource_record = ResourceRecord::new(r_data);
+        a_resource_record.set_type_code(1);
+        cache.add("eol.uchile.cl".to_string(), ns_resource_record);
+        cache.add("eol.uchile.cl".to_string(), a_resource_record);
+        resolver_query.set_cache(cache);
+        let socket = UdpSocket::bind("127.0.0.1:34289").expect("couldn't bind to address");
+        assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
 
-    let mut sbelt = Slist::new();
-    sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
-    let (_resp1, _resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
-    assert_eq!(_resp1, None) //Expected None because we have no local info to return so we get a tuple of (None, None)
-     }
+        let mut sbelt = Slist::new();
+        sbelt.insert("test4.com".to_string(), "190.0.0.1".to_string(), 5000);
+        let (_resp1, _resp2) = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
+        assert_eq!(_resp1, None) //Expected None because we have no local info to return so we get a tuple of (None, None)
+    }
 
+    #[test]
+    fn step_1_udp_with_local_info() {
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp, 
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        resolver_query.set_stype(1);
+        resolver_query.set_sclass(1);
+        resolver_query.set_sname("127.0.0.0".to_string());
+        let mut cache = DnsCache::new();
+        cache.set_max_size(2);
+        resolver_query.set_cache(cache);
+        resolver_query.set_sclass(1);
+        resolver_query.set_timestamp(1);
+        resolver_query.set_old_id(12345);
+        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let mut rr = ResourceRecord::new(rdata);
+        rr.set_class(1);
+        rr.set_ttl(2);
+        let mut rr2 = rr.clone();
+        rr2.set_class(2);
+        rr2.set_ttl(2);
+        let domain_name = String::from("127.0.0.0");
+        let domain_name2 = String::from("127.0.1.0");
+        resolver_query.add_to_cache(domain_name.clone(), rr.clone());
+        resolver_query.add_to_cache(domain_name2.clone(), rr2.clone());
+        let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+       
+        let socket = UdpSocket::bind("127.0.0.1:24000").expect("couldn't bind to address");
+        let (rr_vec, _none)  = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
+        let rr_res = rr_vec.unwrap();
+        assert_eq!(rr_res.len(), 1);
+         
+    }
     // //ToDo: Revisar Práctica/in progress
      #[test]
      //slist is empty after step 2

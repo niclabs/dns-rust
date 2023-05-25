@@ -390,7 +390,7 @@ impl ResolverQuery {
         // If the resolver uses cache, it is used to search for the desired data
         if USE_CACHE == true {
             let rr_vec_cache = self.search_cache(s_name.clone(), s_type, s_class);
-            if rr_vec_cache.len() > 0 {
+            if rr_vec_cache.len() > 0 { 
                 return Ok(rr_vec_cache);
             }
         }
@@ -4348,7 +4348,7 @@ mod resolver_query_tests {
      }
 
      #[test]
-     fn look_for_local_info_match_single_class() {
+     fn look_for_local_info_no_cache() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -4387,18 +4387,6 @@ mod resolver_query_tests {
          let mut rr_vec = Vec::<ResourceRecord>::new();
          rr_vec.push(rr.clone());
 
-
-         let expected_rr_vec = rr_vec.clone();
-
-         // Add cache
-         let mut cache = DnsCache::new();
-         cache.set_max_size(2);
-         resolver_query.set_cache(cache);
-         resolver_query.set_sclass(1);
-         resolver_query.set_timestamp(1);
-         let domain_name = String::from("127.0.0.0");
-         resolver_query.add_to_cache(domain_name.clone(), rr.clone());
-
          let rr_result = resolver_query.look_for_local_info();
 
          let rr_vec = match rr_result {
@@ -4406,7 +4394,7 @@ mod resolver_query_tests {
              _ => unreachable!(),
          };
 
-         //assert_eq!(rr_vec, expected_rr_vec);
+         assert_eq!(rr_vec.len(),0);
      }
 
     // #[test]

@@ -611,8 +611,9 @@ impl Resolver {
 
     /// Check queries for a timeout.
     ///
-    /// This function iterates over the provided `queries_hash_by_id` HashMap, which contains each query 
-    /// with its id as the key, and checks each query for a possible timeout. If a query has timed out, 
+    /// This function iterates over the provided `queries_hash_by_id` HashMap<u16, ResolverQuery> 
+    /// (where `u16` corresonds to the query's ID, and `ResolverQuery` contains the corresonding 
+    /// query) and checks each query for a possible timeout. If a query has timed out, 
     /// it performs the necessary steps to handle the timeout.
     fn check_queries_timeout(
         &mut self, 

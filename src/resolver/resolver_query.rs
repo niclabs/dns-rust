@@ -1055,7 +1055,6 @@ impl ResolverQuery {
                 return DnsMessage::not_implemented_msg();
             }
         }
-
         if local_info.clone().unwrap().len() > 0 {
             println!("Local info!");
 
@@ -3334,104 +3333,8 @@ mod resolver_query_tests {
     }
 
     #[test]
-    #[ignore = "Investigating posible errors ..."]
     fn step_1_tcp() {
         // Channels
-        /* let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-        let (tx_update_query, _rx_update_query) = mpsc::channel();
-        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-        let mut resolver_query = ResolverQuery::new(
-            add_sender_udp,
-            delete_sender_udp,
-            add_sender_tcp,
-            delete_sender_tcp,
-            tx_update_query,
-            tx_delete_query,
-            DnsMessage::new(),
-            tx_update_cache_udp,
-            tx_update_cache_tcp,
-            tx_update_slist_tcp,
-            tx_update_self_slist,
-        );
-        let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-        let name = "test.com".to_string();
-        resolver_query.set_sname(name.clone());
-        resolver_query.set_sclass(255);
-        resolver_query.set_stype(1);
-        resolver_query.set_sname("test.com".to_string());
-        let mut slist = Slist::new();
-        slist.insert("test.com".to_string(), "".to_string(), 5000);
-        resolver_query.set_slist(slist);
-        println!("SLIST LEN: {}", resolver_query.get_slist().len());
-
-        resolver_query.set_index_to_choose(1);
-
-        // We need to create RRs for different classes
-        // Create the RRs
-        let ip_address_1: [u8; 4] = [127, 0, 0, 0];
-        let ip_address_2: [u8; 4] = [127, 0, 7, 0];
-        let mut a_rdata_1 = ARdata::new();
-        let mut a_rdata_2 = ARdata::new();
-        a_rdata_1.set_address(ip_address_1);
-        a_rdata_2.set_address(ip_address_2);
-        let rdata_1 = Rdata::SomeARdata(a_rdata_1);
-        let rdata_2 = Rdata::SomeARdata(a_rdata_2);
-        let mut rr_1 = ResourceRecord::new(rdata_1);
-        let mut rr_2 = ResourceRecord::new(rdata_2);
-        rr_1.set_class(1 as u16);
-        rr_2.set_class(2 as u16);
-
-        let mut rr_vec_1 = Vec::<ResourceRecord>::new();
-        rr_vec_1.push(rr_1.clone());
-        let mut rr_vec_2 = Vec::<ResourceRecord>::new();
-        rr_vec_2.push(rr_2.clone());
-
-        // NS Zone with the information we're trying to retrieve:
-        // ns_data: HashMap<u16, HashMap<String, NSZone>>,
-        // let mut nszone_class_1 = NSZone::new();
-        // let mut nszone_class_2 = NSZone::new();
-        // let mut nsnode_class_1 = NSNode::new();
-        // let mut nsnode_class_2 = NSNode::new();
-        // nsnode_class_1.set_name(name.clone());
-        // nsnode_class_2.set_name(name.clone());
-        // nsnode_class_1.set_value(rr_vec_1.clone());
-        // nsnode_class_2.set_value(rr_vec_2.clone());
-
-        // nszone_class_1.set_zone_nodes(nsnode_class_1);
-        // nszone_class_1.set_class(1);
-        // nszone_class_2.set_zone_nodes(nsnode_class_2);
-        // nszone_class_2.set_class(2);
-
-        // let expected_rr_vec = rr_vec.clone();
-
-        // let mut hash_string_and_nszone_1 = HashMap::<String, NSZone>::new();
-        // hash_string_and_nszone_1.insert(name.clone(), nszone_class_1);
-
-        // let mut hash_string_and_nszone_2 = HashMap::<String, NSZone>::new();
-        // hash_string_and_nszone_2.insert(name.clone(), nszone_class_2);
-
-        // Insert ns data with different classes but same sname and stype
-        // let mut ns_data = HashMap::<u16, HashMap<String, NSZone>>::new();
-        // ns_data.insert(1, hash_string_and_nszone_1.clone());
-        // ns_data.insert(2, hash_string_and_nszone_2.clone());
-        // resolver_query.set_ns_data(ns_data);
-
-        // Add cache
-        let mut cache = DnsCache::new();
-        cache.set_max_size(2);
-        resolver_query.set_cache(cache);
-        resolver_query.set_sclass(1);
-        resolver_query.set_timestamp(1);
-        let domain_name = String::from("127.0.0.0");
-        resolver_query.add_to_cache(domain_name.clone(), rr_1.clone()); */
-
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
         let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
@@ -3447,7 +3350,7 @@ mod resolver_query_tests {
             add_sender_udp,
             delete_sender_udp,
             add_sender_tcp,
-            delete_sender_tcp,
+            delete_sender_tcp, 
             tx_update_query,
             tx_delete_query,
             DnsMessage::new(),
@@ -3456,41 +3359,30 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        resolver_query.set_sname("eol.uchile.cl".to_string());
-        resolver_query.set_rd(true);
         resolver_query.set_stype(1);
         resolver_query.set_sclass(1);
-
+        resolver_query.set_sname("127.0.0.0".to_string());
         let mut cache = DnsCache::new();
-        cache.set_max_size(4);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name("eol.uchile.cl".to_string());
-
-        let mut ns_rdata = NsRdata::new();
-        ns_rdata.set_nsdname(domain_name);
-
-        let r_data = Rdata::SomeNsRdata(ns_rdata);
-
-        let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
-
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address([8, 8, 8, 8]); //IP THAT works but it is google resolver ip
-        //a_rdata.set_address([192, 33, 4, 12]); //IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
-        //a_rdata.set_address([198, 41, 0, 4]); //IP THAT DOESNT REFUSED CONNECTION BUT LOOPS
-
-        let r_data = Rdata::SomeARdata(a_rdata);
-
-        let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
-
-        cache.add("eol.uchile.cl".to_string(), ns_resource_record);
-        cache.add("eol.uchile.cl".to_string(), a_resource_record);
+        cache.set_max_size(2);
         resolver_query.set_cache(cache);
-
+        resolver_query.set_sclass(1);
+        resolver_query.set_timestamp(1);
+        resolver_query.set_old_id(12345);
+        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let mut rr = ResourceRecord::new(rdata);
+        rr.set_class(1);
+        rr.set_ttl(2);
+        let mut rr2 = rr.clone();
+        rr2.set_class(2);
+        rr2.set_ttl(2);
+        let domain_name = String::from("127.0.0.0");
+        let domain_name2 = String::from("127.0.1.0");
+        resolver_query.add_to_cache(domain_name.clone(), rr.clone());
+        resolver_query.add_to_cache(domain_name2.clone(), rr2.clone());
         let query_msg = resolver_query.create_query_message();
-
         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
         // let expected = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
         // let _name_expected = expected.get_question().get_qname().get_name();
@@ -3499,7 +3391,10 @@ mod resolver_query_tests {
         //assert_eq!(name, String::from("test.com"));
 
         let msg = resolver_query.step_1_tcp(query_msg, update_slist_tcp_recv);
+        println!("hola");
         msg.clone().print_dns_message();
+        let id = msg.get_header().get_id();
+        assert_eq!(12345,id);
 
     }
 

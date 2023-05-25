@@ -1909,4 +1909,70 @@ mod resolver_test {
             assert!(cache.contains_key(domain_name_ref));
         }
     }
+
+    #[test]
+    #[ignore = "Investigate how timeout should be handled."]
+    fn check_queries_timeout() {
+        // Create resolver channels
+        let (tx_add_cache_udp, 
+            _rx_add_cache_udp) = mpsc::channel();
+        let (tx_delete_cache_udp, 
+            _rx_delete_cache_udp) = mpsc::channel();
+        let (tx_add_cache_tcp, 
+            _rx_add_cache_tcp) = mpsc::channel();
+        let (tx_delete_cache_tcp, 
+            _rx_delete_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_time_udp, 
+            _rx_update_cache_time_udp) = mpsc::channel();
+        let (tx_update_cache_time_tcp, 
+            _rx_update_cache_time_tcp) = mpsc::channel();
+
+        let mut resolver = Resolver::new(
+            tx_add_cache_udp,
+            tx_delete_cache_udp,
+            tx_add_cache_tcp,
+            tx_delete_cache_tcp,
+            tx_update_cache_time_udp,
+            tx_update_cache_time_tcp,
+        );
+
+        // Channel to update resolver queries
+        let (tx_update_query, 
+            rx_update_query) = mpsc::channel();
+        let (tx_delete_query, 
+            _rx_delete_query) = mpsc::channel();
+        let (tx_update_slist_tcp, 
+            _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, 
+            _rx_update_self_slist) = mpsc::channel();
+
+        let mut resolver_query = ResolverQuery::new(
+            resolver.get_tx_add_cache_udp(),
+            resolver.get_tx_delete_cache_udp(),
+            resolver.get_tx_add_cache_tcp(),
+            resolver.get_tx_delete_cache_tcp(),
+            tx_update_query.clone(),
+            tx_delete_query,
+            DnsMessage::new(),
+            resolver.get_tx_update_cache_time_tcp(),
+            resolver.get_tx_update_cache_time_tcp(),
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+
+        // Send query to be saved in the Hashmap
+        let host_name = String::from("test.com");
+        resolver_query.set_last_query_hostname(host_name.clone());
+        let _result = tx_update_query.send(resolver_query);
+
+        // Hashmap to save the queries in process
+        let mut queries_hash_by_id = HashMap::<u16, ResolverQuery>::new();
+        resolver.update_queries(&rx_update_query, &mut queries_hash_by_id);
+
+        // Create socket to received messages
+        let origin_port_address = "127.0.0.1:34254";
+        let socket_origin = UdpSocket::bind(origin_port_address).expect("Failed to bind host socket");
+
+        resolver.check_queries_timeout(queries_hash_by_id, socket_origin);
+    }
  }

@@ -4652,59 +4652,47 @@ mod resolver_query_tests {
         resolver_query.send_tcp_query(&msg_to_bytes, ip_address, update_slist_tcp_recv);
     }
 
-    // #[test]
-    // fn step_3_tcp_no_answer() {
-    //     // Channels
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    //     let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    //     let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    //     let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-    //     let (tx_update_query, _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    //     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-    //     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    //     let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
-    //     let mut resolver_query = ResolverQuery::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         add_sender_ns_udp,
-    //         delete_sender_ns_udp,
-    //         add_sender_ns_tcp,
-    //         delete_sender_ns_tcp,
-    //         tx_update_query,
-    //         tx_delete_query,
-    //         DnsMessage::new(),
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_cache_ns_udp,
-    //         tx_update_cache_ns_tcp,
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
-    //     let (_update_slist_tcp_sender, 
-    //         update_slist_tcp_recv) = 
-    //         mpsc::channel();
-    //     resolver_query.set_sname("test.com.".to_string());
-    //     resolver_query.set_timeout(234);
+     #[test]
+     fn step_3_tcp_no_answer() {
+    // Channels
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        let (_update_slist_tcp_sender, 
+             update_slist_tcp_recv) = 
+            mpsc::channel();
+         resolver_query.set_sname("test.com.".to_string());
+         resolver_query.set_timeout(234);
 
-    //     // Create a SLIST for the resolver
-    //     let mut slist = Slist::new();
-    //     slist.insert("dcc.uchile.cl.".to_string(), "198.41.0.4".to_string(), 5000);
-    //     // slist.insert("test.com.".to_string(), "127.0.0.1".to_string(), 5000);
-    //     resolver_query.set_slist(slist);
+         // Create a SLIST for the resolver
+         let mut slist = Slist::new();
+         slist.insert("dcc.uchile.cl.".to_string(), "198.41.0.4".to_string(), 5000);
+         // slist.insert("test.com.".to_string(), "127.0.0.1".to_string(), 5000);
+         resolver_query.set_slist(slist);
 
-    //     let msg = resolver_query.step_3_tcp(update_slist_tcp_recv);        
-    //     assert_eq!(msg.get_answer().len(), 0);
-    // }
+         let msg = resolver_query.step_3_tcp(update_slist_tcp_recv);        
+         assert_eq!(msg.get_answer().len(), 0);
+     }
 
     // #[test]
     // #[should_panic = "Temporary Error"]

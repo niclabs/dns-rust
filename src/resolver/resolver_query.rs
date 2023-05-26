@@ -3427,7 +3427,7 @@ mod resolver_query_tests {
         resolver_query.set_sname("test.com".to_string());
         let mut query_msg = resolver_query.create_query_message();
         query_msg.set_query_id(123 as u16);
-        let socket = UdpSocket::bind("127.0.0.1:24000").expect("couldn't bind to address");
+        let socket = UdpSocket::bind("127.0.0.1:24011").expect("couldn't bind to address");
         let (rr_vec, dnsmsg)  = resolver_query.step_1_udp(socket, update_slist_tcp_recv);
         assert_eq!(rr_vec, None);
         let dnsmessage = dnsmsg.unwrap();

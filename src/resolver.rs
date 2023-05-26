@@ -1098,6 +1098,7 @@ impl Resolver {
 
  #[cfg(test)]
 mod resolver_test {
+    use crate::config::{RESOLVER_IP_PORT, SBELT_ROOT_IPS};
     use crate::dns_cache::DnsCache;
     use crate::message::DnsMessage;
     use crate::message::rdata::a_rdata::ARdata;
@@ -1936,6 +1937,8 @@ mod resolver_test {
             tx_update_cache_time_udp,
             tx_update_cache_time_tcp,
         );
+
+        resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
 
         // Channel to update resolver queries
         let (tx_update_query, 

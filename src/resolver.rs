@@ -639,6 +639,70 @@ impl Resolver {
         }
     }
 
+    /// TODO
+    /// See if it's necessary to add "resolver" instead of using using "self", 
+    /// also, if it's necessary to add the senders instead of using self' getters.
+    fn new_query_from_msg(
+        &mut self, 
+        dns_message: DnsMessage,
+        src_address: String,
+        resolver: &Resolver,
+        tx_add_cache_udp: Sender<(String, ResourceRecord)>,
+        tx_delete_cache_udp: Sender<(String, ResourceRecord)>,
+        tx_add_cache_tcp: Sender<(String, ResourceRecord)>,
+        tx_delete_cache_tcp: Sender<(String, ResourceRecord)>,
+        tx_update_cache_time_udp: Sender<(String, String, u32)>,
+        tx_update_cache_time_tcp: Sender<(String, String, u32)>,
+        tx_update_query: Sender<ResolverQuery>,
+        tx_delete_query: Sender<ResolverQuery>) -> (
+            ResolverQuery, 
+            Receiver<(String, Vec<ResourceRecord>)>, 
+            Receiver<Slist>) {
+        // DNS message's data
+        let sname = dns_message.get_question().get_qname().get_name();
+        let stype = dns_message.get_question().get_qtype();
+        let sclass = dns_message.get_question().get_qclass();
+        let op_code = dns_message.get_header().get_op_code();
+        let rd = dns_message.get_header().get_rd();
+        let id = dns_message.get_query_id();
+
+        // Channels needed for ResolverQuery
+        let (tx_update_slist_tcp, 
+            rx_update_slist_tcp) = mpsc::channel();
+
+        let (tx_update_self_slist, 
+            rx_update_self_slist) = mpsc::channel();
+
+        let mut resolver_query = ResolverQuery::new(
+            tx_add_cache_udp,
+            tx_delete_cache_udp,
+            tx_add_cache_tcp,
+            tx_delete_cache_tcp,
+            tx_update_query,
+            tx_delete_query,
+            dns_message,
+            tx_update_cache_time_udp,
+            tx_update_cache_time_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+
+        // Initializes ResolverQuery data struct with message's data
+        resolver_query.initialize(
+            sname,
+            stype,
+            sclass,
+            op_code,
+            rd,
+            resolver.get_sbelt(),
+            resolver.get_cache(),
+            // resolver.get_ns_data(),
+            src_address.to_string(),
+            id,
+        );
+        return (resolver_query, rx_update_slist_tcp, rx_update_self_slist);
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

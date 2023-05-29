@@ -182,44 +182,15 @@ impl Resolver {
 
             // If it is query
             if msg_type == false {
-                let sname = dns_message.get_question().get_qname().get_name();
-                let stype = dns_message.get_question().get_qtype();
-                let sclass = dns_message.get_question().get_qclass();
-                let op_code = dns_message.get_header().get_op_code();
-                let rd = dns_message.get_header().get_rd();
-                let id = dns_message.get_query_id();
-
-                let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-
-                let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
-
-                let mut resolver_query = ResolverQuery::new(
-                    tx_add_udp_copy,
-                    tx_delete_udp_copy,
-                    tx_add_tcp_copy,
-                    tx_delete_tcp_copy,
-                    tx_update_query_copy,
-                    tx_delete_query_copy.clone(),
-                    dns_message.clone(),
-                    tx_update_cache_udp_copy.clone(),
-                    tx_update_cache_tcp_copy.clone(),
-                    tx_update_slist_tcp,
-                    tx_update_self_slist,
-                );
-
-                // Initializes the query data struct
-                resolver_query.initialize(
-                    sname,
-                    stype,
-                    sclass,
-                    op_code,
-                    rd,
-                    resolver.get_sbelt(),
-                    resolver.get_cache(),
-                    // resolver.get_ns_data(),
-                    src_address.clone().to_string(),
-                    id,
-                );
+                let (
+                    mut resolver_query, 
+                    _rx_update_slist_tcp, 
+                    rx_update_self_slist
+                ) = self.new_query_from_msg(
+                    dns_message.clone(), 
+                    src_address.clone().to_string(), 
+                    tx_update_query_copy, 
+                    tx_delete_query_copy.clone());
 
                 // Save the query info
                 queries_hash_by_id

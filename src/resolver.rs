@@ -2041,67 +2041,82 @@ mod resolver_test {
         resolver.check_queries_timeout(queries_hash_by_id, socket_origin);
     }
 
-    // #[test]
-    // #[ignore = "Todo."]
-    // fn new_query_from_msg() {
-    //     // Create resolver channels
-    //     let (tx_add_cache_udp, 
-    //         _rx_add_cache_udp) = mpsc::channel();
-    //     let (tx_delete_cache_udp, 
-    //         _rx_delete_cache_udp) = mpsc::channel();
-    //     let (tx_add_cache_tcp, 
-    //         _rx_add_cache_tcp) = mpsc::channel();
-    //     let (tx_delete_cache_tcp, 
-    //         _rx_delete_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_time_udp, 
-    //         _rx_update_cache_time_udp) = mpsc::channel();
-    //     let (tx_update_cache_time_tcp, 
-    //         _rx_update_cache_time_tcp) = mpsc::channel();
+    #[test]
+    fn new_query_from_msg() {
+        // Create resolver channels
+        let (tx_add_cache_udp, 
+            _rx_add_cache_udp) = mpsc::channel();
+        let (tx_delete_cache_udp, 
+            _rx_delete_cache_udp) = mpsc::channel();
+        let (tx_add_cache_tcp, 
+            _rx_add_cache_tcp) = mpsc::channel();
+        let (tx_delete_cache_tcp, 
+            _rx_delete_cache_tcp) = mpsc::channel();
+        let (tx_update_cache_time_udp, 
+            _rx_update_cache_time_udp) = mpsc::channel();
+        let (tx_update_cache_time_tcp, 
+            _rx_update_cache_time_tcp) = mpsc::channel();
 
-    //     let mut resolver = Resolver::new(
-    //         tx_add_cache_udp,
-    //         tx_delete_cache_udp,
-    //         tx_add_cache_tcp,
-    //         tx_delete_cache_tcp,
-    //         tx_update_cache_time_udp,
-    //         tx_update_cache_time_tcp,
-    //     );
+        let mut resolver = Resolver::new(
+            tx_add_cache_udp,
+            tx_delete_cache_udp,
+            tx_add_cache_tcp,
+            tx_delete_cache_tcp,
+            tx_update_cache_time_udp,
+            tx_update_cache_time_tcp,
+        );
 
-    //     resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
-    //     let resolver_copy = resolver.clone();
-
-    //     // rd must be false to be considered a query
-    //     let dns_query_message = DnsMessage::new_query_message(
-    //             String::from("test.com"), 
-    //             1, 
-    //             1, 
-    //             0, 
-    //             false, 
-    //             1
-    //         );
-    //     let src_address = "127.0.0.1:34254";
-
-    //     let (tx_update_query, 
-    //         _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, 
-    //         _rx_delete_query) = mpsc::channel();
+        resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
+        assert_eq!(resolver.get_sbelt().len(), 3);
         
-    //     let (
-    //         resolver_query, 
-    //         _rx_update_slist_tcp, 
-    //         _rx_update_self_slist) = resolver.new_query_from_msg(
-    //         dns_query_message, 
-    //         src_address.to_string(), 
-    //         &resolver_copy, 
-    //         resolver_copy.get_tx_add_cache_udp(), 
-    //         resolver_copy.get_tx_delete_cache_udp(), 
-    //         resolver_copy.get_tx_add_cache_tcp(), 
-    //         resolver_copy.get_tx_delete_cache_tcp(), 
-    //         resolver_copy.get_tx_update_cache_time_udp(), 
-    //         resolver_copy.get_tx_update_cache_time_tcp(), 
-    //         tx_update_query, 
-    //         tx_delete_query);
+        // Set the Resource Records to the Resolver's cache
+        let domain_name = "dcc.uchile.cl.".to_string();
+        let mut a_rdata = ARdata::new();
+        let ip_address: [u8; 4] = [127, 0, 0, 1];
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(1);
 
-    //     assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
-    // }
+        let mut cache = DnsCache::new();
+        cache.set_max_size(5);
+        cache.add(domain_name.clone(), resource_record.clone());
+        resolver.set_cache(cache);
+        assert_eq!(resolver.get_cache().get_size(), 1);
+
+        // rd must be false to be considered a query
+        let dns_query_message = DnsMessage::new_query_message(
+                String::from("test.com"), 
+                1, 
+                1, 
+                0, 
+                false, 
+                7
+            );
+        let src_address = "127.0.0.1:34254";
+
+        let (tx_update_query, 
+            _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, 
+            _rx_delete_query) = mpsc::channel();
+        
+        let (
+            resolver_query, 
+            _rx_update_slist_tcp, 
+            _rx_update_self_slist
+        ) = resolver.new_query_from_msg(
+            dns_query_message, 
+            src_address.to_string(), 
+            tx_update_query, 
+            tx_delete_query);
+
+        assert_eq!(resolver_query.get_sname(), String::from("test.com"));
+        assert_eq!(resolver_query.get_stype(), 1);
+        assert_eq!(resolver_query.get_sclass(), 1);
+        assert_eq!(resolver_query.get_op_code(), 0);
+        assert!(!resolver_query.get_rd());
+        assert_eq!(resolver_query.get_cache().get_size(), 1);
+        assert_eq!(resolver_query.get_old_id(), 7);
+        assert_eq!(resolver_query.get_sbelt().len(), 3);
+    }
  }

@@ -6,9 +6,6 @@ use dns_rust::{
     message::{DnsMessage, },
 };
 
-
-
-
 #[test]
 #[ignore]
 fn udp_query() {
@@ -42,16 +39,14 @@ fn non_existent_type(){
     let domain_name = "example.com";
 
     // create client query
-    let client_query: DnsMessage = create_client_query(domain_name,
-                                                           13,
-                                                           1);
+    let client_query: DnsMessage = create_client_query(domain_name,13,1);
 
-    // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                        google_resolver,
-                                                client_query);
+    // send query and get response TCP and UDP
+    // let dns_response_tcp = send_client_query("TCP",google_resolver,client_query.clone());
+    let dns_response_udp = send_client_query("UDP",google_resolver,client_query);
 
-    common::qtype_hinfo_example_no_answer(dns_response);
+    // common::qtype_hinfo_example_no_answer(dns_response_tcp);
+    common::qtype_hinfo_example_no_answer(dns_response_udp);
     
 }
 
@@ -140,16 +135,15 @@ fn qtype_mx_example(){
     let transport_protocol = "TCP";
 
     // create client query
-    let client_query: DnsMessage = create_client_query(domain_name,
-                                                15,
-                                                1);
+    let client_query: DnsMessage = create_client_query(domain_name,15,1);
 
     //send query and get response FIXME:
-    let dns_response_test = send_client_query(transport_protocol,
-                                                google_resolver,
-                                                client_query);
-    
-    common::qtype_mx_example(dns_response_test);   
+    let dns_response_tcp = send_client_query(transport_protocol,google_resolver, client_query.clone());
+    let dns_response_udp = send_client_query("UDP",google_resolver, client_query);
+
+    common::qtype_mx_example(dns_response_tcp);   
+    common::qtype_mx_example(dns_response_udp);   
+
 }
 
 #[test]

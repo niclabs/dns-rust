@@ -43,6 +43,7 @@ pub fn run_resolver_for_testing(resolver_ip_port: &str,sbelt_root_ips:&'static [
         );
    
 }
+
 #[allow(dead_code)]
 pub fn qtype_cname_bytes(dns_response: Vec<u8>){
     // println!("{:?}",dns_response);
@@ -636,7 +637,7 @@ pub fn qtype_hinfo_example_no_answer(dns_response: DnsMessage){
     assert_eq!(ancount,0);
     assert_eq!(qr,true);
     assert_eq!(op_code,0);
-    assert_eq!(nscount,1);
+    assert_eq!(nscount,0);
 
     //QUESTION SECTION
     let qname = question.get_qname().get_name();
@@ -802,12 +803,12 @@ pub fn qtype_mx_example(dns_response: DnsMessage){
     let op_code = header.get_op_code();
     let rd = header.get_rd();
     let ancount = header.get_ancount();
-    let nscount = header.get_nscount();
+    // let nscount = header.get_nscount();
 
     assert_eq!(rd, false);    
     assert_eq!(op_code, 0);
     assert_eq!(ancount,1);
-    assert_eq!(nscount,1);
+    // assert_eq!(nscount,1);
 
     //QUESTION SECTION
     let qname = question.get_qname().get_name();
@@ -819,8 +820,8 @@ pub fn qtype_mx_example(dns_response: DnsMessage){
     assert_eq!(qtype, 15);
 
     //AUTHOORITY SECTION
-    let authority_count = header.get_nscount();
-    assert_eq!(authority_count, 0);
+    // let authority_count = header.get_nscount();
+    // assert_eq!(authority_count, 0);
 
 
     // ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 28287

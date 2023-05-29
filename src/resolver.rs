@@ -662,6 +662,77 @@ impl Resolver {
         return (resolver_query, rx_update_slist_tcp, rx_update_self_slist);
     }
 
+    /// Matches the answer for the first step of resolution for a given resolver query.
+    /// 
+    /// This method performs the necessary steps to handle the local answer for a resolver query in the first step of resolution. 
+    /// It takes references to the required data structures and performs the following actions:
+    /// - Calls the `step_1_udp` method on the `resolver_query` to obtain the local answer.
+    /// - Matches the local answer and performs the corresponding actions:
+    ///   - If there is a local answer available (`Some(vec_rr)`), it modifies the `dns_message` to include the answer, updates the header information, sends the resolver query for deletion through the `tx_delete_query` channel, and sends the modified `new_dns_msg` as the answer by UDP to `src_address` using the provided `socket`.
+    ///   - If there is an error message available (`None` local answer, but `Some(msg)` error message), it sends the resolver query for deletion through the `tx_delete_query` channel and sends the `msg` as the answer by UDP to `src_address` using the provided `socket`.
+    ///   - For any other cases, no action is taken.
+    /// 
+    /// # Arguments
+    /// * `resolver_query` - A mutable reference to the ResolverQuery struct representing the query being resolved.
+    /// * `socket` - A reference to the UdpSocket used for communication.
+    /// * `rx_update_self_slist` - A Receiver for updating the self Slist.
+    /// * `tx_delete_query` - A reference to the Sender for deleting the resolver query.
+    /// * `dns_message` - A reference to the DnsMessage associated with the resolver query.
+    /// * `src_address` - A reference to the source address where the answer will be sent.
+    fn match_step_1_answer(
+        &mut self, 
+        resolver_query: &mut ResolverQuery, 
+        socket: & UdpSocket,
+        rx_update_self_slist: Receiver<Slist>,
+        tx_delete_query: & Sender<ResolverQuery>,
+        dns_message: & DnsMessage,
+        src_address: & String) {
+        let local_answer = resolver_query
+        .step_1_udp(socket.try_clone().unwrap(), rx_update_self_slist);
+
+        match local_answer {
+            (Some(vec_rr), None) => {
+                println!("Local info!");
+
+                let mut new_dns_msg = dns_message.clone();
+                new_dns_msg.set_answer(vec_rr.clone());
+                new_dns_msg.set_authority(Vec::new());
+                new_dns_msg.set_additional(Vec::new());
+
+                let mut header = new_dns_msg.get_header();
+                header.set_ancount(vec_rr.len() as u16);
+                header.set_nscount(0);
+                header.set_arcount(0);
+                header.set_id(resolver_query.get_old_id());
+                header.set_qr(true);
+
+                new_dns_msg.set_header(header);
+
+                tx_delete_query
+                    .send(resolver_query.clone())
+                    .expect("Couldn't send the resolver query through the channel");
+
+                Resolver::send_answer_by_udp(
+                    new_dns_msg,
+                    src_address.clone().to_string(),
+                    socket,
+                );
+            }
+            (None, Some(msg)) => {
+                tx_delete_query
+                    .send(resolver_query.clone())
+                    .expect("Couldn't send the resolver query through the channel");
+                Resolver::send_answer_by_udp(
+                    msg,
+                    src_address.clone().to_string(),
+                    socket,
+                );
+            }
+            (_, _) => {}
+        }
+        println!("{}", "Thread Finished")
+    }
+
     // Runs a tcp resolver
     fn run_resolver_tcp(
         &mut self,

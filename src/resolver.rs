@@ -639,66 +639,66 @@ impl Resolver {
         }
     }
 
-    /// Creates a new ResolverQuery based on a DNS message and other parameters.
-    /// 
-    /// This function takes the Sender channels to update and delete queries (`tx_update_query` 
-    /// and `tx_delete_query`) to create a new ResolverQuery. Uses the values provided by 
-    /// the `dns_message: DnsMessage` and its source address `src_address` to initialize the query. 
-    /// 
-    /// Returns the ResolverQuery and the Receiver channels required to update the query's
-    ///  SLIST, `rx_update_slist_tcp` and `rx_update_slist_tcp`.
-    fn new_query_from_msg(
-        &mut self, 
-        dns_message: DnsMessage,
-        src_address: String,
-        tx_update_query: Sender<ResolverQuery>,
-        tx_delete_query: Sender<ResolverQuery>) -> (
-            ResolverQuery, 
-            Receiver<(String, Vec<ResourceRecord>)>, 
-            Receiver<Slist>) {
-        // DNS message's data
-        let sname = dns_message.get_question().get_qname().get_name();
-        let stype = dns_message.get_question().get_qtype();
-        let sclass = dns_message.get_question().get_qclass();
-        let op_code = dns_message.get_header().get_op_code();
-        let rd = dns_message.get_header().get_rd();
-        let id = dns_message.get_query_id();
+    // /// Creates a new ResolverQuery based on a DNS message and other parameters.
+    // /// 
+    // /// This function takes the Sender channels to update and delete queries (`tx_update_query` 
+    // /// and `tx_delete_query`) to create a new ResolverQuery. Uses the values provided by 
+    // /// the `dns_message: DnsMessage` and its source address `src_address` to initialize the query. 
+    // /// 
+    // /// Returns the ResolverQuery and the Receiver channels required to update the query's
+    // ///  SLIST, `rx_update_slist_tcp` and `rx_update_slist_tcp`.
+    // fn new_query_from_msg(
+    //     &mut self, 
+    //     dns_message: DnsMessage,
+    //     src_address: String,
+    //     tx_update_query: Sender<ResolverQuery>,
+    //     tx_delete_query: Sender<ResolverQuery>) -> (
+    //         ResolverQuery, 
+    //         Receiver<(String, Vec<ResourceRecord>)>, 
+    //         Receiver<Slist>) {
+    //     // DNS message's data
+    //     let sname = dns_message.get_question().get_qname().get_name();
+    //     let stype = dns_message.get_question().get_qtype();
+    //     let sclass = dns_message.get_question().get_qclass();
+    //     let op_code = dns_message.get_header().get_op_code();
+    //     let rd = dns_message.get_header().get_rd();
+    //     let id = dns_message.get_query_id();
 
-        // Channels needed for ResolverQuery
-        let (tx_update_slist_tcp, 
-            rx_update_slist_tcp) = mpsc::channel();
+    //     // Channels needed for ResolverQuery
+    //     let (tx_update_slist_tcp, 
+    //         rx_update_slist_tcp) = mpsc::channel();
 
-        let (tx_update_self_slist, 
-            rx_update_self_slist) = mpsc::channel();
+    //     let (tx_update_self_slist, 
+    //         rx_update_self_slist) = mpsc::channel();
 
-        let mut resolver_query = ResolverQuery::new(
-            self.get_tx_add_cache_udp(),
-            self.get_tx_delete_cache_udp(),
-            self.get_tx_add_cache_tcp(),
-            self.get_tx_delete_cache_tcp(),
-            tx_update_query,
-            tx_delete_query,
-            dns_message,
-            self.get_tx_update_cache_time_udp(),
-            self.get_tx_update_cache_time_tcp(),
-            tx_update_slist_tcp,
-            tx_update_self_slist,
-        );
+    //     let mut resolver_query = ResolverQuery::new(
+    //         self.get_tx_add_cache_udp(),
+    //         self.get_tx_delete_cache_udp(),
+    //         self.get_tx_add_cache_tcp(),
+    //         self.get_tx_delete_cache_tcp(),
+    //         tx_update_query,
+    //         tx_delete_query,
+    //         dns_message,
+    //         self.get_tx_update_cache_time_udp(),
+    //         self.get_tx_update_cache_time_tcp(),
+    //         tx_update_slist_tcp,
+    //         tx_update_self_slist,
+    //     );
 
-        // Initializes ResolverQuery data struct with message's data
-        resolver_query.initialize(
-            sname,
-            stype,
-            sclass,
-            op_code,
-            rd,
-            self.get_sbelt(),
-            self.get_cache(),
-            src_address.to_string(),
-            id,
-        );
-        return (resolver_query, rx_update_slist_tcp, rx_update_slist_tcp);
-    }
+    //     // Initializes ResolverQuery data struct with message's data
+    //     resolver_query.initialize(
+    //         sname,
+    //         stype,
+    //         sclass,
+    //         op_code,
+    //         rd,
+    //         self.get_sbelt(),
+    //         self.get_cache(),
+    //         src_address.to_string(),
+    //         id,
+    //     );
+    //     return (resolver_query, rx_update_slist_tcp, rx_update_slist_tcp);
+    // }
 
     // Runs a tcp resolver
     fn run_resolver_tcp(
@@ -2041,67 +2041,67 @@ mod resolver_test {
         resolver.check_queries_timeout(queries_hash_by_id, socket_origin);
     }
 
-    #[test]
-    #[ignore = "Todo."]
-    fn new_query_from_msg() {
-        // Create resolver channels
-        let (tx_add_cache_udp, 
-            _rx_add_cache_udp) = mpsc::channel();
-        let (tx_delete_cache_udp, 
-            _rx_delete_cache_udp) = mpsc::channel();
-        let (tx_add_cache_tcp, 
-            _rx_add_cache_tcp) = mpsc::channel();
-        let (tx_delete_cache_tcp, 
-            _rx_delete_cache_tcp) = mpsc::channel();
-        let (tx_update_cache_time_udp, 
-            _rx_update_cache_time_udp) = mpsc::channel();
-        let (tx_update_cache_time_tcp, 
-            _rx_update_cache_time_tcp) = mpsc::channel();
+    // #[test]
+    // #[ignore = "Todo."]
+    // fn new_query_from_msg() {
+    //     // Create resolver channels
+    //     let (tx_add_cache_udp, 
+    //         _rx_add_cache_udp) = mpsc::channel();
+    //     let (tx_delete_cache_udp, 
+    //         _rx_delete_cache_udp) = mpsc::channel();
+    //     let (tx_add_cache_tcp, 
+    //         _rx_add_cache_tcp) = mpsc::channel();
+    //     let (tx_delete_cache_tcp, 
+    //         _rx_delete_cache_tcp) = mpsc::channel();
+    //     let (tx_update_cache_time_udp, 
+    //         _rx_update_cache_time_udp) = mpsc::channel();
+    //     let (tx_update_cache_time_tcp, 
+    //         _rx_update_cache_time_tcp) = mpsc::channel();
 
-        let mut resolver = Resolver::new(
-            tx_add_cache_udp,
-            tx_delete_cache_udp,
-            tx_add_cache_tcp,
-            tx_delete_cache_tcp,
-            tx_update_cache_time_udp,
-            tx_update_cache_time_tcp,
-        );
+    //     let mut resolver = Resolver::new(
+    //         tx_add_cache_udp,
+    //         tx_delete_cache_udp,
+    //         tx_add_cache_tcp,
+    //         tx_delete_cache_tcp,
+    //         tx_update_cache_time_udp,
+    //         tx_update_cache_time_tcp,
+    //     );
 
-        resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
-        let resolver_copy = resolver.clone();
+    //     resolver.set_initial_configuration(RESOLVER_IP_PORT, SBELT_ROOT_IPS);
+    //     let resolver_copy = resolver.clone();
 
-        // rd must be false to be considered a query
-        let dns_query_message = DnsMessage::new_query_message(
-                String::from("test.com"), 
-                1, 
-                1, 
-                0, 
-                false, 
-                1
-            );
-        let src_address = "127.0.0.1:34254";
+    //     // rd must be false to be considered a query
+    //     let dns_query_message = DnsMessage::new_query_message(
+    //             String::from("test.com"), 
+    //             1, 
+    //             1, 
+    //             0, 
+    //             false, 
+    //             1
+    //         );
+    //     let src_address = "127.0.0.1:34254";
 
-        let (tx_update_query, 
-            _rx_update_query) = mpsc::channel();
-        let (tx_delete_query, 
-            _rx_delete_query) = mpsc::channel();
+    //     let (tx_update_query, 
+    //         _rx_update_query) = mpsc::channel();
+    //     let (tx_delete_query, 
+    //         _rx_delete_query) = mpsc::channel();
         
-        let (
-            resolver_query, 
-            _rx_update_slist_tcp, 
-            _rx_update_self_slist) = resolver.new_query_from_msg(
-            dns_query_message, 
-            src_address.to_string(), 
-            &resolver_copy, 
-            resolver_copy.get_tx_add_cache_udp(), 
-            resolver_copy.get_tx_delete_cache_udp(), 
-            resolver_copy.get_tx_add_cache_tcp(), 
-            resolver_copy.get_tx_delete_cache_tcp(), 
-            resolver_copy.get_tx_update_cache_time_udp(), 
-            resolver_copy.get_tx_update_cache_time_tcp(), 
-            tx_update_query, 
-            tx_delete_query);
+    //     let (
+    //         resolver_query, 
+    //         _rx_update_slist_tcp, 
+    //         _rx_update_self_slist) = resolver.new_query_from_msg(
+    //         dns_query_message, 
+    //         src_address.to_string(), 
+    //         &resolver_copy, 
+    //         resolver_copy.get_tx_add_cache_udp(), 
+    //         resolver_copy.get_tx_delete_cache_udp(), 
+    //         resolver_copy.get_tx_add_cache_tcp(), 
+    //         resolver_copy.get_tx_delete_cache_tcp(), 
+    //         resolver_copy.get_tx_update_cache_time_udp(), 
+    //         resolver_copy.get_tx_update_cache_time_tcp(), 
+    //         tx_update_query, 
+    //         tx_delete_query);
 
-        assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
-    }
+    //     assert_eq!(resolver_query.get_slist().get_ns_list().len(), 1);
+    // }
  }

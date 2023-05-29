@@ -527,9 +527,8 @@ impl ResolverQuery {
             .send_to(msg, ip_address)
             .expect("failed to send message");
     }
-
-    /// See if the answer is in local information, and if so it returns it to the client.
-    /// If no local information is found, Step 2 and Step 3 are run and returns None.
+     /// See if the answer is in local information, and if so it returns it to the client.
+     /// If no local information is found, Step 2 and Step 3 are run and returns None.
     pub fn step_1_udp(
         &mut self,
         socket: UdpSocket,
@@ -604,7 +603,6 @@ impl ResolverQuery {
                 .clone();
             counter = counter + 1;
         }
-
         // Set query timeout
         let response_time = best_server_to_ask
             .get(&"response_time".to_string())
@@ -1530,134 +1528,108 @@ impl ResolverQuery {
         return false;
     }
 }
-
 // Getters
 impl ResolverQuery {
     // Gets the timestamp
     pub fn get_timestamp(&self) -> u32 {
         self.timestamp.clone()
     }
-
     // Gets the sname
     pub fn get_sname(&self) -> String {
         self.sname.clone()
     }
-
     // Gets the stype
     pub fn get_stype(&self) -> u16 {
         self.stype
     }
-
     // Gets the sclass
     pub fn get_sclass(&self) -> u16 {
         self.sclass
     }
-
     // Gets the op_code
     pub fn get_op_code(&self) -> u8 {
         self.op_code
     }
-
     // Gets the recursion desired bit
     pub fn get_rd(&self) -> bool {
         self.rd
     }
-
     // Gets the slist
     pub fn get_slist(&self) -> Slist {
         self.slist.clone()
     }
-
     // Gets the sbelt
     pub fn get_sbelt(&self) -> Slist {
         self.sbelt.clone()
     }
-
     // Gets the cache
     pub fn get_cache(&self) -> DnsCache {
         self.cache.clone()
     }
-
     // Gets the main_query_id
     pub fn get_main_query_id(&self) -> u16 {
         self.main_query_id
     }
-
     // Gets the old id
     pub fn get_old_id(&self) -> u16 {
         self.old_id
     }
-
     // Get the owner's query address
     pub fn get_src_address(&self) -> String {
         self.src_address.clone()
     }
-
     // Get the owner's query address
     pub fn get_add_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_channel_udp.clone()
     }
-
     // Get the owner's query address
     pub fn get_add_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.add_channel_tcp.clone()
     }
-
     // Get the owner's query address
     pub fn get_delete_channel_udp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_channel_udp.clone()
     }
-
     // Get the owner's query address
     pub fn get_delete_channel_tcp(&self) -> Sender<(String, ResourceRecord)> {
         self.delete_channel_tcp.clone()
     }
-
     // Gets the queries before temporary error field
     pub fn get_queries_before_temporary_error(&self) -> u16 {
         self.queries_before_temporary_error
     }
-
     // Gets the sender to update the resolver query in the resolver
     pub fn get_tx_update_query(&self) -> Sender<ResolverQuery> {
         self.tx_update_query.clone()
     }
-
     // Gets the sender to delete the resolver query in the resolver
     pub fn get_tx_delete_query(&self) -> Sender<ResolverQuery> {
         self.tx_delete_query.clone()
     }
-
     // Gets the index to choose from slist
     pub fn get_index_to_choose(&self) -> u16 {
         self.index_to_choose
     }
-
     // Gets the last query timestamp
     pub fn get_last_query_timestamp(&self) -> u64 {
         self.last_query_timestamp
     }
-
     // Gets the timeout for the actual query to name server
     pub fn get_timeout(&self) -> u32 {
         self.timeout
     }
-
     // Gets the last query hostname
     pub fn get_last_query_hostname(&self) -> String {
         self.last_query_hostname.clone()
     }
-
     // Gets the sender for updating cache
     pub fn get_update_cache_udp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_udp.clone()
     }
-
     // Gets the sender for updating cache
     pub fn get_update_cache_tcp(&self) -> Sender<(String, String, u32)> {
         self.update_cache_sender_tcp.clone()
     }
-
     // Gets true if the query is an internal query
     pub fn get_internal_query(&self) -> bool {
         self.internal_query
@@ -1723,58 +1695,47 @@ impl ResolverQuery {
     pub fn set_cache(&mut self, cache: DnsCache) {
         self.cache = cache;
     }
-
     // Sets the old id attribute with a new id
     pub fn set_main_query_id(&mut self, query_id: u16) {
         self.main_query_id = query_id;
     }
-
     // Sets the old id attribute with a new id
     pub fn set_old_id(&mut self, query_id: u16) {
         self.old_id = query_id;
     }
-
     // Sets the owner's query address
     pub fn set_src_address(&mut self, address: String) {
         self.src_address = address;
     }
-
     // Sets the queries before temporary error field with a new value
     pub fn set_queries_before_temporary_error(&mut self, queries_before_temporary_error: u16) {
         self.queries_before_temporary_error = queries_before_temporary_error;
     }
-
     // Sets the index to choose from slist with a new value
     pub fn set_index_to_choose(&mut self, index_to_choose: u16) {
         self.index_to_choose = index_to_choose;
     }
-
     // Sets the timestamp for the last query for the request
     pub fn set_last_query_timestamp(&mut self, last_query_timestamp: u64) {
         self.last_query_timestamp = last_query_timestamp;
     }
-
     // Sets the timeout for a query to name server
     pub fn set_timeout(&mut self, timeout: u32) {
         self.timeout = timeout;
     }
-
     // Sets the host name for the last query
     pub fn set_last_query_hostname(&mut self, last_query_hostname: String) {
         self.last_query_hostname = last_query_hostname;
     }
-
     // Sets the query id to update the slist
     pub fn set_query_id_update_slist(&mut self, query_id_update_slist: u16) {
         self.query_id_update_slist = query_id_update_slist;
     }
-
     // Sets the value for the internal query
     pub fn set_internal_query(&mut self, internal_query: bool, queries_left: u16) {
         self.internal_query = internal_query;
         self.queries_before_temporary_error = queries_left;
     }
-
     pub fn set_tx_update_self_slist(&mut self, tx_update_self_slist: Sender<Slist>) {
         self.tx_update_self_slist = tx_update_self_slist;
     }
@@ -2847,7 +2808,6 @@ mod resolver_query_tests {
     }
 
 
-
     //ToDo: Revisar Práctica 1
     #[test]
     fn get_delete_channel_udp() {
@@ -3017,7 +2977,6 @@ mod resolver_query_tests {
 
     //ToDo: Revisar Práctica 1
     #[test]
-
     fn add_to_cache_and_remove_from_cache() {
         // Channels
         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
@@ -3698,11 +3657,11 @@ mod resolver_query_tests {
          resolver_query.set_sname("test.com".to_string());
          let mut slist = Slist::new();
          slist.insert("test.com".to_string(), "".to_string(), 5000);
-         slist.insert("test2.com".to_string(), "".to_string(), 2000);
+         slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2000);
          resolver_query.set_slist(slist);
-         let _resolver = resolver_query.clone();
-         //let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
-         //let _dns = resolver.step_3_tcp(update_slist_tcp_recv);
+         let mut resolver = resolver_query.clone();
+         let (_update_slist_tcp_sender, update_slist_tcp_recv) = mpsc::channel();
+         let _dns = resolver.step_3_tcp(update_slist_tcp_recv);
      }
 
      #[test]
@@ -4694,104 +4653,82 @@ mod resolver_query_tests {
          assert_eq!(msg.get_answer().len(), 0);
      }
 
-    // #[test]
-    // #[should_panic = "Temporary Error"]
-    // fn step_3_udp_should_panic() {
-    //     // Channels
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    //     let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    //     let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    //     let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-    //     let (tx_update_query, _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    //     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-    //     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    //     let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
-    //     let mut resolver_query = ResolverQuery::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         add_sender_ns_udp,
-    //         delete_sender_ns_udp,
-    //         add_sender_ns_tcp,
-    //         delete_sender_ns_tcp,
-    //         tx_update_query,
-    //         tx_delete_query,
-    //         DnsMessage::new(),
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_cache_ns_udp,
-    //         tx_update_cache_ns_tcp,
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
-    //     resolver_query.set_sname("test.com".to_string());
-    //     let mut slist = Slist::new();
-    //     slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
-    //     resolver_query.set_slist(slist);
-    //     resolver_query.set_queries_before_temporary_error(0);
+     #[test]
+     #[should_panic = "Temporary Error"]
+     fn step_3_udp_should_panic() {
+         // Channels
+         let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+   
+        let (_tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+        resolver_query.set_sname("test.com".to_string());
+        let mut slist = Slist::new();
+         slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+         resolver_query.set_slist(slist);
+         resolver_query.set_queries_before_temporary_error(0);
 
-    //     // Socket
-    //     let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
-    //     resolver_query.step_3_udp(socket, rx_update_self_slist);
-    // }
+         // Socket
+         let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
+         resolver_query.step_3_udp(socket, rx_update_self_slist);
+     }
 
-    // #[test]
-    // #[ignore = "Infinite loop on While in Step 3 when empty IP is given"]
-    // fn step_3_udp_empty_ip() {
-    //     // Channels
-    //     let (add_sender_udp, _add_recv_udp) = mpsc::channel();
-    //     let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
-    //     let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
-    //     let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
-    //     let (add_sender_ns_udp, _add_recv_ns_udp) = mpsc::channel();
-    //     let (delete_sender_ns_udp, _delete_recv_ns_udp) = mpsc::channel();
-    //     let (add_sender_ns_tcp, _add_recv_ns_tcp) = mpsc::channel();
-    //     let (delete_sender_ns_tcp, _delete_recv_ns_tcp) = mpsc::channel();
-    //     let (tx_update_query, _rx_update_query) = mpsc::channel();
-    //     let (tx_delete_query, _rx_delete_query) = mpsc::channel();
-    //     let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
-    //     let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
-    //     let (tx_update_cache_ns_udp, _rx_update_cache_ns_udp) = mpsc::channel();
-    //     let (tx_update_cache_ns_tcp, _rx_update_cache_ns_tcp) = mpsc::channel();
-    //     let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
-    //     let (tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
-    //     let mut resolver_query = ResolverQuery::new(
-    //         add_sender_udp,
-    //         delete_sender_udp,
-    //         add_sender_tcp,
-    //         delete_sender_tcp,
-    //         add_sender_ns_udp,
-    //         delete_sender_ns_udp,
-    //         add_sender_ns_tcp,
-    //         delete_sender_ns_tcp,
-    //         tx_update_query,
-    //         tx_delete_query,
-    //         DnsMessage::new(),
-    //         tx_update_cache_udp,
-    //         tx_update_cache_tcp,
-    //         tx_update_cache_ns_udp,
-    //         tx_update_cache_ns_tcp,
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
-    //     resolver_query.set_sname("test.com".to_string());
-    //     let mut slist = Slist::new();
-    //     slist.insert("test.com".to_string(), "".to_string(), 5000);
-    //     resolver_query.set_slist(slist);
+     #[test]
+     fn step_3_udp_empty_ip() {
+        let (add_sender_udp, _add_recv_udp) = mpsc::channel();
+        let (delete_sender_udp, _delete_recv_udp) = mpsc::channel();
+        let (add_sender_tcp, _add_recv_tcp) = mpsc::channel();
+        let (delete_sender_tcp, _delete_recv_tcp) = mpsc::channel();
+        let (tx_update_query, _rx_update_query) = mpsc::channel();
+        let (tx_delete_query, _rx_delete_query) = mpsc::channel();
+        let (tx_update_cache_udp, _rx_update_cache_udp) = mpsc::channel();
+        let (tx_update_cache_tcp, _rx_update_cache_tcp) = mpsc::channel();
+        let (tx_update_slist_tcp, _rx_update_slist_tcp) = mpsc::channel();
+        let (tx_update_self_slist, _rx_update_self_slist) = mpsc::channel();
+        let mut resolver_query = ResolverQuery::new(
+            add_sender_udp,
+            delete_sender_udp,
+            add_sender_tcp,
+            delete_sender_tcp,
+            tx_update_query,
+            tx_delete_query,
+            DnsMessage::new(),
+            tx_update_cache_udp,
+            tx_update_cache_tcp,
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
+        let (_tx_update_self_slist, rx_update_self_slist) = mpsc::channel();
+         resolver_query.set_sname("test.com".to_string());
+         let mut slist = Slist::new();
+         slist.insert("test.com".to_string(), "".to_string(), 5000);
+         slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+         resolver_query.set_slist(slist);
         
-    //     // Socket
-    //     let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
-    //     resolver_query.step_3_udp(socket, rx_update_self_slist);
-    // }
+         // Socket
+         let socket = UdpSocket::bind("127.0.0.1:30400").expect("couldn't bind to address");
+         resolver_query.step_3_udp(socket, rx_update_self_slist);
+     }
 
     #[test] //TODO
     fn step_4_tcp() {
@@ -4868,7 +4805,4 @@ mod resolver_query_tests {
            // update_slist_tcp_recv);
     }
 
-
-
 }
-

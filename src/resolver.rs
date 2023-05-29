@@ -122,10 +122,6 @@ impl Resolver {
         let messages = HashMap::<u16, DnsMessage>::new();
 
         // Channels to send cache data between threads, resolvers and name server
-        let tx_add_udp = self.get_tx_add_cache_udp();
-        let tx_delete_udp = self.get_tx_delete_cache_udp();
-        let tx_add_tcp = self.get_tx_add_cache_tcp();
-        let tx_delete_tcp = self.get_tx_delete_cache_tcp();
         let tx_update_cache_udp = self.get_tx_update_cache_time_udp();
         let tx_update_cache_tcp = self.get_tx_update_cache_time_tcp();
 
@@ -166,11 +162,6 @@ impl Resolver {
             let msg_type = dns_message.get_header().get_qr();
 
             println!("Msg type: {}", msg_type.clone());
-
-            let tx_add_udp_copy = tx_add_udp.clone();
-            let tx_delete_udp_copy = tx_delete_udp.clone();
-            let tx_add_tcp_copy = tx_add_tcp.clone();
-            let tx_delete_tcp_copy = tx_delete_tcp.clone();
 
             let tx_update_query_copy = tx_update_query.clone();
             let tx_delete_query_copy = tx_delete_query.clone();

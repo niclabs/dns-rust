@@ -51,13 +51,11 @@ fn non_existent_type(){
 }
 
 #[test]
-#[ignore]
 fn invalid_domain(){
 
     //values query
     let domain_name = "exam¿ple.com";
-    let google_resolver = "8.8.8.8:53"; 
-    let transport_protocol = "TCP";
+    let google_resolver = "8.8.8.8:53";
 
     // create client query
     let client_query: DnsMessage = create_client_query(domain_name,
@@ -65,16 +63,18 @@ fn invalid_domain(){
                                                            1);
 
     // send query and get response
-    let dns_response = send_client_query(transport_protocol,
-                                        google_resolver,
-                                                client_query);
+    let dns_response_tcp = send_client_query("TCP",google_resolver,client_query.clone());
+    let dns_response_udp = send_client_query("UDP",google_resolver,client_query);
 
-    //Header
-    let header = dns_response.get_header();
-    let rcode = header.get_rcode(); 
-    
-    //Format Error
-    assert_eq!(rcode, 1);
+    //Header TCP
+    let header = dns_response_tcp.get_header();
+    let rcode_tcp = header.get_rcode(); 
+    assert_eq!(rcode_tcp, 1); //Format Error
+
+    //Header UDP
+    let header = dns_response_udp.get_header();
+    let rcode_udp = header.get_rcode(); 
+    assert_eq!(rcode_udp, 1); //Format Error    
 }
 
 #[test]

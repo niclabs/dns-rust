@@ -639,20 +639,18 @@ impl Resolver {
         }
     }
 
-    /// TODO
-    /// See if it's necessary to add "resolver" instead of using using "self", 
-    /// also, if it's necessary to add the senders instead of using self' getters.
+    /// Creates a new ResolverQuery based on a DNS message and other parameters.
+    /// 
+    /// This function takes the Sender channels to update and delete queries (`tx_update_query` 
+    /// and `tx_delete_query`) to create a new ResolverQuery. Uses the values provided by 
+    /// the `dns_message: DnsMessage` and its source address `src_address` to initialize the query. 
+    /// 
+    /// Returns the ResolverQuery and the Receiver channels required to update the query's
+    ///  SLIST, `rx_update_slist_tcp` and `rx_update_slist_tcp`.
     fn new_query_from_msg(
         &mut self, 
         dns_message: DnsMessage,
         src_address: String,
-        resolver: &Resolver,
-        tx_add_cache_udp: Sender<(String, ResourceRecord)>,
-        tx_delete_cache_udp: Sender<(String, ResourceRecord)>,
-        tx_add_cache_tcp: Sender<(String, ResourceRecord)>,
-        tx_delete_cache_tcp: Sender<(String, ResourceRecord)>,
-        tx_update_cache_time_udp: Sender<(String, String, u32)>,
-        tx_update_cache_time_tcp: Sender<(String, String, u32)>,
         tx_update_query: Sender<ResolverQuery>,
         tx_delete_query: Sender<ResolverQuery>) -> (
             ResolverQuery, 
@@ -674,15 +672,15 @@ impl Resolver {
             rx_update_self_slist) = mpsc::channel();
 
         let mut resolver_query = ResolverQuery::new(
-            tx_add_cache_udp,
-            tx_delete_cache_udp,
-            tx_add_cache_tcp,
-            tx_delete_cache_tcp,
+            self.get_tx_add_cache_udp(),
+            self.get_tx_delete_cache_udp(),
+            self.get_tx_add_cache_tcp(),
+            self.get_tx_delete_cache_tcp(),
             tx_update_query,
             tx_delete_query,
             dns_message,
-            tx_update_cache_time_udp,
-            tx_update_cache_time_tcp,
+            self.get_tx_update_cache_time_udp(),
+            self.get_tx_update_cache_time_tcp(),
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
@@ -694,13 +692,12 @@ impl Resolver {
             sclass,
             op_code,
             rd,
-            resolver.get_sbelt(),
-            resolver.get_cache(),
-            // resolver.get_ns_data(),
+            self.get_sbelt(),
+            self.get_cache(),
             src_address.to_string(),
             id,
         );
-        return (resolver_query, rx_update_slist_tcp, rx_update_self_slist);
+        return (resolver_query, rx_update_slist_tcp, rx_update_slist_tcp);
     }
 
     // Runs a tcp resolver

@@ -43,7 +43,7 @@ fn non_existent_type(){
 
     // send query and get response TCP and UDP
     // let dns_response_tcp = send_client_query("TCP",google_resolver,client_query.clone());
-    let dns_response_udp = send_client_query("UDP",google_resolver,client_query);
+    let dns_response_udp = send_client_query(transport_protocol,google_resolver,client_query);
 
     // common::qtype_hinfo_example_no_answer(dns_response_tcp);
     common::qtype_hinfo_example_no_answer(dns_response_udp);
@@ -126,47 +126,41 @@ fn qtype_any_test(){
 }
 
 #[test]
-#[ignore]
 fn qtype_mx_example(){
     
     //values query
     let domain_name = "example.com";
     let google_resolver = "8.8.8.8:53"; 
-    let transport_protocol = "TCP";
 
     // create client query
     let client_query: DnsMessage = create_client_query(domain_name,15,1);
 
-    //send query and get response FIXME:
-    let dns_response_tcp = send_client_query(transport_protocol,google_resolver, client_query.clone());
+    //send query and get response
+    let dns_response_tcp = send_client_query("TCP",google_resolver, client_query.clone());
     let dns_response_udp = send_client_query("UDP",google_resolver, client_query);
 
     common::qtype_mx_example(dns_response_tcp);   
     common::qtype_mx_example(dns_response_udp);   
-
 }
 
 #[test]
-#[ignore]
 fn qtype_ns_example(){
-    //FIXME: fail sometimes
     
     //values query
     let domain_name = "example.com";
-    let google_resolver = "8.8.8.8:53"; 
-    let transport_protocol = "TCP";
+    let cloud_fare_resolver = "1.1.1.1:53";
 
     // create client query
     let client_query: DnsMessage = create_client_query(domain_name,
                                                 2,
                                                 1);
 
-    //send query and get response FIXME: se cae aca
-    let dns_response_test = send_client_query(transport_protocol,
-                                                google_resolver,
-                                                client_query);
+    //send query and get response 
+    let dns_response_tcp = send_client_query("TCP",cloud_fare_resolver,client_query.clone());
+    let dns_response_udp = send_client_query("UDP",cloud_fare_resolver,client_query);
 
-    common::qtype_ns_example(dns_response_test);   
+    common::qtype_ns_example(dns_response_tcp);  
+    common::qtype_ns_example(dns_response_udp); 
 }
 #[test]
 #[ignore]
@@ -175,7 +169,7 @@ fn qtype_cname(){
     
     //values query
     let domain_name = "mail.yahoo.com";
-    let google_resolver = "8.8.8.8:53"; 
+    let google_resolver = "8.8.8.8:53";
     let transport_protocol = "TCP";
 
     // create client query

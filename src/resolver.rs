@@ -639,66 +639,66 @@ impl Resolver {
         }
     }
 
-    // /// Creates a new ResolverQuery based on a DNS message and other parameters.
-    // /// 
-    // /// This function takes the Sender channels to update and delete queries (`tx_update_query` 
-    // /// and `tx_delete_query`) to create a new ResolverQuery. Uses the values provided by 
-    // /// the `dns_message: DnsMessage` and its source address `src_address` to initialize the query. 
-    // /// 
-    // /// Returns the ResolverQuery and the Receiver channels required to update the query's
-    // ///  SLIST, `rx_update_slist_tcp` and `rx_update_slist_tcp`.
-    // fn new_query_from_msg(
-    //     &mut self, 
-    //     dns_message: DnsMessage,
-    //     src_address: String,
-    //     tx_update_query: Sender<ResolverQuery>,
-    //     tx_delete_query: Sender<ResolverQuery>) -> (
-    //         ResolverQuery, 
-    //         Receiver<(String, Vec<ResourceRecord>)>, 
-    //         Receiver<Slist>) {
-    //     // DNS message's data
-    //     let sname = dns_message.get_question().get_qname().get_name();
-    //     let stype = dns_message.get_question().get_qtype();
-    //     let sclass = dns_message.get_question().get_qclass();
-    //     let op_code = dns_message.get_header().get_op_code();
-    //     let rd = dns_message.get_header().get_rd();
-    //     let id = dns_message.get_query_id();
+    /// Creates a new ResolverQuery based on a DNS message and other parameters.
+    /// 
+    /// This function takes the Sender channels to update and delete queries (`tx_update_query` 
+    /// and `tx_delete_query`) to create a new ResolverQuery. Uses the values provided by 
+    /// the `dns_message: DnsMessage` and its source address `src_address` to initialize the query. 
+    /// 
+    /// Returns the ResolverQuery and the Receiver channels required to update the query's
+    ///  SLIST, `rx_update_slist_tcp` and `rx_update_slist_tcp`.
+    fn new_query_from_msg(
+        &mut self, 
+        dns_message: DnsMessage,
+        src_address: String,
+        tx_update_query: Sender<ResolverQuery>,
+        tx_delete_query: Sender<ResolverQuery>) -> (
+            ResolverQuery, 
+            Receiver<(String, Vec<ResourceRecord>)>, 
+            Receiver<Slist>) {
+        // DNS message's data
+        let sname = dns_message.get_question().get_qname().get_name();
+        let stype = dns_message.get_question().get_qtype();
+        let sclass = dns_message.get_question().get_qclass();
+        let op_code = dns_message.get_header().get_op_code();
+        let rd = dns_message.get_header().get_rd();
+        let id = dns_message.get_query_id();
 
-    //     // Channels needed for ResolverQuery
-    //     let (tx_update_slist_tcp, 
-    //         rx_update_slist_tcp) = mpsc::channel();
+        // Channels needed for ResolverQuery
+        let (tx_update_slist_tcp, 
+            rx_update_slist_tcp) = mpsc::channel();
 
-    //     let (tx_update_self_slist, 
-    //         rx_update_self_slist) = mpsc::channel();
+        let (tx_update_self_slist, 
+            rx_update_self_slist) = mpsc::channel();
 
-    //     let mut resolver_query = ResolverQuery::new(
-    //         self.get_tx_add_cache_udp(),
-    //         self.get_tx_delete_cache_udp(),
-    //         self.get_tx_add_cache_tcp(),
-    //         self.get_tx_delete_cache_tcp(),
-    //         tx_update_query,
-    //         tx_delete_query,
-    //         dns_message,
-    //         self.get_tx_update_cache_time_udp(),
-    //         self.get_tx_update_cache_time_tcp(),
-    //         tx_update_slist_tcp,
-    //         tx_update_self_slist,
-    //     );
+        let mut resolver_query = ResolverQuery::new(
+            self.get_tx_add_cache_udp(),
+            self.get_tx_delete_cache_udp(),
+            self.get_tx_add_cache_tcp(),
+            self.get_tx_delete_cache_tcp(),
+            tx_update_query,
+            tx_delete_query,
+            dns_message,
+            self.get_tx_update_cache_time_udp(),
+            self.get_tx_update_cache_time_tcp(),
+            tx_update_slist_tcp,
+            tx_update_self_slist,
+        );
 
-    //     // Initializes ResolverQuery data struct with message's data
-    //     resolver_query.initialize(
-    //         sname,
-    //         stype,
-    //         sclass,
-    //         op_code,
-    //         rd,
-    //         self.get_sbelt(),
-    //         self.get_cache(),
-    //         src_address.to_string(),
-    //         id,
-    //     );
-    //     return (resolver_query, rx_update_slist_tcp, rx_update_slist_tcp);
-    // }
+        // Initializes ResolverQuery data struct with message's data
+        resolver_query.initialize(
+            sname,
+            stype,
+            sclass,
+            op_code,
+            rd,
+            self.get_sbelt(),
+            self.get_cache(),
+            src_address.to_string(),
+            id,
+        );
+        return (resolver_query, rx_update_slist_tcp, rx_update_self_slist);
+    }
 
     // Runs a tcp resolver
     fn run_resolver_tcp(

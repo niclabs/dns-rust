@@ -170,6 +170,7 @@ fn qtype_cname(){
     //values query
     let domain_name = "mail.yahoo.com";
     let google_resolver = "8.8.8.8:53";
+    let cloudfare = "1.1.1.1:53";
     let transport_protocol = "TCP";
 
     // create client query
@@ -178,9 +179,7 @@ fn qtype_cname(){
                                                 1);
 
     //send query and get response FIXME: se cae aca
-    let dns_response_test = send_client_query(transport_protocol,
-                                                google_resolver,
-                                                client_query);
+    let dns_response_test = send_client_query(transport_protocol,cloudfare,client_query);
 
     common::qtype_cname(dns_response_test);   
 }

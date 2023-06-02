@@ -112,9 +112,9 @@ pub fn qtype_a_example_bytes(dns_response: Vec<u8>){
     println!("ASSERTS HEADER OK\n");
 
     //QUESTION SECTION
-    let (qname,_) = get_domain_name(dns_response.clone(), 12);    
-    let type_question = u16::from_be_bytes([dns_response[25], dns_response[26]]);
-    let class_question = u16::from_be_bytes([dns_response[27], dns_response[28]]);
+    let (qname,index_end_qname) = get_domain_name(dns_response.clone(), 12);    
+    let type_question = u16::from_be_bytes([dns_response[index_end_qname], dns_response[index_end_qname + 1]]);
+    let class_question = u16::from_be_bytes([dns_response[index_end_qname + 2], dns_response[index_end_qname + 3]]);
   
     assert_eq!(qname,"example.com.");
     assert_eq!(type_question,1);

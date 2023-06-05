@@ -18,12 +18,12 @@ use std::net::TcpStream;
 use std::net::UdpSocket;
 use std::time::{Duration, Instant};
 
-pub fn run_client() {
+pub fn run_client(host_name: &str) {
     // Start timestamp
     let now = Instant::now();
 
     // Create dns message and send it to the resolver
-    let dns_message_query = create_client_query(HOST_NAME, QTYPE, QCLASS);
+    let dns_message_query = create_client_query(host_name, QTYPE, QCLASS);
 
     //send query and get response
     let mut dns_message = send_client_query(TRANSPORT, RESOLVER_IP_PORT, dns_message_query);

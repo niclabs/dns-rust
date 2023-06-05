@@ -64,7 +64,7 @@ Here you can specify whether to run: *client* or a *server*. Note that if you wa
 
 | Argument | Description |
 |----------|-------------|
-|   `-c`   | Exceute a client that connects to the server and sends requests. |
+|   `-c`   | Execute a client that connects to the server and sends requests. |
 |   `-r`   | Runs a DNS resolver |
 
 ### Example:

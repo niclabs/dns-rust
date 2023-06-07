@@ -138,14 +138,10 @@ use dns_rust::{self,};
 //     }
 // }
 
-
-#[ignore]
 #[test]
 fn qtype_a_example(){
-    //FIXME: Resvisar resolver nuestro
 
     let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000010001000029100000000000000c000a000841d49cc746f76992".to_string();
-    let resolver = "8.8.8.8:53";
 
     // run resolver 
     thread::spawn(move || {
@@ -155,26 +151,23 @@ fn qtype_a_example(){
     thread::sleep(Duration::from_secs(1));
 
     //GOOGLE RESOLVER
-    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    common::qtype_a_example_bytes(dns_response_udp);
-    common::qtype_a_example_bytes(dns_response_tcp); 
+    // let resolver = "8.8.8.8:53";
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    // common::qtype_a_example_bytes(dns_response_udp);
+    // common::qtype_a_example_bytes(dns_response_tcp); 
 
     //OUR RESOLVER
     // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
-    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
     // common::qtype_a_example_bytes(dns_response_udp);
-    // common::qtype_a_example_bytes(dns_response_tcp); 
-  
-   
+    common::qtype_a_example_bytes(dns_response_tcp); 
 }
 
 #[test]
-#[ignore]
 fn qtype_ns_example(){
 
     let string_hex_query = "360f01200001000000000001076578616d706c6503636f6d0000020001000029100000000000000c000a000839f2559f0a6070a7".to_string();
-    let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
@@ -184,27 +177,23 @@ fn qtype_ns_example(){
     thread::sleep(Duration::from_secs(1));
 
     //GOOGLE RESOLVER
-    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    common::qtype_ns_example_bytes(dns_response_udp);
-    common::qtype_ns_example_bytes(dns_response_tcp); 
-
-    //OUR RESOLVER
-    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
-    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let resolver = "8.8.8.8:53";
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
     // common::qtype_ns_example_bytes(dns_response_udp);
     // common::qtype_ns_example_bytes(dns_response_tcp); 
 
+    //OUR RESOLVER
+    let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_ns_example_bytes(dns_response_udp);
+    common::qtype_ns_example_bytes(dns_response_tcp); 
 }
 
-
-#[ignore]
 #[test]
 fn qtype_soa_example(){
-    //FIXME: Se cae resolver 
 
     let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000060001000029100000000000000c000a0008970b6afc9f3385d2".to_string();
-    let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
@@ -214,27 +203,24 @@ fn qtype_soa_example(){
     thread::sleep(Duration::from_secs(1));
   
     //GOOGLE RESOLVER
-    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    common::qtype_soa_example_bytes(dns_response_udp);
-    common::qtype_soa_example_bytes(dns_response_tcp); 
-
-    //OUR RESOLVER
-    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
-    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let resolver = "8.8.8.8:53";
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
     // common::qtype_soa_example_bytes(dns_response_udp);
     // common::qtype_soa_example_bytes(dns_response_tcp); 
-}
 
-//TODO: Falta hacerlo
-// fn qtype_wks(){
-// }
+    //OUR RESOLVER
+    let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_soa_example_bytes(dns_response_udp);
+    common::qtype_soa_example_bytes(dns_response_tcp); 
+}
 
 #[ignore]
 #[test]
 fn qtype_ptr(){
+    //FIXME:
     let string_hex_query = "037801200001000000000001013801380138013807696e2d61646472046172706100000c000100002904d000000000000c000a00084c9879796ef71bec".to_string();
-    let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
@@ -244,16 +230,17 @@ fn qtype_ptr(){
     thread::sleep(Duration::from_secs(1));
   
     //GOOGLE RESOLVER
-    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    common::qtype_ptr_bytes(dns_response_udp);
-    common::qtype_ptr_bytes(dns_response_tcp); 
-
-    //OUR RESOLVER
-    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
-    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let resolver = "8.8.8.8:53";
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
     // common::qtype_ptr_bytes(dns_response_udp);
     // common::qtype_ptr_bytes(dns_response_tcp); 
+
+    //OUR RESOLVER
+    let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_ptr_bytes(dns_response_udp);
+    common::qtype_ptr_bytes(dns_response_tcp); 
 
 }
 
@@ -264,7 +251,6 @@ fn qtype_hinfo_example(){
 
     // let string_hex_query = "b5bb01200001000000000001076578616d706c6503636f6d00000d0001000029100000000000000c000a00082ad20ef6d3683682".to_string();        
     let string_hex_query = "a8eb01200001000000000001076578616d706c6503636f6d00000d0001000029100000000000000c000a00084216f8e4db92ceea".to_string();
-    let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
@@ -274,28 +260,25 @@ fn qtype_hinfo_example(){
     thread::sleep(Duration::from_secs(1));
   
     //GOOGLE RESOLVER
-    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    common::qtype_hinfo_example_bytes(dns_response_udp);
-    common::qtype_hinfo_example_bytes(dns_response_tcp); 
-
-    //OUR RESOLVER
-    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
-    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let resolver = "8.8.8.8:53";
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
     // common::qtype_hinfo_example_bytes(dns_response_udp);
     // common::qtype_hinfo_example_bytes(dns_response_tcp); 
 
+    //OUR RESOLVER
+    let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_hinfo_example_bytes(dns_response_udp);
+    common::qtype_hinfo_example_bytes(dns_response_tcp); 
+
 }
-
-
-
 
 #[test]
 #[ignore]
 fn qtype_mx_example(){
-    //FIXME: fais but becouse of our client, see a library for clreate client query
     let string_hex_query = "ff6e01200001000000000001076578616d706c6503636f6d00000f0001000029100000000000000c000a00084ff21bafb4566efd".to_string();
-    let resolver = "8.8.8.8:53";
+    // let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
@@ -304,27 +287,24 @@ fn qtype_mx_example(){
     thread::sleep(Duration::from_secs(1));
 
     //GOOGLE RESOLVER
-    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    common::qtype_mx_example_bytes(dns_response_udp);
-    common::qtype_mx_example_bytes(dns_response_tcp); 
-
-    //OUR RESOLVER
-    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
-    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
     // common::qtype_mx_example_bytes(dns_response_udp);
     // common::qtype_mx_example_bytes(dns_response_tcp); 
-    
-    
+
+    //OUR RESOLVER
+    let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_mx_example_bytes(dns_response_udp);
+    common::qtype_mx_example_bytes(dns_response_tcp); 
 }
 
 #[ignore]
 #[test]
 fn qtype_txt_example(){
-    //FIXME: 
+    //FIXME: !!!!!!!!!!!!!!!!!!!!
 
     let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000100001000029100000000000000c000a000841d49cc746f76992".to_string();
-    let resolver = "8.8.8.8:53";
 
     //run resolver 
     thread::spawn(move || {
@@ -334,17 +314,17 @@ fn qtype_txt_example(){
     thread::sleep(Duration::from_secs(1));  
     
     //GOOGLE RESOLVER
-    let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    common::qtype_txt_example_bytes(dns_response_udp);
-    common::qtype_txt_example_bytes(dns_response_tcp); 
-
-    //OUR RESOLVER
-    // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
-    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let resolver = "8.8.8.8:53";
+    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
     // common::qtype_txt_example_bytes(dns_response_udp);
     // common::qtype_txt_example_bytes(dns_response_tcp); 
 
+    //OUR RESOLVER
+    let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query,RESOLVER_IP_PORT);
+    //let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // common::qtype_txt_example_bytes(dns_response_udp);
+    common::qtype_txt_example_bytes(dns_response_tcp); 
 }
 
 #[ignore]
@@ -380,10 +360,9 @@ fn qtype_cname(){
 #[ignore]
 #[test]
 fn answer_in_cache(){
-    //FIXME: Resvisar resolver nuestro
+    //FIXME: NO ESTA PONIENDO BIT AA cuando debería estar en cache
 
     let string_hex_query = "861101200001000000000001076578616d706c6503636f6d0000010001000029100000000000000c000a000841d49cc746f76992".to_string();
-    let resolver = "8.8.8.8:53";
 
     // run resolver 
     thread::spawn(move || {
@@ -393,27 +372,29 @@ fn answer_in_cache(){
     thread::sleep(Duration::from_secs(1));
 
     //GOOGLE RESOLVER
-    let _ = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let second_dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-    let _ = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
-    let second_dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    // let resolver = "8.8.8.8:53";
+    // let _ = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let second_dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+    // let _ = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+    // let second_dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
 
-    common::qtype_a_example_bytes_cache(second_dns_response_udp);
-    common::qtype_a_example_bytes_cache(second_dns_response_tcp); 
+    // common::qtype_a_example_bytes_cache(second_dns_response_udp);
+    // common::qtype_a_example_bytes_cache(second_dns_response_tcp); 
 
     //OUR RESOLVER
-    // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
-    // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
-    // common::qtype_a_example_bytes(dns_response_udp);
-    // common::qtype_a_example_bytes(dns_response_tcp); 
+    // let _ = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    // let dns_response_udp_cache = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    let _: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+    let dns_response_tcp_cache: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+
+    common::cache_answer(dns_response_tcp_cache);
+    // common::cache_answer(dns_response_udp_cache);
 }
 
 #[test]
 fn nonexistentdomain(){
-        //FIXME: Resvisar resolver nuestro
 
         let string_hex_query = "eb7801200001000000000001116e6f6e6578697374656e74646f6d61696e0000010001000029100000000000000c000a0008f76b9ff5fb2cba0a".to_string();
-        let resolver = "8.8.8.8:53";
     
         // run resolver 
         thread::spawn(move || {
@@ -423,18 +404,18 @@ fn nonexistentdomain(){
         thread::sleep(Duration::from_secs(1));
     
         //GOOGLE RESOLVER
-        let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
-        let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
+        // let resolver = "8.8.8.8:53";
+        // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),resolver);
+        // let dns_response_tcp = send_get_message_from_resolver_tcp(string_hex_query.clone(),resolver);
     
-        common::nonexistentdomain_bytes(dns_response_udp);
-        common::nonexistentdomain_bytes(dns_response_tcp); 
+        // common::nonexistentdomain_bytes(dns_response_udp);
+        // common::nonexistentdomain_bytes(dns_response_tcp); 
     
         //OUR RESOLVER
         // let dns_response_udp = send_get_message_from_resolver_udp(string_hex_query.clone(),RESOLVER_IP_PORT);
-        // let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
+        let dns_response_tcp: Vec<u8> = send_get_message_from_resolver_tcp(string_hex_query.clone(),RESOLVER_IP_PORT);
         // common::nonexistentdomain_bytes(dns_response_udp);
-        // common::nonexistentdomain_bytes(dns_response_tcp); 
-
+        common::nonexistentdomain_bytes(dns_response_tcp); 
 }
 
 #[test]
@@ -492,7 +473,6 @@ fn send_get_message_from_resolver_udp(hex_string: String,resolver_addr:&str) -> 
     msg.to_vec()
 }
 
-//TODO: trunceted response
 
 ///Sends DNS query by TCP to address of resolver given and returns the response
 fn send_get_message_from_resolver_tcp(hex_string: String, resolver_addr: &str) -> Vec<u8> {
@@ -539,4 +519,9 @@ fn send_get_message_from_resolver_tcp(hex_string: String, resolver_addr: &str) -
 
 
 
+//TODO: trunceted response
+//TODO: queries any type (255)
+//TODO: type WKS (deprecated)
 
+//FIXME: UDP queries
+//FIXME: AA answers 

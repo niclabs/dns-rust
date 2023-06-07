@@ -715,7 +715,7 @@ mod message_test {
         let bytes: [u8; 50] = [
             //test passes with this one
             0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
-            101, 115, 116, 3, 99, 111, 109, 0, 0, 1, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
+            101, 115, 116, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
 
@@ -737,7 +737,7 @@ mod message_test {
 
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(question.get_qtype(), 1);
+        assert_eq!(question.get_qtype(), 16);
         assert_eq!(question.get_qclass(), 1);
 
         // Answer
@@ -773,6 +773,7 @@ mod message_test {
         header.set_tc(true);
         header.set_rcode(8);
         header.set_ancount(0b0000000000000001);
+        header.set_qdcount(1);
 
         let mut question = Question::new();
 
@@ -808,7 +809,7 @@ mod message_test {
         let msg_bytes = &dns_msg.to_bytes();
 
         let real_bytes: [u8; 50] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 0, 0b00000000, 0b00000001, 0, 0, 0,
+            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 1, 0b00000000, 0b00000001, 0, 0, 0,
             0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
             0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];

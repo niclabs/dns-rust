@@ -124,6 +124,7 @@ impl NsRdata {
 #[cfg(test)]
 mod ns_rdata_test {
     use crate::domain_name::DomainName;
+    use crate::message::rdata::Rdata;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -177,5 +178,27 @@ mod ns_rdata_test {
             ns_rdata.get_nsdname().get_name(),
             String::from("test.test2.com")
         );
+    }
+
+    //ToDo: Revisar
+    #[test]
+    fn rr_from_master_file(){
+        let nsrdata_rr = NsRdata::rr_from_master_file("dcc".split_whitespace(),
+         35, 1, 
+         String::from("uchile.cl"), 
+         String::from("uchile.cl"));
+
+         assert_eq!(nsrdata_rr.get_class(), 1);
+         assert_eq!(nsrdata_rr.get_ttl(), 35);
+         assert_eq!(nsrdata_rr.get_name().get_name(), String::from("uchile.cl"));
+         assert_eq!(nsrdata_rr.get_rdlength(), 5);
+         assert_eq!(nsrdata_rr.get_type_code(), 2);
+         
+         let ns_rr_rdata = nsrdata_rr.get_rdata();
+         match ns_rr_rdata {
+            Rdata::SomeNsRdata(val) => assert_eq!(val.get_nsdname().get_name(), 
+            String::from("dcc.uchile.cl")),
+            _ => {}
+        }
     }
 }

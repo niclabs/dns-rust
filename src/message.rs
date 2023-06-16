@@ -22,6 +22,22 @@ pub struct DnsMessage {
     additional: Vec<ResourceRecord>,
 }
 
+//Enum for the Class of a RR in a DnsMessage
+pub enum Rclass {
+    IN,
+    CS,
+    CH,
+    HS,
+    ANY,
+}
+
+//Functions for the Rclass Enum
+impl Rclass {
+
+
+}
+
+
 impl DnsMessage {
     // Creates a new query message
     //

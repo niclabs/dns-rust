@@ -29,6 +29,7 @@ pub enum Rclass {
     CH,
     HS,
     ANY,
+    UNKNOWN(u16),
 }
 
 //Functions for the Rclass Enum
@@ -41,6 +42,7 @@ impl Rclass {
             Rclass::CH => 3,
             Rclass::HS => 4,
             Rclass::ANY => 255,
+            Rclass::UNKNOWN(val) => val,
         }
     }
 
@@ -52,6 +54,18 @@ impl Rclass {
             Rclass::CH => String::from("CH"),
             Rclass::HS => String::from("HS"),
             Rclass::ANY => String::from("ANY"),
+            Rclass::UNKNOWN(_val) => String::from("UNKNOWN CLASS")
+        }
+    }
+
+    pub fn from_int_to_rclass(val:u16) -> Rclass{
+        match val {
+            1 => Rclass::IN,
+            2 => Rclass::CS,
+            3 => Rclass::CH,
+            4 => Rclass::HS,
+            255 => Rclass::ANY,
+            _ => Rclass::UNKNOWN(val)
         }
     }
 

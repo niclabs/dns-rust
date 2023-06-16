@@ -3,6 +3,7 @@ use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
 use crate::message::Rclass;
+use crate::message::Rtype;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
@@ -914,7 +915,7 @@ impl ResolverQuery {
                     println!("Internal Query para {}", qname.clone());
                     let mut rng = thread_rng();
                     let id: u16 = rng.gen();
-                    let dns_msg = DnsMessage::new_query_message(qname.clone(), 1, Rclass::IN, 0, false, id);
+                    let dns_msg = DnsMessage::new_query_message(qname.clone(), Rtype::A, Rclass::IN, 0, false, id);
 
                     let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
                     let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
@@ -1367,7 +1368,7 @@ impl ResolverQuery {
                 if ip_addr == "".to_string() {
                     let mut rng = thread_rng();
                     let id: u16 = rng.gen();
-                    let dns_msg = DnsMessage::new_query_message(qname.clone(), 1, Rclass::IN, 0, false, id);
+                    let dns_msg = DnsMessage::new_query_message(qname.clone(), Rtype::A, Rclass::IN, 0, false, id);
 
                     let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
                     let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
@@ -1490,13 +1491,14 @@ impl ResolverQuery {
     pub fn create_query_message(&mut self) -> DnsMessage {
         let sname = self.get_sname();
         let stype = self.get_stype();
+        let stype_rtype = Rtype::from_int_to_rtype(stype);
         let sclass = self.get_sclass();
         let sclass_rclass = Rclass::from_int_to_rclass(sclass);
         let op_code = self.get_op_code();
         let rd = self.get_rd();
         let id = self.get_main_query_id();
 
-        let query_message = DnsMessage::new_query_message(sname, stype, sclass_rclass, op_code, rd, id);
+        let query_message = DnsMessage::new_query_message(sname, stype_rtype, sclass_rclass, op_code, rd, id);
 
         query_message
     }
@@ -1754,6 +1756,7 @@ mod resolver_query_tests {
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::message::Rclass;
+    use crate::message::Rtype;
     use crate::resolver::resolver_query::ResolverQuery;
     use crate::resolver::slist::Slist;
     use crate::resolver::UdpSocket;
@@ -4600,7 +4603,7 @@ mod resolver_query_tests {
         let dns_message =
             DnsMessage::new_query_message(
                 String::from("dcc.uchile.cl."), 
-                1, 
+                Rtype::A, 
                 Rclass::IN, 
                 0, 
                 true, 
@@ -4824,7 +4827,7 @@ mod resolver_query_tests {
         let mut dns_message =
             DnsMessage::new_query_message(
                 String::from("dcc.uchile.cl."), 
-                1, 
+                Rtype::A, 
                 Rclass::IN, 
                 0, 
                 true, 
@@ -4896,7 +4899,7 @@ mod resolver_query_tests {
         let mut dns_message =
             DnsMessage::new_query_message(
                 String::from("dcc.uchile.cl."), 
-                1, 
+                Rtype::A, 
                 Rclass::IN, 
                 0, 
                 true, 

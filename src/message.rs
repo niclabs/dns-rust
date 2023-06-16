@@ -143,7 +143,7 @@ impl DnsMessage {
     pub fn new_response_message(
         qname: String,
         qtype: u16,
-        qclass: u16,
+        qclass: Rclass,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -165,7 +165,8 @@ impl DnsMessage {
 
         question.set_qname(domain_name);
         question.set_qtype(qtype);
-        question.set_qclass(qclass);
+        let qclass_int = Rclass::from_rclass_to_int(qclass);
+        question.set_qclass(qclass_int);
 
         let dns_message = DnsMessage {
             header: header,
@@ -1037,7 +1038,7 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn new_response_message(){
-        let new_response = DnsMessage::new_response_message(String::from("test.com"), 2, 1, 1, true, 1);
+        let new_response = DnsMessage::new_response_message(String::from("test.com"), 2, Rclass::IN, 1, true, 1);
 
         let header = new_response.get_header();
         let id = header.get_id();

@@ -68,7 +68,7 @@ impl Rclass {
             255 => Rclass::ANY,
             _ => Rclass::UNKNOWN(val)
         }
-    }
+    }  
 }
 
 

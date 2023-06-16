@@ -63,6 +63,21 @@ impl Rtype{
             Rtype::UNKNOWN(val) => val
         }
     }
+    //Function to get the String equivalent of a type
+    pub fn from_rtype_to_str(rtype: Rtype) -> String {
+        match rtype {
+            Rtype::A => String::from("A"),
+            Rtype::NS => String::from("NS"),
+            Rtype::CNAME => String::from("CNAME"),
+            Rtype::SOA => String::from("SOA"),
+            Rtype::PTR => String::from("PTR"),
+            Rtype::HINFO => String::from("HINFO"),
+            Rtype::MX => String::from("MX"),
+            Rtype::TXT => String::from("TXT"),
+            Rtype::ANY => String::from("ANy"),
+            Rtype::UNKNOWN(_val) => String::from("UNKNOWN") 
+        }
+    }
 }
 
 

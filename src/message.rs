@@ -58,6 +58,7 @@ impl Rclass {
         }
     }
 
+    //Function to get the Rclass from a value
     pub fn from_int_to_rclass(val:u16) -> Rclass{
         match val {
             1 => Rclass::IN,
@@ -68,8 +69,6 @@ impl Rclass {
             _ => Rclass::UNKNOWN(val)
         }
     }
-
-
 }
 
 
@@ -93,7 +92,7 @@ impl DnsMessage {
     pub fn new_query_message(
         qname: String,
         qtype: u16,
-        qclass: u16,
+        qclass: Rclass,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -115,7 +114,8 @@ impl DnsMessage {
 
         question.set_qname(domain_name);
         question.set_qtype(qtype);
-        question.set_qclass(qclass);
+        let qclass_int = Rclass::from_rclass_to_int(qclass);
+        question.set_qclass(qclass_int);
 
         let dns_message = DnsMessage {
             header: header,
@@ -216,7 +216,7 @@ impl DnsMessage {
         let mut rng = thread_rng();
         let msg_id = rng.gen();
 
-        let msg = DnsMessage::new_query_message(qname, 252, 1, 0, false, msg_id);
+        let msg = DnsMessage::new_query_message(qname, 252, Rclass::IN, 0, false, msg_id);
 
         msg
     }
@@ -658,11 +658,12 @@ mod message_test {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
+    use crate::message::Rclass;
 
     #[test]
     fn constructor_test() {
         let dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), 1, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
         assert_eq!(dns_query_message.question.get_qtype(), 1);
@@ -679,7 +680,7 @@ mod message_test {
         header.set_rd(true);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), 1, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.get_header().get_rd(), false);
 
@@ -694,7 +695,7 @@ mod message_test {
         question.set_qclass(2);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), 1, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.get_question().get_qclass(), 1);
 
@@ -711,7 +712,7 @@ mod message_test {
         answer.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), 1, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.get_answer().len(), 0);
 
@@ -728,7 +729,7 @@ mod message_test {
         authority.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), 1, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.get_authority().len(), 0);
 
@@ -745,7 +746,7 @@ mod message_test {
         additional.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), 1, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.get_additional().len(), 0);
 
@@ -886,7 +887,7 @@ mod message_test {
     #[test]
     fn add_answers_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), 1, Rclass::IN, 0, false, 1);
 
         let mut new_answer = Vec::<ResourceRecord>::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
@@ -954,7 +955,7 @@ mod message_test {
     #[test]
     fn update_header_counters_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), 1, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.get_header().get_ancount(), 0);
         assert_eq!(dns_query_message.get_header().get_nscount(), 0);
@@ -1001,7 +1002,7 @@ mod message_test {
     #[test]
     fn add_authorities_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), 1, Rclass::IN, 0, false, 1);
 
         let mut new_authority = Vec::<ResourceRecord>::new();
         let a_rdata3 = Rdata::SomeARdata(ARdata::new());
@@ -1019,7 +1020,7 @@ mod message_test {
     #[test]
     fn add_additionals_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), 1, Rclass::IN, 0, false, 1);
 
         let mut new_additional = Vec::<ResourceRecord>::new();
         let a_rdata5 = Rdata::SomeARdata(ARdata::new());
@@ -1060,7 +1061,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_a(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 1, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 1, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1071,7 +1072,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_ns(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 2, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 2, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1082,7 +1083,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_cname(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 5, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 5, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1093,7 +1094,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_soa(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 6, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 6, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1104,7 +1105,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_wks(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 11, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 11, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1115,7 +1116,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_ptr(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 12, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 12, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1126,7 +1127,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_hinfo(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 13, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 13, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1137,7 +1138,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_minfo(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 14, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 14, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1148,7 +1149,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_mx(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 15, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 15, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1159,7 +1160,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_txt(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 16, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 16, Rclass::IN, 1, true, 1);
 
         let qtype = dns_message.get_question_qtype();
 
@@ -1171,7 +1172,7 @@ mod message_test {
     #[should_panic]
     fn get_question_qtype_unreachable(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, 99, 1, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, 99, Rclass::IN, 1, true, 1);
 
         let _qtype = dns_message.get_question_qtype();
     }

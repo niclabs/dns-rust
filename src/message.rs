@@ -33,6 +33,16 @@ pub enum Rclass {
 
 //Functions for the Rclass Enum
 impl Rclass {
+    //Function to get the int equivalent of a class
+    pub fn from_rclass_to_int(class: Rclass) -> u16{
+        match class {
+            Rclass::IN => 1,
+            Rclass::CS => 2,
+            Rclass::CH => 3,
+            Rclass::HS => 4,
+            Rclass::ANY => 255,
+        }
+    }
 
 
 }

@@ -32,6 +32,40 @@ pub enum Rclass {
     UNKNOWN(u16),
 }
 
+//Enum For the Type of a RR in a DnsMessage with an Rdata implementation
+pub enum Rtype {
+    A,
+    NS,
+    CNAME,
+    SOA,
+    PTR,
+    HINFO,
+    MX,
+    TXT,
+    ANY,
+    UNKNOWN(u16),
+}
+
+//Functions for the RType Enum
+impl Rtype{
+    //Function to get the int equivalent of a type
+    pub fn from_rtype_to_int(rtype: Rtype) -> u16{
+        match rtype {
+            Rtype::A => 1,
+            Rtype::NS => 2,
+            Rtype::CNAME => 5,
+            Rtype::SOA => 6,
+            Rtype::PTR => 12,
+            Rtype::HINFO => 13,
+            Rtype::MX => 15,
+            Rtype::TXT => 16,
+            Rtype::ANY => 255,
+            Rtype::UNKNOWN(val) => val
+        }
+    }
+}
+
+
 //Functions for the Rclass Enum
 impl Rclass {
     //Function to get the int equivalent of a class

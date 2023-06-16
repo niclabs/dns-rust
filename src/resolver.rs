@@ -1195,6 +1195,7 @@ mod resolver_test {
     use crate::config::{RESOLVER_IP_PORT, SBELT_ROOT_IPS};
     use crate::dns_cache::DnsCache;
     use crate::message::DnsMessage;
+    use crate::message::Rclass;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
@@ -1571,7 +1572,7 @@ mod resolver_test {
 
         // Send a message to the origin host socket
         let dns_query_message = 
-            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), 1, Rclass::IN, 0, false, 1);
         let socket_to_send_msg = UdpSocket::bind("127.0.0.1:4242").expect("Failed to bind host socket");
         let _result = socket_to_send_msg.connect(host_address_and_port);
         socket_to_send_msg.send_to(&dns_query_message.to_bytes(), host_address_and_port).expect("couldn't send data");
@@ -1592,7 +1593,7 @@ mod resolver_test {
         
         // Send a message to the origin socket
         let dns_query_message =
-        DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+        DnsMessage::new_query_message(String::from("test.com"), 1, Rclass::IN, 0, false, 1);
         let socket_to_send_msg = UdpSocket::bind("127.0.0.1:4242").expect("Failed to bind host socket");
         let _result = socket_to_send_msg.connect(origin_port_address);
         socket_to_send_msg.send_to(&dns_query_message.to_bytes(), origin_port_address).expect("couldn't send data");
@@ -1619,7 +1620,7 @@ mod resolver_test {
     fn receive_udp_msg_with_existing_msg() {
         let mut messages = HashMap::<u16, DnsMessage>::new();
         let dns_message_to_send =
-            DnsMessage::new_query_message(String::from("test.com"), 1, 1, 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), 1, Rclass::IN, 0, false, 1);
         messages.insert(1, dns_message_to_send.clone()); 
 
         let origin_port_address = "127.0.0.1:34254";
@@ -2121,7 +2122,7 @@ mod resolver_test {
         let dns_query_message = DnsMessage::new_query_message(
                 String::from("test.com"), 
                 1, 
-                1, 
+                Rclass::IN, 
                 0, 
                 false, 
                 7

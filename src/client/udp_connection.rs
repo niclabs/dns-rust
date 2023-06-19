@@ -1,9 +1,9 @@
 use crate::client::ClientConnection;
 use crate::message::{DnsMessage, Rtype,Rclass};
 
-use std::net::{IpAddr,Ipv4Addr,UdpSocket,SocketAddr};
-use std::str::FromStr;
+use std::net::{UdpSocket,SocketAddr};
 use std::time::Duration;
+use std::collections::HashMap;
 
 
 pub struct UDPConnection {
@@ -38,23 +38,28 @@ impl ClientConnection for UDPConnection {
                                     .unwrap_or_else(|error| {
                                         panic!("Problem Socket UDP {:?}", error);
                                     });
+        
+        socket_udp.set_read_timeout(Some(timeout)).unwrap(); //FIXME: pensar si timeout sea tipo Opcton<Duration>
 
         socket_udp
             .send_to(&dns_query_bytes ,server_addr)
-            .unwrap_or_else(|e| panic!("Error durent send {}",e));
-        println!("[SEND UDP] mensaje sent");
-
-
-        // socket_udp.set_read_timeout(Some(timeout)).unwrap(); //FIXME: pensar mejor si timeout debe guardarse como Option<Duration>
+            .unwrap_or_else(|e| panic!("Error send {}",e));
         
-        //addr where the query is sent
-        // let server_addr:SocketAddr =         
+        println!("[SEND UDP] query sent");
 
+        //TODO: caso en que se reciven trunncados
+        let mut msg: [u8;512] = [0;512];
+        socket_udp
+            .recv_from(&mut msg)
+            .unwrap_or_else(|e| panic!("Error recv {}",e));
 
-
-        //FIXME: dummt for no warning
-        let dns_query_dummy:DnsMessage = DnsMessage::new();
-        return  dns_query_dummy;
+        println!("{:?}",msg);
+        let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
+            Ok(response) => response,
+            Err(_) => panic!("Error parsing DNS query"),
+        };
+        
+        return  response_dns;
     }
 }
 
@@ -64,10 +69,6 @@ impl UDPConnection {
     fn get_bind_addr(&self)-> SocketAddr {
         return self.bind_addr.clone();
     }
-
-    // fn get_bind_port(&self)-> u16 {
-    //     return  self.bind_port;
-    // }
 
     fn get_timeout(&self)-> Duration {
         return self.timeout.clone();
@@ -83,10 +84,6 @@ impl UDPConnection {
         self.bind_addr = addr;
     }
 
-    // fn set_bind_port(&mut self,bind_port: u16){
-    //     self.bind_port = bind_port;
-    // }
-
     fn set_timeout(&mut self,timeout: Duration) {
         self.timeout = timeout;
     }
@@ -99,6 +96,7 @@ impl UDPConnection {
 mod udp_connection_test{
     
     use super::*;
+    use std::net::{SocketAddr,IpAddr,Ipv4Addr};
     #[test]
     fn create_tcp() {
 
@@ -106,7 +104,7 @@ mod udp_connection_test{
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let port:u16 = 8088;
         let bind_addr:SocketAddr  = SocketAddr::new(ip_addr, port);
-        let timeout = Duration::from_secs(100);
+        let timeout = Duration::from_secs(2);
         let bind_port = 8088;
 
         let _conn_new = UDPConnection::new(bind_addr,timeout);

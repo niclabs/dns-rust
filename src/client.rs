@@ -122,11 +122,11 @@ mod client_test {
 
 
         //create connection
-        let ip_Addr:IpAddr = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
+        let ip_Addr:IpAddr = IpAddr::V4(Ipv4Addr::new(172,17,68,14));
         let port:u16 = 8089;
         
         let addr:SocketAddr = SocketAddr::new(ip_Addr,port);
-        let timeout = Duration::from_secs(100);
+        let timeout = Duration::from_secs(2);
 
 
 ;       let conn_udp:UDPConnection = ClientConnection::new(addr,timeout);
@@ -148,7 +148,7 @@ mod client_test {
         client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);        
 
         //sends query
-        let ip_Addr_server:IpAddr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let ip_Addr_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1,1,1,1));
         let port_dns_udp:u16 = 25;
         let server_addr:SocketAddr = SocketAddr::new(ip_Addr_server,port_dns_udp);
         client_tcp.send_query(server_addr);    //will send through tcp

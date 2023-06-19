@@ -6,16 +6,16 @@
 // use crate::client::tcp_connection::TCPConnection;
 
 use crate::message::{DnsMessage};
-use std::net::{IpAddr,Ipv4Addr};
+use std::net::{IpAddr,Ipv4Addr,SocketAddr};
 use std::time::Duration;
 pub trait ClientConnection: Sized{//: 'static + Sized + Send + Sync + Unpin {
 
-    //creates a ClientConecction TCP or
-    fn new( bind_addr:IpAddr,
-            timeout:Duration) -> Self;
+    //creates a ClientConecction TCP or UDP 
+    fn new(bind_addr:SocketAddr,
+        timeout:Duration) -> Self;
     
     /// function sends query to resolver
-    fn send(&self,dns_query:DnsMessage) -> DnsMessage{
+    fn send(&self,server_addr: SocketAddr, dns_query:DnsMessage) -> DnsMessage{
 
         println!("Default implementation of `send` in ClientConnection");
 

@@ -5,6 +5,7 @@ pub mod udp_connection;
 
 use crate::client::client_connection::ClientConnection;
 use crate::message::{DnsMessage, Rtype,Rclass};
+use std::net::{IpAddr,Ipv4Addr,UdpSocket,SocketAddr};
 
 use rand::{thread_rng, Rng};
 
@@ -66,11 +67,13 @@ impl <T: ClientConnection> Client<T> {
     }
 
     ///Sends the query to the resolver in the client
-    fn send_query(&self) -> DnsMessage {
+    fn send_query(&self,server_addr:SocketAddr) -> DnsMessage {
 
         let client_query = self.get_dns_query();
-        let conn:T = self.get_conn();
+        let server_addr = 
+        let conn: &T = &self.get_conn();
 
+        //conn is in charge of send query
         let dns_response:DnsMessage = conn.send(client_query);
         return  dns_response;
     }
@@ -88,8 +91,8 @@ impl <T: ClientConnection> Client<T> {
 //Getters
 impl <T: ClientConnection> Client<T> {
 
-    fn get_conn(&self)-> T {
-        return self.conn;
+    fn get_conn(&self) -> &T {
+        &self.conn
     }
 
     fn get_dns_query(&self)-> DnsMessage {
@@ -116,6 +119,10 @@ impl <T: ClientConnection> Client<T>{
 
 #[cfg(test)]
 mod client_test {
+    use std::net::SocketAddr;
+
+    use crate::client::config::CLIENT_IP_PORT;
+
     use super::{Client, tcp_connection::TCPConnection, client_connection::ClientConnection, udp_connection::UDPConnection};
 
     #[test]
@@ -125,8 +132,12 @@ mod client_test {
 
 
         //create connection
-        let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let ip_Addr:IpAddr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port:u16 = 8089;
+        
+        let addr:SocketAddr = SocketAddr::new(ip_Addr,port);
         let timeout = Duration::from_secs(100);
+
 
 ;       let conn_udp:UDPConnection = ClientConnection::new(addr,timeout);
         let conn_tcp:TCPConnection = ClientConnection::new(addr,timeout);
@@ -138,16 +149,22 @@ mod client_test {
         //create query
         let domain_name_udp = String::from("uchile.cl");
         let domain_name_tcp = String::from("uchile.cl");
-        let qtype_udp = String::from("A");
-        let qtype_tcp = String::from("A");
-        let qclass_udp:String = String::from("IN");
-        let qclass_tcp:String = String::from("IN");
+        let qtype_udp = String::from("1");//FIXME:
+        let qtype_tcp = String::from("1");
+        let qclass_udp:String = String::from("1");
+        let qclass_tcp:String = String::from("1");
 
         client_udp.create_dns_query(domain_name_udp,qtype_udp,qclass_udp);
-        client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);
-        
+        client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);        
 
         //sends query
+        let ip_Addr_server:IpAddr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port_dns_udp:u16 = 25;
+        let server_addr:SocketAddr = SocketAddr::new(ip_Addr_server,port_dns_udp);
+        client_tcp.send_query(server_addr);    //will send through tcp
+        client_udp.send_query(server_addr);    //will send through udp
+
+
 
     }
 

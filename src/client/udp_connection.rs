@@ -39,7 +39,11 @@ impl ClientConnection for UDPConnection {
                                         panic!("Problem Socket UDP {:?}", error);
                                     });
         
-        socket_udp.set_read_timeout(Some(timeout)).unwrap(); //FIXME: pensar si timeout sea tipo Opcton<Duration>
+        //FIXME: pensar si timeout sea tipo Opcton<Duration>
+        match socket_udp.set_read_timeout(Some(timeout)) {
+            Err(_) => panic!("Error setting read timeout for socket"),
+            Ok(_) => (),
+        }
 
         socket_udp
             .send_to(&dns_query_bytes ,server_addr)
@@ -53,11 +57,13 @@ impl ClientConnection for UDPConnection {
             .recv_from(&mut msg)
             .unwrap_or_else(|e| panic!("Error recv {}",e));
 
-        println!("{:?}",msg);
         let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
             Ok(response) => response,
             Err(_) => panic!("Error parsing DNS query"),
         };
+        // println!("[SEND UDP] {:?}", msg);
+        
+        drop(socket_udp);
         
         return  response_dns;
     }
@@ -105,7 +111,6 @@ mod udp_connection_test{
         let port:u16 = 8088;
         let bind_addr:SocketAddr  = SocketAddr::new(ip_addr, port);
         let timeout = Duration::from_secs(2);
-        let bind_port = 8088;
 
         let _conn_new = UDPConnection::new(bind_addr,timeout);
 

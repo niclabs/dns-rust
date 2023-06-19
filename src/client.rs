@@ -8,6 +8,12 @@ use crate::message::{DnsMessage, Rtype,Rclass};
 use std::net::{IpAddr,Ipv4Addr,UdpSocket,SocketAddr};
 
 use rand::{thread_rng, Rng};
+/*
+TODO: send tcp 
+TODO: caso para recibir truncados (no lo hace ahora)
+TODO: valores que vengan por defecto en un constructor por ejemplo el puerto 53, el socket_Addr 
+ */
+
 
 /// Struct that represents a Client dns
 pub struct Client<T>
@@ -111,8 +117,6 @@ impl <T: ClientConnection> Client<T>{
 mod client_test {
     use std::net::SocketAddr;
 
-    use crate::client::config::CLIENT_IP_PORT;
-
     use super::{Client, tcp_connection::TCPConnection, client_connection::ClientConnection, udp_connection::UDPConnection};
 
     #[test]
@@ -122,12 +126,11 @@ mod client_test {
 
 
         //create connection
-        let ip_Addr:IpAddr = IpAddr::V4(Ipv4Addr::new(172,17,68,14));
-        let port:u16 = 8089;
-        
-        let addr:SocketAddr = SocketAddr::new(ip_Addr,port);
-        let timeout = Duration::from_secs(2);
+        let ip_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 17, 68, 14));
+        let port: u16 = 8089;
 
+        let addr: SocketAddr = SocketAddr::new(ip_addr, port);
+        let timeout: Duration = Duration::from_secs(2);
 
 ;       let conn_udp:UDPConnection = ClientConnection::new(addr,timeout);
         let conn_tcp:TCPConnection = ClientConnection::new(addr,timeout);
@@ -149,7 +152,7 @@ mod client_test {
 
         //sends query
         let ip_Addr_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1,1,1,1));
-        let port_dns_udp:u16 = 25;
+        let port_dns_udp:u16 = 53;
         let server_addr:SocketAddr = SocketAddr::new(ip_Addr_server,port_dns_udp);
         client_tcp.send_query(server_addr);    //will send through tcp
         client_udp.send_query(server_addr);    //will send through udp

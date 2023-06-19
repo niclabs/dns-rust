@@ -18,12 +18,4 @@ pub trait ClientConnection: Sized{//: 'static + Sized + Send + Sync + Unpin {
     fn send() {
         println!("Default implementation of `send` in ClientConnection");
     }
-
-    //Creates query 
-    fn create_dns_query(domain_name: String, qtype : String, qclass: String )  -> DnsMessage{
-        println!("Crateing dns query with : {} - {} - {} ",domain_name,qtype,qclass);
-        let dns_query = DnsMessage::new();
-        return  dns_query;
-        
-    }
 }

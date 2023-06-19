@@ -32,12 +32,11 @@ impl <T: ClientConnection> Client<T> {
         client
     }
 
-    ///creates dns query with the given domain name, type and class   
-    /// TODO:  
+    ///creates dns query with the given domain name, type and class    
     fn create_dns_query(&self,
         domain_name: String,
-        _qtype : String, 
-        _qclass: String )  -> DnsMessage {
+        qtype : String, 
+        qclass: String )  -> DnsMessage {
 
         //Create random generator
         let mut rng = thread_rng();
@@ -45,11 +44,16 @@ impl <T: ClientConnection> Client<T> {
         // Create query id
         let query_id: u16 = rng.gen();
 
-        //get qtype
-        // let rtype: Option<Rtype> = Rtype::from_int_to_rtype(qtype);
-        //TODO: funcion que hace match para obtener tipo enum y lo mismo para qclass
-        let qtype:Rtype = Rtype::A;
-        let qclass:Rclass = Rclass::IN;
+        //Changes types 
+        let int_qtype:u16 = qtype.parse().unwrap(); //FIXME: arrglear est eparseo, lo debe hacer el enum
+        let int_qclass:u16 = qclass.parse().unwrap(); 
+
+        let qtype:Rtype = Rtype::from_int_to_rtype(int_qtype);
+        let qclass:Rclass = Rclass::from_int_to_rclass(int_qtype);
+
+
+
+        println!("[CREATE DNS]");
 
         // Create query msg
         let query_msg_custome:DnsMessage =
@@ -66,6 +70,7 @@ impl <T: ClientConnection> Client<T> {
     ///Sends the query to the resolver in the client
     ///  TODO:  
     fn send_query(&self,query_msg: DnsMessage) -> DnsMessage {
+
         // self.conn.send(query_msg)
 
         //FIXME: dummt for no warning
@@ -87,9 +92,6 @@ impl <T: ClientConnection> Client<T> {
 
 #[cfg(test)]
 mod client_test {
-
-    use crate::message::DnsMessage;
-
     use super::{Client, tcp_connection::TCPConnection, client_connection::ClientConnection, udp_connection::UDPConnection};
 
     #[test]
@@ -119,6 +121,9 @@ mod client_test {
 
         let _query_client_udp = client_udp.create_dns_query(domain_name_udp,qtype_udp,qclass_udp);
         let _query_client_tcp = client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);
+
+
+
     }
 
    

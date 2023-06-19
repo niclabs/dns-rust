@@ -33,42 +33,39 @@ impl <T: ClientConnection> Client<T> {
     }
 
     ///creates dns query with the given domain name, type and class    
-    fn create_dns_query(&self,
+    pub fn create_dns_query(
+        &mut self,
         domain_name: String,
-        qtype : String, 
-        qclass: String )  -> DnsMessage {
-
-        //Create random generator
+        qtype: String,
+        qclass: String,
+    )  {
+        // Create random generator
         let mut rng = thread_rng();
 
         // Create query id
         let query_id: u16 = rng.gen();
 
-        //Changes types 
-        let int_qtype:u16 = qtype.parse().unwrap(); //FIXME: arrglear est eparseo, lo debe hacer el enum
-        let int_qclass:u16 = qclass.parse().unwrap(); 
+        // Changes types
+        let int_qtype: u16 = qtype.parse::<u16>().unwrap(); //FIXME: arrreglar parseo de String a int  
+        let int_qclass: u16 = qclass.parse::<u16>().unwrap();
 
-        let qtype:Rtype = Rtype::from_int_to_rtype(int_qtype);
-        let qclass:Rclass = Rclass::from_int_to_rclass(int_qtype);
-
-
-
-        println!("[CREATE DNS]");
+        let qtype: Rtype = Rtype::from_int_to_rtype(int_qtype);
+        let qclass: Rclass = Rclass::from_int_to_rclass(int_qclass);
 
         // Create query msg
-        let query_msg_custome:DnsMessage =
-            DnsMessage::new_query_message(domain_name, 
-                                            qtype,
-                                            qclass, 
-                                            0,
-                                            false, 
-                                            query_id);
-        
-        query_msg_custome
+        let client_query: DnsMessage = DnsMessage::new_query_message(
+            domain_name,
+            qtype,
+            qclass,
+            0,
+            false,
+            query_id,
+        );
+
+        self.dns_query = client_query;
     }
 
     ///Sends the query to the resolver in the client
-    ///  TODO:  
     fn send_query(&self,query_msg: DnsMessage) -> DnsMessage {
 
         // self.conn.send(query_msg)
@@ -87,7 +84,34 @@ impl <T: ClientConnection> Client<T> {
     //     reponse
     // }
 }
-    
+
+//Getters
+impl <T: ClientConnection> Client<T> {
+
+    // fn get_conn(&self)-> T {
+    //     // return self.conn.clone();
+    // }
+
+    fn get_dns_query(&self)-> DnsMessage {
+        return self.dns_query.clone();
+    }
+
+
+}
+
+//Setters
+impl <T: ClientConnection> Client<T>{
+
+    fn set_conn(&mut self,conn :T) {
+        self.conn = conn;
+    }
+
+    fn set_dns_query(&mut self,dns_query: DnsMessage) {
+        self.dns_query = dns_query;
+    }
+
+}
+
 
 
 #[cfg(test)]
@@ -108,8 +132,8 @@ mod client_test {
         let conn_tcp:TCPConnection = ClientConnection::new(addr,timeout);
 
         //create client
-        let client_udp = Client::new(conn_udp); //se crea un cliente vacio?
-        let client_tcp = Client::new(conn_tcp);
+        let mut client_udp = Client::new(conn_udp); //se crea un cliente vacio?
+        let mut client_tcp = Client::new(conn_tcp);
 
         //create query
         let domain_name_udp = String::from("uchile.cl");
@@ -119,10 +143,11 @@ mod client_test {
         let qclass_udp:String = String::from("IN");
         let qclass_tcp:String = String::from("IN");
 
-        let _query_client_udp = client_udp.create_dns_query(domain_name_udp,qtype_udp,qclass_udp);
-        let _query_client_tcp = client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);
+        client_udp.create_dns_query(domain_name_udp,qtype_udp,qclass_udp);
+        client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);
+        
 
-
+        //sends query
 
     }
 

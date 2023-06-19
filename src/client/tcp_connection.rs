@@ -1,8 +1,8 @@
 use crate::client::ClientConnection;
-use crate::message::{DnsMessage, Rtype,Rclass};
+use crate::message::{DnsMessage};
 
 use std::io::{Write, Read};
-use std::net::{IpAddr,Ipv4Addr,TcpStream,SocketAddr};
+use std::net::{TcpStream,SocketAddr};
 use std::time::Duration;
 
 
@@ -23,8 +23,7 @@ impl ClientConnection for TCPConnection {
         }
     }
 
-    //TODO: funcion enviar
-
+    ///creates socket tcp, sends query and receive response
     fn send(&self, server_addr: SocketAddr, dns_query: DnsMessage) -> DnsMessage {
         println!("[SEND TCP]");
         let timeout: Duration = self.get_timeout();
@@ -106,6 +105,8 @@ impl TCPConnection {
 mod tcp_connection_test{
     
     use super::*;
+    use std::net::{SocketAddr,IpAddr,Ipv4Addr};
+
     #[test]
     fn create_tcp() {
 

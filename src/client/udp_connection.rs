@@ -5,15 +5,9 @@ use std::time::Duration;
 
 
 pub struct UDPConnection {
-    name_server: SocketAddr,
+    name_server: String,
     bind_addr: Option<SocketAddr>,
     timeout: Duration,
-}
-
-impl UDPConnection {
-    
-
-
 }
 
 impl ClientConnection for UDPConnection {
@@ -21,8 +15,7 @@ impl ClientConnection for UDPConnection {
     ///Creates UDPConnection
     fn new() -> UDPConnection {
         UDPConnection {
-            //FIXME: por mientras valor dummy
-            name_server: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), 0),
+            name_server: String::from(""),
             bind_addr: None,
             timeout: Duration::from_secs(0),
         }
@@ -33,6 +26,40 @@ impl ClientConnection for UDPConnection {
         println!("impl send() for TCPConnection");
     }
 }
+
+//Getters
+impl UDPConnection {
+
+    fn get_name_server(&self)->String{
+        return self.name_server.clone();    
+    }
+
+    fn get_bind_addr(&self)-> Option<SocketAddr> {
+        return self.bind_addr.clone();
+    }
+
+    fn get_timeout(&self)-> Duration {
+        return self.timeout.clone();
+    }
+}
+
+//Setters
+impl UDPConnection {
+    
+    fn set_name_server(&mut self, name_server: String){        
+        self.name_server = name_server;
+    }
+    fn set_bind_addr(&mut self,addr :SocketAddr) {
+        self.bind_addr = Some(addr) ;
+    }
+    fn set_timeout(&mut self,timeout: Duration) {
+        self.timeout = timeout;
+
+    }
+
+
+}
+
 
 
 #[cfg(test)]

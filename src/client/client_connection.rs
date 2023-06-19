@@ -12,5 +12,7 @@ pub trait ClientConnection {//: 'static + Sized + Send + Sync + Unpin {
     fn new() -> Self;
     
     /// function sends query to resolver
-    fn send();
+    fn send() {
+        println!("Default implementation of `send` in ClientConnection");
+    }
 }

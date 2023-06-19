@@ -42,6 +42,7 @@ impl ClientConnection for UDPConnection {
         socket_udp
             .send_to(&dns_query_bytes ,server_addr)
             .unwrap_or_else(|e| panic!("Error durent send {}",e));
+        println!("[SEND UDP] mensaje sent");
 
 
         // socket_udp.set_read_timeout(Some(timeout)).unwrap(); //FIXME: pensar mejor si timeout debe guardarse como Option<Duration>

@@ -70,22 +70,12 @@ impl <T: ClientConnection> Client<T> {
     fn send_query(&self,server_addr:SocketAddr) -> DnsMessage {
 
         let client_query = self.get_dns_query();
-        let server_addr = 
         let conn: &T = &self.get_conn();
 
         //conn is in charge of send query
-        let dns_response:DnsMessage = conn.send(client_query);
+        let dns_response:DnsMessage = conn.send(server_addr,client_query);
         return  dns_response;
     }
-
-    // Create and send dns query and receive response
-    // pub fn query(&self, domain_name: String, qtype : String, qclass: String) -> DnsMessage {
-    //     let query = create_dns_query(domain_name, qtype, qclass);
-        
-    //     let response = send_udp_query(query);
-
-    //     reponse
-    // }
 }
 
 //Getters
@@ -132,7 +122,7 @@ mod client_test {
 
 
         //create connection
-        let ip_Addr:IpAddr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let ip_Addr:IpAddr = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
         let port:u16 = 8089;
         
         let addr:SocketAddr = SocketAddr::new(ip_Addr,port);

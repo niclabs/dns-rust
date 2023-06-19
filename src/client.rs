@@ -66,13 +66,13 @@ impl <T: ClientConnection> Client<T> {
     }
 
     ///Sends the query to the resolver in the client
-    fn send_query(&self,query_msg: DnsMessage) -> DnsMessage {
+    fn send_query(&self) -> DnsMessage {
 
-        // self.conn.send(query_msg)
+        let client_query = self.get_dns_query();
+        let conn:T = self.get_conn();
 
-        //FIXME: dummt for no warning
-        let dns_query_dummy:DnsMessage = DnsMessage::new();
-        return  dns_query_dummy;
+        let dns_response:DnsMessage = conn.send(client_query);
+        return  dns_response;
     }
 
     // Create and send dns query and receive response
@@ -88,9 +88,9 @@ impl <T: ClientConnection> Client<T> {
 //Getters
 impl <T: ClientConnection> Client<T> {
 
-    // fn get_conn(&self)-> T {
-    //     // return self.conn.clone();
-    // }
+    fn get_conn(&self)-> T {
+        return self.conn;
+    }
 
     fn get_dns_query(&self)-> DnsMessage {
         return self.dns_query.clone();

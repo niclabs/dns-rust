@@ -1,4 +1,5 @@
 use crate::client::ClientConnection;
+use crate::message::{DnsMessage, Rtype,Rclass};
 
 use std::net::{IpAddr,Ipv4Addr};
 use std::time::Duration;
@@ -14,15 +15,19 @@ impl ClientConnection for TCPConnection {
     ///Creates UDPConnection
     fn new(bind_addr:IpAddr, timeout:Duration) -> TCPConnection {
         TCPConnection {
-            // domain_name: domain_name,
             bind_addr: bind_addr,
             timeout: timeout,
         }
     }
 
     //TODO: funcion enviar
-    fn send(){
+    fn send(&self,dns_query:DnsMessage)-> DnsMessage{
+
         println!("impl send() for TCPConnection");
+
+        //FIXME: dummt for no warning
+        let dns_query_dummy:DnsMessage = DnsMessage::new();
+        return  dns_query_dummy;
     }
 }
 

@@ -15,7 +15,12 @@ pub trait ClientConnection: Sized{//: 'static + Sized + Send + Sync + Unpin {
             timeout:Duration) -> Self;
     
     /// function sends query to resolver
-    fn send() {
+    fn send(&self,dns_query:DnsMessage) -> DnsMessage{
+
         println!("Default implementation of `send` in ClientConnection");
+
+        //FIXME: dummt for no warning
+        let dns_query_dummy:DnsMessage = DnsMessage::new();
+        return  dns_query_dummy;
     }
 }

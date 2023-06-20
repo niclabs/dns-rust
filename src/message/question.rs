@@ -1,5 +1,8 @@
 use crate::domain_name::DomainName;
 
+use crate::message::Rclass;
+use crate::message::Rtype;
+
 #[derive(Default, Clone)]
 // An struct that represents the question section from a dns message
 //
@@ -18,9 +21,9 @@ use crate::domain_name::DomainName;
 pub struct Question {
     qname: DomainName,
     // type of query
-    qtype: u16,
+    qtype: Rtype,
     // class of query
-    qclass: u16,
+    qclass: Rclass,
 }
 
 // Methods
@@ -39,8 +42,8 @@ impl Question {
     pub fn new() -> Self {
         let question: Question = Question {
             qname: DomainName::new(),
-            qtype: 0 as u16,
-            qclass: 0 as u16,
+            qtype: Rtype::A,
+            qclass: Rclass::IN,
         };
         question
     }

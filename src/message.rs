@@ -137,6 +137,9 @@ impl Rtype{
         }
     }
 }
+impl Default for Rtype {
+    fn default() -> Self { Rtype::A }
+}
 
 
 //Functions for the Rclass Enum
@@ -189,6 +192,10 @@ impl Rclass {
             _ => Rclass::UNKNOWN(99)
         }
     }  
+}
+
+impl Default for Rclass {
+    fn default() -> Self { Rclass::IN }
 }
 
 

@@ -153,6 +153,19 @@ impl Rclass {
             255 => Rclass::ANY,
             _ => Rclass::UNKNOWN(val)
         }
+    }
+
+    //Function to get the Rclass from a String
+    pub fn from_string_to_rclass(string: String) -> Rclass{
+        let to_be_macthed = string.as_str();
+        match to_be_macthed {
+            "IN" => Rclass::IN,
+            "CS" => Rclass::CS,
+            "CH" => Rclass::CH,
+            "HS" => Rclass::HS,
+            "ANY" => Rclass::ANY,
+            _ => Rclass::UNKNOWN(99)
+        }
     }  
 }
 

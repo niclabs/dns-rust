@@ -725,24 +725,6 @@ impl DnsMessage {
     pub fn get_query_id(&self) -> u16 {
         self.get_header().get_id()
     }
-
-    pub fn get_question_qtype(&self) -> String {
-        let qtype = match self.get_question().get_qtype() {
-            1 => "A".to_string(),
-            2 => "NS".to_string(),
-            5 => "CNAME".to_string(),
-            6 => "SOA".to_string(),
-            11 => "WKS".to_string(),
-            12 => "PTR".to_string(),
-            13 => "HINFO".to_string(),
-            14 => "MINFO".to_string(),
-            15 => "MX".to_string(),
-            16 => "TXT".to_string(),
-            _ => unreachable!(),
-        };
-
-        qtype
-    }
 }
 
 // Setters
@@ -799,8 +781,8 @@ mod message_test {
             DnsMessage::new_query_message("test.com".to_string(), Rtype::A, Rclass::IN, 0, false, 1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
-        assert_eq!(dns_query_message.question.get_qtype(), 1);
-        assert_eq!(dns_query_message.question.get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(dns_query_message.question.get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(dns_query_message.question.get_qclass()), 1);
         assert_eq!(
             dns_query_message.question.get_qname().get_name(),
             "test.com".to_string()
@@ -830,11 +812,11 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message("test.com".to_string(), Rtype::A, Rclass::IN, 0, false, 1);
 
-        assert_eq!(dns_query_message.get_question().get_qclass(), 1);
+        assert_eq!(Rclass::from_rclass_to_int(dns_query_message.get_question().get_qclass()), 1);
 
         dns_query_message.set_question(question);
 
-        assert_eq!(dns_query_message.get_question().get_qclass(), 2);
+        assert_eq!(Rclass::from_rclass_to_int(dns_query_message.get_question().get_qclass()), 2);
     }
 
     #[test]
@@ -922,8 +904,8 @@ mod message_test {
 
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(question.get_qtype(), 16);
-        assert_eq!(question.get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(question.get_qtype()), 16);
+        assert_eq!(Rclass::from_rclass_to_int(question.get_qclass()), 1);
 
         // Answer
         assert_eq!(answer.len(), 1);
@@ -1056,8 +1038,8 @@ mod message_test {
             dns_message.get_question().get_qname().get_name(),
             String::from("example.com")
         );
-        assert_eq!(dns_message.get_question().get_qtype(), 252);
-        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(dns_message.get_question().get_qtype()), 252);
+        assert_eq!(Rclass::from_rclass_to_int(dns_message.get_question().get_qclass()), 1);
         assert_eq!(dns_message.get_header().get_op_code(), 0);
         assert_eq!(dns_message.get_header().get_rd(), false);
     }
@@ -1186,8 +1168,8 @@ mod message_test {
         assert_eq!(op_code, 1);
         assert!(rd);
         assert_eq!(qname, String::from("test.com"));
-        assert_eq!(qtype, 2);
-        assert_eq!(qclass, 1);
+        assert_eq!(Rtype::from_rtype_to_int(qtype), 2);
+        assert_eq!(Rtype::from_rtype_to_int(qtype), 1);
     }
 
     //ToDo: Revisar
@@ -1196,7 +1178,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::A, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("A"));
     }
@@ -1207,7 +1189,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::NS, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("NS"));
     }
@@ -1218,7 +1200,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::CNAME, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("CNAME"));
     }
@@ -1229,7 +1211,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::SOA, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("SOA"));
     }
@@ -1240,7 +1222,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::WKS, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("WKS"));
     }
@@ -1251,7 +1233,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::PTR, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("PTR"));
     }
@@ -1262,7 +1244,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::HINFO, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("HINFO"));
     }
@@ -1273,7 +1255,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::MINFO, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("MINFO"));
     }
@@ -1284,7 +1266,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::MX, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("MX"));
     }
@@ -1295,18 +1277,8 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, Rtype::TXT, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question_qtype();
+        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("TXT"));
-    }
-
-    //ToDo: Revisar
-    #[test]
-    #[should_panic]
-    fn get_question_qtype_unreachable(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, Rtype::UNKNOWN(99), Rclass::IN, 1, true, 1);
-
-        let _qtype = dns_message.get_question_qtype();
     }
 }

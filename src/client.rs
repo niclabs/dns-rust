@@ -56,8 +56,10 @@ impl <T: ClientConnection> Client<T> {
         let int_qtype: u16 = qtype.parse::<u16>().unwrap(); //FIXME: arrreglar parseo de String a int  
         let int_qclass: u16 = qclass.parse::<u16>().unwrap();
 
-        let qtype: Rtype = Rtype::from_int_to_rtype(int_qtype);
-        let qclass: Rclass = Rclass::from_int_to_rclass(int_qclass);
+        let qtype_rtype: Rtype = Rtype::from_int_to_rtype(int_qtype);
+        let qtype: String = Rtype::from_rtype_to_str(qtype_rtype);
+        let qclass_rclass: Rclass = Rclass::from_int_to_rclass(int_qclass);
+        let qclass: String = Rclass::from_rclass_to_str(qclass_rclass);
 
         // Create query msg
         let client_query: DnsMessage = DnsMessage::new_query_message(

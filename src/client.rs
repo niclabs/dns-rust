@@ -52,15 +52,6 @@ impl <T: ClientConnection> Client<T> {
         // Create query id
         let query_id: u16 = rng.gen();
 
-        // Changes types
-        let int_qtype: u16 = qtype.parse::<u16>().unwrap(); //FIXME: arrreglar parseo de String a int  
-        let int_qclass: u16 = qclass.parse::<u16>().unwrap();
-
-        let qtype_rtype: Rtype = Rtype::from_int_to_rtype(int_qtype);
-        let qtype: String = Rtype::from_rtype_to_str(qtype_rtype);
-        let qclass_rclass: Rclass = Rclass::from_int_to_rclass(int_qclass);
-        let qclass: String = Rclass::from_rclass_to_str(qclass_rclass);
-
         // Create query msg
         let client_query: DnsMessage = DnsMessage::new_query_message(
             domain_name,
@@ -144,10 +135,10 @@ mod client_test {
         //create query
         let domain_name_udp = String::from("uchile.cl");
         let domain_name_tcp = String::from("uchile.cl");
-        let qtype_udp = String::from("1");//FIXME:
-        let qtype_tcp = String::from("1");
-        let qclass_udp:String = String::from("1");
-        let qclass_tcp:String = String::from("1");
+        let qtype_udp = String::from("A");
+        let qtype_tcp = String::from("A");
+        let qclass_udp:String = String::from("IN");
+        let qclass_tcp:String = String::from("IN");
 
         client_udp.create_dns_query(domain_name_udp,qtype_udp,qclass_udp);
         client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);        

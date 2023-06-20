@@ -114,6 +114,28 @@ impl Rtype{
             _ => Rtype::UNKNOWN(val),
         }
     }
+
+    //Function to get the Rtype from a String
+    pub fn from_string_to_rtype(string: String) -> Rtype{
+        let to_be_matched = string.as_str();
+        match to_be_matched {
+            "A" => Rtype::A,
+            "NS" => Rtype::NS,
+            "CNAME" => Rtype::CNAME,
+            "SOA" => Rtype::SOA,
+            "WKS" => Rtype::WKS,
+            "PTR" => Rtype::PTR,
+            "HINFO" => Rtype::HINFO,
+            "MINFO" => Rtype::MINFO,
+            "MX" => Rtype::MX,
+            "TXT" => Rtype::TXT,
+            "AXFR" => Rtype::AXFR,
+            "MAILB" => Rtype::MAILB,
+            "MAILA" => Rtype::MAILA,
+            "ANY" => Rtype::ANY,
+            _ => Rtype::UNKNOWN(99),
+        }
+    }
 }
 
 

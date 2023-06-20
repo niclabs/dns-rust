@@ -22,6 +22,7 @@ pub struct DnsMessage {
     additional: Vec<ResourceRecord>,
 }
 
+#[derive(Clone)]
 //Enum for the Class of a RR in a DnsMessage
 pub enum Rclass {
     IN,
@@ -32,6 +33,7 @@ pub enum Rclass {
     UNKNOWN(u16),
 }
 
+#[derive(Clone)]
 //Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
     A,

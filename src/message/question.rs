@@ -83,7 +83,7 @@ impl Question {
     // Returns a byte that represents the first byte from qtype.
     fn get_first_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
-        let first_byte = (qtype >> 8) as u8;
+        let first_byte = (Rtype::from_rtype_to_int(qtype) >> 8) as u8;
 
         first_byte
     }
@@ -91,7 +91,7 @@ impl Question {
     // Returns a byte that represents the second byte from qtype.
     fn get_second_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
-        let second_byte = qtype as u8;
+        let second_byte = Rtype::from_rtype_to_int(qtype) as u8;
 
         second_byte
     }
@@ -99,7 +99,7 @@ impl Question {
     // Returns a byte that represents the first byte from qclass.
     fn get_first_qclass_byte(&self) -> u8 {
         let qclass = self.get_qclass();
-        let first_byte = (qclass >> 8) as u8;
+        let first_byte = (Rclass::from_rclass_to_int(qclass) >> 8) as u8;
 
         first_byte
     }
@@ -107,7 +107,7 @@ impl Question {
     // Returns a byte that represents the second byte from qclass.
     fn get_second_qclass_byte(&self) -> u8 {
         let qclass = self.get_qclass();
-        let second_byte = qclass as u8;
+        let second_byte = Rclass::from_rclass_to_int(qclass) as u8;
 
         second_byte
     }
@@ -140,11 +140,13 @@ impl Question {
     }
 
     pub fn set_qtype(&mut self, qtype: u16) {
-        self.qtype = qtype;
+        let new_qtype = Rtype::from_int_to_rtype(qtype);
+        self.qtype = new_qtype;
     }
 
     pub fn set_qclass(&mut self, qclass: u16) {
-        self.qclass = qclass;
+        let new_qclass = Rclass::from_int_to_rclass(qclass);
+        self.qclass = new_qclass;
     }
 }
 
@@ -154,27 +156,30 @@ impl Question {
         self.qname.clone()
     }
 
-    pub fn get_qtype(&self) -> u16 {
-        self.qtype
+    pub fn get_qtype(&self) -> Rtype {
+        self.qtype.clone()
     }
 
-    pub fn get_qclass(&self) -> u16 {
-        self.qclass
+    pub fn get_qclass(&self) -> Rclass {
+        self.qclass.clone()
     }
 }
 
 #[cfg(test)]
 mod question_test {
+
     use super::Question;
     use crate::domain_name::DomainName;
+    use crate::message::Rtype;
+    use crate::message::Rclass;
 
     #[test]
     fn constructor_test() {
         let question = Question::new();
 
         assert_eq!(question.qname.get_name(), String::from(""));
-        assert_eq!(question.qtype, 0);
-        assert_eq!(question.qclass, 0);
+        assert_eq!(Rtype::from_rtype_to_str(question.qtype), String::from("A"));
+        assert_eq!(Rclass::from_rclass_to_str(question.qclass), String::from("IN"));
     }
 
     #[test]
@@ -197,11 +202,11 @@ mod question_test {
         let mut question = Question::new();
 
         let mut qtype = question.get_qtype();
-        assert_eq!(qtype, 0);
+        assert_eq!(Rtype::from_rtype_to_str(qtype), String::from("A"));
 
-        question.set_qtype(1 as u16);
+        question.set_qtype(5 as u16);
         qtype = question.get_qtype();
-        assert_eq!(qtype, 1 as u16);
+        assert_eq!(Rtype::from_rtype_to_str(qtype), String::from("CNAME"));
     }
 
     #[test]
@@ -209,11 +214,11 @@ mod question_test {
         let mut question = Question::new();
 
         let mut qclass = question.get_qclass();
-        assert_eq!(qclass, 0);
+        assert_eq!(Rclass::from_rclass_to_str(qclass), String::from("IN"));
 
-        question.set_qclass(1 as u16);
+        question.set_qclass(2 as u16);
         qclass = question.get_qclass();
-        assert_eq!(qclass, 1 as u16);
+        assert_eq!(Rclass::from_rclass_to_str(qclass), String::from("CS"));
     }
 
     #[test]
@@ -252,9 +257,9 @@ mod question_test {
         let qname = question.get_qname().get_name();
         assert_eq!(qname, String::from("test.com"));
         let qtype = question.get_qtype();
-        assert_eq!(qtype, 5);
+        assert_eq!(Rtype::from_rtype_to_int(qtype), 5);
         let qclass = question.get_qclass();
-        assert_eq!(qclass, 1);
+        assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
     }
 
     #[test]

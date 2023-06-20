@@ -4355,16 +4355,16 @@ mod resolver_query_tests {
         dns_message.set_header(header);
 
         assert_eq!(dns_message.get_header().get_rd(), true);
-        assert_eq!(dns_message.get_question().get_qtype(), 1);
-        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(dns_message.get_question().get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(dns_message.get_question().get_qclass()), 1);
         assert_eq!(
             dns_message.get_question().get_qname().get_name(),
             "*test.com".to_string()
         );
         let msg = resolver_query.step_4a(dns_message);
         assert_eq!(msg.get_header().get_rd(), true);
-        assert_eq!(msg.get_question().get_qtype(), 1);
-        assert_eq!(msg.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(msg.get_question().get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(msg.get_question().get_qclass()), 1);
         assert_eq!(
             msg.get_question().get_qname().get_name(),
             "*test.com".to_string()
@@ -4416,16 +4416,16 @@ mod resolver_query_tests {
         dns_message.set_answer(answer);
 
         assert_eq!(dns_message.get_header().get_rd(), true);
-        assert_eq!(dns_message.get_question().get_qtype(), 1);
-        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(dns_message.get_question().get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(dns_message.get_question().get_qclass()), 1);
         assert_eq!(
             dns_message.get_question().get_qname().get_name(),
             "test.com".to_string()
         );
         let msg = resolver_query.step_4a(dns_message);
         assert_eq!(msg.get_header().get_rd(), true);
-        assert_eq!(msg.get_question().get_qtype(), 1);
-        assert_eq!(msg.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(msg.get_question().get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(msg.get_question().get_qclass()), 1);
         assert_eq!(
             msg.get_question().get_qname().get_name(),
             "test.com".to_string()
@@ -4495,8 +4495,8 @@ mod resolver_query_tests {
 
         let msg = resolver_query.step_4a(dns_message); // fail in exist cache when the name searched doesn't contains a "*"
         assert_eq!(msg.get_header().get_rd(), true);
-        assert_eq!(msg.get_question().get_qtype(), 1);
-        assert_eq!(msg.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(msg.get_question().get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(msg.get_question().get_qclass()), 1);
         assert_eq!(
             msg.get_question().get_qname().get_name(),
             "nname.com".to_string()
@@ -4552,16 +4552,16 @@ mod resolver_query_tests {
         dns_message.set_header(header);
        
         assert_eq!(dns_message.get_header().get_rd(), true);
-        assert_eq!(dns_message.get_question().get_qtype(), 1);
-        assert_eq!(dns_message.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(dns_message.get_question().get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(dns_message.get_question().get_qclass()), 1);
         assert_eq!(
             dns_message.get_question().get_qname().get_name(),
             "*test.com".to_string()
         );
         let msg = resolver_query.step_4a(dns_message);
         assert_eq!(msg.get_header().get_rd(), true);
-        assert_eq!(msg.get_question().get_qtype(), 1);
-        assert_eq!(msg.get_question().get_qclass(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(msg.get_question().get_qtype()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(msg.get_question().get_qclass()), 1);
         assert_eq!(
             msg.get_question().get_qname().get_name(),
             "*test.com".to_string()

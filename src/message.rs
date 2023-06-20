@@ -1169,7 +1169,7 @@ mod message_test {
         assert!(rd);
         assert_eq!(qname, String::from("test.com"));
         assert_eq!(Rtype::from_rtype_to_int(qtype), 2);
-        assert_eq!(Rtype::from_rtype_to_int(qtype), 1);
+        assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
     }
 
     //ToDo: Revisar

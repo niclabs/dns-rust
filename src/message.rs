@@ -220,8 +220,8 @@ impl DnsMessage {
     //
     pub fn new_query_message(
         qname: String,
-        qtype: Rtype,
-        qclass: Rclass,
+        qtype: String,
+        qclass: String,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -242,9 +242,11 @@ impl DnsMessage {
         domain_name.set_name(qname);
 
         question.set_qname(domain_name);
-        let qtype_int = Rtype::from_rtype_to_int(qtype);
+        let qtype_rtype = Rtype::from_string_to_rtype(qtype);
+        let qtype_int = Rtype::from_rtype_to_int(qtype_rtype);
         question.set_qtype(qtype_int);
-        let qclass_int = Rclass::from_rclass_to_int(qclass);
+        let qclass_rclass = Rclass::from_string_to_rclass(qclass);
+        let qclass_int = Rclass::from_rclass_to_int(qclass_rclass);
         question.set_qclass(qclass_int);
 
         let dns_message = DnsMessage {

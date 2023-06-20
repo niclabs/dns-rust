@@ -45,7 +45,7 @@ impl <T: ClientConnection> Client<T> {
         domain_name: String,
         qtype: String,
         qclass: String,
-    )  {
+    ){
         // Create random generator
         let mut rng = thread_rng();
 
@@ -61,7 +61,6 @@ impl <T: ClientConnection> Client<T> {
             false,
             query_id,
         );
-
         self.dns_query = client_query;
     }
 
@@ -119,7 +118,7 @@ mod client_test {
 
 
         //create connection
-        let ip_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 17, 68, 14));
+        let ip_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
         let port: u16 = 8089;
 
         let addr: SocketAddr = SocketAddr::new(ip_addr, port);

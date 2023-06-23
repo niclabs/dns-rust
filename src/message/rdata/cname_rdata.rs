@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
+use crate::message::Rclass;
+use crate::message::Rtype;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
@@ -77,7 +79,7 @@ impl CnameRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: u16,
+        class: String,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -96,8 +98,9 @@ impl CnameRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(5);
-        resource_record.set_class(class);
+        resource_record.set_type_code(Rtype::CNAME);
+        let rclass = Rclass::from_string_to_rclass(class);
+        resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
 
@@ -125,6 +128,8 @@ impl CnameRdata {
 mod cname_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::cname_rdata::CnameRdata;
+    use crate::message::Rtype;
+    use crate::message::Rclass;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
@@ -177,17 +182,17 @@ mod cname_rdata_test {
         let cname_rr = CnameRdata::rr_from_master_file(
             "test.googleplex.edu".split_whitespace(),
             0,
-            0,
+            String::from("IN"),
             "admin1.googleplex.edu".to_string(),
             "admin1.googleplex.edu".to_string(),
         );
 
-        assert_eq!(cname_rr.get_class(), 0);
+        assert_eq!(cname_rr.get_class(), Rclass::IN);
         assert_eq!(
             cname_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")
         );
-        assert_eq!(cname_rr.get_type_code(), 5);
+        assert_eq!(cname_rr.get_type_code(), Rtype::CNAME);
         assert_eq!(cname_rr.get_ttl(), 0);
         assert_eq!(cname_rr.get_rdlength(), 21);
 

@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
+use crate::message::Rtype;
+use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
@@ -99,7 +101,7 @@ impl HinfoRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: u16,
+        class: String,
         host_name: String,
     ) -> ResourceRecord {
         let mut hinfo_rdata = HinfoRdata::new();
@@ -116,8 +118,9 @@ impl HinfoRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(13);
-        resource_record.set_class(class);
+        resource_record.set_type_code(Rtype::HINFO);
+        let rclass = Rclass::from_string_to_rclass(class);
+        resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(cpu.len() as u16 + os.len() as u16);
 
@@ -152,6 +155,8 @@ impl HinfoRdata {
 #[cfg(test)]
 mod hinfo_rdata_test {
     use crate::message::rdata::Rdata;
+    use crate::message::Rtype;
+    use crate::message::Rclass;
     use crate::message::rdata::hinfo_rdata::HinfoRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -214,15 +219,15 @@ mod hinfo_rdata_test {
     #[test]
     fn rr_from_master_file_test(){
         let hinfo_rr = HinfoRdata::rr_from_master_file("ryzen ubuntu".split_whitespace(), 
-        15, 1, 
+        15, String::from("IN"), 
         String::from("dcc.cl"));
 
         let hinfo_rdata = hinfo_rr.get_rdata();
 
-        assert_eq!(hinfo_rr.get_class(), 1);
+        assert_eq!(hinfo_rr.get_class(), Rclass::IN);
         assert_eq!(hinfo_rr.get_name().get_name(), "dcc.cl");
         assert_eq!(hinfo_rr.get_ttl(), 15);
-        assert_eq!(hinfo_rr.get_type_code(), 13);
+        assert_eq!(hinfo_rr.get_type_code(), Rtype::HINFO);
         assert_eq!(hinfo_rr.get_rdlength(), 11);
         
         let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));

@@ -531,6 +531,7 @@ impl SoaRdata {
 #[cfg(test)]
 mod soa_rdata_test {
     use crate::domain_name::DomainName;
+    use crate::message::Rclass;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -675,16 +676,17 @@ mod soa_rdata_test {
     //ToDo: Revisar
     #[test]
     fn rr_from_master_file_test(){
-        let soardata_rr_min = SoaRdata::rr_from_master_file("dcc u-cursos 1112 7600 3500 14000 150".split_whitespace(),
-         56
-         , 1
-         , String::from("uchile.cl")
-         , String::from("uchile.cl"));
+        let soardata_rr_min = SoaRdata::rr_from_master_file(
+            "dcc u-cursos 1112 7600 3500 14000 150".split_whitespace(),
+            56,
+            String::from("IN"),
+            String::from("uchile.cl"),
+            String::from("uchile.cl"));
 
          let (soardata_rr, minimum) = soardata_rr_min;
 
          assert_eq!(minimum, 150);
-         assert_eq!(soardata_rr.get_class(), 1);
+         assert_eq!(soardata_rr.get_class(), Rclass::IN);
          assert_eq!(soardata_rr.get_ttl(), 56);
          assert_eq!(soardata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(soardata_rr.get_rdlength(), 35);

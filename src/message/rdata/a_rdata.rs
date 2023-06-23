@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
+use crate::message::Rclass;
+use crate::message::Rtype;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
@@ -66,7 +68,7 @@ impl ARdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: u16,
+        class: String,
         host_name: String,
     ) -> ResourceRecord {
         let mut a_rdata = ARdata::new();
@@ -91,8 +93,9 @@ impl ARdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(1);
-        resource_record.set_class(class);
+        resource_record.set_type_code(Rtype::A);
+        let rclass = Rclass::from_string_to_rclass(class);
+        resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(4);
 
@@ -135,6 +138,8 @@ impl ARdata {
 mod a_rdata_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
+    use crate::message::Rclass;
+    use crate::message::Rtype;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
@@ -202,16 +207,16 @@ mod a_rdata_test {
         let a_rr = ARdata::rr_from_master_file(
             "204.13.100.3".split_whitespace(),
             0,
-            0,
+            String::from("IN"),
             "admin1.googleplex.edu".to_string(),
         );
 
-        assert_eq!(a_rr.get_class(), 0);
+        assert_eq!(a_rr.get_class(), Rclass::IN);
         assert_eq!(
             a_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")
         );
-        assert_eq!(a_rr.get_type_code(), 1);
+        assert_eq!(a_rr.get_type_code(), Rtype::A);
         assert_eq!(a_rr.get_ttl(), 0);
         assert_eq!(a_rr.get_rdlength(), 4);
 

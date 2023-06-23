@@ -6,19 +6,20 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for cname type
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                  CNAME                        |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-//
-
+/// An struct that represents the `Rdata` for cname type.
+/// 
+/// ```text
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                  CNAME                        |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// ```
 pub struct CnameRdata {
-    // Specifies the canonical or primary name for the owner. The owner name is an alias.
+    /// Specifies the canonical or primary name for the owner. The owner name is an alias.
     cname: DomainName,
 }
 
 impl ToBytes for CnameRdata {
-    // Return a vec of bytes that represents the cname rdata
+    /// Return a `Vec<u8>` of bytes that represents the cname rdata.
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let cname_bytes = self.get_cname().to_bytes();
@@ -32,7 +33,7 @@ impl ToBytes for CnameRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for CnameRdata {
-    // Creates a new Cname from an array of bytes
+    /// Creates a new `Cname` from an array of bytes.
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -60,15 +61,13 @@ impl FromBytes<Result<Self, &'static str>> for CnameRdata {
 }
 
 impl CnameRdata {
-    // Creates a new CnameRdata with default values.
-    //
-    // # Examples
-    // ```
-    // let cname_rdata = CnameRdata::new();
-    //
-    // ```
-    //
-
+    /// Creates a new CnameRdata with default values.
+    ///
+    /// # Examples
+    /// ```
+    /// let cname_rdata = CnameRdata::new();
+    ///
+    /// ```
     pub fn new() -> Self {
         let cname_rdata = CnameRdata {
             cname: DomainName::new(),
@@ -108,17 +107,17 @@ impl CnameRdata {
     }
 }
 
-// Getter
+/// Getter
 impl CnameRdata {
-    // Gets the cname attribute
+    /// Gets the cname attribute
     pub fn get_cname(&self) -> DomainName {
         self.cname.clone()
     }
 }
 
-// Setter
+/// Setter
 impl CnameRdata {
-    // Sets the cname field with a value
+    /// Sets the cname field with a value
     pub fn set_cname(&mut self, cname: DomainName) {
         self.cname = cname;
     }

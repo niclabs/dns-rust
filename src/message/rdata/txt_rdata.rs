@@ -7,18 +7,20 @@ use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for txt type.
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// /                   TXT-DATA                    /
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-//
+/// An struct that represents the `Rdata` for txt type.
+/// 
+/// ```text
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                   TXT-DATA                    /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// ```
 pub struct TxtRdata {
-    // One or more <character-string>s.
+    /// One or more <character-string>s.
     text: Vec<String>,
 }
 
 impl ToBytes for TxtRdata {
-    // Return a vec of bytes that represents the txt rdata
+    /// Returns a vec of bytes that represents the txt rdata.
     fn to_bytes(&self) -> Vec<u8> {
         let text = self.get_text();
         let mut bytes: Vec<u8> = Vec::new();
@@ -37,7 +39,7 @@ impl ToBytes for TxtRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for TxtRdata {
-    // Creates a new TxtRdata from an array of bytes
+    /// Creates a new TxtRdata from an array of bytes.
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut string;
         let mut txt: Vec<String> = Vec::new();
@@ -60,21 +62,45 @@ impl FromBytes<Result<Self, &'static str>> for TxtRdata {
 }
 
 impl TxtRdata {
-    // Creates a new TxtRdata.
-    //
-    // # Examples
-    // ```
-    // let txt_rdata = TxtRdata::new(String::from("test"));
-    //
-    // assert_eq!(txt_rdata.text, String::from("test"));
-    // ```
-    //
+    /// Creates a new TxtRdata.
+    ///
+    /// # Examples
+    /// ```
+    /// let txt_rdata = TxtRdata::new(String::from("test"));
+    ///
+    /// assert_eq!(txt_rdata.text, String::from("test"));
+    /// ```
     pub fn new(text: Vec<String>) -> Self {
         let txt_rdata = TxtRdata { text: text };
 
         txt_rdata
     }
 
+    /// Returns a `ResourceRecord` from the given values.
+    /// 
+    /// # Examples
+    /// ```
+    /// let txtrdata_rr = TxtRdata::rr_from_master_file(
+    ///     "dcc uchile cl".split_whitespace(),
+    ///     25,
+    ///     String::from("IN"),
+    ///     String::from("uchile.cl"));
+    /// 
+    /// assert_eq!(txtrdata_rr.get_class(), Rclass::IN);
+    /// assert_eq!(txtrdata_rr.get_ttl(), 25);
+    /// assert_eq!(txtrdata_rr.get_rdlength(), 3);
+    /// assert_eq!(txtrdata_rr.get_name().get_name(), String::from("uchile.cl"));
+    /// 
+    /// let txt_rr_rdata = txtrdata_rr.get_rdata();
+    /// let mut expected_text: Vec<String> = Vec::new();
+    /// expected_text.push(String::from("dcc"));
+    /// expected_text.push(String::from("uchile"));
+    /// expected_text.push(String::from("cl"));
+    /// match txt_rr_rdata {
+    ///     Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text(), expected_text),
+    ///     _ => {}
+    /// }
+    /// ```
     pub fn rr_from_master_file(
         values: SplitWhitespace,
         ttl: u32,
@@ -106,17 +132,17 @@ impl TxtRdata {
     }
 }
 
-// Getters
+/// Getters
 impl TxtRdata {
-    // Gets the text attribute
+    /// Gets the text attribute.
     pub fn get_text(&self) -> Vec<String> {
         self.text.clone()
     }
 }
 
-// Setters
+/// Setters
 impl TxtRdata {
-    // Sets the text field with a value
+    /// Sets the text field with a value.
     pub fn set_text(&mut self, text: Vec<String>) {
         self.text = text;
     }

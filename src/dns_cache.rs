@@ -38,7 +38,7 @@ impl DnsCache {
     // Adds an element to cache
     pub fn add(&mut self, domain_name: String, resource_record: ResourceRecord) {
         let mut cache = self.get_cache();
-        let rr_type = Rtype::from_rtype_to_str(resource_record.get_type_code());
+        let rr_type = Rtype::from_rtype_to_str(resource_record.get_rtype());
 
         // see cache size
         if self.max_size < 1 {
@@ -340,14 +340,14 @@ mod dns_cache_test {
         assert_eq!(
             cache.get("test.com".to_string(), "A".to_string())[0]
                 .get_resource_record()
-                .get_type_code(),
+                .get_rtype(),
             Rtype::A
         );
 
         assert_eq!(
             cache.get("test.com".to_string(), "NS".to_string())[0]
                 .get_resource_record()
-                .get_type_code(),
+                .get_rtype(),
             Rtype::NS
         );
 
@@ -386,7 +386,7 @@ mod dns_cache_test {
         assert_eq!(
             cache.get("test.com".to_string(), "A".to_string())[0]
                 .get_resource_record()
-                .get_type_code(),
+                .get_rtype(),
             Rtype::A
         )
     }
@@ -444,7 +444,7 @@ mod dns_cache_test {
 
         let rr_cache = dns_cache.get(String::from("test.com"), String::from("NS"));
         let rr = rr_cache[0].get_resource_record();
-        let qtype = Rtype::from_rtype_to_int(rr.get_type_code());
+        let qtype = Rtype::from_rtype_to_int(rr.get_rtype());
 
         assert_eq!(qtype, 2);
     }

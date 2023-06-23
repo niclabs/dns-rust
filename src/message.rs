@@ -91,7 +91,7 @@ impl Rtype{
             Rtype::AXFR => String::from("AXFR"),
             Rtype::MAILB => String::from("MAILB"),
             Rtype::MAILA => String::from("MAILA"),
-            Rtype::ANY => String::from("ANy"),
+            Rtype::ANY => String::from("ANY"),
             Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
     }

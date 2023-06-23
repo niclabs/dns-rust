@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
+use crate::message::Rtype;
+use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
@@ -93,7 +95,7 @@ impl AChRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: u16,
+        class: String,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -116,8 +118,9 @@ impl AChRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(1);
-        resource_record.set_class(class);
+        resource_record.set_type_code(Rtype::A);
+        let rclass = Rclass::from_string_to_rclass(class);
+        resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
 
@@ -150,6 +153,8 @@ impl AChRdata {
 #[cfg(test)]
 mod a_ch_rdata_test {
     use crate::domain_name::DomainName;
+    use crate::message::Rtype;
+    use crate::message::Rclass;
     use crate::message::rdata::a_ch_rdata::AChRdata;
     use crate::message::rdata::{ARdata, Rdata};
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -268,13 +273,13 @@ mod a_ch_rdata_test {
     fn rr_from_master_file_test() {
         let ach_rr = AChRdata::rr_from_master_file(
             "204.13.100.3 10".split_whitespace(), 
-            0, 3,
+            0, String::from("CH"),
             "admin.googleplex".to_string(), 
             "edu".to_string());
 
-        assert_eq!(ach_rr.get_class(), 3);
+        assert_eq!(ach_rr.get_class(), Rclass::CH);
         assert_eq!(ach_rr.get_name().get_name(), String::from("admin.googleplex"));
-        assert_eq!(ach_rr.get_type_code(), 1);
+        assert_eq!(ach_rr.get_type_code(), Rtype::A);
         assert_eq!(ach_rr.get_ttl(), 0);
         assert_eq!(ach_rr.get_rdlength(), 16);
 

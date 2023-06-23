@@ -1,6 +1,8 @@
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::rr_cache::RRCache;
+use crate::message::Rtype;
+use crate::message::Rclass;
 use chrono::prelude::*;
 use std::collections::HashMap;
 
@@ -36,22 +38,7 @@ impl DnsCache {
     // Adds an element to cache
     pub fn add(&mut self, domain_name: String, resource_record: ResourceRecord) {
         let mut cache = self.get_cache();
-        let rr_type = match resource_record.get_type_code() {
-            1 => "A".to_string(),
-            2 => "NS".to_string(),
-            5 => "CNAME".to_string(),
-            6 => "SOA".to_string(),
-            11 => "WKS".to_string(),
-            12 => "PTR".to_string(),
-            13 => "HINFO".to_string(),
-            14 => "MINFO".to_string(),
-            15 => "MX".to_string(),
-            16 => "TXT".to_string(),
-            //  Replace the next line when AAAA is implemented
-            28 => "TXT".to_string(),
-            //
-            _ => unreachable!(),
-        };
+        let rr_type = Rtype::from_rtype_to_str(resource_record.get_type_code());
 
         // see cache size
         if self.max_size < 1 {
@@ -309,6 +296,8 @@ mod dns_cache_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::ns_rdata::NsRdata;
+    use crate::message::Rtype;
+    use crate::message::Rclass;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
 
@@ -332,7 +321,7 @@ mod dns_cache_test {
 
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
 
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
@@ -340,7 +329,7 @@ mod dns_cache_test {
         let r_data = Rdata::SomeARdata(a_rdata);
 
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
 
         cache.add("test.com".to_string(), ns_resource_record);
 
@@ -352,14 +341,14 @@ mod dns_cache_test {
             cache.get("test.com".to_string(), "A".to_string())[0]
                 .get_resource_record()
                 .get_type_code(),
-            1
+            Rtype::A
         );
 
         assert_eq!(
             cache.get("test.com".to_string(), "NS".to_string())[0]
                 .get_resource_record()
                 .get_type_code(),
-            2
+            Rtype::NS
         );
 
         cache.remove("test.com".to_string(), "NS".to_string());
@@ -382,7 +371,7 @@ mod dns_cache_test {
         let rdata = Rdata::SomeARdata(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         let second_resource_record = resource_record.clone();
 
@@ -398,7 +387,7 @@ mod dns_cache_test {
             cache.get("test.com".to_string(), "A".to_string())[0]
                 .get_resource_record()
                 .get_type_code(),
-            1
+            Rtype::A
         )
     }
 
@@ -443,7 +432,7 @@ mod dns_cache_test {
 
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
 
         new_cache.add(String::from("test.com"), ns_resource_record);
         assert_eq!(new_cache.get_size(), 1 as u32);
@@ -455,7 +444,7 @@ mod dns_cache_test {
 
         let rr_cache = dns_cache.get(String::from("test.com"), String::from("NS"));
         let rr = rr_cache[0].get_resource_record();
-        let qtype = rr.get_type_code();
+        let qtype = Rtype::from_rtype_to_int(rr.get_type_code());
 
         assert_eq!(qtype, 2);
     }
@@ -472,7 +461,7 @@ mod dns_cache_test {
         let r_data = Rdata::SomeARdata(a_rdata);
 
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
 
         dns_cache.add(String::from("test.com"), a_resource_record);
         let response_time = dns_cache.get_response_time(

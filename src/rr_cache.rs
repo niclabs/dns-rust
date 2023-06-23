@@ -93,7 +93,7 @@ mod rr_cache_test {
 
         let rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_type_code()), 1);
+        assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_rtype()), 1);
         assert_eq!(rr_cache.response_time, 5000);
     }
 
@@ -110,7 +110,7 @@ mod rr_cache_test {
 
         let mut rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_type_code()), 1);
+        assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_rtype()), 1);
 
         let second_ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut second_a_rdata = ARdata::new();
@@ -123,7 +123,7 @@ mod rr_cache_test {
 
         rr_cache.set_resource_record(second_resource_record);
 
-        assert_eq!(Rtype::from_rtype_to_int(rr_cache.get_resource_record().get_type_code()), 2);
+        assert_eq!(Rtype::from_rtype_to_int(rr_cache.get_resource_record().get_rtype()), 2);
     }
 
     #[test]

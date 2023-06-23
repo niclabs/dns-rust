@@ -1,5 +1,7 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
+use crate::message::Rtype;
+use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
@@ -91,7 +93,7 @@ impl MxRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: u16,
+        class: String,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -110,8 +112,9 @@ impl MxRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(15);
-        resource_record.set_class(class);
+        resource_record.set_type_code(Rtype::MX);
+        let rclass = Rclass::from_string_to_rclass(class);
+        resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
 
@@ -159,6 +162,8 @@ impl MxRdata {
 mod mx_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
+    use crate::message::Rtype;
+    use crate::message::Rclass;
     use crate::message::rdata::mx_rdata::MxRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -227,11 +232,12 @@ mod mx_rdata_test {
     #[test]
     fn rr_from_master_file_test(){
         let mxrdata_rr = MxRdata::rr_from_master_file("3 dcc".split_whitespace(), 
-        20, 1, 
+        20, String::from("IN"), 
         String::from("uchile.cl"), 
         String::from("uchile.cl"));
 
-        assert_eq!(mxrdata_rr.get_class(), 1);
+        assert_eq!(mxrdata_rr.get_class(), Rclass::IN);
+        assert_eq!(mxrdata_rr.get_type_code(), Rtype::MX);
         assert_eq!(mxrdata_rr.get_ttl(), 20);
         assert_eq!(mxrdata_rr.get_name().get_name(), String::from("uchile.cl"));
         assert_eq!(mxrdata_rr.get_rdlength(), 7);

@@ -206,7 +206,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
-    use crate::message::resource_record::{FromBytes, ToBytes};
+    use crate::message::resource_record::{ToBytes};
     use crate::message::rdata::Rdata;
     use super:: a_ch_rdata::AChRdata;
     use super::a_rdata::ARdata;

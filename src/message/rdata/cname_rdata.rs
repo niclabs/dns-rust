@@ -192,7 +192,7 @@ mod cname_rdata_test {
             cname_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")
         );
-        assert_eq!(cname_rr.get_type_code(), Rtype::CNAME);
+        assert_eq!(cname_rr.get_rtype(), Rtype::CNAME);
         assert_eq!(cname_rr.get_ttl(), 0);
         assert_eq!(cname_rr.get_rdlength(), 21);
 

@@ -472,12 +472,12 @@ impl ResourceRecord {
 
     // Gets the type_code attribute value
     pub fn get_type_code(&self) -> Rtype {
-        self.type_code
+        self.type_code.clone()
     }
 
     // Gets the class attribute value
     pub fn get_class(&self) -> Rclass {
-        self.class
+        self.class.clone()
     }
 
     // Gets the ttl attribute value

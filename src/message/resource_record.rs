@@ -482,12 +482,12 @@ impl ResourceRecord {
 
     // Gets the ttl attribute value
     pub fn get_ttl(&self) -> u32 {
-        self.ttl
+        self.ttl.clone()
     }
 
     // Gets the rdlength attribute value
     pub fn get_rdlength(&self) -> u16 {
-        self.rdlength
+        self.rdlength.clone()
     }
 
     // Gets the rdata attribute value
@@ -538,8 +538,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(a_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 1);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -566,8 +566,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(ns_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 2);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 2);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -594,8 +594,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(cname_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 5);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 5);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -629,8 +629,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 6);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 6);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -671,8 +671,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(ptr_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 12);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 12);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -702,8 +702,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(hinfo_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 13);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 13);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -741,8 +741,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(mx_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 15);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 15);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -769,8 +769,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 16);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 16);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -801,8 +801,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(ach_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code), 0);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.class), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.type_code.clone()), 0);
+        assert_eq!(Rclass::from_rclass_to_int(resource_record.class.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(

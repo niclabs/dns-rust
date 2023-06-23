@@ -5,20 +5,24 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for ptr type
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// /                   PTRDNAME                    /
-// /                                               /
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-//
+/// Struct that represents the `Rdata` for PTR TYPE.
+/// 
+/// [RFC 1035](https://tools.ietf.org/html/rfc1035#section-3.3.12)
+/// 
+/// ```text
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                   PTRDNAME                    /
+/// /                                               /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// ```
 pub struct PtrRdata {
-    // A domain name which points to some location in the
-    // domain name space.
+    /// A domain name which points to some location in the
+    /// domain name space.
     ptrdname: DomainName,
 }
 
 impl ToBytes for PtrRdata {
-    // Return a vec of bytes that represents the ptr rdata
+    /// Return a vec of bytes that represents the ptr rdata.
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let ptrdname = self.get_ptrdname();
@@ -33,7 +37,7 @@ impl ToBytes for PtrRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for PtrRdata {
-    // Creates a new PtrRdata from an array of bytes
+    /// Creates a new `PtrRdata` from an array of bytes.
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -60,15 +64,14 @@ impl FromBytes<Result<Self, &'static str>> for PtrRdata {
 }
 
 impl PtrRdata {
-    // Creates a new PtrRdata with default values.
-    //
-    // # Examples
-    // ```
-    // let ptr_rdata = PtrRdata::new();
-    //
-    // assert_eq!(ptr_rdata.ptrdname.get_name(), String::from(""));
-    // ```
-    //
+    /// Creates a new `PtrRdata` with default values.
+    ///
+    /// # Examples
+    /// ```
+    /// let ptr_rdata = PtrRdata::new();
+    ///
+    /// assert_eq!(ptr_rdata.ptrdname.get_name(), String::from(""));
+    /// ```
     pub fn new() -> Self {
         let ptr_rdata = PtrRdata {
             ptrdname: DomainName::new(),
@@ -77,6 +80,23 @@ impl PtrRdata {
         ptr_rdata
     }
 
+    /// Returns a `ResourceRecord` from the given values.
+    /// 
+    /// # Examples
+    /// ```
+    /// let ptr_rdata_rr = PtrRdata::rr_from_master_file(
+    /// "dcc".split_whitespace(),
+    /// 35,
+    /// String::from("IN"), 
+    /// String::from("uchile.cl"), 
+    /// String::from("uchile.cl"));
+    /// 
+    ///  assert_eq!(ptr_rdata_rr.get_class(), Rclass::IN);
+    ///  assert_eq!(ptr_rdata_rr.get_ttl(), 35);
+    ///  assert_eq!(ptr_rdata_rr.get_name().get_name(), String::from("uchile.cl"));
+    ///  assert_eq!(ptr_rdata_rr.get_rdlength(), 5);
+    ///  assert_eq!(ptr_rdata_rr.get_rtype(), Rtype::PTR);
+    /// ```
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
@@ -110,7 +130,7 @@ impl PtrRdata {
 
 // Getters
 impl PtrRdata {
-    // Gets the ptrdname attribute from PtrRdata
+    /// Returns a copy of the `ptrdname` attribute from `PtrRdata`.
     pub fn get_ptrdname(&self) -> DomainName {
         self.ptrdname.clone()
     }
@@ -118,7 +138,7 @@ impl PtrRdata {
 
 // Setters
 impl PtrRdata {
-    // Sets the ptrdname attibute with a value
+    /// Sets the `ptrdname` attibute with the given value.
     pub fn set_ptrdname(&mut self, ptrdname: DomainName) {
         self.ptrdname = ptrdname;
     }

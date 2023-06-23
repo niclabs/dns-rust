@@ -20,7 +20,8 @@ use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
 
 #[derive(Clone, PartialEq, Debug)]
-// This enum, enumerates the differents types of rdata struct
+
+/// Enumerates the differents types of `Rdata` struct.
 pub enum Rdata {
     SomeARdata(ARdata),
     SomeAChRdata(AChRdata),
@@ -35,7 +36,20 @@ pub enum Rdata {
 }
 
 impl ToBytes for Rdata {
-    // Converts an Rdata to bytes
+    /// Converts an `Rdata` to bytes.
+    /// 
+    /// # Examples
+    /// ```
+    /// use dns_message_parser::message::rdata::Rdata;
+    /// use dns_message_parser::message::rdata::a_rdata::ARdata;
+    /// use dns_message_parser::message::resource_record::ToBytes;
+    ///     
+    /// let mut a_rdata = ARdata::new();
+    /// a_rdata.set_address([127, 0, 0, 1]);
+    /// let rdata = Rdata::SomeARdata(a_rdata);
+    /// let bytes = rdata.to_bytes();
+    /// assert_eq!(bytes, vec![127, 0, 0, 1]);
+    /// ```
     fn to_bytes(&self) -> Vec<u8> {
         match self {
             Rdata::SomeARdata(val) => val.to_bytes(),
@@ -52,7 +66,7 @@ impl ToBytes for Rdata {
 }
 
 impl FromBytes<Result<Rdata, &'static str>> for Rdata {
-    // Given an array of bytes and a type code, returns a new Rdata
+    /// Given an array of bytes and a type in its code form, returns a new `Rdata`.
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Rdata, &'static str> {
         let type_code = (bytes[bytes.len() - 4] as u16) << 8 | bytes[bytes.len() - 3] as u16;
         let class = (bytes[bytes.len() - 2] as u16) << 8 | bytes[bytes.len() - 1] as u16;
@@ -192,7 +206,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
-    use crate::message::resource_record::{FromBytes, ToBytes};
+    use crate::message::resource_record::{ToBytes};
     use crate::message::rdata::Rdata;
     use super:: a_ch_rdata::AChRdata;
     use super::a_rdata::ARdata;

@@ -216,7 +216,7 @@ mod a_rdata_test {
             a_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")
         );
-        assert_eq!(a_rr.get_type_code(), Rtype::A);
+        assert_eq!(a_rr.get_rtype(), Rtype::A);
         assert_eq!(a_rr.get_ttl(), 0);
         assert_eq!(a_rr.get_rdlength(), 4);
 

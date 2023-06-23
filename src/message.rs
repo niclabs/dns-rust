@@ -202,22 +202,23 @@ impl Default for Rclass {
 
 
 impl DnsMessage {
-    // Creates a new query message
-    //
-    // # Examples
-    // '''
-    // let dns_query_message =
-    // DnsMessage::new_query_message("test.com".to_string(), 1, 1, 0, false);
-    //
-    // assert_eq!(dns_query_message.header.get_rd(), false);
-    // assert_eq!(dns_query_message.question.get_qtype(), 1);
-    // assert_eq!(dns_query_message.question.get_qclass(), 1);
-    // assert_eq!(
-    //     dns_query_message.question.get_qname().get_name(),
-    //     "test.com".to_string()
-    // );
-    // '''
-    //
+    ///```text
+    /// Creates a new query message
+    ///
+    /// # Examples
+    /// 
+    /// let dns_query_message =
+    /// DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false);
+    ///
+    /// assert_eq!(dns_query_message.header.get_rd(), false);
+    /// assert_eq!(dns_query_message.question.get_qtype(), Rtype::A);
+    /// assert_eq!(dns_query_message.question.get_qclass(), Rclass::IN);
+    /// assert_eq!(
+    ///     dns_query_message.question.get_qname().get_name(),
+    ///     "test.com".to_string()
+    /// );
+    /// ```
+    ///
     pub fn new_query_message(
         qname: String,
         qtype: String,
@@ -257,7 +258,10 @@ impl DnsMessage {
 
         dns_message
     }
-
+    ///```text
+    /// Creates a new message
+    /// #Example
+    /// let msg = DnsMessage::new();
     pub fn new() -> Self {
         let msg = DnsMessage {
             header: Header::new(),
@@ -269,7 +273,27 @@ impl DnsMessage {
 
         msg
     }
-
+    ///```text
+    /// Creates a new response message
+    /// #Example
+    /// let new_response = DnsMessage::new_response_message(String::from("test.com"), String::from("NS"), String::from("IN"), 1, true, 1);
+    /// let header = new_response.get_header();
+    /// let id = header.get_id();
+    /// let op_code = header.get_op_code();
+    /// let rd = header.get_rd();
+    ///
+    /// let question = new_response.get_question();
+    /// let qname = question.get_qname().get_name();
+    /// let qtype = question.get_qtype();
+    /// let qclass = question.get_qclass();
+    /// 
+    /// assert_eq!(id, 1);
+    /// assert_eq!(op_code, 1);
+    /// assert!(rd);
+    /// assert_eq!(qname, String::from("test.com"));
+    /// assert_eq!(Rtype::from_rtype_to_int(qtype), 2);
+    /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+    /// ```
     pub fn new_response_message(
         qname: String,
         qtype: String,
@@ -321,7 +345,18 @@ impl DnsMessage {
 
     //     msg
     // }
-
+    
+    ///```text
+    /// Creates a new error message
+    /// #Example
+    /// let error_msg = DnsMessage::format_error_msg();
+    /// let header = error_msg.get_header();
+    /// let rcode = header.get_rcode();
+    /// let qr = header.get_qr();
+    /// 
+    /// assert_eq!(rcode, 1);
+    /// assert!(qr);
+    /// ```
     pub fn format_error_msg() -> Self {
         let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
@@ -333,6 +368,19 @@ impl DnsMessage {
         msg
     }
 
+    ///```text
+    /// Creates a new not found error message
+    /// #Example
+    /// let error_msg = DnsMessage::data_not_found_error_msg();
+    /// let header = error_msg.get_header();
+    /// let rcode = header.get_rcode();
+    /// let qr = header.get_qr();
+    /// let aa = header.get_aa();
+    /// 
+    /// assert_eq!(rcode, 3);
+    /// assert!(qr);
+    /// assert!(aa);
+    /// ```
     pub fn data_not_found_error_msg() -> Self {
         let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
@@ -344,6 +392,31 @@ impl DnsMessage {
         msg
     }
 
+    ///```text
+    /// Creates a new axfr query message
+    /// #Example
+    /// let axfr_msg = DnsMessage::axfr_query_message(String::from("test.com"));
+    /// let header = axfr_msg.get_header();
+    /// let id = header.get_id();
+    /// let qr = header.get_qr();
+    /// let opcode = header.get_op_code();
+    /// let rd = header.get_rd();
+    /// let qdcount = header.get_qdcount();
+    /// 
+    /// let question = axfr_msg.get_question();
+    /// let qname = question.get_qname().get_name();
+    /// let qtype = question.get_qtype();
+    /// let qclass = question.get_qclass();
+    /// 
+    /// assert_eq!(id, 1);
+    /// assert!(qr);
+    /// assert_eq!(opcode, 0);
+    /// assert!(rd);
+    /// assert_eq!(qdcount, 1);
+    /// assert_eq!(qname, String::from("test.com"));
+    /// assert_eq!(Rtype::from_rtype_to_int(qtype), 252);
+    /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+    /// ```
     pub fn axfr_query_message(qname: String) -> Self {
         let mut rng = thread_rng();
         let msg_id = rng.gen();
@@ -353,6 +426,17 @@ impl DnsMessage {
         msg
     }
 
+    ///```text
+    /// Creates a new not implemented error message
+    /// #Example
+    /// let error_msg = DnsMessage::not_implemented_msg();
+    /// let header = error_msg.get_header();
+    /// let rcode = header.get_rcode();
+    /// let qr = header.get_qr();
+    /// 
+    /// assert_eq!(rcode, 4);
+    /// assert!(qr);
+    /// ```
     pub fn not_implemented_msg() -> Self {
         let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
@@ -364,7 +448,40 @@ impl DnsMessage {
         msg
     }
 
-    // Creates a DnsMessage from an array of bytes
+    ///```text
+    /// Creates a DnsMessage from an array of bytes
+    /// #Example
+    /// let bytes = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 ,0];
+    /// let msg = DnsMessage::from_bytes(&bytes);
+    /// let header = msg.get_header();
+    /// let id = header.get_id();
+    /// let qr = header.get_qr();
+    /// let opcode = header.get_op_code();
+    /// let aa = header.get_aa();
+    /// let tc = header.get_tc();
+    /// let rd = header.get_rd();
+    /// let ra = header.get_ra();
+    /// let z = header.get_z();
+    /// let rcode = header.get_rcode();
+    /// let qdcount = header.get_qdcount();
+    /// let ancount = header.get_ancount();
+    /// let nscount = header.get_nscount();
+    /// let arcount = header.get_arcount();
+    /// 
+    /// assert_eq!(id, 1);
+    /// assert!(!qr);
+    /// assert_eq!(opcode, 0);
+    /// assert!(!aa);
+    /// assert!(!tc);
+    /// assert!(!rd);
+    /// assert!(!ra);
+    /// assert_eq!(z, 0);
+    /// assert_eq!(rcode, 0);
+    /// assert_eq!(qdcount, 1);
+    /// assert_eq!(ancount, 0);
+    /// assert_eq!(nscount, 0);
+    /// assert_eq!(arcount, 0);
+    /// ```
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -472,6 +589,40 @@ impl DnsMessage {
         Ok(dns_message)
     }
 
+    ///```text
+    /// Creates a DnsMessage from an array of bytes
+    /// #Example
+    /// let bytes = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 ,0];
+    /// let msg = DnsMessage::from_bytes(&bytes);
+    /// let header = msg.get_header();
+    /// let id = header.get_id();
+    /// let qr = header.get_qr();
+    /// let opcode = header.get_op_code();
+    /// let aa = header.get_aa();
+    /// let tc = header.get_tc();
+    /// let rd = header.get_rd();
+    /// let ra = header.get_ra();
+    /// let z = header.get_z();
+    /// let rcode = header.get_rcode();
+    /// let qdcount = header.get_qdcount();
+    /// let ancount = header.get_ancount();
+    /// let nscount = header.get_nscount();
+    /// let arcount = header.get_arcount();
+    /// 
+    /// assert_eq!(id, 1);
+    /// assert!(!qr);
+    /// assert_eq!(opcode, 0);
+    /// assert!(!aa);
+    /// assert!(!tc);
+    /// assert!(!rd);
+    /// assert!(!ra);
+    /// assert_eq!(z, 0);
+    /// assert_eq!(rcode, 0);
+    /// assert_eq!(qdcount, 1);
+    /// assert_eq!(ancount, 0);
+    /// assert_eq!(nscount, 0);
+    /// assert_eq!(arcount, 0);
+    /// ```
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut header_bytes = self.get_header().to_bytes().to_vec();
         let mut question_bytes = self.get_question().to_bytes();
@@ -502,6 +653,28 @@ impl DnsMessage {
         dns_msg_bytes
     }
 
+    ///```text
+    /// Updates the header counters
+    /// #Example
+    /// let mut msg = DnsMessage::new();
+    /// let mut header = Header::new();
+    /// header.set_qdcount(1);
+    /// header.set_ancount(1);
+    /// header.set_nscount(1);
+    /// header.set_arcount(1);
+    /// msg.set_header(header);
+    /// msg.update_header_counters();
+    /// let header = msg.get_header();
+    /// let qdcount = header.get_qdcount();
+    /// let ancount = header.get_ancount();
+    /// let nscount = header.get_nscount();
+    /// let arcount = header.get_arcount();
+    /// 
+    /// assert_eq!(qdcount, 1);
+    /// assert_eq!(ancount, 0);
+    /// assert_eq!(nscount, 0);
+    /// assert_eq!(arcount, 0);
+    /// ```
     pub fn update_header_counters(&mut self) {
         let answer = self.get_answer();
         let authority = self.get_authority();
@@ -515,6 +688,22 @@ impl DnsMessage {
         self.set_header(header);
     }
 
+    ///```text
+    /// Adds a answers to the message
+    /// #Example
+    /// let mut msg = DnsMessage::new();
+    /// let mut rr = ResourceRecord::new();
+    /// rr.set_name("www.example.com".to_string());
+    /// rr.set_type(1);
+    /// rr.set_class(1);
+    /// rr.set_ttl(1);
+    /// rr.set_rdlength(1);
+    /// rr.set_rdata(vec![1]);
+    /// msg.add_answers(vec![rr]);
+    /// let answers = msg.get_answer();
+    /// 
+    /// assert_eq!(answers.len(), 1);
+    /// ```
     pub fn add_answers(&mut self, mut answers: Vec<ResourceRecord>) {
         let mut msg_answers = self.get_answer();
 
@@ -522,6 +711,22 @@ impl DnsMessage {
         self.set_answer(msg_answers);
     }
 
+    ///```text
+    /// Adds a authorities to the message
+    /// #Example
+    /// let mut msg = DnsMessage::new();
+    /// let mut rr = ResourceRecord::new();
+    /// rr.set_name("www.example.com".to_string());
+    /// rr.set_type(1);
+    /// rr.set_class(1);
+    /// rr.set_ttl(1);
+    /// rr.set_rdlength(1);
+    /// rr.set_rdata(vec![1]);
+    /// msg.add_authorities(vec![rr]);
+    /// let authorities = msg.get_authority();
+    /// 
+    /// assert_eq!(authorities.len(), 1);
+    /// ```
     pub fn add_authorities(&mut self, mut authorities: Vec<ResourceRecord>) {
         let mut msg_authorities = self.get_authority();
 
@@ -529,6 +734,13 @@ impl DnsMessage {
         self.set_answer(msg_authorities);
     }
 
+    ///```text
+    /// Adds a additionals to the message
+    /// #Example
+    /// let mut msg = DnsMessage::new();
+    /// let mut rr = ResourceRecord::new();
+    /// rr.set_name("www.example.com".to_string());
+    /// rr.set_type(1);
     pub fn add_additionals(&mut self, mut additionals: Vec<ResourceRecord>) {
         let mut msg_additionals = self.get_additional();
 
@@ -536,7 +748,19 @@ impl DnsMessage {
         self.set_answer(msg_additionals);
     }
 
-    // Print the information of DNS message
+    ///```text
+    /// Print the information of DNS message
+    /// #Example
+    /// let mut msg = DnsMessage::new();
+    /// let mut header = Header::new();
+    /// header.set_qdcount(1);
+    /// header.set_ancount(1);
+    /// header.set_nscount(1);
+    /// header.set_arcount(1);
+    /// msg.set_header(header);
+    /// msg.update_header_counters();
+    /// msg.print_dns_message();
+    /// ```
     pub fn print_dns_message(&mut self) {
         // Get the message and print the information
         let header = self.get_header();

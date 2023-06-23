@@ -5,64 +5,92 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for soa type
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// /                     MNAME                     /
-// /                                               /
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// /                     RNAME                     /
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                    SERIAL                     |
-// |                                               |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                    REFRESH                    |
-// |                                               |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                     RETRY                     |
-// |                                               |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                    EXPIRE                     |
-// |                                               |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                    MINIMUM                    |
-// |                                               |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-//
+/// An struct that represents the `Rdata` for SOA TYPE.
+/// 
+/// [RFC 1035](https://tools.ietf.org/html/rfc1035#section-3.3.13)
+/// 
+/// ```text
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                     MNAME                     /
+/// /                                               /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                     RNAME                     /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    SERIAL                     |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    REFRESH                    |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                     RETRY                     |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    EXPIRE                     |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    MINIMUM                    |
+/// |                                               |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// ```
 pub struct SoaRdata {
-    // DomainName of the name server that was the
-    // original or primary source of data for this zone.
+    /// DomainName of the name server that was the
+    /// original or primary source of data for this zone.
     mname: DomainName,
 
-    // A DomainName which specifies the mailbox of the
-    // person responsible for this zone.
+    /// A DomainName which specifies the mailbox of the
+    /// person responsible for this zone.
     rname: DomainName,
 
-    // The unsigned 32 bit version number of the original copy
-    // of the zone.  Zone transfers preserve this value.  This
-    // value wraps and should be compared using sequence space
-    // arithmetic.
+    /// The unsigned 32 bit version number of the original copy
+    /// of the zone.  Zone transfers preserve this value.  This
+    /// value wraps and should be compared using sequence space
+    /// arithmetic.
     serial: u32,
 
-    // A 32 bit time interval before the zone should be
-    // refreshed.
+    /// A 32 bit time interval before the zone should be
+    /// refreshed.
     refresh: u32,
 
-    // A 32 bit time interval that should elapse before a
-    // failed refresh should be retried.
+    /// A 32 bit time interval that should elapse before a
+    /// failed refresh should be retried.
     retry: u32,
 
-    // A 32 bit time value that specifies the upper limit on
-    // the time interval that can elapse before the zone is no
-    // longer authoritative.
+    /// A 32 bit time value that specifies the upper limit on
+    /// the time interval that can elapse before the zone is no
+    /// longer authoritative.
     expire: u32,
 
-    // The unsigned 32 bit minimum TTL field that should be
-    // exported with any RR from this zone.
+    /// The unsigned 32 bit minimum TTL field that should be
+    /// exported with any RR from this zone.
     minimum: u32,
 }
 
 impl ToBytes for SoaRdata {
-    // Return a vec of bytes that represents the soa rdata
+    /// ReturnS a `Vec<u8>` of bytes that represents the SOA `Rdata`.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut soa_rdata = SoaRdata::new();
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_name(String::from("test.com"));
+    /// soa_rdata.set_mname(domain_name.clone());
+    /// soa_rdata.set_rname(domain_name);
+    /// soa_rdata.set_serial(512);
+    /// soa_rdata.set_refresh(8);
+    /// soa_rdata.set_retry(4);
+    /// soa_rdata.set_expire(2);
+    /// soa_rdata.set_minimum(1);
+
+    /// let bytes_to_test: [u8; 40] = [
+    ///     4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0,
+    ///     0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1,
+    /// ];
+    /// let soa_rdata_to_bytes = soa_rdata.to_bytes();
+    /// for (index, value) in soa_rdata_to_bytes.iter().enumerate() {
+    ///     assert_eq!(*value, bytes_to_test[index]);
+    /// }
+    /// ```
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let mname_bytes = self.get_mname().to_bytes();
@@ -147,7 +175,7 @@ impl ToBytes for SoaRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for SoaRdata {
-    // Creates a new SoaRdata from an array of bytes
+    /// Creates a new `SoaRdata` from an array of bytes.
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let mname_result = DomainName::from_bytes(bytes, full_msg);
 
@@ -191,18 +219,17 @@ impl FromBytes<Result<Self, &'static str>> for SoaRdata {
 }
 
 impl SoaRdata {
-    // Creates a new SoaRdata with default values.
+    /// Creates a new `SoaRdata` with default values.
     //
-    // # Examples
-    // ```
-    // let soa_rdata = SoaRdata::new();
-    // assert_eq!(soa_rdata.serial, 0);
-    // assert_eq!(soa_rdata.refresh, 0);
-    // assert_eq!(soa_rdata.retry, 0);
-    // assert_eq!(soa_rdata.expire, 0);
-    // assert_eq!(soa_rdata.minimum, 0);
-    // ```
-    //
+    /// # Examples
+    /// ```
+    /// let soa_rdata = SoaRdata::new();
+    /// assert_eq!(soa_rdata.serial, 0);
+    /// assert_eq!(soa_rdata.refresh, 0);
+    /// assert_eq!(soa_rdata.retry, 0);
+    /// assert_eq!(soa_rdata.expire, 0);
+    /// assert_eq!(soa_rdata.minimum, 0);
+    /// ```
     pub fn new() -> Self {
         let soa_rdata = SoaRdata {
             mname: DomainName::new(),
@@ -261,147 +288,147 @@ impl SoaRdata {
         (resource_record, minimum)
     }
 
-    // Gets the first byte from the serial value
+    /// Gets the first byte from the serial value.
     fn get_first_serial_byte(&self) -> u8 {
         let serial = self.get_serial();
 
         (serial >> 24) as u8
     }
 
-    // Gets the second byte from the serial value
+    /// Gets the second byte from the serial value.
     fn get_second_serial_byte(&self) -> u8 {
         let serial = self.get_serial();
 
         (serial >> 16) as u8
     }
 
-    // Gets the third byte from the serial value
+    /// Gets the third byte from the serial value.
     fn get_third_serial_byte(&self) -> u8 {
         let serial = self.get_serial();
 
         (serial >> 8) as u8
     }
 
-    // Gets the fourth byte from the serial value
+    /// Gets the fourth byte from the serial value.
     fn get_fourth_serial_byte(&self) -> u8 {
         let serial = self.get_serial();
 
         serial as u8
     }
 
-    // Gets the first byte from the refresh value
+    /// Gets the first byte from the refresh value.
     fn get_first_refresh_byte(&self) -> u8 {
         let refresh = self.get_refresh();
 
         (refresh >> 24) as u8
     }
 
-    // Gets the second byte from the refresh value
+    /// Gets the second byte from the refresh value.
     fn get_second_refresh_byte(&self) -> u8 {
         let refresh = self.get_refresh();
 
         (refresh >> 16) as u8
     }
 
-    // Gets the third byte from the refresh value
+    /// Gets the third byte from the refresh value.
     fn get_third_refresh_byte(&self) -> u8 {
         let refresh = self.get_refresh();
 
         (refresh >> 8) as u8
     }
 
-    // Gets the fourth byte from the refresh value
+    /// Gets the fourth byte from the refresh value.
     fn get_fourth_refresh_byte(&self) -> u8 {
         let refresh = self.get_refresh();
 
         refresh as u8
     }
 
-    // Gets the first byte from the retry value
+    /// Gets the first byte from the retry value.
     fn get_first_retry_byte(&self) -> u8 {
         let retry = self.get_retry();
 
         (retry >> 24) as u8
     }
 
-    // Gets the second byte from the retry value
+    /// Gets the second byte from the retry value.
     fn get_second_retry_byte(&self) -> u8 {
         let retry = self.get_retry();
 
         (retry >> 16) as u8
     }
 
-    // Gets the third byte from the retry value
+    /// Gets the third byte from the retry value.
     fn get_third_retry_byte(&self) -> u8 {
         let retry = self.get_retry();
 
         (retry >> 8) as u8
     }
 
-    // Gets the fourth byte from the retry value
+    /// Gets the fourth byte from the retry value.
     fn get_fourth_retry_byte(&self) -> u8 {
         let retry = self.get_retry();
 
         retry as u8
     }
 
-    // Gets the first byte from the expire value
+    /// Gets the first byte from the expire value.
     fn get_first_expire_byte(&self) -> u8 {
         let expire = self.get_expire();
 
         (expire >> 24) as u8
     }
 
-    // Gets the second byte from the expire value
+    /// Gets the second byte from the expire value.
     fn get_second_expire_byte(&self) -> u8 {
         let expire = self.get_expire();
 
         (expire >> 16) as u8
     }
 
-    // Gets the third byte from the expire value
+    /// Gets the third byte from the expire value.
     fn get_third_expire_byte(&self) -> u8 {
         let expire = self.get_expire();
 
         (expire >> 8) as u8
     }
 
-    // Gets the fourth byte from the expire value
+    /// Gets the fourth byte from the expire value.
     fn get_fourth_expire_byte(&self) -> u8 {
         let expire = self.get_expire();
 
         expire as u8
     }
 
-    // Gets the first byte from the minimum value
+    /// Gets the first byte from the minimum value.
     fn get_first_minimum_byte(&self) -> u8 {
         let minimum = self.get_minimum();
 
         (minimum >> 24) as u8
     }
 
-    // Gets the second byte from the minimum value
+    /// Gets the second byte from the minimum value.
     fn get_second_minimum_byte(&self) -> u8 {
         let minimum = self.get_minimum();
 
         (minimum >> 16) as u8
     }
 
-    // Gets the third byte from the minimum value
+    /// Gets the third byte from the minimum value.
     fn get_third_minimum_byte(&self) -> u8 {
         let minimum = self.get_minimum();
 
         (minimum >> 8) as u8
     }
 
-    // Gets the fourth byte from the minimum value
+    /// Gets the fourth byte from the minimum value.
     fn get_fourth_minimum_byte(&self) -> u8 {
         let minimum = self.get_minimum();
 
         minimum as u8
     }
 
-    // Set the serial attribute from an array of bytes
+    /// Set the serial attribute from an array of bytes.
     fn set_serial_from_bytes(&mut self, bytes: &[u8]) {
         let first_byte = (bytes[0] as u32) << 24;
         let second_byte = (bytes[1] as u32) << 16;
@@ -411,7 +438,7 @@ impl SoaRdata {
         self.set_serial(first_byte | second_byte | third_byte | fourth_byte);
     }
 
-    // Set the refresh attribute from an array of bytes
+    /// Set the refresh attribute from an array of bytes.
     fn set_refresh_from_bytes(&mut self, bytes: &[u8]) {
         let first_byte = (bytes[0] as u32) << 24;
         let second_byte = (bytes[1] as u32) << 16;
@@ -421,7 +448,7 @@ impl SoaRdata {
         self.set_refresh(first_byte | second_byte | third_byte | fourth_byte);
     }
 
-    // Set the retry attribute from an array of bytes
+    /// Set the retry attribute from an array of bytes.
     fn set_retry_from_bytes(&mut self, bytes: &[u8]) {
         let first_byte = (bytes[0] as u32) << 24;
         let second_byte = (bytes[1] as u32) << 16;
@@ -431,7 +458,7 @@ impl SoaRdata {
         self.set_retry(first_byte | second_byte | third_byte | fourth_byte);
     }
 
-    // Set the expire attribute from an array of bytes
+    // Set the expire attribute from an array of bytes.
     fn set_expire_from_bytes(&mut self, bytes: &[u8]) {
         let first_byte = (bytes[0] as u32) << 24;
         let second_byte = (bytes[1] as u32) << 16;
@@ -441,7 +468,7 @@ impl SoaRdata {
         self.set_expire(first_byte | second_byte | third_byte | fourth_byte);
     }
 
-    // Set the minimum attribute from an array of bytes
+    /// Set the minimum attribute from an array of bytes.
     fn set_minimum_from_bytes(&mut self, bytes: &[u8]) {
         let first_byte = (bytes[0] as u32) << 24;
         let second_byte = (bytes[1] as u32) << 16;
@@ -452,39 +479,39 @@ impl SoaRdata {
     }
 }
 
-// Getters
+/// Getters
 impl SoaRdata {
-    // Gets the mname attribute from SoaRdata
+    /// Gets the mname attribute from SoaRdata.
     pub fn get_mname(&self) -> DomainName {
         self.mname.clone()
     }
 
-    // Gets the rname attribute from SoaRdata
+    /// Gets the rname attribute from SoaRdata.
     pub fn get_rname(&self) -> DomainName {
         self.rname.clone()
     }
 
-    // Gets the serial attribute from SoaRdata
+    /// Gets the serial attribute from SoaRdata.
     pub fn get_serial(&self) -> u32 {
         self.serial
     }
 
-    // Gets the refresh attribute from SoaRdata
+    /// Gets the refresh attribute from SoaRdata.
     pub fn get_refresh(&self) -> u32 {
         self.refresh
     }
 
-    // Gets the retry attribute from SoaRdata
+    /// Gets the retry attribute from SoaRdata.
     pub fn get_retry(&self) -> u32 {
         self.retry
     }
 
-    // Gets the expire attribute from SoaRdata
+    /// Gets the expire attribute from SoaRdata.
     pub fn get_expire(&self) -> u32 {
         self.expire
     }
 
-    // Gets the minimum attribute from SoaRdata
+    /// Gets the minimum attribute from SoaRdata.
     pub fn get_minimum(&self) -> u32 {
         self.minimum
     }
@@ -492,37 +519,37 @@ impl SoaRdata {
 
 // Setters
 impl SoaRdata {
-    // Sets the mname attibute with a DomainName
+    /// Sets the mname attibute with a DomainName.
     pub fn set_mname(&mut self, mname: DomainName) {
         self.mname = mname;
     }
 
-    // Sets the rname attibute with a DomainName
+    /// Sets the rname attibute with a DomainName.
     pub fn set_rname(&mut self, rname: DomainName) {
         self.rname = rname;
     }
 
-    // Sets the serial attibute with a value
+    /// Sets the serial attibute with a value.
     pub fn set_serial(&mut self, serial: u32) {
         self.serial = serial;
     }
 
-    // Sets the refresh attibute with a value
+    /// Sets the refresh attibute with a value.
     pub fn set_refresh(&mut self, refresh: u32) {
         self.refresh = refresh;
     }
 
-    // Sets the retry attibute with a value
+    /// Sets the retry attibute with a value.
     pub fn set_retry(&mut self, retry: u32) {
         self.retry = retry;
     }
 
-    // Sets the expire attibute with a value
+    /// Sets the expire attibute with a value.
     pub fn set_expire(&mut self, expire: u32) {
         self.expire = expire;
     }
 
-    // Sets the minimum attibute with a value
+    /// Sets the minimum attibute with a value.
     pub fn set_minimum(&mut self, minimum: u32) {
         self.minimum = minimum;
     }

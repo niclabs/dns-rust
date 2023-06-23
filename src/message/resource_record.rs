@@ -176,7 +176,7 @@ impl ResourceRecord {
      let resource_record_test = ResourceRecord::<Rdata>::from_bytes(&bytes_msg);
 
      assert_eq!(resource_record_test.get_name().get_name(), String::from("dcc.cl"));
-     assert_eq!(resource_record_test.get_type_code(), 16);
+     assert_eq!(resource_record_test.get_rtype(), 16);
      assert_eq!(resource_record_test.get_class(), 1);
      assert_eq!(resource_record_test.get_ttl(), 5642);
      assert_eq!(resource_record_test.get_rdlength(), 5);
@@ -250,7 +250,7 @@ impl ResourceRecord {
 
     // Returns a byte that represents the first byte from type code in the dns message.
     fn get_first_type_code_byte(&self) -> u8 {
-        let type_code = Rtype::from_rtype_to_int(self.get_type_code());
+        let type_code = Rtype::from_rtype_to_int(self.get_rtype());
         let first_byte = (type_code >> 8) as u8;
 
         first_byte
@@ -258,7 +258,7 @@ impl ResourceRecord {
 
     // Returns a byte that represents the second byte from type code in the dns message.
     fn get_second_type_code_byte(&self) -> u8 {
-        let type_code = Rtype::from_rtype_to_int(self.get_type_code());
+        let type_code = Rtype::from_rtype_to_int(self.get_rtype());
         let second_byte = type_code as u8;
 
         second_byte
@@ -399,7 +399,7 @@ impl ResourceRecord {
     }
 
     pub fn get_string_type(&self) -> String {
-        let qtype = Rtype::from_rtype_to_str(self.get_type_code());
+        let qtype = Rtype::from_rtype_to_str(self.get_rtype());
         qtype
     }
 }
@@ -438,8 +438,8 @@ impl ResourceRecord {
 }
 impl ResourceRecord {
     pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool {
-        let a: u16 = Rtype::from_rtype_to_int(self.get_type_code());
-        let aa: u16 = Rtype::from_rtype_to_int(rr.get_type_code());
+        let a: u16 = Rtype::from_rtype_to_int(self.get_rtype());
+        let aa: u16 = Rtype::from_rtype_to_int(rr.get_rtype());
         let b: u16 = Rclass::from_rclass_to_int(self.get_class());
         let bb: u16 = Rclass::from_rclass_to_int(rr.get_class());
         let c: u16 = self.get_rdlength();
@@ -471,7 +471,7 @@ impl ResourceRecord {
     }
 
     // Gets the type_code attribute value
-    pub fn get_type_code(&self) -> Rtype {
+    pub fn get_rtype(&self) -> Rtype {
         self.rtype.clone()
     }
 
@@ -500,7 +500,7 @@ impl fmt::Display for ResourceRecord {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         // We need to remove "-" from the number output.
         let name = self.get_name();
-        let type_code = self.get_type_code();
+        let type_code = self.get_rtype();
         let class = self.get_class();
 
         formatter.write_fmt(format_args!(
@@ -839,11 +839,11 @@ mod resource_record_test {
     fn set_and_get_type_code_test() {
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.get_type_code()), 16);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record.get_rtype()), 16);
 
         resource_record.set_type_code(Rtype::A);
 
-        let type_code = Rtype::from_rtype_to_int(resource_record.get_type_code());
+        let type_code = Rtype::from_rtype_to_int(resource_record.get_rtype());
         assert_eq!(type_code, 1 as u16);
     }
 
@@ -950,7 +950,7 @@ mod resource_record_test {
             resource_record_test.get_name().get_name(),
             String::from("dcc.cl")
         );
-        assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_type_code()), 16);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_rtype()), 16);
         assert_eq!(Rclass::from_rclass_to_int(resource_record_test.get_class()), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
         assert_eq!(resource_record_test.get_rdlength(), 4);
@@ -975,7 +975,7 @@ mod resource_record_test {
             resource_record_test.get_name().get_name(),
             String::from("dcc.cl")
         );
-        assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_type_code()), 1);
+        assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_rtype()), 1);
         assert_eq!(Rclass::from_rclass_to_int(resource_record_test.get_class()), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
         assert_eq!(resource_record_test.get_rdlength(), 4);

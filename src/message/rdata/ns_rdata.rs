@@ -93,7 +93,7 @@ impl NsRdata {
     /// assert_eq!(nsrdata_rr.get_ttl(), 35);
     /// assert_eq!(nsrdata_rr.get_name().get_name(), String::from("uchile.cl"));
     /// assert_eq!(nsrdata_rr.get_rdlength(), 5);
-    /// assert_eq!(nsrdata_rr.get_type_code(), Rtype::NS);
+    /// assert_eq!(nsrdata_rr.get_rtype(), Rtype::NS);
     /// ```
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
@@ -215,7 +215,7 @@ mod ns_rdata_test {
          assert_eq!(nsrdata_rr.get_ttl(), 35);
          assert_eq!(nsrdata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(nsrdata_rr.get_rdlength(), 5);
-         assert_eq!(nsrdata_rr.get_type_code(), Rtype::NS);
+         assert_eq!(nsrdata_rr.get_rtype(), Rtype::NS);
          
          let ns_rr_rdata = nsrdata_rr.get_rdata();
          match ns_rr_rdata {

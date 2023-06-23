@@ -1,4 +1,5 @@
 use crate::domain_name::DomainName;
+use crate::message::{Rtype, Rclass};
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
@@ -78,7 +79,7 @@ impl NsRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: u16,
+        class: String,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -95,8 +96,9 @@ impl NsRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(2);
-        resource_record.set_class(class);
+        resource_record.set_type_code(Rtype::NS);
+        let rclass = Rclass::from_string_to_rclass(class);
+        resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
 

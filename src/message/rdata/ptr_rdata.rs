@@ -127,6 +127,7 @@ impl PtrRdata {
 #[cfg(test)]
 mod ptr_rdata_test {
     use crate::domain_name::DomainName;
+    use crate::message::{Rclass, Rtype};
     use crate::message::rdata::Rdata;
     use crate::message::rdata::ptr_rdata::PtrRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -189,16 +190,18 @@ mod ptr_rdata_test {
     //ToDo: Revisar
     #[test]
     fn rr_from_master_file(){
-        let ptr_rdata_rr = PtrRdata::rr_from_master_file("dcc".split_whitespace(),
-         35, 1, 
-         String::from("uchile.cl"), 
-         String::from("uchile.cl"));
+        let ptr_rdata_rr = PtrRdata::rr_from_master_file(
+            "dcc".split_whitespace(),
+            35,
+            String::from("IN"), 
+            String::from("uchile.cl"), 
+            String::from("uchile.cl"));
 
-         assert_eq!(ptr_rdata_rr.get_class(), 1);
+         assert_eq!(ptr_rdata_rr.get_class(), Rclass::IN);
          assert_eq!(ptr_rdata_rr.get_ttl(), 35);
          assert_eq!(ptr_rdata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(ptr_rdata_rr.get_rdlength(), 5);
-         assert_eq!(ptr_rdata_rr.get_type_code(), 12);
+         assert_eq!(ptr_rdata_rr.get_type_code(), Rtype::PTR);
          
          let ptr_rr_rdata = ptr_rdata_rr.get_rdata();
          match ptr_rr_rdata {

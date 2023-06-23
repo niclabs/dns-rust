@@ -32,8 +32,8 @@ use std::vec::Vec;
 pub struct ResolverQuery {
     timestamp: u32,
     sname: String,
-    stype: u16,
-    sclass: u16,
+    stype: Rtype,
+    sclass: Rclass,
     op_code: u8,
     rd: bool,
     slist: Slist,
@@ -115,8 +115,8 @@ impl ResolverQuery {
         let query = ResolverQuery {
             timestamp: timestamp,
             sname: "".to_string(),
-            stype: 0 as u16,
-            sclass: 0 as u16,
+            stype: Rtype::A,
+            sclass: Rclass::IN,
             op_code: 0 as u8,
             rd: false,
             slist: Slist::new(),
@@ -152,8 +152,8 @@ impl ResolverQuery {
     pub fn initialize(
         &mut self,
         sname: String,
-        stype: u16,
-        sclass: u16,
+        stype: String,
+        sclass: String,
         op_code: u8,
         rd: bool,
         sbelt: Slist,
@@ -162,8 +162,8 @@ impl ResolverQuery {
         old_id: u16,
     ) {
         self.set_sname(sname);
-        self.set_stype(stype);
-        self.set_sclass(sclass);
+        self.set_stype(Rtype::from_string_to_rtype(stype));
+        self.set_sclass(Rclass::from_string_to_rclass(sclass));
         self.set_op_code(op_code);
         self.set_rd(rd);
         self.set_sbelt(sbelt);
@@ -383,9 +383,9 @@ impl ResolverQuery {
     /// Searches the cache and the name server for the desired data, to be
     /// used in Step 1.
     pub fn look_for_local_info(&mut self) -> Result<Vec<ResourceRecord>, &'static str> {
-        let s_type = utils::get_string_stype(self.get_stype())?;
+        let s_type = Rtype::from_rtype_to_str(self.get_stype());
         let s_name = self.get_sname();
-        let s_class = self.get_sclass();
+        let s_class = Rclass::from_rclass_to_int(self.get_sclass());
 
         let rr_vec = Vec::<ResourceRecord>::new();
 
@@ -485,7 +485,7 @@ impl ResolverQuery {
                 if aa == true {
                     let mut remove_exist_cache = true;
                     for an in answer.iter_mut() {
-                        if an.get_ttl() > 0 && Rtype::from_rtype_to_int(an.get_type_code()) == self.get_stype() {
+                        if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
                             an.set_ttl(an.get_ttl() + self.get_timestamp());
 
                             // Remove old cache
@@ -506,7 +506,7 @@ impl ResolverQuery {
 
                     if exist_in_cache == false { 
                         for an in answer.iter_mut() {
-                            if an.get_ttl() > 0 && Rtype::from_rtype_to_int(an.get_type_code()) == self.get_stype() {
+                            if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
                                 an.set_ttl(an.get_ttl() + self.get_timestamp());
 
                                 // Cache
@@ -670,7 +670,7 @@ impl ResolverQuery {
         let answer = msg_from_response.get_answer();
 
         // Step 4a
-        if (answer.len() > 0 && rcode == 0 && Rtype::from_rtype_to_int(answer[0].get_type_code()) == self.get_stype())
+        if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
         {
             return Some(self.step_4a(msg_from_response));
@@ -690,7 +690,7 @@ impl ResolverQuery {
         // If the answer is CName and the user dont want CName
         if answer.len() > 0
             && Rtype::from_rtype_to_int(answer[0].get_type_code()) == 5
-            && Rtype::from_rtype_to_int(answer[0].get_type_code()) != self.get_stype()
+            && answer[0].get_type_code() != self.get_stype()
         {
             return self.step_4c_udp(msg_from_response, socket, rx_update_self_slist);
         }
@@ -802,7 +802,7 @@ impl ResolverQuery {
 
             for answer in answers[1..].into_iter() {
                 let answer_name = answer.get_name().get_name();
-                let answer_type = Rtype::from_rtype_to_int(answer.get_type_code());
+                let answer_type = answer.get_type_code();
 
                 if answer_name == cname_name && answer_type == qtype {
                     answers_found = answers_found + 1;
@@ -947,8 +947,8 @@ impl ResolverQuery {
                     // Initializes the query data struct
                     internal_query.initialize(
                         qname,
-                        1,
-                        1,
+                        String::from("A"),
+                        String::from("IN"),
                         0,
                         false,
                         resolver_query_to_update.get_sbelt(),
@@ -1206,7 +1206,7 @@ impl ResolverQuery {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
 
-        if (answer.len() > 0 && rcode == 0 && Rtype::from_rtype_to_int(answer[0].get_type_code()) == self.get_stype())
+        if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
             || rcode == 3
         {
             return self.step_4a(msg_from_response);
@@ -1224,7 +1224,7 @@ impl ResolverQuery {
         // If the answer is CName and the user dont want CName
         if answer.len() > 0
             && Rtype::from_rtype_to_int(answer[0].get_type_code()) == 5
-            && Rtype::from_rtype_to_int(answer[0].get_type_code()) != self.get_stype()
+            && answer[0].get_type_code() != self.get_stype()
         {
             return self.step_4c_tcp(msg_from_response, update_slist_tcp_recv);
         }
@@ -1399,8 +1399,8 @@ impl ResolverQuery {
                     // Initializes the query data struct
                     internal_query.initialize(
                         qname,
-                        1,
-                        1,
+                        String::from("A"),
+                        String::from("IN"),
                         0,
                         false,
                         resolver_query_to_update.get_sbelt(),
@@ -1491,11 +1491,9 @@ impl ResolverQuery {
     pub fn create_query_message(&mut self) -> DnsMessage {
         let sname = self.get_sname();
         let stype = self.get_stype();
-        let stype_rtype = Rtype::from_int_to_rtype(stype);
-        let stype_str = Rtype::from_rtype_to_str(stype_rtype);
+        let stype_str = Rtype::from_rtype_to_str(stype);
         let sclass = self.get_sclass();
-        let sclass_rclass = Rclass::from_int_to_rclass(sclass);
-        let sclass_str = Rclass::from_rclass_to_str(sclass_rclass);
+        let sclass_str = Rclass::from_rclass_to_str(sclass);
         let op_code = self.get_op_code();
         let rd = self.get_rd();
         let id = self.get_main_query_id();
@@ -1545,12 +1543,12 @@ impl ResolverQuery {
         self.sname.clone()
     }
     // Gets the stype
-    pub fn get_stype(&self) -> u16 {
-        self.stype
+    pub fn get_stype(&self) -> Rtype {
+        self.stype.clone()
     }
     // Gets the sclass
-    pub fn get_sclass(&self) -> u16 {
-        self.sclass
+    pub fn get_sclass(&self) -> Rclass {
+        self.sclass.clone()
     }
     // Gets the op_code
     pub fn get_op_code(&self) -> u8 {
@@ -1668,12 +1666,12 @@ impl ResolverQuery {
     }
 
     // Sets the stype attribute with a new value
-    pub fn set_stype(&mut self, stype: u16) {
+    pub fn set_stype(&mut self, stype: Rtype) {
         self.stype = stype;
     }
 
     // Sets the sclass attribute with a new value
-    pub fn set_sclass(&mut self, sclass: u16) {
+    pub fn set_sclass(&mut self, sclass: Rclass) {
         self.sclass = sclass;
     }
 
@@ -1795,8 +1793,8 @@ mod resolver_query_tests {
         );
 
         assert_eq!(resolver_query.sname, "".to_string());
-        assert_eq!(resolver_query.stype, 0);
-        assert_eq!(resolver_query.sclass, 0);
+        assert_eq!(resolver_query.stype, Rtype::A);
+        assert_eq!(resolver_query.sclass, Rclass::IN);
         assert_eq!(resolver_query.slist.get_ns_list().len(), 0);
         assert_eq!(resolver_query.cache.clone().get_size(), 0);
     }
@@ -1898,9 +1896,9 @@ mod resolver_query_tests {
         );
 
 
-        resolver_query.set_stype(1);
+        resolver_query.set_stype(Rtype::A);
 
-        assert_eq!(resolver_query.get_stype(), 1);
+        assert_eq!(resolver_query.get_stype(), Rtype::A);
     }
 
     #[test]
@@ -1932,9 +1930,9 @@ mod resolver_query_tests {
         );
 
 
-        resolver_query.set_sclass(1);
+        resolver_query.set_sclass(Rclass::IN);
 
-        assert_eq!(resolver_query.get_sclass(), 1);
+        assert_eq!(resolver_query.get_sclass(), Rclass::IN);
     }
 
     #[test]
@@ -2442,8 +2440,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.test2.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
         let mut domain_name = DomainName::new();
@@ -2507,8 +2505,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.test2.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
         let mut domain_name = DomainName::new();
@@ -2572,8 +2570,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.test2.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
         let mut domain_name = DomainName::new();
@@ -2629,8 +2627,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.test2.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
         let mut domain_name = DomainName::new();
@@ -2684,8 +2682,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.test2.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
         let mut domain_name = DomainName::new();
@@ -2749,8 +2747,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test6.test4.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut cache = DnsCache::new();
         cache.set_max_size(2);
         let mut domain_name = DomainName::new();
@@ -3181,8 +3179,8 @@ mod resolver_query_tests {
 
         resolver_query.initialize(
             String::from("example.com"),
-            1,
-            2,
+            String::from("A"),
+            String::from("CS"),
             1,
             true,
             sbelt,
@@ -3192,8 +3190,8 @@ mod resolver_query_tests {
         );
 
         assert_eq!(resolver_query.get_sname(), String::from("example.com"));
-        assert_eq!(resolver_query.get_stype(), 1);
-        assert_eq!(resolver_query.get_sclass(), 2);
+        assert_eq!(resolver_query.get_stype(), Rtype::A);
+        assert_eq!(resolver_query.get_sclass(), Rclass::IN);
         assert_eq!(resolver_query.get_op_code(), 1);
         assert!(resolver_query.get_rd());
         assert_eq!(resolver_query.get_sbelt().len(), 1);
@@ -3381,13 +3379,13 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         resolver_query.set_sname("127.0.0.0".to_string());
         let mut cache = DnsCache::new();
         cache.set_max_size(2);
         resolver_query.set_cache(cache);
-        resolver_query.set_sclass(1);
+        resolver_query.set_sclass(Rclass::IN);
         resolver_query.set_timestamp(1);
         resolver_query.set_old_id(12345);
         let ip_address: [u8; 4] = [127, 0, 0, 0];
@@ -3486,8 +3484,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("eol.uchile.cl".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
 
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
@@ -3546,13 +3544,13 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         resolver_query.set_sname("127.0.0.0".to_string());
         let mut cache = DnsCache::new();
         cache.set_max_size(2);
         resolver_query.set_cache(cache);
-        resolver_query.set_sclass(1);
+        resolver_query.set_sclass(Rclass::IN);
         resolver_query.set_timestamp(1);
         resolver_query.set_old_id(12345);
         let ip_address: [u8; 4] = [127, 0, 0, 0];
@@ -3788,7 +3786,7 @@ mod resolver_query_tests {
          let mut cache = DnsCache::new();
          cache.set_max_size(2);
          resolver_query.set_cache(cache);
-         resolver_query.set_sclass(1);
+         resolver_query.set_sclass(Rclass::IN);
          resolver_query.set_timestamp(1);
          let ip_address: [u8; 4] = [127, 0, 0, 0];
          let mut a_rdata = ARdata::new();
@@ -3842,7 +3840,7 @@ mod resolver_query_tests {
          let mut cache = DnsCache::new();
          cache.set_max_size(2);
          resolver_query.set_cache(cache);
-         resolver_query.set_sclass(1);
+         resolver_query.set_sclass(Rclass::IN);
          resolver_query.set_timestamp(1);
          let ip_address: [u8; 4] = [127, 0, 0, 0];
          let mut a_rdata = ARdata::new();
@@ -4179,8 +4177,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut cache = DnsCache::new();
         cache.set_max_size(4);
         let mut domain_name = DomainName::new();
@@ -4238,8 +4236,8 @@ mod resolver_query_tests {
         );
          let name = "test.com".to_string();
          resolver_query.set_sname(name.clone());
-         resolver_query.set_sclass(1);
-         resolver_query.set_stype(1);
+         resolver_query.set_sclass(Rclass::IN);
+         resolver_query.set_stype(Rtype::A);
 
          // Create the RRs
          let ip_address: [u8; 4] = [127, 0, 0, 0];
@@ -4286,13 +4284,13 @@ mod resolver_query_tests {
             tx_update_slist_tcp,
             tx_update_self_slist,
         );
-         resolver_query.set_stype(1);
-         resolver_query.set_sclass(1);
+         resolver_query.set_stype(Rtype::A);
+         resolver_query.set_sclass(Rclass::IN);
          resolver_query.set_sname("127.0.0.0".to_string());
          let mut cache = DnsCache::new();
          cache.set_max_size(2);
          resolver_query.set_cache(cache);
-         resolver_query.set_sclass(1);
+         resolver_query.set_sclass(Rclass::IN);
          resolver_query.set_timestamp(1);
          let ip_address: [u8; 4] = [127, 0, 0, 0];
          let mut a_rdata = ARdata::new();
@@ -4348,8 +4346,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("*test.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut dns_message = resolver_query.create_query_message();
         let mut header = dns_message.get_header();
         header.set_rcode(0);
@@ -4401,8 +4399,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("test.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut dns_message = resolver_query.create_query_message();
         let mut header = dns_message.get_header();
         header.set_rcode(0);
@@ -4462,8 +4460,8 @@ mod resolver_query_tests {
         );
         resolver_query.set_sname("*test.com".to_string());
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut dns_message = resolver_query.create_query_message();
         let mut a_rdata_1 = ARdata::new();
         let mut a_rdata_2 = ARdata::new();
@@ -4545,8 +4543,8 @@ mod resolver_query_tests {
         resolver_query.add_to_cache(domain_name.clone(), rr.clone());
 
         resolver_query.set_rd(true);
-        resolver_query.set_stype(1);
-        resolver_query.set_sclass(1);
+        resolver_query.set_stype(Rtype::A);
+        resolver_query.set_sclass(Rclass::IN);
         let mut dns_message = resolver_query.create_query_message();
         let mut header = dns_message.get_header();
         header.set_rcode(0);
@@ -4837,7 +4835,7 @@ mod resolver_query_tests {
         let mut header = dns_message.get_header();
         header.set_rcode(0);
         dns_message.set_header(header);
-        resolver_query.set_stype(0);
+        resolver_query.set_stype(Rtype::UNKNOWN(0));
         let mut a_rdata_1 = ARdata::new();
         let mut a_rdata_2 = ARdata::new();
         let ip_address_1: [u8; 4] = [127, 0, 0, 0];
@@ -4909,7 +4907,7 @@ mod resolver_query_tests {
         let mut header = dns_message.get_header();
         header.set_rcode(0);
         dns_message.set_header(header);
-        resolver_query.set_stype(0);
+        resolver_query.set_stype(Rtype::UNKNOWN(0));
         let mut a_rdata_1 = ARdata::new();
         let mut a_rdata_2 = ARdata::new();
         let ip_address_1: [u8; 4] = [127, 0, 0, 0];

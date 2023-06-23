@@ -279,7 +279,7 @@ mod a_ch_rdata_test {
 
         assert_eq!(ach_rr.get_class(), Rclass::CH);
         assert_eq!(ach_rr.get_name().get_name(), String::from("admin.googleplex"));
-        assert_eq!(ach_rr.get_type_code(), Rtype::A);
+        assert_eq!(ach_rr.get_rtype(), Rtype::A);
         assert_eq!(ach_rr.get_ttl(), 0);
         assert_eq!(ach_rr.get_rdlength(), 16);
 

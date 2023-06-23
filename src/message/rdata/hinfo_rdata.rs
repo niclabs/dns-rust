@@ -227,7 +227,7 @@ mod hinfo_rdata_test {
         assert_eq!(hinfo_rr.get_class(), Rclass::IN);
         assert_eq!(hinfo_rr.get_name().get_name(), "dcc.cl");
         assert_eq!(hinfo_rr.get_ttl(), 15);
-        assert_eq!(hinfo_rr.get_type_code(), Rtype::HINFO);
+        assert_eq!(hinfo_rr.get_rtype(), Rtype::HINFO);
         assert_eq!(hinfo_rr.get_rdlength(), 11);
         
         let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));

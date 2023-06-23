@@ -652,8 +652,8 @@ impl Resolver {
         // Initializes ResolverQuery data struct with message's data
         resolver_query.initialize(
             sname,
-            Rtype::from_rtype_to_int(stype),
-            Rclass::from_rclass_to_int(sclass),
+            Rtype::from_rtype_to_str(stype),
+            Rclass::from_rclass_to_str(sclass),
             op_code,
             rd,
             self.get_sbelt(),
@@ -906,8 +906,8 @@ impl Resolver {
                             // Initializes the query data struct
                             resolver_query.initialize(
                                 sname,
-                                Rtype::from_rtype_to_int(stype),
-                                Rclass::from_rclass_to_int(sclass),
+                                Rtype::from_rtype_to_str(stype),
+                                Rclass::from_rclass_to_str(sclass),
                                 op_code,
                                 rd,
                                 resolver.get_sbelt(),
@@ -2148,8 +2148,8 @@ mod resolver_test {
             tx_delete_query);
 
         assert_eq!(resolver_query.get_sname(), String::from("test.com"));
-        assert_eq!(resolver_query.get_stype(), 1);
-        assert_eq!(resolver_query.get_sclass(), 1);
+        assert_eq!(resolver_query.get_stype(), Rtype::A);
+        assert_eq!(resolver_query.get_sclass(), Rclass::IN);
         assert_eq!(resolver_query.get_op_code(), 0);
         assert!(!resolver_query.get_rd());
         assert_eq!(resolver_query.get_cache().get_size(), 1);

@@ -1,3 +1,5 @@
+use crate::message::Rtype;
+
 pub fn check_label_name(name: String) -> bool {
     if name.len() > 63 || name.len() == 0 {
         return false;
@@ -67,21 +69,8 @@ pub fn is_reverse_query(host_name: String) -> bool {
 }
 
 /// Given the value of the STYPE, obtains its corresponding string.
-pub fn get_string_stype(stype_code: u16) -> Result<String, &'static str> {
-    let s_type = match stype_code {
-        1 => Ok("A".to_string()),
-        2 => Ok("NS".to_string()),
-        5 => Ok("CNAME".to_string()),
-        6 => Ok("SOA".to_string()),
-        11 => Ok("WKS".to_string()),
-        12 => Ok("PTR".to_string()),
-        13 => Ok("HINFO".to_string()),
-        14 => Ok("MINFO".to_string()),
-        15 => Ok("MX".to_string()),
-        16 => Ok("TXT".to_string()),
-        255 => Ok("*".to_string()),
-        _ => Err("Not implemented type of query"),
-    };
+pub fn get_string_stype(stype: Rtype) -> String {
+    let s_type = Rtype::from_rtype_to_str(stype);
     s_type
 }
 

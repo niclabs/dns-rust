@@ -8,23 +8,24 @@ use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for hinfo type
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                  CPU                          |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                   OS                          |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-//
-
+/// An struct that represents the `Rdata` for HINFO TYPE.
+/// 
+/// ```text
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                  CPU                          |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                   OS                          |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// ```
 pub struct HinfoRdata {
-    // Specifies the CPU type.
+    /// Specifies the CPU type.
     cpu: String,
-    // Specifies the operating system type.
+    /// Specifies the operating system type.
     os: String,
 }
 
 impl ToBytes for HinfoRdata {
-    // Return a vec of bytes that represents the hinfo rdata
+    /// Return a `Vec<u8>` of bytes that represents the HINFO RDATA.
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let mut cpu = self.get_cpu();
@@ -49,7 +50,20 @@ impl ToBytes for HinfoRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for HinfoRdata {
-    // Creates a new HinfoRdata from an array of bytes
+    /// Creates a new `HinfoRdata` from an array of bytes.
+    /// 
+    /// # Examples
+    /// ```
+    /// use dns_message_parser::message::rdata::hinfo_rdata::HinfoRdata;
+    /// use dns_message_parser::message::rdata::Rdata;
+    /// use dns_message_parser::message::rdata::RdataResult;
+    /// 
+    /// let bytes: [u8; 7] = [99, 112, 117, 0, 111, 115, 0];
+    /// let hinfo_rdata = HinfoRdata::from_bytes(&bytes, &bytes).unwrap();
+    /// 
+    /// assert_eq!(hinfo_rdata.get_cpu(), String::from("cpu"));
+    /// assert_eq!(hinfo_rdata.get_os(), String::from("os"));
+    /// ```
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let mut cpu = String::from("");
         let mut os = String::from("");
@@ -79,17 +93,15 @@ impl FromBytes<Result<Self, &'static str>> for HinfoRdata {
 }
 
 impl HinfoRdata {
-    // Creates a new HinfoRdata with default values.
+    /// Creates a new `HinfoRdata` with default values.
     //
-    // # Examples
-    // ```
-    // let hinfo_rdata = HinfoRdata::new();
+    /// # Examples
+    /// ```
+    /// let hinfo_rdata = HinfoRdata::new();
     //
-    // assert_eq!(hinfo_rdata.cpu, String::from(""));
-    // assert_eq!(hinfo_rdata.os, String::from(""));
-    // ```
-    //
-
+    /// assert_eq!(hinfo_rdata.cpu, String::from(""));
+    /// assert_eq!(hinfo_rdata.os, String::from(""));
+    /// ```
     pub fn new() -> Self {
         let hinfo_rdata = HinfoRdata {
             cpu: String::new(),
@@ -98,6 +110,28 @@ impl HinfoRdata {
         hinfo_rdata
     }
 
+    /// Returns a `ResourceRecord` from the given values.
+    /// 
+    /// # Examples
+    /// ```
+    /// let hinfo_rr = HinfoRdata::rr_from_master_file("ryzen ubuntu".split_whitespace(), 
+    ///     15, 
+    ///     String::from("IN"), 
+    ///     String::from("dcc.cl"));
+    /// let hinfo_rdata = hinfo_rr.get_rdata();
+    /// 
+    /// assert_eq!(hinfo_rr.get_class(), Rclass::IN);
+    /// assert_eq!(hinfo_rr.get_name().get_name(), "dcc.cl");
+    /// assert_eq!(hinfo_rr.get_ttl(), 15);
+    /// assert_eq!(hinfo_rr.get_rtype(), Rtype::HINFO);
+    /// assert_eq!(hinfo_rr.get_rdlength(), 11);
+    /// 
+    /// let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));
+    /// match hinfo_rdata {
+    ///     Rdata::SomeHinfoRdata(val) => assert_eq!((val.get_cpu(), val.get_os()), (expected_cpu_os)),
+    ///     _ => {}
+    /// }
+    /// ```
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
@@ -130,11 +164,11 @@ impl HinfoRdata {
 
 // Getters
 impl HinfoRdata {
-    // Gets the cpu attribute
+    /// Returns a clone of the `cpu` attribute.
     pub fn get_cpu(&self) -> String {
         self.cpu.clone()
     }
-    // Gets the os attribute
+    /// Returns a clone of the `os` attribute.
     pub fn get_os(&self) -> String {
         self.os.clone()
     }
@@ -142,11 +176,11 @@ impl HinfoRdata {
 
 // Setters
 impl HinfoRdata {
-    // Sets the cpu field with a value
+    /// Sets the `cpu` field with a value.
     pub fn set_cpu(&mut self, cpu: String) {
         self.cpu = cpu;
     }
-    // Sets the os field with a value
+    /// Sets the `os` field with a value.
     pub fn set_os(&mut self, os: String) {
         self.os = os;
     }

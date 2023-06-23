@@ -1,4 +1,6 @@
 use crate::message::rdata::Rdata;
+use crate::message::Rclass;
+use crate::message::Rtype;
 
 use crate::domain_name::DomainName;
 use std::fmt;
@@ -31,9 +33,9 @@ pub struct ResourceRecord {
     // Domain Name
     name: DomainName,
     // Specifies the meaning of the data in the RDATA
-    type_code: u16,
+    type_code: Rtype,
     // Specifies the class of the data in the RDATA
-    class: u16,
+    class: Rclass,
     // Specifies the time interval (in seconds) that the resource record may be cached before it should be discarded.
     ttl: u32,
     // Specifies the length in octets of the RDATA field
@@ -76,8 +78,8 @@ impl ResourceRecord {
         match rdata {
             Rdata::SomeARdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 1 as u16,
-                class: 0 as u16,
+                type_code: Rtype::A,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomeARdata(val),
@@ -85,64 +87,64 @@ impl ResourceRecord {
 
             Rdata::SomeNsRdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 2 as u16,
-                class: 0 as u16,
+                type_code: Rtype::NS,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomeNsRdata(val),
             },
             Rdata::SomeCnameRdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 5 as u16,
-                class: 0 as u16,
+                type_code: Rtype::CNAME,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomeCnameRdata(val),
             },
             Rdata::SomeSoaRdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 6 as u16,
-                class: 0 as u16,
+                type_code: Rtype::SOA,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomeSoaRdata(val),
             },
             Rdata::SomePtrRdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 12 as u16,
-                class: 0 as u16,
+                type_code: Rtype::PTR,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomePtrRdata(val),
             },
             Rdata::SomeHinfoRdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 13 as u16,
-                class: 0 as u16,
+                type_code: Rtype::HINFO,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomeHinfoRdata(val),
             },
             Rdata::SomeMxRdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 15 as u16,
-                class: 0 as u16,
+                type_code: Rtype::MX,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomeMxRdata(val),
             },
             Rdata::SomeTxtRdata(val) => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 16 as u16,
-                class: 0 as u16,
+                type_code: Rtype::TXT,
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::SomeTxtRdata(val),
             },
             _ => ResourceRecord {
                 name: DomainName::new(),
-                type_code: 0 as u16,
-                class: 0 as u16,
+                type_code: Rtype::UNKNOWN(0),
+                class: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: rdata,
@@ -202,7 +204,9 @@ impl ResourceRecord {
         }
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
+        let rtype = Rtype::from_int_to_rtype(type_code);
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
+        let rclass = Rclass::from_int_to_rclass(class);
         let ttl = ((bytes_without_name[4] as u32) << 24)
             | ((bytes_without_name[5] as u32) << 16)
             | ((bytes_without_name[6] as u32) << 8)
@@ -234,8 +238,8 @@ impl ResourceRecord {
 
         let resource_record = ResourceRecord {
             name: name,
-            type_code: type_code,
-            class: class,
+            type_code: rtype,
+            class: rclass,
             ttl: ttl,
             rdlength: rdlength,
             rdata: rdata,
@@ -246,7 +250,7 @@ impl ResourceRecord {
 
     // Returns a byte that represents the first byte from type code in the dns message.
     fn get_first_type_code_byte(&self) -> u8 {
-        let type_code = self.get_type_code();
+        let type_code = Rtype::from_rtype_to_int(self.get_type_code());
         let first_byte = (type_code >> 8) as u8;
 
         first_byte
@@ -254,7 +258,7 @@ impl ResourceRecord {
 
     // Returns a byte that represents the second byte from type code in the dns message.
     fn get_second_type_code_byte(&self) -> u8 {
-        let type_code = self.get_type_code();
+        let type_code = Rtype::from_rtype_to_int(self.get_type_code());
         let second_byte = type_code as u8;
 
         second_byte
@@ -262,7 +266,7 @@ impl ResourceRecord {
 
     // Returns a byte that represents the first byte from class in the dns message.
     fn get_first_class_byte(&self) -> u8 {
-        let class = self.get_class();
+        let class = Rclass::from_rclass_to_int(self.get_class());
         let first_byte = (class >> 8) as u8;
 
         first_byte
@@ -270,7 +274,7 @@ impl ResourceRecord {
 
     // Returns a byte that represents the second byte from class in the dns message.
     fn get_second_class_byte(&self) -> u8 {
-        let class = self.get_class();
+        let class = Rclass::from_rclass_to_int(self.get_class());
         let second_byte = class as u8;
 
         second_byte
@@ -395,21 +399,7 @@ impl ResourceRecord {
     }
 
     pub fn get_string_type(&self) -> String {
-        let qtype = match self.get_type_code() {
-            1 => "A".to_string(),
-            2 => "NS".to_string(),
-            5 => "CNAME".to_string(),
-            6 => "SOA".to_string(),
-            11 => "WKS".to_string(),
-            12 => "PTR".to_string(),
-            13 => "HINFO".to_string(),
-            14 => "MINFO".to_string(),
-            15 => "MX".to_string(),
-            16 => "TXT".to_string(),
-            28 => "AAAA".to_string(),
-            _ => unreachable!(),
-        };
-
+        let qtype = Rtype::from_rtype_to_str(self.get_type_code());
         qtype
     }
 }
@@ -422,12 +412,12 @@ impl ResourceRecord {
     }
 
     // Sets the type_code attribute with a value
-    pub fn set_type_code(&mut self, type_code: u16) {
+    pub fn set_type_code(&mut self, type_code: Rtype) {
         self.type_code = type_code;
     }
 
     // Sets the class attribute with a value
-    pub fn set_class(&mut self, class: u16) {
+    pub fn set_class(&mut self, class: Rclass) {
         self.class = class;
     }
 
@@ -448,10 +438,10 @@ impl ResourceRecord {
 }
 impl ResourceRecord {
     pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool {
-        let a: u16 = self.get_type_code();
-        let aa: u16 = rr.get_type_code();
-        let b: u16 = self.get_class();
-        let bb: u16 = rr.get_class();
+        let a: u16 = Rtype::from_rtype_to_int(self.get_type_code());
+        let aa: u16 = Rtype::from_rtype_to_int(rr.get_type_code());
+        let b: u16 = Rclass::from_rclass_to_int(self.get_class());
+        let bb: u16 = Rclass::from_rclass_to_int(rr.get_class());
         let c: u16 = self.get_rdlength();
         let cc: u16 = rr.get_rdlength();
         let d: u32 = self.get_ttl();
@@ -481,12 +471,12 @@ impl ResourceRecord {
     }
 
     // Gets the type_code attribute value
-    pub fn get_type_code(&self) -> u16 {
+    pub fn get_type_code(&self) -> Rtype {
         self.type_code
     }
 
     // Gets the class attribute value
-    pub fn get_class(&self) -> u16 {
+    pub fn get_class(&self) -> Rclass {
         self.class
     }
 
@@ -515,7 +505,7 @@ impl fmt::Display for ResourceRecord {
 
         formatter.write_fmt(format_args!(
             "RR:{} - type:{} - class:{}",
-            name, type_code, class
+            name, Rtype::from_rtype_to_int(type_code), Rclass::from_rclass_to_int(class)
         ))
     }
 }

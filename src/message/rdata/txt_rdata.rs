@@ -124,6 +124,7 @@ impl TxtRdata {
 
 #[cfg(test)]
 mod txt_rdata_test {
+    use crate::message::Rclass;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -169,11 +170,13 @@ mod txt_rdata_test {
     //ToDo: Revisar
     #[test]
     fn rr_from_master_file_test(){
-        let txtrdata_rr = TxtRdata::rr_from_master_file("dcc uchile cl".split_whitespace(),
-         25, 1,
-        String::from("uchile.cl"));
+        let txtrdata_rr = TxtRdata::rr_from_master_file(
+            "dcc uchile cl".split_whitespace(),
+            25,
+            String::from("IN"),
+            String::from("uchile.cl"));
 
-        assert_eq!(txtrdata_rr.get_class(), 1);
+        assert_eq!(txtrdata_rr.get_class(), Rclass::IN);
         assert_eq!(txtrdata_rr.get_ttl(), 25);
         assert_eq!(txtrdata_rr.get_rdlength(), 3);
         assert_eq!(txtrdata_rr.get_name().get_name(), String::from("uchile.cl"));

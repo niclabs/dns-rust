@@ -485,7 +485,7 @@ impl ResolverQuery {
                 if aa == true {
                     let mut remove_exist_cache = true;
                     for an in answer.iter_mut() {
-                        if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                        if an.get_ttl() > 0 && an.get_rtype() == self.get_stype() {
                             an.set_ttl(an.get_ttl() + self.get_timestamp());
 
                             // Remove old cache
@@ -506,7 +506,7 @@ impl ResolverQuery {
 
                     if exist_in_cache == false { 
                         for an in answer.iter_mut() {
-                            if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                            if an.get_ttl() > 0 && an.get_rtype() == self.get_stype() {
                                 an.set_ttl(an.get_ttl() + self.get_timestamp());
 
                                 // Cache
@@ -670,7 +670,7 @@ impl ResolverQuery {
         let answer = msg_from_response.get_answer();
 
         // Step 4a
-        if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
+        if (answer.len() > 0 && rcode == 0 && answer[0].get_rtype() == self.get_stype())
             || rcode == 3
         {
             return Some(self.step_4a(msg_from_response));
@@ -680,7 +680,7 @@ impl ResolverQuery {
 
         // Step 4b
         // If there is authority and it is NS type
-        if (authority.len() > 0) && (Rtype::from_rtype_to_int(authority[0].get_type_code()) == 2) {
+        if (authority.len() > 0) && (Rtype::from_rtype_to_int(authority[0].get_rtype()) == 2) {
             println!("Delegation response");
             self.step_4b_udp(msg_from_response, socket, rx_update_self_slist);
             return None;
@@ -689,8 +689,8 @@ impl ResolverQuery {
         // Step 4c
         // If the answer is CName and the user dont want CName
         if answer.len() > 0
-            && Rtype::from_rtype_to_int(answer[0].get_type_code()) == 5
-            && answer[0].get_type_code() != self.get_stype()
+            && Rtype::from_rtype_to_int(answer[0].get_rtype()) == 5
+            && answer[0].get_rtype() != self.get_stype()
         {
             return self.step_4c_udp(msg_from_response, socket, rx_update_self_slist);
         }
@@ -802,7 +802,7 @@ impl ResolverQuery {
 
             for answer in answers[1..].into_iter() {
                 let answer_name = answer.get_name().get_name();
-                let answer_type = answer.get_type_code();
+                let answer_type = answer.get_rtype();
 
                 if answer_name == cname_name && answer_type == qtype {
                     answers_found = answers_found + 1;
@@ -1206,7 +1206,7 @@ impl ResolverQuery {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
 
-        if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
+        if (answer.len() > 0 && rcode == 0 && answer[0].get_rtype() == self.get_stype())
             || rcode == 3
         {
             return self.step_4a(msg_from_response);
@@ -1216,15 +1216,15 @@ impl ResolverQuery {
         // let additional = msg_from_response.get_additional();
         // Step 4b
         // If there is authority and it is NS type
-        if (authority.len() > 0) && (Rtype::from_rtype_to_int(authority[0].get_type_code()) == 2) {
+        if (authority.len() > 0) && (Rtype::from_rtype_to_int(authority[0].get_rtype()) == 2) {
             return self.step_4b_tcp(msg_from_response, update_slist_tcp_recv);
         }
 
         // Step 4c
         // If the answer is CName and the user dont want CName
         if answer.len() > 0
-            && Rtype::from_rtype_to_int(answer[0].get_type_code()) == 5
-            && answer[0].get_type_code() != self.get_stype()
+            && Rtype::from_rtype_to_int(answer[0].get_rtype()) == 5
+            && answer[0].get_rtype() != self.get_stype()
         {
             return self.step_4c_tcp(msg_from_response, update_slist_tcp_recv);
         }

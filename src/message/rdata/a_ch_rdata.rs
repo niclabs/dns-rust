@@ -7,16 +7,27 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for a type in CH class
-// For the CH class, a domain name followed
-// by a 16 bit octal Chaos address.
+/// An struct that represents the RDATA for A TYPE in CH class.
+/// 
+/// For the CH class, a domain name followed by a 16 bit octal Chaos address.
 pub struct AChRdata {
     domain_name: DomainName,
     ch_address: u16,
 }
 
 impl ToBytes for AChRdata {
-    // Return a vec of bytes that represents the a rdata
+    /// Return a `Vec<u8>` of bytes that represents the A RDATA.
+    /// 
+    /// # Examples
+    /// ```
+    /// let bytes: [u8; 4] = [128, 0, 0, 1];
+    /// let a_rdata = ARdata::from_bytes(&bytes, &bytes).unwrap();
+    /// 
+    /// assert_eq!(a_rdata.get_address()[0], 128);
+    /// assert_eq!(a_rdata.get_address()[1], 0);
+    /// assert_eq!(a_rdata.get_address()[2], 0);
+    /// assert_eq!(a_rdata.get_address()[3], 1);
+    /// ```
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
@@ -40,7 +51,18 @@ impl ToBytes for AChRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for AChRdata {
-    // Creates a new A ch class from an array of bytes
+    /// Creates a new A CH class from an array of bytes.
+    /// 
+    /// # Examples
+    /// ```
+    /// let bytes: [u8; 4] = [128, 0, 0, 1];
+    /// let a_rdata = ARdata::from_bytes(&bytes, &bytes).unwrap();
+    /// 
+    /// assert_eq!(a_rdata.get_address()[0], 128);
+    /// assert_eq!(a_rdata.get_address()[1], 0);
+    /// assert_eq!(a_rdata.get_address()[2], 0);
+    /// assert_eq!(a_rdata.get_address()[3], 1);
+    /// ```	
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -83,6 +105,7 @@ impl FromBytes<Result<Self, &'static str>> for AChRdata {
 }
 
 impl AChRdata {
+    /// Creates a new `AChRdata` with default values.
     pub fn new() -> Self {
         let a_ch_rdata = AChRdata {
             domain_name: DomainName::new(),
@@ -92,6 +115,16 @@ impl AChRdata {
         a_ch_rdata
     }
 
+    /// Returns a `ResourceRecord` from the given values.
+    /// 
+    /// # Examples
+    /// ```
+    /// let data_bytes = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 10];
+    /// let ach_rdata = AChRdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+    /// 
+    /// assert_eq!(ach_rdata.get_domain_name().get_name(), String::from("test.com"));
+    /// assert_eq!(ach_rdata.get_ch_address(), 10 as u16);
+    /// ```
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
@@ -130,10 +163,12 @@ impl AChRdata {
 
 // Getters
 impl AChRdata {
+    /// Returns a clone of the `domain_name` attribute.
     pub fn get_domain_name(&self) -> DomainName {
         self.domain_name.clone()
     }
 
+    /// Returns a clone of the `ch_address` attribute.
     pub fn get_ch_address(&self) -> u16 {
         self.ch_address
     }
@@ -141,10 +176,12 @@ impl AChRdata {
 
 // Setters
 impl AChRdata {
+    /// Sets the `domain_name` attibute with a given `DomainName`.
     pub fn set_domain_name(&mut self, domain_name: DomainName) {
         self.domain_name = domain_name;
     }
 
+    /// Sets the `ch_address` attibute with a given address.
     pub fn set_ch_address(&mut self, ch_address: u16) {
         self.ch_address = ch_address;
     }

@@ -59,15 +59,14 @@ impl FromBytes<Result<Self, &'static str>> for NsRdata {
 }
 
 impl NsRdata {
-    // Creates a new NsRdata with default values.
-    //
-    // # Examples
-    // ```
-    // let ns_rdata = NsRdata::new();
-    //
-    // assert_eq!(ns_rdata.nsdname.get_name(), String::from(""));
-    // ```
-    //
+    /// Creates a new `NsRdata` with default values.
+    ///
+    /// # Examples
+    /// ```
+    /// let ns_rdata = NsRdata::new();
+    ///
+    /// assert_eq!(ns_rdata.nsdname.get_name(), String::from(""));
+    /// ```
     pub fn new() -> Self {
         let ns_rdata = NsRdata {
             nsdname: DomainName::new(),

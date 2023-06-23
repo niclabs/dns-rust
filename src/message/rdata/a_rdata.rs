@@ -20,7 +20,7 @@ pub struct ARdata {
 }
 
 impl ToBytes for ARdata {
-    /// Return a vec of bytes that represents the a rdata
+    /// Returns a `Vec<u8>` of bytes that represents the A RDATA.
     fn to_bytes(&self) -> Vec<u8> {
         let bytes: Vec<u8> = self.get_address().to_vec();
 
@@ -29,7 +29,7 @@ impl ToBytes for ARdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for ARdata {
-    /// Creates a new ARdata from an array of bytes
+    /// Creates a new `ARdata` from an array of bytes.
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -48,7 +48,7 @@ impl FromBytes<Result<Self, &'static str>> for ARdata {
 }
 
 impl ARdata {
-    /// Creates a new ARdata with default values.
+    /// Creates a new `ARdata` with default values.
     ///
     /// # Examples
     /// ```
@@ -69,7 +69,6 @@ impl ARdata {
     /// Returns a `ResourceRecord` from the given values.
     /// 
     /// # Examples
-    /// 
     /// ```
     /// let a_rr = ARdata::rr_from_master_file(
     ///     "204.13.100.3".split_whitespace(),
@@ -86,7 +85,6 @@ impl ARdata {
     /// assert_eq!(a_rr.get_rtype(), Rtype::A);
     /// assert_eq!(a_rr.get_ttl(), 0);
     /// assert_eq!(a_rr.get_rdlength(), 4);
-
     /// let a_rdata = a_rr.get_rdata();
     /// match a_rdata {
     ///     Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
@@ -149,7 +147,7 @@ impl ARdata {
 
 // Getters
 impl ARdata {
-    /// Gets the address attribute from ARdata
+    /// Gets the `address` attribute from ARdata.
     pub fn get_address(&self) -> [u8; 4] {
         self.address
     }
@@ -157,7 +155,7 @@ impl ARdata {
 
 // Setters
 impl ARdata {
-    /// Sets the address attibute with a value
+    /// Sets the `address` attibute with the given value.
     pub fn set_address(&mut self, address: [u8; 4]) {
         self.address = address;
     }

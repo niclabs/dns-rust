@@ -237,7 +237,7 @@ mod mx_rdata_test {
         String::from("uchile.cl"));
 
         assert_eq!(mxrdata_rr.get_class(), Rclass::IN);
-        assert_eq!(mxrdata_rr.get_type_code(), Rtype::MX);
+        assert_eq!(mxrdata_rr.get_rtype(), Rtype::MX);
         assert_eq!(mxrdata_rr.get_ttl(), 20);
         assert_eq!(mxrdata_rr.get_name().get_name(), String::from("uchile.cl"));
         assert_eq!(mxrdata_rr.get_rdlength(), 7);

@@ -5,20 +5,22 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for ns type
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// /                   NSDNAME                     /
-// /                                               /
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-//
+/// An struct that represents the `rdata` for NS TYPE.
+/// 
+/// ```text
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// /                   NSDNAME                     /
+/// /                                               /
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// ```
 pub struct NsRdata {
-    // A domain name which specifies a host which should be
-    // authoritative for the specified class and domain.
+    /// A domain name which specifies a host which should be
+    /// authoritative for the specified class and domain.
     nsdname: DomainName,
 }
 
 impl ToBytes for NsRdata {
-    // Return a vec of bytes that represents the ns rdata
+    /// Return a vec of bytes that represents the ns rdata
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         let nsdname = self.get_nsdname();
@@ -33,7 +35,7 @@ impl ToBytes for NsRdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for NsRdata {
-    // Creates a new NsRdata from an array of bytes
+    /// Creates a new NsRdata from an array of bytes
     fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -125,7 +127,7 @@ impl NsRdata {
 
 // Getters
 impl NsRdata {
-    // Gets the nsdname attribute from NsRdata
+    /// Gets the nsdname attribute from NsRdata
     pub fn get_nsdname(&self) -> DomainName {
         self.nsdname.clone()
     }
@@ -133,7 +135,7 @@ impl NsRdata {
 
 // Setters
 impl NsRdata {
-    // Sets the nsdname attibute with a value
+    /// Sets the nsdname attibute with a value
     pub fn set_nsdname(&mut self, nsdname: DomainName) {
         self.nsdname = nsdname;
     }

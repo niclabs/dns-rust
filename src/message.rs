@@ -911,7 +911,7 @@ mod message_test {
         assert_eq!(answer.len(), 1);
 
         assert_eq!(answer[0].get_name().get_name(), String::from("dcc.cl"));
-        assert_eq!(Rtype::from_rtype_to_int(answer[0].get_type_code()), 16);
+        assert_eq!(Rtype::from_rtype_to_int(answer[0].get_rtype()), 16);
         assert_eq!(Rclass::from_rclass_to_int(answer[0].get_class()), 1);
         assert_eq!(answer[0].get_ttl(), 5642);
         assert_eq!(answer[0].get_rdlength(), 6);

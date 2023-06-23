@@ -243,11 +243,9 @@ impl DnsMessage {
 
         question.set_qname(domain_name);
         let qtype_rtype = Rtype::from_string_to_rtype(qtype);
-        let qtype_int = Rtype::from_rtype_to_int(qtype_rtype);
-        question.set_qtype(qtype_int);
+        question.set_qtype(qtype_rtype);
         let qclass_rclass = Rclass::from_string_to_rclass(qclass);
-        let qclass_int = Rclass::from_rclass_to_int(qclass_rclass);
-        question.set_qclass(qclass_int);
+        question.set_qclass(qclass_rclass);
 
         let dns_message = DnsMessage {
             header: header,
@@ -297,11 +295,9 @@ impl DnsMessage {
 
         question.set_qname(domain_name);
         let qtype_rtype = Rtype::from_string_to_rtype(qtype);
-        let qtype_int = Rtype::from_rtype_to_int(qtype_rtype);
-        question.set_qtype(qtype_int);
+        question.set_qtype(qtype_rtype);
         let qclass_rclass = Rclass::from_string_to_rclass(qclass);
-        let qclass_int = Rclass::from_rclass_to_int(qclass_rclass);
-        question.set_qclass(qclass_int);
+        question.set_qclass(qclass_rclass);
 
         let dns_message = DnsMessage {
             header: header,
@@ -811,7 +807,7 @@ mod message_test {
     #[test]
     fn set_and_get_question() {
         let mut question = Question::new();
-        question.set_qclass(2);
+        question.set_qclass(Rclass::CS);
 
         let mut dns_query_message =
             DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false, 1);
@@ -952,8 +948,8 @@ mod message_test {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(5);
-        question.set_qclass(2);
+        question.set_qtype(Rtype::CNAME);
+        question.set_qclass(Rclass::CS);
 
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);

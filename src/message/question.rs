@@ -69,8 +69,10 @@ impl Question {
             return Err("Format Error");
         }
 
-        let qtype = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
-        let qclass = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
+        let qtype_int = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
+        let qtype = Rtype::from_int_to_rtype(qtype_int);
+        let qclass_int = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
+        let qclass = Rclass::from_int_to_rclass(qclass_int);
 
         let mut question = Question::new();
         question.set_qname(qname);
@@ -139,14 +141,12 @@ impl Question {
         self.qname = qname;
     }
 
-    pub fn set_qtype(&mut self, qtype: u16) {
-        let new_qtype = Rtype::from_int_to_rtype(qtype);
-        self.qtype = new_qtype;
+    pub fn set_qtype(&mut self, qtype: Rtype) {
+        self.qtype = qtype;
     }
 
-    pub fn set_qclass(&mut self, qclass: u16) {
-        let new_qclass = Rclass::from_int_to_rclass(qclass);
-        self.qclass = new_qclass;
+    pub fn set_qclass(&mut self, qclass: Rclass) {
+        self.qclass = qclass;
     }
 }
 
@@ -204,7 +204,7 @@ mod question_test {
         let mut qtype = question.get_qtype();
         assert_eq!(Rtype::from_rtype_to_str(qtype), String::from("A"));
 
-        question.set_qtype(5 as u16);
+        question.set_qtype(Rtype::CNAME);
         qtype = question.get_qtype();
         assert_eq!(Rtype::from_rtype_to_str(qtype), String::from("CNAME"));
     }
@@ -216,7 +216,7 @@ mod question_test {
         let mut qclass = question.get_qclass();
         assert_eq!(Rclass::from_rclass_to_str(qclass), String::from("IN"));
 
-        question.set_qclass(2 as u16);
+        question.set_qclass(Rclass::CS);
         qclass = question.get_qclass();
         assert_eq!(Rclass::from_rclass_to_str(qclass), String::from("CS"));
     }
@@ -228,8 +228,8 @@ mod question_test {
 
         domain_name.set_name(String::from("test.com"));
         question.set_qname(domain_name);
-        question.set_qtype(5);
-        question.set_qclass(1);
+        question.set_qtype(Rtype::CNAME);
+        question.set_qclass(Rclass::IN);
 
         let bytes_to_test: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 1];
         let question_to_bytes = question.to_bytes();

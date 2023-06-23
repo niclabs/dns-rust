@@ -1342,7 +1342,7 @@ mod resolver_test {
 
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         cache_test.add("127.0.0.0".to_string(), resource_record);
         resolver.set_cache(cache_test);
@@ -1853,7 +1853,7 @@ mod resolver_test {
         a_rdata_1.set_address(ip_address_1);
         let rdata_1 = Rdata::SomeARdata(a_rdata_1);
         let mut resource_record_1 = ResourceRecord::new(rdata_1);
-        resource_record_1.set_type_code(1);
+        resource_record_1.set_type_code(Rtype::A);
 
         let domain_name_2 = "example.com.".to_string();
         let mut a_rdata_2 = ARdata::new();
@@ -1861,7 +1861,7 @@ mod resolver_test {
         a_rdata_2.set_address(ip_address_2);
         let rdata_2 = Rdata::SomeARdata(a_rdata_2);
         let mut resource_record_2 = ResourceRecord::new(rdata_2);
-        resource_record_2.set_type_code(1);
+        resource_record_2.set_type_code(Rtype::A);
 
         let mut cache = DnsCache::new();
         cache.set_max_size(5);
@@ -1913,7 +1913,7 @@ mod resolver_test {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         let mut cache = DnsCache::new();
         cache.set_max_size(5);
@@ -1979,7 +1979,7 @@ mod resolver_test {
         a_rdata_1.set_address(ip_address_1);
         let rdata_1 = Rdata::SomeARdata(a_rdata_1);
         let mut resource_record_1 = ResourceRecord::new(rdata_1);
-        resource_record_1.set_type_code(1);
+        resource_record_1.set_type_code(Rtype::A);
 
         let mut cache = DnsCache::new();
         cache.set_max_size(5);
@@ -1995,7 +1995,7 @@ mod resolver_test {
         a_rdata_to_add.set_address(ip_address_to_add);
         let rdata_to_add = Rdata::SomeARdata(a_rdata_to_add);
         let mut resource_record_to_add = ResourceRecord::new(rdata_to_add);
-        resource_record_to_add.set_type_code(1);
+        resource_record_to_add.set_type_code(Rtype::A);
 
         let _result = tx_add_cache_udp.send(
             (domain_name_to_add.clone(), 
@@ -2113,7 +2113,7 @@ mod resolver_test {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         let mut cache = DnsCache::new();
         cache.set_max_size(5);

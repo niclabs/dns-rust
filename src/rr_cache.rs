@@ -74,6 +74,8 @@ impl RRCache {
 mod rr_cache_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
+    use crate::message::Rtype;
+    use crate::message::Rclass;
     use crate::message::resource_record::ResourceRecord;
     use crate::rr_cache::RRCache;
     use chrono::prelude::*;
@@ -87,11 +89,11 @@ mod rr_cache_test {
         let rdata = Rdata::SomeARdata(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         let rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(rr_cache.resource_record.get_type_code(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_type_code()), 1);
         assert_eq!(rr_cache.response_time, 5000);
     }
 
@@ -104,11 +106,11 @@ mod rr_cache_test {
         let rdata = Rdata::SomeARdata(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata.clone());
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         let mut rr_cache = RRCache::new(resource_record);
 
-        assert_eq!(rr_cache.get_resource_record().get_type_code(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_type_code()), 1);
 
         let second_ip_address: [u8; 4] = [127, 0, 0, 0];
         let mut second_a_rdata = ARdata::new();
@@ -117,11 +119,11 @@ mod rr_cache_test {
         let second_rdata = Rdata::SomeARdata(second_a_rdata);
 
         let mut second_resource_record = ResourceRecord::new(second_rdata);
-        second_resource_record.set_type_code(2);
+        second_resource_record.set_type_code(Rtype::NS);
 
         rr_cache.set_resource_record(second_resource_record);
 
-        assert_eq!(rr_cache.get_resource_record().get_type_code(), 2);
+        assert_eq!(Rtype::from_rtype_to_int(rr_cache.get_resource_record().get_type_code()), 2);
     }
 
     #[test]
@@ -133,7 +135,7 @@ mod rr_cache_test {
         let rdata = Rdata::SomeARdata(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         let mut rr_cache = RRCache::new(resource_record);
 
@@ -153,7 +155,7 @@ mod rr_cache_test {
         let rdata = Rdata::SomeARdata(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         let mut rr_cache = RRCache::new(resource_record);
 

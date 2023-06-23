@@ -418,7 +418,7 @@ impl ResolverQuery {
         if s_class != asterisk_s_class {
             for rr in cache_answer {
                 let rr_class = rr.get_resource_record().get_class();
-                if rr_class == s_class {
+                if Rclass::from_rclass_to_int(rr_class) == s_class {
                     rrs_cache_answer.push(rr);
                 }
             }
@@ -485,7 +485,7 @@ impl ResolverQuery {
                 if aa == true {
                     let mut remove_exist_cache = true;
                     for an in answer.iter_mut() {
-                        if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                        if an.get_ttl() > 0 && Rtype::from_rtype_to_int(an.get_type_code()) == self.get_stype() {
                             an.set_ttl(an.get_ttl() + self.get_timestamp());
 
                             // Remove old cache
@@ -506,7 +506,7 @@ impl ResolverQuery {
 
                     if exist_in_cache == false { 
                         for an in answer.iter_mut() {
-                            if an.get_ttl() > 0 && an.get_type_code() == self.get_stype() {
+                            if an.get_ttl() > 0 && Rtype::from_rtype_to_int(an.get_type_code()) == self.get_stype() {
                                 an.set_ttl(an.get_ttl() + self.get_timestamp());
 
                                 // Cache
@@ -670,7 +670,7 @@ impl ResolverQuery {
         let answer = msg_from_response.get_answer();
 
         // Step 4a
-        if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
+        if (answer.len() > 0 && rcode == 0 && Rtype::from_rtype_to_int(answer[0].get_type_code()) == self.get_stype())
             || rcode == 3
         {
             return Some(self.step_4a(msg_from_response));
@@ -680,7 +680,7 @@ impl ResolverQuery {
 
         // Step 4b
         // If there is authority and it is NS type
-        if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
+        if (authority.len() > 0) && (Rtype::from_rtype_to_int(authority[0].get_type_code()) == 2) {
             println!("Delegation response");
             self.step_4b_udp(msg_from_response, socket, rx_update_self_slist);
             return None;
@@ -689,8 +689,8 @@ impl ResolverQuery {
         // Step 4c
         // If the answer is CName and the user dont want CName
         if answer.len() > 0
-            && answer[0].get_type_code() == 5
-            && answer[0].get_type_code() != self.get_stype()
+            && Rtype::from_rtype_to_int(answer[0].get_type_code()) == 5
+            && Rtype::from_rtype_to_int(answer[0].get_type_code()) != self.get_stype()
         {
             return self.step_4c_udp(msg_from_response, socket, rx_update_self_slist);
         }
@@ -802,7 +802,7 @@ impl ResolverQuery {
 
             for answer in answers[1..].into_iter() {
                 let answer_name = answer.get_name().get_name();
-                let answer_type = answer.get_type_code();
+                let answer_type = Rtype::from_rtype_to_int(answer.get_type_code());
 
                 if answer_name == cname_name && answer_type == qtype {
                     answers_found = answers_found + 1;
@@ -1206,7 +1206,7 @@ impl ResolverQuery {
         let rcode = msg_from_response.get_header().get_rcode();
         let answer = msg_from_response.get_answer();
 
-        if (answer.len() > 0 && rcode == 0 && answer[0].get_type_code() == self.get_stype())
+        if (answer.len() > 0 && rcode == 0 && Rtype::from_rtype_to_int(answer[0].get_type_code()) == self.get_stype())
             || rcode == 3
         {
             return self.step_4a(msg_from_response);
@@ -1216,15 +1216,15 @@ impl ResolverQuery {
         // let additional = msg_from_response.get_additional();
         // Step 4b
         // If there is authority and it is NS type
-        if (authority.len() > 0) && (authority[0].get_type_code() == 2) {
+        if (authority.len() > 0) && (Rtype::from_rtype_to_int(authority[0].get_type_code()) == 2) {
             return self.step_4b_tcp(msg_from_response, update_slist_tcp_recv);
         }
 
         // Step 4c
         // If the answer is CName and the user dont want CName
         if answer.len() > 0
-            && answer[0].get_type_code() == 5
-            && answer[0].get_type_code() != self.get_stype()
+            && Rtype::from_rtype_to_int(answer[0].get_type_code()) == 5
+            && Rtype::from_rtype_to_int(answer[0].get_type_code()) != self.get_stype()
         {
             return self.step_4c_tcp(msg_from_response, update_slist_tcp_recv);
         }
@@ -2115,7 +2115,7 @@ mod resolver_query_tests {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         cache.add("127.0.0.0".to_string(), resource_record);
         resolver_query.set_cache(cache);
@@ -2452,12 +2452,12 @@ mod resolver_query_tests {
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("test2.com".to_string(), ns_resource_record);
         cache.add("test2.com".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
@@ -2517,12 +2517,12 @@ mod resolver_query_tests {
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("test2.com".to_string(), ns_resource_record);
         resolver_query.set_cache(cache);
         let socket = UdpSocket::bind("127.0.0.1:33333").expect("couldn't bind to address");
@@ -2582,12 +2582,12 @@ mod resolver_query_tests {
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("test2.com".to_string(), ns_resource_record);
         resolver_query.set_cache(cache);
         let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
@@ -2639,12 +2639,12 @@ mod resolver_query_tests {
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("test2.com".to_string(), ns_resource_record);
         resolver_query.set_cache(cache);
         assert_eq!(resolver_query.get_slist().get_ns_list().len(), 0);
@@ -2694,12 +2694,12 @@ mod resolver_query_tests {
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("test2.com".to_string(), ns_resource_record);
         cache.add("test2.com".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
@@ -2759,12 +2759,12 @@ mod resolver_query_tests {
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("test2.com".to_string(), ns_resource_record);
         cache.add("test2.com".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
@@ -3075,7 +3075,7 @@ mod resolver_query_tests {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut rr = ResourceRecord::new(rdata);
-        rr.set_type_code(1);
+        rr.set_type_code(Rtype::A);
         let domain_name = String::from("127.0.0.0");
 
         resolver_query.add_to_cache(domain_name.clone(), rr.clone());
@@ -3123,7 +3123,7 @@ mod resolver_query_tests {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut rr = ResourceRecord::new(rdata);
-        rr.set_type_code(1);
+        rr.set_type_code(Rtype::A);
         let domain_name = String::from("127.0.0.0");
         resolver_query.add_to_cache(domain_name.clone(), rr.clone());
 
@@ -3170,7 +3170,7 @@ mod resolver_query_tests {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(1);
+        resource_record.set_type_code(Rtype::A);
 
         cache.add("127.0.0.0".to_string(), resource_record);
 
@@ -3395,10 +3395,10 @@ mod resolver_query_tests {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut rr = ResourceRecord::new(rdata);
-        rr.set_class(1);
+        rr.set_class(Rclass::IN);
         rr.set_ttl(2);
         let mut rr2 = rr.clone();
-        rr2.set_class(2);
+        rr2.set_class(Rclass::CS);
         rr2.set_ttl(2);
         let domain_name = String::from("127.0.0.0");
         let domain_name2 = String::from("127.0.1.0");
@@ -3501,14 +3501,14 @@ mod resolver_query_tests {
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
 
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address([127, 0, 0, 1]);
         //a_rdata.set_address([192, 33, 4, 12]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("eol.uchile.cl".to_string(), ns_resource_record);
         cache.add("eol.uchile.cl".to_string(), a_resource_record);
         resolver_query.set_cache(cache);
@@ -3560,10 +3560,10 @@ mod resolver_query_tests {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut rr = ResourceRecord::new(rdata);
-        rr.set_class(1);
+        rr.set_class(Rclass::IN);
         rr.set_ttl(2);
         let mut rr2 = rr.clone();
-        rr2.set_class(2);
+        rr2.set_class(Rclass::CS);
         rr2.set_ttl(2);
         let domain_name = String::from("127.0.0.0");
         let domain_name2 = String::from("127.0.1.0");
@@ -3795,10 +3795,10 @@ mod resolver_query_tests {
          a_rdata.set_address(ip_address);
          let rdata = Rdata::SomeARdata(a_rdata);
          let mut rr = ResourceRecord::new(rdata);
-         rr.set_class(1);
+         rr.set_class(Rclass::IN);
          rr.set_ttl(2);
          let mut rr2 = rr.clone();
-         rr2.set_class(2);
+         rr2.set_class(Rclass::CS);
          rr2.set_ttl(2);
          let domain_name = String::from("127.0.0.0");
          let domain_name2 = String::from("127.0.1.0");
@@ -3849,10 +3849,10 @@ mod resolver_query_tests {
          a_rdata.set_address(ip_address);
          let rdata = Rdata::SomeARdata(a_rdata);
          let mut rr = ResourceRecord::new(rdata);
-         rr.set_class(1);
+         rr.set_class(Rclass::IN);
          rr.set_ttl(2);
          let mut rr2 = rr.clone();
-         rr2.set_class(1);
+         rr2.set_class(Rclass::IN);
          rr2.set_ttl(2);
          let domain_name = String::from("127.0.0.0");
          let domain_name2 = String::from("127.0.0.0");
@@ -4189,12 +4189,12 @@ mod resolver_query_tests {
         ns_rdata.set_nsdname(domain_name);
         let r_data = Rdata::SomeNsRdata(ns_rdata);
         let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(2);
+        ns_resource_record.set_type_code(Rtype::NS);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address([127, 0, 0, 1]);
         let r_data = Rdata::SomeARdata(a_rdata);
         let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(1);
+        a_resource_record.set_type_code(Rtype::A);
         cache.add("test2.com".to_string(), ns_resource_record);
         resolver_query.set_cache(cache);
         let socket = UdpSocket::bind("127.0.0.1:11000").expect("couldn't bind to address");
@@ -4299,10 +4299,10 @@ mod resolver_query_tests {
          a_rdata.set_address(ip_address);
          let rdata = Rdata::SomeARdata(a_rdata);
          let mut rr = ResourceRecord::new(rdata);
-         rr.set_class(1);
+         rr.set_class(Rclass::IN);
          rr.set_ttl(2);
          let mut rr2 = rr.clone();
-         rr2.set_class(2);
+         rr2.set_class(Rclass::CS);
          rr2.set_ttl(2);
          let domain_name = String::from("127.0.0.0");
          let domain_name2 = String::from("127.0.1.0");
@@ -4412,7 +4412,7 @@ mod resolver_query_tests {
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let mut rr = ResourceRecord::new(a_rdata);
         rr.set_ttl(20);
-        rr.set_type_code(1);
+        rr.set_type_code(Rtype::A);
         answer.push(rr.clone());
         answer.push(rr.clone());
         dns_message.set_answer(answer);
@@ -4475,10 +4475,10 @@ mod resolver_query_tests {
         let rdata_2 = Rdata::SomeARdata(a_rdata_2);
         let mut rr_1 = ResourceRecord::new(rdata_1);
         let mut rr_2 = ResourceRecord::new(rdata_2);
-        rr_1.set_class(1 as u16);
-        rr_1.set_type_code(1);
+        rr_1.set_class(Rclass::IN);
+        rr_1.set_type_code(Rtype::A);
         rr_1.set_ttl(888);
-        rr_2.set_class(2 as u16);
+        rr_2.set_class(Rclass::CS);
         let mut rr_vec_1 = Vec::<ResourceRecord>::new();
         rr_vec_1.push(rr_1.clone());
         let mut rr_vec_2 = Vec::<ResourceRecord>::new();
@@ -4540,7 +4540,7 @@ mod resolver_query_tests {
         a_rdata.set_address(ip_address);
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut rr = ResourceRecord::new(rdata);
-        rr.set_type_code(1);
+        rr.set_type_code(Rtype::A);
         let domain_name = String::from("127.0.0.0");
         resolver_query.add_to_cache(domain_name.clone(), rr.clone());
 
@@ -4848,11 +4848,11 @@ mod resolver_query_tests {
         let rdata_2 = Rdata::SomeARdata(a_rdata_2);
         let mut rr_1 = ResourceRecord::new(rdata_1);
         let mut rr_2 = ResourceRecord::new(rdata_2);
-        rr_1.set_class(1 as u16);
-        rr_1.set_type_code(0);
-        rr_2.set_type_code(0);
+        rr_1.set_class(Rclass::IN);
+        rr_1.set_type_code(Rtype::UNKNOWN(0));
+        rr_2.set_type_code(Rtype::UNKNOWN(0));
         rr_1.set_ttl(888);
-        rr_2.set_class(2 as u16);
+        rr_2.set_class(Rclass::CS);
         let mut rr_vec_1 = Vec::<ResourceRecord>::new();
         rr_vec_1.push(rr_1.clone());
         let mut rr_vec_2 = Vec::<ResourceRecord>::new();
@@ -4920,11 +4920,11 @@ mod resolver_query_tests {
         let rdata_2 = Rdata::SomeARdata(a_rdata_2);
         let mut rr_1 = ResourceRecord::new(rdata_1);
         let mut rr_2 = ResourceRecord::new(rdata_2);
-        rr_1.set_class(1 as u16);
-        rr_1.set_type_code(0);
-        rr_2.set_type_code(0);
+        rr_1.set_class(Rclass::IN);
+        rr_1.set_type_code(Rtype::UNKNOWN(0));
+        rr_2.set_type_code(Rtype::UNKNOWN(0));
         rr_1.set_ttl(888);
-        rr_2.set_class(2 as u16);
+        rr_2.set_class(Rclass::CS);
         let mut rr_vec_1 = Vec::<ResourceRecord>::new();
         rr_vec_1.push(rr_1.clone());
         let mut rr_vec_2 = Vec::<ResourceRecord>::new();

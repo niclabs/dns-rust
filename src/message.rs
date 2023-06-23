@@ -22,7 +22,7 @@ pub struct DnsMessage {
     additional: Vec<ResourceRecord>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 //Enum for the Class of a RR in a DnsMessage
 pub enum Rclass {
     IN,
@@ -33,7 +33,7 @@ pub enum Rclass {
     UNKNOWN(u16),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 //Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
     A,
@@ -911,8 +911,8 @@ mod message_test {
         assert_eq!(answer.len(), 1);
 
         assert_eq!(answer[0].get_name().get_name(), String::from("dcc.cl"));
-        assert_eq!(answer[0].get_type_code(), 16);
-        assert_eq!(answer[0].get_class(), 1);
+        assert_eq!(Rtype::from_rtype_to_int(answer[0].get_type_code()), 16);
+        assert_eq!(Rclass::from_rclass_to_int(answer[0].get_class()), 1);
         assert_eq!(answer[0].get_ttl(), 5642);
         assert_eq!(answer[0].get_rdlength(), 6);
         assert_eq!(
@@ -958,8 +958,8 @@ mod message_test {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(16);
-        resource_record.set_class(1);
+        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_class(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);
 

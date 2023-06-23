@@ -201,7 +201,7 @@ mod ptr_rdata_test {
          assert_eq!(ptr_rdata_rr.get_ttl(), 35);
          assert_eq!(ptr_rdata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(ptr_rdata_rr.get_rdlength(), 5);
-         assert_eq!(ptr_rdata_rr.get_type_code(), Rtype::PTR);
+         assert_eq!(ptr_rdata_rr.get_rtype(), Rtype::PTR);
          
          let ptr_rr_rdata = ptr_rdata_rr.get_rdata();
          match ptr_rr_rdata {

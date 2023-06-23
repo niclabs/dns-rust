@@ -7,18 +7,20 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
-// An struct that represents the rdata for a type
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-// |                    ADDRESS                    |
-// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-//
+/// An struct that represents the `Rdata` for a type.
+/// 
+/// ```text
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    ADDRESS                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// ```
 pub struct ARdata {
-    // A 32 bit Internet address.
+    /// A 32 bit Internet address.
     address: [u8; 4],
 }
 
 impl ToBytes for ARdata {
-    // Return a vec of bytes that represents the a rdata
+    /// Return a vec of bytes that represents the a rdata
     fn to_bytes(&self) -> Vec<u8> {
         let bytes: Vec<u8> = self.get_address().to_vec();
 
@@ -27,7 +29,7 @@ impl ToBytes for ARdata {
 }
 
 impl FromBytes<Result<Self, &'static str>> for ARdata {
-    // Creates a new ARdata from an array of bytes
+    /// Creates a new ARdata from an array of bytes
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
@@ -46,17 +48,16 @@ impl FromBytes<Result<Self, &'static str>> for ARdata {
 }
 
 impl ARdata {
-    // Creates a new ARdata with default values.
-    //
-    // # Examples
-    // ```
-    // let a_rdata = ARdata::new();
-    // assert_eq!(a_rdata.address[0], 0);
-    // assert_eq!(a_rdata.address[1], 0);
-    // assert_eq!(a_rdata.address[2], 0);
-    // assert_eq!(a_rdata.address[3], 0);
-    // ```
-    //
+    /// Creates a new ARdata with default values.
+    ///
+    /// # Examples
+    /// ```
+    /// let a_rdata = ARdata::new();
+    /// assert_eq!(a_rdata.address[0], 0);
+    /// assert_eq!(a_rdata.address[1], 0);
+    /// assert_eq!(a_rdata.address[2], 0);
+    /// assert_eq!(a_rdata.address[3], 0);
+    /// ```
     pub fn new() -> Self {
         let a_rdata = ARdata {
             address: [0 as u8, 0 as u8, 0 as u8, 0 as u8],
@@ -65,6 +66,33 @@ impl ARdata {
         a_rdata
     }
 
+    /// Returns a `ResourceRecord` from the given values.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let a_rr = ARdata::rr_from_master_file(
+    ///     "204.13.100.3".split_whitespace(),
+    ///     0,
+    ///     String::from("IN"),
+    ///     "admin1.googleplex.edu".to_string(),
+    /// );
+    /// 
+    /// assert_eq!(a_rr.get_class(), Rclass::IN);
+    /// assert_eq!(
+    ///     a_rr.get_name().get_name(),
+    ///     String::from("admin1.googleplex.edu")
+    /// );
+    /// assert_eq!(a_rr.get_rtype(), Rtype::A);
+    /// assert_eq!(a_rr.get_ttl(), 0);
+    /// assert_eq!(a_rr.get_rdlength(), 4);
+
+    /// let a_rdata = a_rr.get_rdata();
+    /// match a_rdata {
+    ///     Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
+    ///     _ => {}
+    /// }
+    /// ```
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
@@ -102,6 +130,7 @@ impl ARdata {
         resource_record
     }
 
+    /// Returns a `String` that represents the `ARdata`.
     pub fn get_string_address(&self) -> String {
         let ip = self.get_address();
 
@@ -120,7 +149,7 @@ impl ARdata {
 
 // Getters
 impl ARdata {
-    // Gets the address attribute from ARdata
+    /// Gets the address attribute from ARdata
     pub fn get_address(&self) -> [u8; 4] {
         self.address
     }
@@ -128,7 +157,7 @@ impl ARdata {
 
 // Setters
 impl ARdata {
-    // Sets the address attibute with a value
+    /// Sets the address attibute with a value
     pub fn set_address(&mut self, address: [u8; 4]) {
         self.address = address;
     }

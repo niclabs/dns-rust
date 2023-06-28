@@ -144,9 +144,9 @@ impl Default for Rtype {
 }
 
 
-//Functions for the Rclass Enum
+///Functions for the Rclass Enum
 impl Rclass {
-    //Function to get the int equivalent of a class
+    ///Function to get the int equivalent of a class
     pub fn from_rclass_to_int(class: Rclass) -> u16{
         match class {
             Rclass::IN => 1,
@@ -158,7 +158,7 @@ impl Rclass {
         }
     }
 
-    //Function to get an string representing the class
+    ///Function to get an string representing the class
     pub fn from_rclass_to_str(class: Rclass) -> String{
         match class {
             Rclass::IN => String::from("IN"),
@@ -170,7 +170,7 @@ impl Rclass {
         }
     }
 
-    //Function to get the Rclass from a value
+    ///Function to get the Rclass from a value
     pub fn from_int_to_rclass(val:u16) -> Rclass{
         match val {
             1 => Rclass::IN,
@@ -182,7 +182,7 @@ impl Rclass {
         }
     }
 
-    //Function to get the Rclass from a String
+    ///Function to get the Rclass from a String
     pub fn from_str_to_rclass(rclass: &str) -> Rclass{
         match rclass {
             "IN" => Rclass::IN,

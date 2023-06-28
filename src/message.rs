@@ -229,7 +229,6 @@ pub enum Rclass {
     CS,
     CH,
     HS,
-    ANY,
     UNKNOWN(u16),
 }
 
@@ -242,7 +241,6 @@ impl Rclass {
             Rclass::CS => 2,
             Rclass::CH => 3,
             Rclass::HS => 4,
-            Rclass::ANY => 255,
             Rclass::UNKNOWN(val) => val,
         }
     }
@@ -254,7 +252,6 @@ impl Rclass {
             Rclass::CS => String::from("CS"),
             Rclass::CH => String::from("CH"),
             Rclass::HS => String::from("HS"),
-            Rclass::ANY => String::from("ANY"),
             Rclass::UNKNOWN(_val) => String::from("UNKNOWN CLASS")
         }
     }
@@ -266,7 +263,6 @@ impl Rclass {
             2 => Rclass::CS,
             3 => Rclass::CH,
             4 => Rclass::HS,
-            255 => Rclass::ANY,
             _ => Rclass::UNKNOWN(val)
         }
     }
@@ -278,7 +274,6 @@ impl Rclass {
             "CS" => Rclass::CS,
             "CH" => Rclass::CH,
             "HS" => Rclass::HS,
-            "ANY" => Rclass::ANY,
             _ => Rclass::UNKNOWN(99)
         }
     }  
@@ -286,6 +281,72 @@ impl Rclass {
 
 impl Default for Rclass {
     fn default() -> Self { Rclass::IN }
+}
+
+#[derive(Clone, PartialEq, Debug)]
+/// Enum for the Class of a RR in a DnsMessage
+pub enum Qclass {
+    IN,
+    CS,
+    CH,
+    HS,
+    ANY,
+    UNKNOWN(u16),
+}
+
+///Functions for the Rclass Enum
+impl Qclass {
+    ///Function to get the int equivalent of a class
+    pub fn from_qclass_to_int(class: Qclass) -> u16{
+        match class {
+            Qclass::IN => 1,
+            Qclass::CS => 2,
+            Qclass::CH => 3,
+            Qclass::HS => 4,
+            Qclass::ANY => 255,
+            Qclass::UNKNOWN(val) => val,
+        }
+    }
+
+    ///Function to get an string representing the class
+    pub fn from_qclass_to_str(class: Qclass) -> String{
+        match class {
+            Qclass::IN => String::from("IN"),
+            Qclass::CS => String::from("CS"),
+            Qclass::CH => String::from("CH"),
+            Qclass::HS => String::from("HS"),
+            Qclass::ANY => String::from("ANY"),
+            Qclass::UNKNOWN(_val) => String::from("UNKNOWN CLASS")
+        }
+    }
+
+    ///Function to get the Qclass from a value
+    pub fn from_int_to_qclass(val:u16) -> Qclass{
+        match val {
+            1 => Qclass::IN,
+            2 => Qclass::CS,
+            3 => Qclass::CH,
+            4 => Qclass::HS,
+            255 => Qclass::ANY,
+            _ => Qclass::UNKNOWN(val)
+        }
+    }
+
+    ///Function to get the Qclass from a String
+    pub fn from_str_to_qclass(qclass: &str) -> Qclass{
+        match qclass {
+            "IN" => Qclass::IN,
+            "CS" => Qclass::CS,
+            "CH" => Qclass::CH,
+            "HS" => Qclass::HS,
+            "ANY" => Qclass::ANY,
+            _ => Qclass::UNKNOWN(99)
+        }
+    }  
+}
+
+impl Default for Qclass {
+    fn default() -> Self { Qclass::IN }
 }
 
 
@@ -299,8 +360,8 @@ impl DnsMessage {
     /// DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false);
     ///
     /// assert_eq!(dns_query_message.header.get_rd(), false);
-    /// assert_eq!(dns_query_message.question.get_qtype(), Rtype::A);
-    /// assert_eq!(dns_query_message.question.get_qclass(), Rclass::IN);
+    /// assert_eq!(dns_query_message.question.get_qtype(), Qtype::A);
+    /// assert_eq!(dns_query_message.question.get_qclass(), Qclass::IN);
     /// assert_eq!(
     ///     dns_query_message.question.get_qname().get_name(),
     ///     "test.com".to_string()
@@ -333,8 +394,8 @@ impl DnsMessage {
         question.set_qname(domain_name);
         let qtype_qtype = Qtype::from_str_to_qtype(qtype);
         question.set_qtype(qtype_qtype);
-        let qclass_rclass = Rclass::from_str_to_rclass(qclass);
-        question.set_qclass(qclass_rclass);
+        let qclass_qclass = Qclass::from_str_to_qclass(qclass);
+        question.set_qclass(qclass_qclass);
 
         let dns_message = DnsMessage {
             header: header,
@@ -408,8 +469,8 @@ impl DnsMessage {
         question.set_qname(domain_name);
         let qtype_qtype = Qtype::from_str_to_qtype(qtype);
         question.set_qtype(qtype_qtype);
-        let qclass_rclass = Rclass::from_str_to_rclass(qclass);
-        question.set_qclass(qclass_rclass);
+        let qclass_qclass = Qclass::from_str_to_qclass(qclass);
+        question.set_qclass(qclass_qclass);
 
         let dns_message = DnsMessage {
             header: header,
@@ -1085,6 +1146,7 @@ mod message_test {
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::message::Rclass;
+    use crate::message::Qclass;
     use crate::message::Qtype;
     use crate::message::Rtype;
 
@@ -1095,7 +1157,7 @@ mod message_test {
 
         assert_eq!(dns_query_message.header.get_rd(), false);
         assert_eq!(Qtype::from_qtype_to_int(dns_query_message.question.get_qtype()), 1);
-        assert_eq!(Rclass::from_rclass_to_int(dns_query_message.question.get_qclass()), 1);
+        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.question.get_qclass()), 1);
         assert_eq!(
             dns_query_message.question.get_qname().get_name(),
             "test.com".to_string()
@@ -1120,16 +1182,16 @@ mod message_test {
     #[test]
     fn set_and_get_question() {
         let mut question = Question::new();
-        question.set_qclass(Rclass::CS);
+        question.set_qclass(Qclass::CS);
 
         let mut dns_query_message =
             DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
-        assert_eq!(Rclass::from_rclass_to_int(dns_query_message.get_question().get_qclass()), 1);
+        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.get_question().get_qclass()), 1);
 
         dns_query_message.set_question(question);
 
-        assert_eq!(Rclass::from_rclass_to_int(dns_query_message.get_question().get_qclass()), 2);
+        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.get_question().get_qclass()), 2);
     }
 
     #[test]
@@ -1218,7 +1280,7 @@ mod message_test {
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
         assert_eq!(Qtype::from_qtype_to_int(question.get_qtype()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(question.get_qclass()), 1);
+        assert_eq!(Qclass::from_qclass_to_int(question.get_qclass()), 1);
 
         // Answer
         assert_eq!(answer.len(), 1);
@@ -1262,7 +1324,7 @@ mod message_test {
 
         question.set_qname(domain_name);
         question.set_qtype(Qtype::CNAME);
-        question.set_qclass(Rclass::CS);
+        question.set_qclass(Qclass::CS);
 
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
@@ -1352,7 +1414,7 @@ mod message_test {
             String::from("example.com")
         );
         assert_eq!(Qtype::from_qtype_to_int(dns_message.get_question().get_qtype()), 252);
-        assert_eq!(Rclass::from_rclass_to_int(dns_message.get_question().get_qclass()), 1);
+        assert_eq!(Qclass::from_qclass_to_int(dns_message.get_question().get_qclass()), 1);
         assert_eq!(dns_message.get_header().get_op_code(), 0);
         assert_eq!(dns_message.get_header().get_rd(), false);
     }
@@ -1482,7 +1544,7 @@ mod message_test {
         assert!(rd);
         assert_eq!(qname, String::from("test.com"));
         assert_eq!(Qtype::from_qtype_to_int(qtype), 2);
-        assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+        assert_eq!(Qclass::from_qclass_to_int(qclass), 1);
     }
 
     //ToDo: Revisar

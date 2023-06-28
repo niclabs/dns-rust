@@ -1,6 +1,6 @@
 use crate::domain_name::DomainName;
 
-use crate::message::Rclass;
+use crate::message::Qclass;
 use crate::message::Qtype;
 
 #[derive(Default, Clone)]
@@ -24,7 +24,7 @@ pub struct Question {
     // type of query
     qtype: Qtype,
     // class of query
-    qclass: Rclass,
+    qclass: Qclass,
 }
 
 // Methods
@@ -41,7 +41,7 @@ impl Question {
         let question: Question = Question {
             qname: DomainName::new(),
             qtype: Qtype::A,
-            qclass: Rclass::IN,
+            qclass: Qclass::IN,
         };
         question
     }
@@ -83,7 +83,7 @@ impl Question {
         let qtype_int = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let qtype = Qtype::from_int_to_qtype(qtype_int);
         let qclass_int = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
-        let qclass = Rclass::from_int_to_rclass(qclass_int);
+        let qclass = Qclass::from_int_to_qclass(qclass_int);
 
         let mut question = Question::new();
         question.set_qname(qname);
@@ -119,7 +119,7 @@ impl Question {
     // Returns a byte that represents the first byte from qclass.
     fn get_first_qclass_byte(&self) -> u8 {
         let qclass = self.get_qclass();
-        let first_byte = (Rclass::from_rclass_to_int(qclass) >> 8) as u8;
+        let first_byte = (Qclass::from_qclass_to_int(qclass) >> 8) as u8;
 
         first_byte
     }
@@ -127,7 +127,7 @@ impl Question {
     // Returns a byte that represents the second byte from qclass.
     fn get_second_qclass_byte(&self) -> u8 {
         let qclass = self.get_qclass();
-        let second_byte = Rclass::from_rclass_to_int(qclass) as u8;
+        let second_byte = Qclass::from_qclass_to_int(qclass) as u8;
 
         second_byte
     }
@@ -163,7 +163,7 @@ impl Question {
         self.qtype = qtype;
     }
 
-    pub fn set_qclass(&mut self, qclass: Rclass) {
+    pub fn set_qclass(&mut self, qclass: Qclass) {
         self.qclass = qclass;
     }
 }
@@ -178,7 +178,7 @@ impl Question {
         self.qtype.clone()
     }
 
-    pub fn get_qclass(&self) -> Rclass {
+    pub fn get_qclass(&self) -> Qclass {
         self.qclass.clone()
     }
 }
@@ -189,7 +189,7 @@ mod question_test {
     use super::Question;
     use crate::domain_name::DomainName;
     use crate::message::Qtype;
-    use crate::message::Rclass;
+    use crate::message::Qclass;
 
     #[test]
     fn constructor_test() {
@@ -197,7 +197,7 @@ mod question_test {
 
         assert_eq!(question.qname.get_name(), String::from(""));
         assert_eq!(Qtype::from_qtype_to_str(question.qtype), String::from("A"));
-        assert_eq!(Rclass::from_rclass_to_str(question.qclass), String::from("IN"));
+        assert_eq!(Qclass::from_qclass_to_str(question.qclass), String::from("IN"));
     }
 
     #[test]
@@ -232,11 +232,11 @@ mod question_test {
         let mut question = Question::new();
 
         let mut qclass = question.get_qclass();
-        assert_eq!(Rclass::from_rclass_to_str(qclass), String::from("IN"));
+        assert_eq!(Qclass::from_qclass_to_str(qclass), String::from("IN"));
 
-        question.set_qclass(Rclass::CS);
+        question.set_qclass(Qclass::CS);
         qclass = question.get_qclass();
-        assert_eq!(Rclass::from_rclass_to_str(qclass), String::from("CS"));
+        assert_eq!(Qclass::from_qclass_to_str(qclass), String::from("CS"));
     }
 
     #[test]
@@ -247,7 +247,7 @@ mod question_test {
         domain_name.set_name(String::from("test.com"));
         question.set_qname(domain_name);
         question.set_qtype(Qtype::CNAME);
-        question.set_qclass(Rclass::IN);
+        question.set_qclass(Qclass::IN);
 
         let bytes_to_test: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 1];
         let question_to_bytes = question.to_bytes();
@@ -277,7 +277,7 @@ mod question_test {
         let qtype = question.get_qtype();
         assert_eq!(Qtype::from_qtype_to_int(qtype), 5);
         let qclass = question.get_qclass();
-        assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+        assert_eq!(Qclass::from_qclass_to_int(qclass), 1);
     }
 
     #[test]

@@ -1,6 +1,5 @@
 use crate::dns_cache::DnsCache;
-use crate::message::Rclass;
-use crate::message::Rtype;
+use crate::message::Qclass;
 use crate::message::Qtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
@@ -654,7 +653,7 @@ impl Resolver {
         resolver_query.initialize(
             sname,
             Qtype::from_qtype_to_str(stype).as_str(),
-            Rclass::from_rclass_to_str(sclass).as_str(),
+            Qclass::from_qclass_to_str(sclass).as_str(),
             op_code,
             rd,
             self.get_sbelt(),
@@ -908,7 +907,7 @@ impl Resolver {
                             resolver_query.initialize(
                                 sname,
                                 Qtype::from_qtype_to_str(stype).as_str(),
-                                Rclass::from_rclass_to_str(sclass).as_str(),
+                                Qclass::from_qclass_to_str(sclass).as_str(),
                                 op_code,
                                 rd,
                                 resolver.get_sbelt(),
@@ -1198,8 +1197,9 @@ mod resolver_test {
     use crate::config::{RESOLVER_IP_PORT, SBELT_ROOT_IPS};
     use crate::dns_cache::DnsCache;
     use crate::message::DnsMessage;
-    use crate::message::Rclass;
+    use crate::message::Qclass;
     use crate::message::Rtype;
+    use crate::message::Qtype;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
@@ -2149,8 +2149,8 @@ mod resolver_test {
             tx_delete_query);
 
         assert_eq!(resolver_query.get_sname(), String::from("test.com"));
-        assert_eq!(resolver_query.get_stype(), Rtype::A);
-        assert_eq!(resolver_query.get_sclass(), Rclass::IN);
+        assert_eq!(resolver_query.get_stype(), Qtype::A);
+        assert_eq!(resolver_query.get_sclass(), Qclass::IN);
         assert_eq!(resolver_query.get_op_code(), 0);
         assert!(!resolver_query.get_rd());
         assert_eq!(resolver_query.get_cache().get_size(), 1);

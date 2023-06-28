@@ -23,17 +23,6 @@ pub struct DnsMessage {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-/// Enum for the Class of a RR in a DnsMessage
-pub enum Rclass {
-    IN,
-    CS,
-    CH,
-    HS,
-    ANY,
-    UNKNOWN(u16),
-}
-
-#[derive(Clone, PartialEq, Debug)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
     A,
@@ -143,6 +132,16 @@ impl Default for Rtype {
     fn default() -> Self { Rtype::A }
 }
 
+#[derive(Clone, PartialEq, Debug)]
+/// Enum for the Class of a RR in a DnsMessage
+pub enum Rclass {
+    IN,
+    CS,
+    CH,
+    HS,
+    ANY,
+    UNKNOWN(u16),
+}
 
 ///Functions for the Rclass Enum
 impl Rclass {

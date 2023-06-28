@@ -146,7 +146,7 @@ impl MxRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -166,7 +166,7 @@ impl MxRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::MX);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
@@ -285,7 +285,7 @@ mod mx_rdata_test {
     #[test]
     fn rr_from_master_file_test(){
         let mxrdata_rr = MxRdata::rr_from_master_file("3 dcc".split_whitespace(), 
-        20, String::from("IN"), 
+        20, "IN", 
         String::from("uchile.cl"), 
         String::from("uchile.cl"));
 

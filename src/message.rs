@@ -13,7 +13,7 @@ use rand::Rng;
 use std::vec::Vec;
 
 #[derive(Clone)]
-// Structs that represents a dns message
+/// Structs that represents a dns message
 pub struct DnsMessage {
     header: Header,
     question: Question,
@@ -23,7 +23,7 @@ pub struct DnsMessage {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-//Enum for the Class of a RR in a DnsMessage
+/// Enum for the Class of a RR in a DnsMessage
 pub enum Rclass {
     IN,
     CS,
@@ -34,7 +34,7 @@ pub enum Rclass {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-//Enum For the Type of a RR in a DnsMessage with an Rdata implementation
+/// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
     A,
     NS,
@@ -53,9 +53,9 @@ pub enum Rtype {
     UNKNOWN(u16),
 }
 
-//Functions for the RType Enum
+/// Functions for the RType Enum
 impl Rtype{
-    //Function to get the int equivalent of a type
+    /// Function to get the int equivalent of a type
     pub fn from_rtype_to_int(rtype: Rtype) -> u16{
         match rtype {
             Rtype::A => 1,
@@ -75,7 +75,7 @@ impl Rtype{
             Rtype::UNKNOWN(val) => val
         }
     }
-    //Function to get the String equivalent of a type
+    /// Function to get the String equivalent of a type
     pub fn from_rtype_to_str(rtype: Rtype) -> String {
         match rtype {
             Rtype::A => String::from("A"),
@@ -96,7 +96,7 @@ impl Rtype{
         }
     }
 
-    //Function to get the String equivalent of a type
+    /// Function to get the String equivalent of a type
     pub fn from_int_to_rtype(val: u16) -> Rtype{
         match val {
             1 => Rtype::A,
@@ -117,10 +117,9 @@ impl Rtype{
         }
     }
 
-    //Function to get the Rtype from a String
-    pub fn from_string_to_rtype(string: String) -> Rtype{
-        let to_be_matched = string.as_str();
-        match to_be_matched {
+    /// Function to get the Rtype from a String
+    pub fn from_str_to_rtype(rtype: &str) -> Rtype {
+        match rtype {
             "A" => Rtype::A,
             "NS" => Rtype::NS,
             "CNAME" => Rtype::CNAME,
@@ -139,6 +138,7 @@ impl Rtype{
         }
     }
 }
+
 impl Default for Rtype {
     fn default() -> Self { Rtype::A }
 }
@@ -183,9 +183,8 @@ impl Rclass {
     }
 
     //Function to get the Rclass from a String
-    pub fn from_string_to_rclass(string: String) -> Rclass{
-        let to_be_macthed = string.as_str();
-        match to_be_macthed {
+    pub fn from_str_to_rclass(rclass: &str) -> Rclass{
+        match rclass {
             "IN" => Rclass::IN,
             "CS" => Rclass::CS,
             "CH" => Rclass::CH,
@@ -221,8 +220,8 @@ impl DnsMessage {
     ///
     pub fn new_query_message(
         qname: String,
-        qtype: String,
-        qclass: String,
+        qtype: &str,
+        qclass: &str,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -243,9 +242,9 @@ impl DnsMessage {
         domain_name.set_name(qname);
 
         question.set_qname(domain_name);
-        let qtype_rtype = Rtype::from_string_to_rtype(qtype);
+        let qtype_rtype = Rtype::from_str_to_rtype(qtype);
         question.set_qtype(qtype_rtype);
-        let qclass_rclass = Rclass::from_string_to_rclass(qclass);
+        let qclass_rclass = Rclass::from_str_to_rclass(qclass);
         question.set_qclass(qclass_rclass);
 
         let dns_message = DnsMessage {
@@ -296,8 +295,8 @@ impl DnsMessage {
     /// ```
     pub fn new_response_message(
         qname: String,
-        qtype: String,
-        qclass: String,
+        qtype: &str,
+        qclass: &str,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -318,9 +317,9 @@ impl DnsMessage {
         domain_name.set_name(qname);
 
         question.set_qname(domain_name);
-        let qtype_rtype = Rtype::from_string_to_rtype(qtype);
+        let qtype_rtype = Rtype::from_str_to_rtype(qtype);
         question.set_qtype(qtype_rtype);
-        let qclass_rclass = Rclass::from_string_to_rclass(qclass);
+        let qclass_rclass = Rclass::from_str_to_rclass(qclass);
         question.set_qclass(qclass_rclass);
 
         let dns_message = DnsMessage {
@@ -421,7 +420,7 @@ impl DnsMessage {
         let mut rng = thread_rng();
         let msg_id = rng.gen();
 
-        let msg = DnsMessage::new_query_message(qname, String::from("AXFR"), String::from("IN"), 0, false, msg_id);
+        let msg = DnsMessage::new_query_message(qname, "AXFR", "IN", 0, false, msg_id);
 
         msg
     }
@@ -1002,7 +1001,7 @@ mod message_test {
     #[test]
     fn constructor_test() {
         let dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
         assert_eq!(Rtype::from_rtype_to_int(dns_query_message.question.get_qtype()), 1);
@@ -1019,7 +1018,7 @@ mod message_test {
         header.set_rd(true);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
         assert_eq!(dns_query_message.get_header().get_rd(), false);
 
@@ -1034,7 +1033,7 @@ mod message_test {
         question.set_qclass(Rclass::CS);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
         assert_eq!(Rclass::from_rclass_to_int(dns_query_message.get_question().get_qclass()), 1);
 
@@ -1051,7 +1050,7 @@ mod message_test {
         answer.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
         assert_eq!(dns_query_message.get_answer().len(), 0);
 
@@ -1068,7 +1067,7 @@ mod message_test {
         authority.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
         assert_eq!(dns_query_message.get_authority().len(), 0);
 
@@ -1085,7 +1084,7 @@ mod message_test {
         additional.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
         assert_eq!(dns_query_message.get_additional().len(), 0);
 
@@ -1226,7 +1225,7 @@ mod message_test {
     #[test]
     fn add_answers_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
 
         let mut new_answer = Vec::<ResourceRecord>::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
@@ -1294,7 +1293,7 @@ mod message_test {
     #[test]
     fn update_header_counters_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
 
         assert_eq!(dns_query_message.get_header().get_ancount(), 0);
         assert_eq!(dns_query_message.get_header().get_nscount(), 0);
@@ -1341,7 +1340,7 @@ mod message_test {
     #[test]
     fn add_authorities_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
 
         let mut new_authority = Vec::<ResourceRecord>::new();
         let a_rdata3 = Rdata::SomeARdata(ARdata::new());
@@ -1359,7 +1358,7 @@ mod message_test {
     #[test]
     fn add_additionals_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), String::from("A"), String::from("IN"), 0, false, 1);
+            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
 
         let mut new_additional = Vec::<ResourceRecord>::new();
         let a_rdata5 = Rdata::SomeARdata(ARdata::new());
@@ -1376,7 +1375,7 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn new_response_message(){
-        let new_response = DnsMessage::new_response_message(String::from("test.com"), String::from("NS"), String::from("IN"), 1, true, 1);
+        let new_response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
 
         let header = new_response.get_header();
         let id = header.get_id();
@@ -1400,7 +1399,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_a(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("A"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "A", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1411,7 +1410,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_ns(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("NS"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "NS", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1422,7 +1421,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_cname(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("CNAME"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "CNAME", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1433,7 +1432,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_soa(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("SOA"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "SOA", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1444,7 +1443,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_wks(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("WKS"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "WKS", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1455,7 +1454,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_ptr(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("PTR"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "PTR", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1466,7 +1465,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_hinfo(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("HINFO"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "HINFO", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1477,7 +1476,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_minfo(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("MINFO"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "MINFO", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1488,7 +1487,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_mx(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("MX"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "MX", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1499,7 +1498,7 @@ mod message_test {
     #[test]
     fn get_question_qtype_txt(){
         let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, String::from("TXT"), String::from("IN"), 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, "TXT", "IN", 1, true, 1);
 
         let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
 

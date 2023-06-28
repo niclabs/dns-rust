@@ -152,8 +152,8 @@ impl ResolverQuery {
     pub fn initialize(
         &mut self,
         sname: String,
-        stype: String,
-        sclass: String,
+        stype: &str,
+        sclass: &str,
         op_code: u8,
         rd: bool,
         sbelt: Slist,
@@ -162,8 +162,8 @@ impl ResolverQuery {
         old_id: u16,
     ) {
         self.set_sname(sname);
-        self.set_stype(Rtype::from_string_to_rtype(stype));
-        self.set_sclass(Rclass::from_string_to_rclass(sclass));
+        self.set_stype(Rtype::from_str_to_rtype(stype));
+        self.set_sclass(Rclass::from_str_to_rclass(sclass));
         self.set_op_code(op_code);
         self.set_rd(rd);
         self.set_sbelt(sbelt);
@@ -915,7 +915,7 @@ impl ResolverQuery {
                     println!("Internal Query para {}", qname.clone());
                     let mut rng = thread_rng();
                     let id: u16 = rng.gen();
-                    let dns_msg = DnsMessage::new_query_message(qname.clone(), String::from("A"), String::from("IN"), 0, false, id);
+                    let dns_msg = DnsMessage::new_query_message(qname.clone(), "A", "IN", 0, false, id);
 
                     let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
                     let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
@@ -947,8 +947,8 @@ impl ResolverQuery {
                     // Initializes the query data struct
                     internal_query.initialize(
                         qname,
-                        String::from("A"),
-                        String::from("IN"),
+                        "A",
+                        "IN",
                         0,
                         false,
                         resolver_query_to_update.get_sbelt(),
@@ -1368,7 +1368,7 @@ impl ResolverQuery {
                 if ip_addr == "".to_string() {
                     let mut rng = thread_rng();
                     let id: u16 = rng.gen();
-                    let dns_msg = DnsMessage::new_query_message(qname.clone(), String::from("A"), String::from("IN"), 0, false, id);
+                    let dns_msg = DnsMessage::new_query_message(qname.clone(), "A", "IN", 0, false, id);
 
                     let tx_add_udp_copy = resolver_query_to_update.get_add_channel_udp();
                     let tx_delete_udp_copy = resolver_query_to_update.get_delete_channel_udp();
@@ -1399,8 +1399,8 @@ impl ResolverQuery {
                     // Initializes the query data struct
                     internal_query.initialize(
                         qname,
-                        String::from("A"),
-                        String::from("IN"),
+                        "A",
+                        "IN",
                         0,
                         false,
                         resolver_query_to_update.get_sbelt(),
@@ -1498,7 +1498,7 @@ impl ResolverQuery {
         let rd = self.get_rd();
         let id = self.get_main_query_id();
 
-        let query_message = DnsMessage::new_query_message(sname, stype_str, sclass_str, op_code, rd, id);
+        let query_message = DnsMessage::new_query_message(sname, stype_str.as_str(), sclass_str.as_str(), op_code, rd, id);
 
         query_message
     }
@@ -3179,8 +3179,8 @@ mod resolver_query_tests {
 
         resolver_query.initialize(
             String::from("example.com"),
-            String::from("A"),
-            String::from("CS"),
+            "A",
+            "CS",
             1,
             true,
             sbelt,
@@ -4603,8 +4603,8 @@ mod resolver_query_tests {
         let dns_message =
             DnsMessage::new_query_message(
                 String::from("dcc.uchile.cl."), 
-                String::from("A"), 
-                String::from("IN"), 
+                "A", 
+                "IN", 
                 0, 
                 true, 
                 1);
@@ -4827,8 +4827,8 @@ mod resolver_query_tests {
         let mut dns_message =
             DnsMessage::new_query_message(
                 String::from("dcc.uchile.cl."), 
-                String::from("A"), 
-                String::from("IN"), 
+                "A", 
+                "IN", 
                 0, 
                 true, 
                 1);
@@ -4899,8 +4899,8 @@ mod resolver_query_tests {
         let mut dns_message =
             DnsMessage::new_query_message(
                 String::from("dcc.uchile.cl."), 
-                String::from("A"), 
-                String::from("IN"), 
+                "A", 
+                "IN", 
                 0, 
                 true, 
                 1);

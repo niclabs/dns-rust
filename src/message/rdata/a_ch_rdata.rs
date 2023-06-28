@@ -128,7 +128,7 @@ impl AChRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -152,7 +152,7 @@ impl AChRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::A);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
@@ -310,7 +310,7 @@ mod a_ch_rdata_test {
     fn rr_from_master_file_test() {
         let ach_rr = AChRdata::rr_from_master_file(
             "204.13.100.3 10".split_whitespace(), 
-            0, String::from("CH"),
+            0, "CH",
             "admin.googleplex".to_string(), 
             "edu".to_string());
 

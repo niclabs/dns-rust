@@ -247,7 +247,7 @@ impl SoaRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace, 
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
         origin: String,
     ) -> (ResourceRecord, u32) {
@@ -280,7 +280,7 @@ impl SoaRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::SOA);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(20 + m_name_str.len() as u16 + r_name_str.len() as u16 + 4);
@@ -706,7 +706,7 @@ mod soa_rdata_test {
         let soardata_rr_min = SoaRdata::rr_from_master_file(
             "dcc u-cursos 1112 7600 3500 14000 150".split_whitespace(),
             56,
-            String::from("IN"),
+            "IN",
             String::from("uchile.cl"),
             String::from("uchile.cl"));
 

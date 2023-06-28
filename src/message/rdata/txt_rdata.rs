@@ -104,7 +104,7 @@ impl TxtRdata {
     pub fn rr_from_master_file(
         values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
     ) -> ResourceRecord {
         let mut text: Vec<String> = Vec::new();
@@ -123,7 +123,7 @@ impl TxtRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::TXT);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(rd_lenght as u16);
@@ -199,7 +199,7 @@ mod txt_rdata_test {
         let txtrdata_rr = TxtRdata::rr_from_master_file(
             "dcc uchile cl".split_whitespace(),
             25,
-            String::from("IN"),
+            "IN",
             String::from("uchile.cl"));
 
         assert_eq!(txtrdata_rr.get_class(), Rclass::IN);

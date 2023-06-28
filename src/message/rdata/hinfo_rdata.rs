@@ -135,7 +135,7 @@ impl HinfoRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
     ) -> ResourceRecord {
         let mut hinfo_rdata = HinfoRdata::new();
@@ -153,7 +153,7 @@ impl HinfoRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::HINFO);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(cpu.len() as u16 + os.len() as u16);
@@ -253,7 +253,7 @@ mod hinfo_rdata_test {
     #[test]
     fn rr_from_master_file_test(){
         let hinfo_rr = HinfoRdata::rr_from_master_file("ryzen ubuntu".split_whitespace(), 
-        15, String::from("IN"), 
+        15, "IN", 
         String::from("dcc.cl"));
 
         let hinfo_rdata = hinfo_rr.get_rdata();

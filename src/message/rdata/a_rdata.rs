@@ -94,7 +94,7 @@ impl ARdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
     ) -> ResourceRecord {
         let mut a_rdata = ARdata::new();
@@ -120,7 +120,7 @@ impl ARdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::A);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(4);
@@ -234,7 +234,7 @@ mod a_rdata_test {
         let a_rr = ARdata::rr_from_master_file(
             "204.13.100.3".split_whitespace(),
             0,
-            String::from("IN"),
+            "IN",
             "admin1.googleplex.edu".to_string(),
         );
 

@@ -11,7 +11,6 @@ use rand::{thread_rng, Rng};
 /*
 TODO: send tcp 
 TODO: caso para recibir truncados (no lo hace ahora)
-TODO: valores que vengan por defecto en un constructor por ejemplo el puerto 53, el socket_Addr 
  */
 
 
@@ -39,13 +38,13 @@ impl <T: ClientConnection> Client<T> {
         client
     }
 
-    ///creates dns query with the given domain name, type and class    
+    /// creates dns query with the given domain name, type and class    
     pub fn create_dns_query(
         &mut self,
-        domain_name: String,
-        qtype: String,
-        qclass: String,
-    ){
+        domain_name: &str,
+        qtype: &str,
+        qclass: &str,
+    ) -> DnsMessage {
         // Create random generator
         let mut rng = thread_rng();
 
@@ -54,26 +53,39 @@ impl <T: ClientConnection> Client<T> {
 
         // Create query msg
         let client_query: DnsMessage = DnsMessage::new_query_message(
-            domain_name,
-            qtype,
+            domain_name.to_string(),
+            qtype, 
             qclass,
             0,
             false,
             query_id,
         );
-        self.dns_query = client_query;
+        self.dns_query = client_query.clone();
+
+        client_query
     }
 
-    ///Sends the query to the resolver in the client
-    fn send_query(&self,server_addr:SocketAddr) -> DnsMessage {
+    /// Sends the query to the resolver in the client
+    fn send_query(&self) -> DnsMessage {
 
         let client_query = self.get_dns_query();
         let conn: &T = &self.get_conn();
 
         //conn is in charge of send query
         let dns_response:DnsMessage = conn.send(client_query);
-        return  dns_response;
+
+        dns_response
     }
+
+
+    pub fn query(&mut self, domain_name: &str, qtype: &str, qclass: &str) -> DnsMessage {
+        let dns_message = self.create_dns_query(domain_name, qtype, qclass);
+        
+        let response = self.send_query();
+
+        response
+    }
+
 }
 
 //Getters
@@ -105,51 +117,53 @@ impl <T: ClientConnection> Client<T>{
 
 #[cfg(test)]
 mod client_test {
-    use std::net::SocketAddr;
+    use std::{net::{SocketAddr, IpAddr, Ipv4Addr}, time::Duration};
 
-    use super::{Client, tcp_connection::TCPConnection, client_connection::ClientConnection, udp_connection::UDPConnection};
+    use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
     #[test]
-    fn example_use(){
+    fn udp_client_query() {
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp); //se crea un cliente vacio?
+
+
+        // sends query
+        let domain_name= "example.com";
+        let qtype = "A"; 
+        let qclass= "IN";
+        let mut response = udp_client.query(domain_name, qtype, qclass).to_owned();
+
+        response.print_dns_message()
+    }
+
+    #[test]
+    fn tcp_client_query() {
         use std::net::{IpAddr,Ipv4Addr};
         use std::time::Duration;
 
-
         //create connection
-        // let ip_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
-        let port: u16 = 8089;
-        let ip_addr_to_connect:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
-
-        // let addr: SocketAddr = SocketAddr::new(ip_addr, port);
+        // let ip_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));s
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
         let timeout: Duration = Duration::from_secs(2);
-        let addr_cloudfare = SocketAddr::new(ip_addr_to_connect, port)
-;       let conn_udp:UDPConnection = ClientConnection::new(ip_addr_to_connect,timeout);
-        let conn_tcp:TCPConnection = ClientConnection::new(ip_addr_to_connect,timeout);
+
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
 
         //create client
-        let mut client_udp = Client::new(conn_udp); //se crea un cliente vacio?
-        let mut client_tcp = Client::new(conn_tcp);
+        let mut tcp_client = Client::new(conn_tcp);
 
         //create query
-        let domain_name_udp = String::from("uchile.cl");
-        let domain_name_tcp = String::from("uchile.cl");
-        let qtype_udp = String::from("A");
-        let qtype_tcp = String::from("A");
-        let qclass_udp:String = String::from("IN");
-        let qclass_tcp:String = String::from("IN");
+        let domain_name= "example.com";
+        let qtype = "A"; 
+        let qclass= "IN";
+        let mut response = tcp_client.query(domain_name, qtype, qclass).to_owned();
 
-        client_udp.create_dns_query(domain_name_udp,qtype_udp,qclass_udp);
-        client_tcp.create_dns_query(domain_name_tcp,qtype_tcp,qclass_tcp);        
-
+        response.print_dns_message()
         //sends query
-        let ip_Addr_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1,1,1,1));
-        let port_dns_udp:u16 = 53;
-        let server_addr:SocketAddr = SocketAddr::new(ip_Addr_server,port_dns_udp);
-        client_tcp.send_query(server_addr);    //will send through tcp
-        client_udp.send_query(server_addr);    //will send through udp
-
-
-
+        
     }
 
    

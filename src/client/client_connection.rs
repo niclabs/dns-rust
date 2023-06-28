@@ -8,7 +8,7 @@
 use crate::message::{DnsMessage};
 use std::net::{IpAddr};
 use std::time::Duration;
-pub trait ClientConnection: Sized{//: 'static + Sized + Send + Sync + Unpin {
+pub trait ClientConnection: Sized {//: 'static + Sized + Send + Sync + Unpin {
 
     //creates a ClientConecction TCP or UDP 
     fn new(bind_addr:IpAddr,

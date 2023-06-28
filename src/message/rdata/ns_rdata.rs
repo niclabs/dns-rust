@@ -98,7 +98,7 @@ impl NsRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -116,7 +116,7 @@ impl NsRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::NS);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
@@ -207,7 +207,7 @@ mod ns_rdata_test {
         let nsrdata_rr = NsRdata::rr_from_master_file(
             "dcc".split_whitespace(),
             35, 
-            String::from("IN"), 
+            "IN", 
             String::from("uchile.cl"), 
             String::from("uchile.cl"));
 

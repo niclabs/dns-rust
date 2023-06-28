@@ -78,7 +78,7 @@ impl CnameRdata {
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
         ttl: u32,
-        class: String,
+        class: &str,
         host_name: String,
         origin: String,
     ) -> ResourceRecord {
@@ -98,7 +98,7 @@ impl CnameRdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::CNAME);
-        let rclass = Rclass::from_string_to_rclass(class);
+        let rclass = Rclass::from_str_to_rclass(class);
         resource_record.set_class(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
@@ -181,7 +181,7 @@ mod cname_rdata_test {
         let cname_rr = CnameRdata::rr_from_master_file(
             "test.googleplex.edu".split_whitespace(),
             0,
-            String::from("IN"),
+            "IN",
             "admin1.googleplex.edu".to_string(),
             "admin1.googleplex.edu".to_string(),
         );

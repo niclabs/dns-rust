@@ -6,31 +6,31 @@ use std::net::{TcpStream,SocketAddr,IpAddr};
 use std::time::Duration;
 
 
-pub struct TCPConnection {
+pub struct ClientTCPConnection {
     //addr client
-    bind_addr: IpAddr,
+    server_addr: IpAddr,
     //timeout read time
     timeout: Duration,
 }
 
-impl ClientConnection for TCPConnection {
+impl ClientConnection for ClientTCPConnection {
 
     ///Creates UDPConnection
-    fn new(bind_addr:IpAddr, timeout:Duration) -> TCPConnection {
-        TCPConnection {
-            bind_addr: bind_addr,
+    fn new(server_addr:IpAddr, timeout:Duration) -> ClientTCPConnection {
+        ClientTCPConnection {
+            server_addr: server_addr,
             timeout: timeout,
         }
     }
 
-    ///creates socket tcp, sends query and receive response
+    /// creates socket tcp, sends query and receive response
     fn send(&self, dns_query: DnsMessage) -> DnsMessage {
         println!("[SEND TCP]");
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
-        let bind_addr:SocketAddr = SocketAddr::new(self.get_bind_addr(), 53);
+        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
 
-        let mut stream: TcpStream = TcpStream::connect(bind_addr)
+        let mut stream: TcpStream = TcpStream::connect(server_addr)
             .unwrap_or_else(|e| panic!("Error connect {}", e));
     
         //Add len of message len
@@ -69,15 +69,15 @@ impl ClientConnection for TCPConnection {
         };
         // println!("[SEND TCP] {:?}", vec_msg);
     
-        return  response_dns;
+        return response_dns;
     }
 }
 
 //Getters
-impl TCPConnection {
+impl ClientTCPConnection {
 
-    fn get_bind_addr(&self)-> IpAddr {
-        return self.bind_addr.clone();
+    fn get_server_addr(&self)-> IpAddr {
+        return self.server_addr.clone();
     }
 
     fn get_timeout(&self)-> Duration {
@@ -88,10 +88,10 @@ impl TCPConnection {
 }
 
 //Setters
-impl TCPConnection {
+impl ClientTCPConnection {
 
-    fn set_bind_addr(&mut self,addr :IpAddr) {
-        self.bind_addr = addr;
+    fn set_server_addr(&mut self,addr :IpAddr) {
+        self.server_addr = addr;
     }
 
     fn set_timeout(&mut self,timeout: Duration) {
@@ -99,8 +99,6 @@ impl TCPConnection {
     }
 
 }
-
-
 
 #[cfg(test)]
 mod tcp_connection_test{
@@ -111,23 +109,14 @@ mod tcp_connection_test{
     #[test]
     fn create_tcp() {
 
-        //create connection
-        let port: u16 = 8089;
-        let ip_addr_to_connect:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+        // let domain_name = String::from("uchile.cl");
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port: u16 = 8088;
+        let timeout = Duration::from_secs(100);
 
-        // let addr: SocketAddr = SocketAddr::new(ip_addr, port);
-        let timeout: Duration = Duration::from_secs(2);
-        let addr_cloudfare = SocketAddr::new(ip_addr_to_connect, port)
-;       let conn_udp:TCPConnection = ClientConnection::new(ip_addr_to_connect,timeout);
+        let _conn_new = ClientTCPConnection::new(ip_addr,timeout);
 
-        //Query
-        let dns_query = DnsMessage::new_query_message("uchile.cl".to_string(),
-                                                "A".to_string(),
-                                                "IN".to_string(),
-                                                0, false, 111);
-        
-        let mut response = conn_udp.send(dns_query);
-        response.print_dns_message();
-
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
     }
 }

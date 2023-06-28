@@ -6,14 +6,16 @@
 // use crate::client::tcp_connection::TCPConnection;
 
 use crate::message::{DnsMessage};
-use std::net::{SocketAddr};
+use std::net::{IpAddr};
 use std::time::Duration;
 pub trait ClientConnection: Sized{//: 'static + Sized + Send + Sync + Unpin {
 
     //creates a ClientConecction TCP or UDP 
-    fn new(bind_addr:SocketAddr,
+    fn new(bind_addr:IpAddr,
         timeout:Duration) -> Self;
     
     /// function sends query to resolver
-    fn send(&self,server_addr: SocketAddr, dns_query:DnsMessage) -> DnsMessage;
+    fn send(&self, dns_query:DnsMessage) -> DnsMessage;
+
+    //FIXME: iran aqui los geters y seters? la firma
 }

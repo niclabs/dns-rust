@@ -1,14 +1,14 @@
 use crate::client::ClientConnection;
 use crate::message::{DnsMessage, Rtype,Rclass};
 
-use std::net::{UdpSocket,SocketAddr};
+use std::net::{UdpSocket,SocketAddr,IpAddr};
 use std::time::Duration;
 use std::collections::HashMap;
 
 
 pub struct UDPConnection {
-    //addr client
-    bind_addr: SocketAddr,
+    //addr that client will connect
+    bind_addr: IpAddr,
     //timeout read time
     timeout: Duration,
 }
@@ -16,7 +16,7 @@ pub struct UDPConnection {
 impl ClientConnection for UDPConnection {
 
     ///Creates UDPConnection
-    fn new( bind_addr:SocketAddr,timeout:Duration) -> UDPConnection {
+    fn new( bind_addr:IpAddr,timeout:Duration) -> UDPConnection {
         UDPConnection {
             bind_addr: bind_addr,
             timeout: timeout,
@@ -26,15 +26,16 @@ impl ClientConnection for UDPConnection {
     }
 
     //TODO: funcion enviar
-    fn send(&self, server_addr: SocketAddr, dns_query:DnsMessage) -> DnsMessage{
+    fn send(&self,dns_query:DnsMessage) -> DnsMessage{
         println!("[SEND UDP]");
-        let bind_addr:SocketAddr = self.get_bind_addr();
+        let bind_addr:SocketAddr = SocketAddr::new(self.get_bind_addr(), 53);
         let timeout:Duration = self.get_timeout();
+        let my_add = "127.0.0.1:3400";
 
 
         let dns_query_bytes = dns_query.to_bytes(); 
 
-        let socket_udp:UdpSocket = UdpSocket::bind(bind_addr)
+        let socket_udp:UdpSocket = UdpSocket::bind("127.0.0.1:3400")
                                     .unwrap_or_else(|error| {
                                         panic!("Problem Socket UDP {:?}", error);
                                     });
@@ -46,7 +47,7 @@ impl ClientConnection for UDPConnection {
         }
 
         socket_udp
-            .send_to(&dns_query_bytes ,server_addr)
+            .send_to(&dns_query_bytes ,bind_addr)
             .unwrap_or_else(|e| panic!("Error send {}",e));
         
         println!("[SEND UDP] query sent");
@@ -72,7 +73,7 @@ impl ClientConnection for UDPConnection {
 //Getters
 impl UDPConnection {
 
-    fn get_bind_addr(&self)-> SocketAddr {
+    fn get_bind_addr(&self)-> IpAddr {
         return self.bind_addr.clone();
     }
 
@@ -86,7 +87,7 @@ impl UDPConnection {
 //Setters
 impl UDPConnection {
 
-    fn set_bind_addr(&mut self,addr :SocketAddr) {
+    fn set_bind_addr(&mut self,addr :IpAddr) {
         self.bind_addr = addr;
     }
 
@@ -104,15 +105,27 @@ mod udp_connection_test{
     use super::*;
     use std::net::{SocketAddr,IpAddr,Ipv4Addr};
     #[test]
-    fn create_tcp() {
+    fn create_tcp() {        
+        //create connection
+        let port: u16 = 8089;
+        let ip_addr_to_connect:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
 
-        // let domain_name = String::from("uchile.cl");
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let port:u16 = 8088;
-        let bind_addr:SocketAddr  = SocketAddr::new(ip_addr, port);
-        let timeout = Duration::from_secs(2);
+        // let addr: SocketAddr = SocketAddr::new(ip_addr, port);
+        let timeout: Duration = Duration::from_secs(2);
+        let addr_cloudfare = SocketAddr::new(ip_addr_to_connect, port)
+;       let conn_udp:UDPConnection = ClientConnection::new(ip_addr_to_connect,timeout);
 
-        let _conn_new = UDPConnection::new(bind_addr,timeout);
+        //Query
+        let dns_query = DnsMessage::new_query_message("uchile.cl".to_string(),
+                                                "A".to_string(),
+                                                "IN".to_string(),
+                                                0, false, 111);
+        
+        let mut response = conn_udp.send(dns_query);
+        response.print_dns_message();
+
+
+
 
     }
 }

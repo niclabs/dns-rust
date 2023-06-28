@@ -71,7 +71,7 @@ impl <T: ClientConnection> Client<T> {
         let conn: &T = &self.get_conn();
 
         //conn is in charge of send query
-        let dns_response:DnsMessage = conn.send(server_addr,client_query);
+        let dns_response:DnsMessage = conn.send(client_query);
         return  dns_response;
     }
 }
@@ -86,8 +86,6 @@ impl <T: ClientConnection> Client<T> {
     fn get_dns_query(&self)-> DnsMessage {
         return self.dns_query.clone();
     }
-
-
 }
 
 //Setters
@@ -118,14 +116,15 @@ mod client_test {
 
 
         //create connection
-        let ip_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
+        // let ip_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
         let port: u16 = 8089;
+        let ip_addr_to_connect:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
 
-        let addr: SocketAddr = SocketAddr::new(ip_addr, port);
+        // let addr: SocketAddr = SocketAddr::new(ip_addr, port);
         let timeout: Duration = Duration::from_secs(2);
-
-;       let conn_udp:UDPConnection = ClientConnection::new(addr,timeout);
-        let conn_tcp:TCPConnection = ClientConnection::new(addr,timeout);
+        let addr_cloudfare = SocketAddr::new(ip_addr_to_connect, port)
+;       let conn_udp:UDPConnection = ClientConnection::new(ip_addr_to_connect,timeout);
+        let conn_tcp:TCPConnection = ClientConnection::new(ip_addr_to_connect,timeout);
 
         //create client
         let mut client_udp = Client::new(conn_udp); //se crea un cliente vacio?

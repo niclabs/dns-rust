@@ -35,10 +35,6 @@ pub enum Rtype {
     WKS,
     MX,
     TXT,
-    ANY,
-    AXFR,
-    MAILB,
-    MAILA,
     UNKNOWN(u16),
 }
 
@@ -57,10 +53,6 @@ impl Rtype{
             Rtype::MINFO => 14,
             Rtype::MX => 15,
             Rtype::TXT => 16,
-            Rtype::AXFR => 252,
-            Rtype::MAILB => 253,
-            Rtype::MAILA => 254,
-            Rtype::ANY => 255,
             Rtype::UNKNOWN(val) => val
         }
     }
@@ -77,10 +69,6 @@ impl Rtype{
             Rtype::MINFO => String::from("MINFO"),
             Rtype::MX => String::from("MX"),
             Rtype::TXT => String::from("TXT"),
-            Rtype::AXFR => String::from("AXFR"),
-            Rtype::MAILB => String::from("MAILB"),
-            Rtype::MAILA => String::from("MAILA"),
-            Rtype::ANY => String::from("ANY"),
             Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
     }
@@ -98,10 +86,6 @@ impl Rtype{
             14 => Rtype::MINFO,
             15 => Rtype::MX,
             16 => Rtype::TXT,
-            252 => Rtype::AXFR,
-            253 => Rtype::MAILB,
-            254 => Rtype::MAILA,
-            255 => Rtype::ANY,
             _ => Rtype::UNKNOWN(val),
         }
     }
@@ -119,10 +103,6 @@ impl Rtype{
             "MINFO" => Rtype::MINFO,
             "MX" => Rtype::MX,
             "TXT" => Rtype::TXT,
-            "AXFR" => Rtype::AXFR,
-            "MAILB" => Rtype::MAILB,
-            "MAILA" => Rtype::MAILA,
-            "ANY" => Rtype::ANY,
             _ => Rtype::UNKNOWN(99),
         }
     }
@@ -130,6 +110,116 @@ impl Rtype{
 
 impl Default for Rtype {
     fn default() -> Self { Rtype::A }
+}
+
+#[derive(Clone, PartialEq, Debug)]
+/// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
+pub enum Qtype {
+    A,
+    NS,
+    CNAME,
+    SOA,
+    PTR,
+    HINFO,
+    MINFO,
+    WKS,
+    MX,
+    TXT,
+    ANY,
+    AXFR,
+    MAILB,
+    MAILA,
+    UNKNOWN(u16),
+}
+
+/// Functions for the Qtype Enum
+impl Qtype{
+    /// Function to get the int equivalent of a type
+    pub fn from_qtype_to_int(qtype: Qtype) -> u16{
+        match qtype {
+            Qtype::A => 1,
+            Qtype::NS => 2,
+            Qtype::CNAME => 5,
+            Qtype::SOA => 6,
+            Qtype::WKS => 11,
+            Qtype::PTR => 12,
+            Qtype::HINFO => 13,
+            Qtype::MINFO => 14,
+            Qtype::MX => 15,
+            Qtype::TXT => 16,
+            Qtype::AXFR => 252,
+            Qtype::MAILB => 253,
+            Qtype::MAILA => 254,
+            Qtype::ANY => 255,
+            Qtype::UNKNOWN(val) => val
+        }
+    }
+    /// Function to get the String equivalent of a type
+    pub fn from_qtype_to_str(qtype: Qtype) -> String {
+        match qtype {
+            Qtype::A => String::from("A"),
+            Qtype::NS => String::from("NS"),
+            Qtype::CNAME => String::from("CNAME"),
+            Qtype::SOA => String::from("SOA"),
+            Qtype::WKS => String::from("WKS"),
+            Qtype::PTR => String::from("PTR"),
+            Qtype::HINFO => String::from("HINFO"),
+            Qtype::MINFO => String::from("MINFO"),
+            Qtype::MX => String::from("MX"),
+            Qtype::TXT => String::from("TXT"),
+            Qtype::AXFR => String::from("AXFR"),
+            Qtype::MAILB => String::from("MAILB"),
+            Qtype::MAILA => String::from("MAILA"),
+            Qtype::ANY => String::from("ANY"),
+            Qtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
+        }
+    }
+
+    /// Function to get the String equivalent of a type
+    pub fn from_int_to_qtype(val: u16) -> Qtype{
+        match val {
+            1 => Qtype::A,
+            2 => Qtype::NS,
+            5 => Qtype::CNAME,
+            6 => Qtype::SOA,
+            11 => Qtype::WKS,
+            12 => Qtype::PTR,
+            13 => Qtype::HINFO,
+            14 => Qtype::MINFO,
+            15 => Qtype::MX,
+            16 => Qtype::TXT,
+            252 => Qtype::AXFR,
+            253 => Qtype::MAILB,
+            254 => Qtype::MAILA,
+            255 => Qtype::ANY,
+            _ => Qtype::UNKNOWN(val),
+        }
+    }
+
+    /// Function to get the Qtype from a String
+    pub fn from_str_to_qtype(qtype: &str) -> Qtype {
+        match qtype {
+            "A" => Qtype::A,
+            "NS" => Qtype::NS,
+            "CNAME" => Qtype::CNAME,
+            "SOA" => Qtype::SOA,
+            "WKS" => Qtype::WKS,
+            "PTR" => Qtype::PTR,
+            "HINFO" => Qtype::HINFO,
+            "MINFO" => Qtype::MINFO,
+            "MX" => Qtype::MX,
+            "TXT" => Qtype::TXT,
+            "AXFR" => Qtype::AXFR,
+            "MAILB" => Qtype::MAILB,
+            "MAILA" => Qtype::MAILA,
+            "ANY" => Qtype::ANY,
+            _ => Qtype::UNKNOWN(99),
+        }
+    }
+}
+
+impl Default for Qtype {
+    fn default() -> Self { Qtype::A }
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -241,8 +331,8 @@ impl DnsMessage {
         domain_name.set_name(qname);
 
         question.set_qname(domain_name);
-        let qtype_rtype = Rtype::from_str_to_rtype(qtype);
-        question.set_qtype(qtype_rtype);
+        let qtype_qtype = Qtype::from_str_to_qtype(qtype);
+        question.set_qtype(qtype_qtype);
         let qclass_rclass = Rclass::from_str_to_rclass(qclass);
         question.set_qclass(qclass_rclass);
 
@@ -316,8 +406,8 @@ impl DnsMessage {
         domain_name.set_name(qname);
 
         question.set_qname(domain_name);
-        let qtype_rtype = Rtype::from_str_to_rtype(qtype);
-        question.set_qtype(qtype_rtype);
+        let qtype_qtype = Qtype::from_str_to_qtype(qtype);
+        question.set_qtype(qtype_qtype);
         let qclass_rclass = Rclass::from_str_to_rclass(qclass);
         question.set_qclass(qclass_rclass);
 
@@ -995,6 +1085,7 @@ mod message_test {
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::message::Rclass;
+    use crate::message::Qtype;
     use crate::message::Rtype;
 
     #[test]
@@ -1003,7 +1094,7 @@ mod message_test {
             DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
-        assert_eq!(Rtype::from_rtype_to_int(dns_query_message.question.get_qtype()), 1);
+        assert_eq!(Qtype::from_qtype_to_int(dns_query_message.question.get_qtype()), 1);
         assert_eq!(Rclass::from_rclass_to_int(dns_query_message.question.get_qclass()), 1);
         assert_eq!(
             dns_query_message.question.get_qname().get_name(),
@@ -1126,7 +1217,7 @@ mod message_test {
 
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(Rtype::from_rtype_to_int(question.get_qtype()), 16);
+        assert_eq!(Qtype::from_qtype_to_int(question.get_qtype()), 16);
         assert_eq!(Rclass::from_rclass_to_int(question.get_qclass()), 1);
 
         // Answer
@@ -1170,7 +1261,7 @@ mod message_test {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Rtype::CNAME);
+        question.set_qtype(Qtype::CNAME);
         question.set_qclass(Rclass::CS);
 
         let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["hello".to_string()]));
@@ -1260,7 +1351,7 @@ mod message_test {
             dns_message.get_question().get_qname().get_name(),
             String::from("example.com")
         );
-        assert_eq!(Rtype::from_rtype_to_int(dns_message.get_question().get_qtype()), 252);
+        assert_eq!(Qtype::from_qtype_to_int(dns_message.get_question().get_qtype()), 252);
         assert_eq!(Rclass::from_rclass_to_int(dns_message.get_question().get_qclass()), 1);
         assert_eq!(dns_message.get_header().get_op_code(), 0);
         assert_eq!(dns_message.get_header().get_rd(), false);
@@ -1390,7 +1481,7 @@ mod message_test {
         assert_eq!(op_code, 1);
         assert!(rd);
         assert_eq!(qname, String::from("test.com"));
-        assert_eq!(Rtype::from_rtype_to_int(qtype), 2);
+        assert_eq!(Qtype::from_qtype_to_int(qtype), 2);
         assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
     }
 
@@ -1400,7 +1491,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "A", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("A"));
     }
@@ -1411,7 +1502,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "NS", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("NS"));
     }
@@ -1422,7 +1513,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "CNAME", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("CNAME"));
     }
@@ -1433,7 +1524,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "SOA", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("SOA"));
     }
@@ -1444,7 +1535,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "WKS", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("WKS"));
     }
@@ -1455,7 +1546,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "PTR", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("PTR"));
     }
@@ -1466,7 +1557,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "HINFO", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("HINFO"));
     }
@@ -1477,7 +1568,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "MINFO", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("MINFO"));
     }
@@ -1488,7 +1579,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "MX", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("MX"));
     }
@@ -1499,7 +1590,7 @@ mod message_test {
         let name = String::from("value");
         let dns_message = DnsMessage::new_query_message(name, "TXT", "IN", 1, true, 1);
 
-        let qtype = Rtype::from_rtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("TXT"));
     }

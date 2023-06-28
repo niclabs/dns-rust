@@ -1,6 +1,7 @@
 use crate::dns_cache::DnsCache;
 use crate::message::Rclass;
 use crate::message::Rtype;
+use crate::message::Qtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
@@ -652,7 +653,7 @@ impl Resolver {
         // Initializes ResolverQuery data struct with message's data
         resolver_query.initialize(
             sname,
-            Rtype::from_rtype_to_str(stype).as_str(),
+            Qtype::from_qtype_to_str(stype).as_str(),
             Rclass::from_rclass_to_str(sclass).as_str(),
             op_code,
             rd,
@@ -906,7 +907,7 @@ impl Resolver {
                             // Initializes the query data struct
                             resolver_query.initialize(
                                 sname,
-                                Rtype::from_rtype_to_str(stype).as_str(),
+                                Qtype::from_qtype_to_str(stype).as_str(),
                                 Rclass::from_rclass_to_str(sclass).as_str(),
                                 op_code,
                                 rd,

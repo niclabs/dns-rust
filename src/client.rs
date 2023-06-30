@@ -164,6 +164,8 @@ impl <T: ClientConnection> Client<T>{
 mod client_test {
     use std::{net::{SocketAddr, IpAddr, Ipv4Addr}, time::Duration};
     use crate::message::{DnsMessage};
+    use crate::message::qtype::Qtype;
+    use crate::message::qclass::Qclass;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
     #[test]
@@ -223,9 +225,34 @@ mod client_test {
         assert_eq!(new_client.get_dns_query().get_question().get_qname().get_name(), String::from(""));
     }
     // Query UDP
+    #[test]
+    fn create_dns_query_udp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_udp);
+        let dns_query = new_client.create_dns_query("www.test.com", "A", "IN");
+
+        assert_eq!(dns_query.get_question().get_qtype(), Qtype::A);
+        assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
+        assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
+    }
     
     // Query TCP
-    
+    #[test]
+    fn create_dns_query_tcp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let dns_query = new_client.create_dns_query("www.test.com", "A", "IN");
+
+        assert_eq!(dns_query.get_question().get_qtype(), Qtype::A);
+        assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
+        assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
+    }
     // Query timeout
 
     // Querys with error

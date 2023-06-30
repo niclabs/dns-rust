@@ -98,7 +98,16 @@ impl <T: ClientConnection> Client<T> {
         dns_response
     }
 
-
+    /// Get's the query from send_query and returns the response
+    /// # Example
+    /// ```text
+    /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    /// let timeout: Duration = Duration::from_secs(2);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let mut client = Client::new(conn_tcp);
+    /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
+    /// let dns_response = client.query();
+    /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
     pub fn query(&mut self, domain_name: &str, qtype: &str, qclass: &str) -> DnsMessage {
         let dns_message = self.create_dns_query(domain_name, qtype, qclass);
         

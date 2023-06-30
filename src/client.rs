@@ -36,6 +36,8 @@ impl <T: ClientConnection> Client<T> {
     /// let timeout: Duration = Duration::from_secs(2);
     /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
     /// let mut client = Client::new(conn_tcp);
+    /// assert_eq!(client.dns_query.get_question().get_qname().get_name(), String::from(""));
+    /// ```
     pub fn new(conn: T) -> Self {
         
         let client = Client { 

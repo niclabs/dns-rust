@@ -1,6 +1,6 @@
 use crate::domain_name::DomainName;
 
-use crate::message::Qclass;
+use crate::message::qclass::Qclass;
 use crate::message::qtype::Qtype;
 
 #[derive(Default, Clone)]
@@ -189,7 +189,7 @@ mod question_test {
     use super::Question;
     use crate::domain_name::DomainName;
     use crate::message::qtype::Qtype;
-    use crate::message::Qclass;
+    use crate::message::qclass::Qclass;
 
     #[test]
     fn constructor_test() {

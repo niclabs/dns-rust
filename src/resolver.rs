@@ -1,5 +1,5 @@
 use crate::dns_cache::DnsCache;
-use crate::message::Qclass;
+use crate::message::qclass::Qclass;
 use crate::message::qtype::Qtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
@@ -1197,7 +1197,7 @@ mod resolver_test {
     use crate::config::{RESOLVER_IP_PORT, SBELT_ROOT_IPS};
     use crate::dns_cache::DnsCache;
     use crate::message::DnsMessage;
-    use crate::message::Qclass;
+    use crate::message::qclass::Qclass;
     use crate::message::rtype::Rtype;
     use crate::message::qtype::Qtype;
     use crate::message::rdata::a_rdata::ARdata;

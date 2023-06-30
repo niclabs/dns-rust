@@ -87,11 +87,11 @@ impl ClientUDPConnection {
 // Setters
 impl ClientUDPConnection {
 
-    fn set_server_addr(&mut self, addr :IpAddr) {
+    pub fn set_server_addr(&mut self, addr :IpAddr) {
         self.server_addr = addr;
     }
 
-    fn set_timeout(&mut self, timeout: Duration) {
+    pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = timeout;
     }
 }

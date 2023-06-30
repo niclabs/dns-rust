@@ -204,6 +204,7 @@ mod client_test {
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let new_client = Client::new(conn_tcp);
+        //assert_eq!(new_client.get_conn().get_server_addr(), server_addr);
         assert_eq!(new_client.get_dns_query().get_question().get_qname().get_name(), String::from(""));
     }
     // Query UDP

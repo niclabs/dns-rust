@@ -88,6 +88,18 @@ impl <T: ClientConnection> Client<T> {
     }
 
     /// Sends the query to the resolver in the client
+    /// # Example
+    /// ```text
+    /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    /// let timeout: Duration = Duration::from_secs(2);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let mut client = Client::new(conn_tcp);
+    /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
+    /// let dns_response = client.send_query();
+    /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
+    /// assert_eq!(dns_response.get_question().get_qtype(), Rtype::A);
+    /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
+    /// ```
     fn send_query(&self) -> DnsMessage {
 
         let client_query = self.get_dns_query();

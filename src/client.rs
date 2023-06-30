@@ -32,8 +32,10 @@ impl <T: ClientConnection> Client<T> {
     /// Creates a new Client with default values
     /// # Example
     /// ```text
-    /// let mut client = Client::new();
-    /// 
+    /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    /// let timeout: Duration = Duration::from_secs(2);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let mut client = Client::new(conn_tcp);
     pub fn new(conn: T) -> Self {
         
         let client = Client { 
@@ -47,7 +49,10 @@ impl <T: ClientConnection> Client<T> {
     /// creates dns query with the given domain name, type and class
     /// # Example
     /// ```text
-    /// let mut client = Client::new();
+    /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    /// let timeout: Duration = Duration::from_secs(2);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let mut client = Client::new(conn_tcp);
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// assert_eq!(dns_query.get_qname().get_name(), String::from("www.test.com"));
     /// assert_eq!(dns_query.get_qtype(), Rtype::A);
@@ -132,7 +137,7 @@ impl <T: ClientConnection> Client<T>{
 #[cfg(test)]
 mod client_test {
     use std::{net::{SocketAddr, IpAddr, Ipv4Addr}, time::Duration};
-
+    use crate::message::{DnsMessage};
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
     #[test]
@@ -180,10 +185,16 @@ mod client_test {
         
     }
 
-   
-
     // Constructor test
-    
+    #[test]
+    fn constructor_test(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let new_client = Client::new(conn_tcp);
+        assert_eq!(new_client.get_dns_query().get_question().get_qname().get_name(), String::from(""));
+    }
     // Query UDP
     
     // Query TCP

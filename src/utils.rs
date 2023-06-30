@@ -1,4 +1,4 @@
-use crate::message::Rtype;
+use crate::message::rtype::Rtype;
 
 pub fn check_label_name(name: String) -> bool {
     if name.len() > 63 || name.len() == 0 {

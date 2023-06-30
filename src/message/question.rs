@@ -1,7 +1,7 @@
 use crate::domain_name::DomainName;
 
 use crate::message::Qclass;
-use crate::message::Qtype;
+use crate::message::qtype::Qtype;
 
 #[derive(Default, Clone)]
 /// An struct that represents the question section from a dns message
@@ -188,7 +188,7 @@ mod question_test {
 
     use super::Question;
     use crate::domain_name::DomainName;
-    use crate::message::Qtype;
+    use crate::message::qtype::Qtype;
     use crate::message::Qclass;
 
     #[test]

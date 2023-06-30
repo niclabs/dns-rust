@@ -2,7 +2,11 @@ pub mod header;
 pub mod question;
 pub mod rdata;
 pub mod resource_record;
+pub mod rtype;
+pub mod qtype;
 
+use crate::message::qtype::Qtype;
+use crate::message::rtype::Rtype;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
@@ -20,206 +24,6 @@ pub struct DnsMessage {
     answer: Vec<ResourceRecord>,
     authority: Vec<ResourceRecord>,
     additional: Vec<ResourceRecord>,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-/// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
-pub enum Rtype {
-    A,
-    NS,
-    CNAME,
-    SOA,
-    PTR,
-    HINFO,
-    MINFO,
-    WKS,
-    MX,
-    TXT,
-    UNKNOWN(u16),
-}
-
-/// Functions for the RType Enum
-impl Rtype{
-    /// Function to get the int equivalent of a type
-    pub fn from_rtype_to_int(rtype: Rtype) -> u16{
-        match rtype {
-            Rtype::A => 1,
-            Rtype::NS => 2,
-            Rtype::CNAME => 5,
-            Rtype::SOA => 6,
-            Rtype::WKS => 11,
-            Rtype::PTR => 12,
-            Rtype::HINFO => 13,
-            Rtype::MINFO => 14,
-            Rtype::MX => 15,
-            Rtype::TXT => 16,
-            Rtype::UNKNOWN(val) => val
-        }
-    }
-    /// Function to get the String equivalent of a type
-    pub fn from_rtype_to_str(rtype: Rtype) -> String {
-        match rtype {
-            Rtype::A => String::from("A"),
-            Rtype::NS => String::from("NS"),
-            Rtype::CNAME => String::from("CNAME"),
-            Rtype::SOA => String::from("SOA"),
-            Rtype::WKS => String::from("WKS"),
-            Rtype::PTR => String::from("PTR"),
-            Rtype::HINFO => String::from("HINFO"),
-            Rtype::MINFO => String::from("MINFO"),
-            Rtype::MX => String::from("MX"),
-            Rtype::TXT => String::from("TXT"),
-            Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
-        }
-    }
-
-    /// Function to get the String equivalent of a type
-    pub fn from_int_to_rtype(val: u16) -> Rtype{
-        match val {
-            1 => Rtype::A,
-            2 => Rtype::NS,
-            5 => Rtype::CNAME,
-            6 => Rtype::SOA,
-            11 => Rtype::WKS,
-            12 => Rtype::PTR,
-            13 => Rtype::HINFO,
-            14 => Rtype::MINFO,
-            15 => Rtype::MX,
-            16 => Rtype::TXT,
-            _ => Rtype::UNKNOWN(val),
-        }
-    }
-
-    /// Function to get the Rtype from a String
-    pub fn from_str_to_rtype(rtype: &str) -> Rtype {
-        match rtype {
-            "A" => Rtype::A,
-            "NS" => Rtype::NS,
-            "CNAME" => Rtype::CNAME,
-            "SOA" => Rtype::SOA,
-            "WKS" => Rtype::WKS,
-            "PTR" => Rtype::PTR,
-            "HINFO" => Rtype::HINFO,
-            "MINFO" => Rtype::MINFO,
-            "MX" => Rtype::MX,
-            "TXT" => Rtype::TXT,
-            _ => Rtype::UNKNOWN(99),
-        }
-    }
-}
-
-impl Default for Rtype {
-    fn default() -> Self { Rtype::A }
-}
-
-#[derive(Clone, PartialEq, Debug)]
-/// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
-pub enum Qtype {
-    A,
-    NS,
-    CNAME,
-    SOA,
-    PTR,
-    HINFO,
-    MINFO,
-    WKS,
-    MX,
-    TXT,
-    ANY,
-    AXFR,
-    MAILB,
-    MAILA,
-    UNKNOWN(u16),
-}
-
-/// Functions for the Qtype Enum
-impl Qtype{
-    /// Function to get the int equivalent of a type
-    pub fn from_qtype_to_int(qtype: Qtype) -> u16{
-        match qtype {
-            Qtype::A => 1,
-            Qtype::NS => 2,
-            Qtype::CNAME => 5,
-            Qtype::SOA => 6,
-            Qtype::WKS => 11,
-            Qtype::PTR => 12,
-            Qtype::HINFO => 13,
-            Qtype::MINFO => 14,
-            Qtype::MX => 15,
-            Qtype::TXT => 16,
-            Qtype::AXFR => 252,
-            Qtype::MAILB => 253,
-            Qtype::MAILA => 254,
-            Qtype::ANY => 255,
-            Qtype::UNKNOWN(val) => val
-        }
-    }
-    /// Function to get the String equivalent of a type
-    pub fn from_qtype_to_str(qtype: Qtype) -> String {
-        match qtype {
-            Qtype::A => String::from("A"),
-            Qtype::NS => String::from("NS"),
-            Qtype::CNAME => String::from("CNAME"),
-            Qtype::SOA => String::from("SOA"),
-            Qtype::WKS => String::from("WKS"),
-            Qtype::PTR => String::from("PTR"),
-            Qtype::HINFO => String::from("HINFO"),
-            Qtype::MINFO => String::from("MINFO"),
-            Qtype::MX => String::from("MX"),
-            Qtype::TXT => String::from("TXT"),
-            Qtype::AXFR => String::from("AXFR"),
-            Qtype::MAILB => String::from("MAILB"),
-            Qtype::MAILA => String::from("MAILA"),
-            Qtype::ANY => String::from("ANY"),
-            Qtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
-        }
-    }
-
-    /// Function to get the String equivalent of a type
-    pub fn from_int_to_qtype(val: u16) -> Qtype{
-        match val {
-            1 => Qtype::A,
-            2 => Qtype::NS,
-            5 => Qtype::CNAME,
-            6 => Qtype::SOA,
-            11 => Qtype::WKS,
-            12 => Qtype::PTR,
-            13 => Qtype::HINFO,
-            14 => Qtype::MINFO,
-            15 => Qtype::MX,
-            16 => Qtype::TXT,
-            252 => Qtype::AXFR,
-            253 => Qtype::MAILB,
-            254 => Qtype::MAILA,
-            255 => Qtype::ANY,
-            _ => Qtype::UNKNOWN(val),
-        }
-    }
-
-    /// Function to get the Qtype from a String
-    pub fn from_str_to_qtype(qtype: &str) -> Qtype {
-        match qtype {
-            "A" => Qtype::A,
-            "NS" => Qtype::NS,
-            "CNAME" => Qtype::CNAME,
-            "SOA" => Qtype::SOA,
-            "WKS" => Qtype::WKS,
-            "PTR" => Qtype::PTR,
-            "HINFO" => Qtype::HINFO,
-            "MINFO" => Qtype::MINFO,
-            "MX" => Qtype::MX,
-            "TXT" => Qtype::TXT,
-            "AXFR" => Qtype::AXFR,
-            "MAILB" => Qtype::MAILB,
-            "MAILA" => Qtype::MAILA,
-            "ANY" => Qtype::ANY,
-            _ => Qtype::UNKNOWN(99),
-        }
-    }
-}
-
-impl Default for Qtype {
-    fn default() -> Self { Qtype::A }
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -1148,7 +952,7 @@ mod message_test {
     use crate::message::Rclass;
     use crate::message::Qclass;
     use crate::message::Qtype;
-    use crate::message::Rtype;
+    use crate::message::rtype::Rtype;
 
     #[test]
     fn constructor_test() {

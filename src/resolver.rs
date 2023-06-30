@@ -1,6 +1,6 @@
 use crate::dns_cache::DnsCache;
 use crate::message::Qclass;
-use crate::message::Qtype;
+use crate::message::qtype::Qtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
@@ -1198,8 +1198,8 @@ mod resolver_test {
     use crate::dns_cache::DnsCache;
     use crate::message::DnsMessage;
     use crate::message::Qclass;
-    use crate::message::Rtype;
-    use crate::message::Qtype;
+    use crate::message::rtype::Rtype;
+    use crate::message::qtype::Qtype;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;

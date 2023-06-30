@@ -4,7 +4,8 @@ pub mod tcp_connection;
 pub mod udp_connection;
 
 use crate::client::client_connection::ClientConnection;
-use crate::message::{DnsMessage,Rclass};
+use crate::message::{DnsMessage};
+use crate::message::rclass::Rclass;
 use crate::message::rtype::Rtype;
 use std::net::{IpAddr,Ipv4Addr,UdpSocket,SocketAddr};
 

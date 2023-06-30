@@ -2,7 +2,7 @@ use crate::dns_cache::DnsCache;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::DnsMessage;
-use crate::message::Rclass;
+use crate::message::rclass::Rclass;
 use crate::message::rtype::Rtype;
 use crate::message::Qclass;
 use crate::message::qtype::Qtype;
@@ -1756,7 +1756,7 @@ mod resolver_query_tests {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
-    use crate::message::Rclass;
+    use crate::message::rclass::Rclass;
     use crate::message::Qclass;
     use crate::message::rtype::Rtype;
     use crate::message::qtype::Qtype;

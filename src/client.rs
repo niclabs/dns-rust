@@ -30,6 +30,10 @@ pub struct Client<T>
 impl <T: ClientConnection> Client<T> {
     
     /// Creates a new Client with default values
+    /// # Example
+    /// ```text
+    /// let mut client = Client::new();
+    /// 
     pub fn new(conn: T) -> Self {
         
         let client = Client { 
@@ -40,7 +44,15 @@ impl <T: ClientConnection> Client<T> {
         client
     }
 
-    /// creates dns query with the given domain name, type and class    
+    /// creates dns query with the given domain name, type and class
+    /// # Example
+    /// ```text
+    /// let mut client = Client::new();
+    /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
+    /// assert_eq!(dns_query.get_qname().get_name(), String::from("www.test.com"));
+    /// assert_eq!(dns_query.get_qtype(), Rtype::A);
+    /// assert_eq!(dns_query.get_qclass(), Rclass::IN);
+    /// ```    
     pub fn create_dns_query(
         &mut self,
         domain_name: &str,

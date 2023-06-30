@@ -36,6 +36,7 @@ impl <T: ClientConnection> Client<T> {
     /// let timeout: Duration = Duration::from_secs(2);
     /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
     /// let mut client = Client::new(conn_tcp);
+    /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
     /// assert_eq!(client.dns_query.get_question().get_qname().get_name(), String::from(""));
     /// ```
     pub fn new(conn: T) -> Self {
@@ -107,6 +108,8 @@ impl <T: ClientConnection> Client<T> {
     /// let mut client = Client::new(conn_tcp);
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// let dns_response = client.query();
+    /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
+    /// assert_eq!(dns_response.get_question().get_qtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
     pub fn query(&mut self, domain_name: &str, qtype: &str, qclass: &str) -> DnsMessage {
         let dns_message = self.create_dns_query(domain_name, qtype, qclass);
@@ -204,7 +207,7 @@ mod client_test {
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let new_client = Client::new(conn_tcp);
-        //assert_eq!(new_client.get_conn().get_server_addr(), server_addr);
+        assert_eq!(new_client.get_conn().get_server_addr(), server_addr);
         assert_eq!(new_client.get_dns_query().get_question().get_qname().get_name(), String::from(""));
     }
     // Query UDP

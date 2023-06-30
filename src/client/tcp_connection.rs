@@ -76,11 +76,11 @@ impl ClientConnection for ClientTCPConnection {
 //Getters
 impl ClientTCPConnection {
 
-    fn get_server_addr(&self)-> IpAddr {
+    pub fn get_server_addr(&self)-> IpAddr {
         return self.server_addr.clone();
     }
 
-    fn get_timeout(&self)-> Duration {
+    pub fn get_timeout(&self)-> Duration {
         return self.timeout.clone();
     }
 

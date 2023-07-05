@@ -2,15 +2,15 @@ pub mod header;
 pub mod question;
 pub mod rdata;
 pub mod resource_record;
-pub mod rtype;
-pub mod qtype;
-pub mod rclass;
-pub mod qclass;
+pub mod type_rtype;
+pub mod type_qtype;
+pub mod class_rclass;
+pub mod class_qclass;
 
-use crate::message::qclass::Qclass;
-use crate::message::rclass::Rclass;
-use crate::message::qtype::Qtype;
-use crate::message::rtype::Rtype;
+use crate::message::class_qclass::Qclass;
+use crate::message::class_rclass::Rclass;
+use crate::message::type_qtype::Qtype;
+use crate::message::type_rtype::Rtype;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
@@ -828,7 +828,7 @@ mod message_test {
     use crate::message::Rclass;
     use crate::message::Qclass;
     use crate::message::Qtype;
-    use crate::message::rtype::Rtype;
+    use crate::message::type_rtype::Rtype;
 
     #[test]
     fn constructor_test() {

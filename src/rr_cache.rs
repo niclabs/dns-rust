@@ -74,7 +74,7 @@ impl RRCache {
 mod rr_cache_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
-    use crate::message::rtype::Rtype;
+    use crate::message::type_rtype::Rtype;
     use crate::message::resource_record::ResourceRecord;
     use crate::rr_cache::RRCache;
     use chrono::prelude::*;

@@ -5,8 +5,8 @@ pub mod udp_connection;
 
 use crate::client::client_connection::ClientConnection;
 use crate::message::{DnsMessage};
-use crate::message::rclass::Rclass;
-use crate::message::rtype::Rtype;
+use crate::message::class_rclass::Rclass;
+use crate::message::type_rtype::Rtype;
 use std::net::{IpAddr,Ipv4Addr,UdpSocket,SocketAddr};
 
 use rand::{thread_rng, Rng};
@@ -164,8 +164,8 @@ impl <T: ClientConnection> Client<T>{
 mod client_test {
     use std::{net::{SocketAddr, IpAddr, Ipv4Addr}, time::Duration};
     use crate::message::{DnsMessage};
-    use crate::message::qtype::Qtype;
-    use crate::message::qclass::Qclass;
+    use crate::message::type_qtype::Qtype;
+    use crate::message::class_qclass::Qclass;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
     #[test]

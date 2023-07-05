@@ -253,8 +253,37 @@ mod client_test {
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
         assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
     }
-    // Query timeout
+    //FIXME: Query timeout tcp
+    #[test]
+    #[ignore = "No timeout"]
+    #[should_panic]
+    fn query_timeout_tcp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
+        let timeout: Duration = Duration::from_secs(2);
 
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+
+        new_client.create_dns_query("www.u-cursos.cl", "A", "IN");
+
+        new_client.send_query();
+    }
+
+    //FIXME: Query timeout tcp
+    #[test]
+    #[ignore = "No timeout"]
+    #[should_panic]
+    fn query_timeout_udp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_udp);
+
+        new_client.create_dns_query("www.u-cursos.cl", "A", "IN");
+
+        new_client.send_query();
+    }
     // Querys with error
     
  

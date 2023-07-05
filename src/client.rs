@@ -285,7 +285,47 @@ mod client_test {
         new_client.send_query();
     }
     // Querys with error
-    
+
+    //Wrong domain starting with "?"
+    #[test]
+    #[should_panic]
+    fn wrong_written_domain(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let mut response = new_client.query("?www.u-cursos.cl", "A", "IN");
+
+        response.print_dns_message();
+    }
+
+    //Wrong domain that doesn't exist
+    #[test]
+    fn domain_that_does_not_exist(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let mut response = new_client.query("www.wrong-domain.cl", "A", "IN");
+
+        response.print_dns_message();
+    }
+
+    //Wrong domain that haves a number at the start
+    #[test]
+    #[should_panic]
+    fn wrong_written_domain_2(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let mut response = new_client.query("2www.u-cursos.cl", "A", "IN");
+
+        response.print_dns_message();
+    }
  
 
 }

@@ -300,7 +300,7 @@ mod client_test {
         response.print_dns_message();
     }
 
-    //Wrong domain that doesn't exist
+    //Wrong domain that doesn't exist: should panic?
     #[test]
     fn domain_that_does_not_exist(){
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));

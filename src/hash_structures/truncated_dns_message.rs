@@ -15,36 +15,39 @@ pub struct TruncatedDnsMessage {
     truncated_messages_hash: HashMap<ID, DnsMessage>,
 }
 
-impl FragmentedDnsMessage {
+impl TruncatedDnsMessage {
+    /// Function to create a new TruncatedDnsMessage.
     fn new() -> Self {
-        FragmentedDnsMessage {
+        TruncatedDnsMessage {
             messages: HashMap::new(),
         }
     }
 
+    /// Function to add a new message to the TruncatedDnsMessage.
+    /// todo: check if the message is already in the TruncatedDnsMessage.
     fn add_message(&mut self, msg_id: id, dns_message: DnsMessage) {
         self.messages.insert(msg_id, dns_message);
     }
 
+    /// Function to remove a message from the TruncatedDnsMessage.
     fn remove_message(&mut self, msg_id: &id) -> Option<DnsMessage> {
-        self.messages.remove(msg_id)
+        self.messages.remove(msg_id);
     }
 
+    /// Function to get a message from the TruncatedDnsMessage.
     fn get_dns_message(&self, msg_id: &id) -> Option<&DnsMessage> {
-        self.messages.get(key)
-    }
-
-    fn get_messages(&self) -> HashMap<id, DnsMessage> {
-        self.messages.clone()
+        self.messages.get(key);
     }
 }
 
-impl FragmentedDnsMessage {
-    fn set_messages(&mut self, messages: HashMap<id, DnsMessage>) {
-        self.messages = messages;
+impl TruncatedDnsMessage {
+    /// Function to create a new TruncatedDnsMessage.
+    fn set_truncated_messages_hash(&mut self, truncated_messages_hash: HashMap<id, DnsMessage>) {
+        self.truncated_messages_hash = truncated_messages_hash;
     }
 
-    fn set_dns_message(&mut self, msg_id: id, dns_message: DnsMessage) {
-        self.messages.insert(msg_id, dns_message);
+    /// Function to get all the messages from the TruncatedDnsMessage.
+    fn get_truncated_messages_hash(&self) -> HashMap<id, DnsMessage> {
+        self.truncated_messages_hash.clone();
     }
 }

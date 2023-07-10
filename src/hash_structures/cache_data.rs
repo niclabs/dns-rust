@@ -58,6 +58,17 @@ impl CacheData{
         self.set_cache_data(cache_data);
     }
 
+    ///function to remove an element from the cache data
+    /// # Example
+    /// ```
+    /// let mut cache_data = CacheData::new();
+    /// let rr_cache = RRCache::new();
+    /// cache_data.add_to_cache_data(Rtype::A, String::from("uchile.cl"), rr_cache);
+    /// cache_data.remove_from_cache_data(String::from("uchile.cl"), Rtype::A);
+    /// ```
+    /// # Arguments
+    /// * `domain_name` - A String that represents the domain name of the cache data
+    /// * `rtype` - A Rtype that represents the rtype of the cache data
     pub fn remove_from_cache_data(&mut self, domain_name: String, rtype: Rtype){
         let mut cache_data = self.get_cache_data();
         rr_type_str = Rtype::from_rtype_to_str(rtype);

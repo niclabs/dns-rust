@@ -59,7 +59,14 @@ impl CacheData{
     }
 
     pub fn remove_from_cache_data(&mut self, domain_name: String, rtype: Rtype){
-        
+        let mut cache_data = self.get_cache_data();
+        rr_type_str = Rtype::from_rtype_to_str(rtype);
+        if let Some(x) = cache_data.get_mut(&rr_type_str) {
+            let mut type_hash: HostData = x.clone();
+            type_hash.remove_from_host_data(domain_name);
+            cache_data.insert(rtype, type_hash);
+            self.set_cache_data(cache_data);
+        } 
     }
 }
 

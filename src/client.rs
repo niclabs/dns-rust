@@ -224,6 +224,7 @@ mod client_test {
         assert_eq!(new_client.get_conn().get_server_addr(), server_addr);
         assert_eq!(new_client.get_dns_query().get_question().get_qname().get_name(), String::from(""));
     }
+    
     // Query UDP
     #[test]
     fn create_dns_query_udp(){
@@ -253,6 +254,7 @@ mod client_test {
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
         assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
     }
+
     //FIXME: Query timeout tcp
     #[test]
     #[ignore = "No timeout"]

@@ -14,6 +14,23 @@
 
 
 
+
+
+#[test]
+fn resolver_client() {
+    //create config
+    let resolver_addr: SocketAddr = ("127.0.0.1", 53).to_socket_addrs();
+    let mut config = ResolverConfig::new(resolver_addr);
+    let resolver = Resolver::new(config);
+
+    let conn = ClientTCPConnection::new(resolver_addr, Duration::from_secs(2));
+    let client = Client::new(conn);
+    let response = client.query("example.com", "A", "IN");
+
+    response.print_dns_message();
+}
+
+
 //-------Test practica juaquin -------
 // // TEST EXAMPLE.COM
 // #[test]

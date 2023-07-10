@@ -48,7 +48,7 @@ impl DnsMessage {
     /// );
     /// ```
     ///
-    pub fn new_query_message(
+    pub fn new_query_message( //FIXME: tipos de los valores deben ser DomainName, Rtype, Qclass , etc
         qname: String,
         qtype: &str,
         qclass: &str,

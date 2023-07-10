@@ -4,8 +4,8 @@ use crate::dns_message::DnsMessage;
 type ID = u16;
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct FragmentedDnsMessage {
-    message: HashMap<ID, DnsMessage>,
+pub struct TruncatedDnsMessage {
+    truncated_messages_hash: HashMap<ID, DnsMessage>,
 
 }
 

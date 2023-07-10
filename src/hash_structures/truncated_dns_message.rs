@@ -4,9 +4,15 @@ use crate::dns_message::DnsMessage;
 type ID = u16;
 
 #[derive(Clone, PartialEq, Debug)]
+/// Struct to save the truncated messages.
+/// 
+/// When a new message is received and it is truncated, 
+/// it is saved in this struct. When a new message with 
+/// the same ID is received, it is added to the previous 
+/// message.
 pub struct TruncatedDnsMessage {
+    /// HashMap to save the truncated messages according to their ID.
     truncated_messages_hash: HashMap<ID, DnsMessage>,
-
 }
 
 impl FragmentedDnsMessage {

@@ -1,6 +1,6 @@
 use crate::resolver::slist::Slist;
 
-use std::net::{IpAddr,SocketAddr};
+use std::{net::{IpAddr,SocketAddr,Ipv4Addr, UdpSocket}, default};
 
 pub struct ResolverConfig{
     //Servers
@@ -28,57 +28,71 @@ impl ResolverConfig {
         resolver_config
     }
 
+    pub fn default()-> Self {
+        //TODO: crea un resolver con los valores por defecto
+        let resolver_config: ResolverConfig = ResolverConfig {
+            sbelt: Slist::new(),
+            addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
+            retry: 30,
+            cache_available: true,
+            recursive_available: false
+        };
+
+        resolver_config
+    }
+
 }
 
 ///Getters
 impl ResolverConfig {
 
-    fn get_sbelt(&self) -> Slist {
-        self.sbelt
+    pub fn get_sbelt(&self) -> &Slist {
+        &self.sbelt
     }
 
-    fn get_addr(&self) -> SocketAddr {
+    pub fn get_addr(&self) -> SocketAddr {
         self.addr
     }
 
-    fn get_retry(&self) -> u16{
+    pub fn get_retry(&self) -> u16{
         self.retry
     }
 
-    fn get_cache_available(&self) -> bool{
+    pub fn get_cache_available(&self) -> bool{
         self.cache_available 
     }
 
-    fn get_recursive_available(&self) -> bool{
+    pub fn get_recursive_available(&self) -> bool{
         self.recursive_available
     }
+
+
 }
 
 ///Setters
 impl ResolverConfig{
 
-    fn set_sbelt(&mut self,sbelt: Slist ) {
+    pub fn set_sbelt(&mut self,sbelt: Slist ) {
         self.sbelt = sbelt;
     }
 
-    fn set_Addr(&mut self,addr:SocketAddr){
+    pub fn set_Addr(&mut self,addr:SocketAddr){
         self.addr = addr;
     }
 
-    fn set_retry(&self, retry:u16){
+    pub fn set_retry(&mut self, retry:u16){
         self.retry = retry;
     }
 
-    fn set_cache_available(&mut self, cache_available:bool){
+    pub fn set_cache_available(&mut self, cache_available:bool){
         self.cache_available = cache_available;
     }
 
-    fn set_recursive_available(&mut self,recursive_available:bool){
+    pub fn set_recursive_available(&mut self,recursive_available:bool){
         self.recursive_available = recursive_available;
     }
 
 }
-
 
 
 #[cfg(test)]
@@ -105,6 +119,9 @@ mod tests_resolver_config {
         sbelt.set_ns_list(ns_list);
 
         let mut config = ResolverConfig::new(Some(sbelt),resolver_addr);
+
+        //config default
+        let config_default = ResolverConfig::default();
         
 
 

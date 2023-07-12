@@ -1,20 +1,32 @@
+use crate::client::config;
 use crate::dns_cache::DnsCache;
-use crate::domain_name::DomainName;
+use crate::domain_name::{DomainName, self};
 use crate::message::type_rtype::Rtype;
+use crate::resolver::config::{ResolverConfig};
 
 pub struct AsyncResolver{
     // config: ResolverConfig,  FIXME: ver si conviene para configurara tiposd e consultas que aceptara resolver
     cache: DnsCache,
-    host: DomainName,
     use_cache: bool,
     recursive_available: bool,
 }
 
 impl AsyncResolver{
 
-    pub fn new()-> Self{
-        unimplemented!();
+    pub fn new(config:&ResolverConfig)-> Self{
+        let async_resolver = AsyncResolver{
+            cache: DnsCache::new(),
+            use_cache:config.get_recursive_available(),
+            recursive_available:config.get_recursive_available(),
+        };
+        async_resolver
     } 
+
+    pub fn run(){
+        
+    }
+
+    
 
     //esta es la que los usuarios llamaran/ocuparan entonces tiene q ser simple , por eso llama internamente otra
     pub async fn inner_lookup(&self, name: DomainName,rtype: Rtype) -> Result<&'static str, &'static str>{

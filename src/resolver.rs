@@ -42,7 +42,9 @@ impl Resolver {
         let mut udp_buffer = [0u8; 512];
 
         loop {
+            println!("[LOOP]");
             let tcp_incoming = tcp_listener.accept();
+            
 
             tokio::select! {
                 tcp_result = tcp_incoming => {
@@ -60,7 +62,7 @@ impl Resolver {
                         let udp_data = udp_buffer[..size].to_vec(); // Clonar los datos en un nuevo Vec<u8>
                         let async_resolver = AsyncResolver::new(self.get_config());
                         tokio::spawn(async move {
-                            if let Err(err) = handle_udp_client(&udp_data, src, async_resolver).await {
+                            if let Err(err) = handle_udp_client(&udp_data, src, async_resolver,udp_socket).await {
                                 eprintln!("Error handling UDP client: {}", err);
                             }
                         });
@@ -71,8 +73,10 @@ impl Resolver {
     }
 
     //TODO: Funcion que hara solo una consulta
-    pub fn lookup(_domain_name: &str){
-        unimplemented!();
+    pub fn lookup(&self, dns_query:DnsMessage){
+        let async_resolver = AsyncResolver::new(self.get_config());
+        async_resolver.inner_lookup(dns_query);
+
     }
 
 }
@@ -84,25 +88,50 @@ impl Resolver {
         &self.config
     }
 }
+
 async fn handle_tcp_client(
-    tcp_stream: tokio::net::TcpStream,
+    mut tcp_stream: tokio::net::TcpStream,
     async_resolver: AsyncResolver,
 ) -> Result<(), Box<dyn Error>> {
+    println!("[TCP]");
     //TODO:transformar bytes a DNSMESSAGE
-    async_resolver.echo();
+    // async_resolver.inner_lookup();
+    let mut buf = Vec::with_capacity(4096);
+
+    // Try to read data, this may still fail with `WouldBlock`
+    // if the readiness event is a false positive.
+    match tcp_stream.try_read_buf(&mut buf) {
+        Ok(n) => {
+            println!("read {} bytes", n);
+        },
+        Err(e) => {
+            println!("[ERROR]");
+            return Err(e.into());
+        }
+    }
+
+    // Imprimir los bytes recibidos
+    println!("Bytes recibidos TCP: {:?}", buf);
     
     Ok(())
 }
 
 async fn handle_udp_client(
-    _udp_data: &[u8],
+    udp_data: &[u8],
     _src: std::net::SocketAddr,
     async_resolver: AsyncResolver,
+    udp_socket:UdpSocket
 ) -> Result<(), Box<dyn Error>> {
     //TODO:transformar bytes a DNSMESSAGE
-    async_resolver.echo();
+    println!("Bytes recibidos UDP: {:?}", udp_data);
+    // async_resolver.inner_lookup();
+
+
+
     Ok(())
 }
+
+
 
 
 #[cfg(test)]

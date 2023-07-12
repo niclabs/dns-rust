@@ -3,6 +3,7 @@ pub mod config;
 pub mod lookup;
 pub mod slist;
 
+use crate::dns_cache;
 use crate::domain_name::{DomainName, self};
 use crate::message::{DnsMessage};
 use crate::resolver::async_resolver::AsyncResolver;
@@ -19,20 +20,13 @@ use std::error::Error;
 use std::sync::Mutex;
 pub struct Resolver {
     config: ResolverConfig,
-    
 }
 
 impl Resolver {
     pub fn new(config: ResolverConfig) -> Self {
 
-        // let mut builder = runtime::Builder::new_current_thread();
-        // builder.enable_all();
-
-        // let runtime = builder.build().unwrap(); 
-
         let resolver = Resolver {
             config: config,
-            // runtime:Mutex::new(runtime),
         };
 
         resolver
@@ -113,21 +107,17 @@ async fn handle_udp_client(
 
 #[cfg(test)]
 mod resolver_test {
-
-    use crate::resolver::{slist::Slist, config::ResolverConfig};
-
-    use std::collections::HashMap;
-    use std::net::{IpAddr, Ipv4Addr};
-    use std::result;
-
     use super::*;
 
-    #[test]
-    fn example() {
+    #[tokio::test]
+    async fn example() {
         let conf_default = ResolverConfig::default();
         let resolver = Resolver::new(conf_default);
 
-        resolver.run();
-    
+        resolver.run().await; 
+
+        //Correr en otra consola 
+        //dig @127.0.0.1 -p 5333 uchile.cl +tcp
+        //dig @127.0.0.1 -p 5333 uchile.cl 
     }
 }

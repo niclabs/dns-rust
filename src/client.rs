@@ -220,7 +220,6 @@ mod client_test {
                 },
                 _ => {}
             }
-
         }        
     }
 

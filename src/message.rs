@@ -21,7 +21,21 @@ use rand::Rng;
 use std::vec::Vec;
 
 #[derive(Clone)]
-/// Structs that represents a dns message
+/// Structs that represents a DNS message.
+/// 
+/// ```text
+/// +---------------------+
+/// |        Header       |
+/// +---------------------+
+/// |       Question      | the question for the name server
+/// +---------------------+
+/// |        Answer       | RRs answering the question
+/// +---------------------+
+/// |      Authority      | RRs pointing toward an authority
+/// +---------------------+
+/// |      Additional     | RRs holding additional information
+/// +---------------------+
+/// ```
 pub struct DnsMessage {
     header: Header,
     question: Question,
@@ -31,11 +45,11 @@ pub struct DnsMessage {
 }
 
 impl DnsMessage {
-    ///```text
-    /// Creates a new query message
+    /// Creates a new query message.
     ///
     /// # Examples
     /// 
+    /// ```
     /// let dns_query_message =
     /// DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false);
     ///
@@ -87,10 +101,13 @@ impl DnsMessage {
 
         dns_message
     }
-    ///```text
-    /// Creates a new message
-    /// #Example
+    /// Creates a new message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let msg = DnsMessage::new();
+    /// ```
     pub fn new() -> Self {
         let msg = DnsMessage {
             header: Header::new(),
@@ -102,9 +119,12 @@ impl DnsMessage {
 
         msg
     }
-    ///```text
-    /// Creates a new response message
-    /// #Example
+
+    /// Creates a new response message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let new_response = DnsMessage::new_response_message(String::from("test.com"), String::from("NS"), String::from("IN"), 1, true, 1);
     /// let header = new_response.get_header();
     /// let id = header.get_id();
@@ -175,9 +195,12 @@ impl DnsMessage {
     //     msg
     // }
     
-    ///```text
-    /// Creates a new error message
-    /// #Example
+
+    /// Creates a new error message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let error_msg = DnsMessage::format_error_msg();
     /// let header = error_msg.get_header();
     /// let rcode = header.get_rcode();
@@ -197,9 +220,12 @@ impl DnsMessage {
         msg
     }
 
-    ///```text
-    /// Creates a new not found error message
-    /// #Example
+
+    /// Creates a new not found error message.
+    /// 
+    /// # Example
+    /// 
+    /// ``` 
     /// let error_msg = DnsMessage::data_not_found_error_msg();
     /// let header = error_msg.get_header();
     /// let rcode = header.get_rcode();
@@ -221,9 +247,12 @@ impl DnsMessage {
         msg
     }
 
-    ///```text
-    /// Creates a new axfr query message
-    /// #Example
+
+    /// Creates a new axfr query message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let axfr_msg = DnsMessage::axfr_query_message(String::from("test.com"));
     /// let header = axfr_msg.get_header();
     /// let id = header.get_id();
@@ -255,9 +284,12 @@ impl DnsMessage {
         msg
     }
 
-    ///```text
-    /// Creates a new not implemented error message
-    /// #Example
+
+    /// Creates a new not implemented error message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let error_msg = DnsMessage::not_implemented_msg();
     /// let header = error_msg.get_header();
     /// let rcode = header.get_rcode();
@@ -277,9 +309,11 @@ impl DnsMessage {
         msg
     }
 
-    ///```text
-    /// Creates a DnsMessage from an array of bytes
-    /// #Example
+    /// Creates a DnsMessage from an array of bytes.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let bytes = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 ,0];
     /// let msg = DnsMessage::from_bytes(&bytes);
     /// let header = msg.get_header();
@@ -418,9 +452,11 @@ impl DnsMessage {
         Ok(dns_message)
     }
 
-    ///```text
-    /// Creates a DnsMessage from an array of bytes
-    /// #Example
+    /// Creates a DnsMessage from an array of bytes.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let bytes = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 ,0];
     /// let msg = DnsMessage::from_bytes(&bytes);
     /// let header = msg.get_header();
@@ -482,9 +518,11 @@ impl DnsMessage {
         dns_msg_bytes
     }
 
-    ///```text
-    /// Updates the header counters
-    /// #Example
+    /// Updates the header counters.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut header = Header::new();
     /// header.set_qdcount(1);
@@ -517,9 +555,11 @@ impl DnsMessage {
         self.set_header(header);
     }
 
-    ///```text
-    /// Adds a answers to the message
-    /// #Example
+    /// Adds a answers to the message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut rr = ResourceRecord::new();
     /// rr.set_name("www.example.com".to_string());
@@ -540,9 +580,11 @@ impl DnsMessage {
         self.set_answer(msg_answers);
     }
 
-    ///```text
-    /// Adds a authorities to the message
-    /// #Example
+    /// Adds a authorities to the message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut rr = ResourceRecord::new();
     /// rr.set_name("www.example.com".to_string());
@@ -563,9 +605,11 @@ impl DnsMessage {
         self.set_answer(msg_authorities);
     }
 
-    ///```text
-    /// Adds a additionals to the message
-    /// #Example
+    /// Adds a additionals to the message.
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut rr = ResourceRecord::new();
     /// rr.set_name("www.example.com".to_string());
@@ -577,9 +621,12 @@ impl DnsMessage {
         self.set_answer(msg_additionals);
     }
 
-    ///```text
+
     /// Print the information of DNS message
-    /// #Example
+    /// 
+    /// # Example
+    /// 
+    /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut header = Header::new();
     /// header.set_qdcount(1);
@@ -749,32 +796,32 @@ impl DnsMessage {
 
 // Getters
 impl DnsMessage {
-    // Gets the header field
+    /// Gets the header field.
     pub fn get_header(&self) -> Header {
         self.header.clone()
     }
 
-    // Gets the question field
+    /// Gets the question field.
     pub fn get_question(&self) -> Question {
         self.question.clone()
     }
 
-    // Gets the answer field
+    /// Gets the answer field.
     pub fn get_answer(&self) -> Vec<ResourceRecord> {
         self.answer.clone()
     }
 
-    // Gets the authority field
+    /// Gets the authority field.
     pub fn get_authority(&self) -> Vec<ResourceRecord> {
         self.authority.clone()
     }
 
-    // Gets the additional field
+    /// Gets the additional field.
     pub fn get_additional(&self) -> Vec<ResourceRecord> {
         self.additional.clone()
     }
 
-    // Gets the id from the header
+    /// Gets the id from the header.
     pub fn get_query_id(&self) -> u16 {
         self.get_header().get_id()
     }
@@ -782,32 +829,32 @@ impl DnsMessage {
 
 // Setters
 impl DnsMessage {
-    // Sets the header field with a new Header
+    /// Sets the header field with a new Header.
     pub fn set_header(&mut self, header: Header) {
         self.header = header;
     }
 
-    // Sets the question field with a new Question
+    /// Sets the question field with a new Question.
     pub fn set_question(&mut self, question: Question) {
         self.question = question;
     }
 
-    // Sets the answer field with a new Vec<ResourceRecord>
+    /// Sets the answer field with a new `Vec<ResourceRecord>`.
     pub fn set_answer(&mut self, answer: Vec<ResourceRecord>) {
         self.answer = answer;
     }
 
-    // Sets the authority field with a new Vec<ResourceRecord>
+    /// Sets the authority field with a new `Vec<ResourceRecord>`.
     pub fn set_authority(&mut self, authority: Vec<ResourceRecord>) {
         self.authority = authority;
     }
 
-    // Sets the additional field with a new Vec<ResourceRecord>
+    /// Sets the additional field with a new `Vec<ResourceRecord>`.
     pub fn set_additional(&mut self, additional: Vec<ResourceRecord>) {
         self.additional = additional;
     }
 
-    // Sets the id from the header with new value
+    /// Sets the id from the header with new value.
     pub fn set_query_id(&mut self, id: u16) {
         let mut header = self.get_header();
         header.set_id(id);

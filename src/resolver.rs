@@ -19,7 +19,7 @@ use std::error::Error;
 use std::sync::Mutex;
 pub struct Resolver {
     config: ResolverConfig,
-    // runtime:Mutex<Runtime>
+    
 }
 
 impl Resolver {
@@ -38,16 +38,17 @@ impl Resolver {
         resolver
     }
 
-    pub async fn run(&self) -> Result<(), Box<dyn Error>> {
+    pub async fn run(&self)  {
+        println!("RUNNING");
         let addr:std::net::SocketAddr = self.get_config().get_addr();
 
         //TODO: poner addr
-        let tcp_listener = TcpListener::bind("127.0.0.1:5333").await?;
-        let udp_socket = UdpSocket::bind("127.0.0.1:5333").await?;
+        let tcp_listener = TcpListener::bind("127.0.0.1:5333").await.unwrap();
+        let udp_socket = UdpSocket::bind("127.0.0.1:5333").await.unwrap();
         let mut udp_buffer = [0u8; 512];
 
         loop {
-            let mut tcp_incoming = tcp_listener.accept();
+            let tcp_incoming = tcp_listener.accept();
 
             tokio::select! {
                 tcp_result = tcp_incoming => {
@@ -73,7 +74,6 @@ impl Resolver {
                 }
             }
         }
-        // self.runtime.lock()?.block_on(udp_result|tcp_result);
     }
 
     //TODO: Funcion que hara solo una consulta
@@ -83,17 +83,19 @@ impl Resolver {
 
 }
 
+// Getters
 impl Resolver {
-    // Getters
+    
     fn get_config(&self) -> &ResolverConfig {
         &self.config
     }
 }
 async fn handle_tcp_client(
-    _tcp_stream: tokio::net::TcpStream,
-    _async_resolver: AsyncResolver,
+    tcp_stream: tokio::net::TcpStream,
+    async_resolver: AsyncResolver,
 ) -> Result<(), Box<dyn Error>> {
-    // Maneja la comunicación TCP echo
+    //TODO:transformar bytes a DNSMESSAGE
+    async_resolver.echo();
     
     Ok(())
 }
@@ -101,9 +103,10 @@ async fn handle_tcp_client(
 async fn handle_udp_client(
     _udp_data: &[u8],
     _src: std::net::SocketAddr,
-    _async_resolver: AsyncResolver,
+    async_resolver: AsyncResolver,
 ) -> Result<(), Box<dyn Error>> {
-    // Maneja la comunicación UDP echo
+    //TODO:transformar bytes a DNSMESSAGE
+    async_resolver.echo();
     Ok(())
 }
 
@@ -121,20 +124,10 @@ mod resolver_test {
 
     #[test]
     fn example() {
-        let resolver_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
-        // let mut config = ResolverConfig::new(None, resolver_addr);
-
         let conf_default = ResolverConfig::default();
-
         let resolver = Resolver::new(conf_default);
 
         resolver.run();
-
-        // tokio::spawn(async move {
-        //     resolver.run().await;
-        // });
-
-        // let response = resolver.lookup("example.com", "A").unwrap();
-
-        }
+    
+    }
 }

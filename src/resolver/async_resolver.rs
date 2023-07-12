@@ -9,6 +9,7 @@ pub struct AsyncResolver{
     cache: DnsCache,
     use_cache: bool,
     recursive_available: bool,
+    // runtime:Mutex<Runtime> //FIXME: obliga correr fun async
 }
 
 impl AsyncResolver{
@@ -22,10 +23,9 @@ impl AsyncResolver{
         async_resolver
     } 
 
-    pub fn run(){
-        
+    pub fn echo(&self){
+        println!("ECHO SERVER");
     }
-
     
 
     //esta es la que los usuarios llamaran/ocuparan entonces tiene q ser simple , por eso llama internamente otra

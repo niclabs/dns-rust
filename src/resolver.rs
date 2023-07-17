@@ -62,7 +62,8 @@ impl Resolver {
                         let udp_data = udp_buffer[..size].to_vec(); // Clonar los datos en un nuevo Vec<u8>
                         let async_resolver = AsyncResolver::new(self.get_config());
                         tokio::spawn(async move {
-                            if let Err(err) = handle_udp_client(&udp_data, src, async_resolver,udp_socket).await {
+
+                            if let Err(err) = handle_udp_client(&udp_data, src, async_resolver).await {
                                 eprintln!("Error handling UDP client: {}", err);
                             }
                         });
@@ -119,8 +120,7 @@ async fn handle_tcp_client(
 async fn handle_udp_client(
     udp_data: &[u8],
     _src: std::net::SocketAddr,
-    async_resolver: AsyncResolver,
-    udp_socket:UdpSocket
+    async_resolver: AsyncResolver
 ) -> Result<(), Box<dyn Error>> {
     //TODO:transformar bytes a DNSMESSAGE
     println!("Bytes recibidos UDP: {:?}", udp_data);

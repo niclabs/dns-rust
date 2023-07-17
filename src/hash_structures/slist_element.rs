@@ -1,9 +1,9 @@
-
+use std::net::{SocketAddr,IpAddr,Ipv4Addr};
 /// This struct is used to represente an element of the slist
 #[derive(Debug)]
 pub struct SlistElement{
     domain_name: String,
-    ip_address: String,
+    ip_address: IpAddr,
     response_time: u16,
 }
 
@@ -16,7 +16,7 @@ impl SlistElemen{
     /// ```
     /// # Arguments
     /// * `domain_name` - A String that represents the domain name of the slist element
-    /// * `ip_address` - A String that represents the ip address of the slist element
+    /// * `ip_address` - A IpAddr that represents the ip address of the slist element
     /// * `response_time` - A u16 that represents the response time of the slist element
     pub fn new(domain_name: String, ip_address: String, response_time: u16) -> SlistElement{
         SlistElement{
@@ -37,7 +37,7 @@ impl SlistElement{
         self.response_time.clone()
     }
 
-    pub fn get_ip_address(&self) -> String{
+    pub fn get_ip_address(&self) -> IpAddr{
         self.ip_address.clone()
     }
 

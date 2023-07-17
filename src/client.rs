@@ -166,6 +166,8 @@ mod client_test {
     use crate::message::{DnsMessage};
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::Rdata;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
     #[test]
@@ -182,9 +184,19 @@ mod client_test {
         let domain_name= "example.com";
         let qtype = "A"; 
         let qclass= "IN";
-        let mut response = udp_client.query(domain_name, qtype, qclass).to_owned();
+        let response = udp_client.query(domain_name, qtype, qclass).to_owned();
 
-        response.print_dns_message()
+        let expected_ip: [u8; 4] = [93, 184, 216, 34];
+        let answers = response.get_answer();
+        for answer in answers {
+            let a_rdata = answer.get_rdata();
+            match a_rdata {
+                Rdata::SomeARdata(val) => {
+                    assert_eq!(val.get_address(), expected_ip)
+                },
+                _ => {}
+            }
+        }
     }
 
     #[test]
@@ -206,11 +218,18 @@ mod client_test {
         let domain_name= "example.com";
         let qtype = "A"; 
         let qclass= "IN";
-        let mut response = tcp_client.query(domain_name, qtype, qclass).to_owned();
-
-        response.print_dns_message()
-        //sends query
-        
+        let response = tcp_client.query(domain_name, qtype, qclass).to_owned();
+        let expected_ip: [u8; 4] = [93, 184, 216, 34];
+        let answers = response.get_answer();
+        for answer in answers {
+            let a_rdata = answer.get_rdata();
+            match a_rdata {
+                Rdata::SomeARdata(val) => {
+                    assert_eq!(val.get_address(), expected_ip)
+                },
+                _ => {}
+            }
+        }        
     }
 
     // Constructor test

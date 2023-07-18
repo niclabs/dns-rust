@@ -8,6 +8,8 @@
 use crate::message::{DnsMessage};
 use std::net::{IpAddr};
 use std::time::Duration;
+use std::io::Error as IoError;
+
 pub trait ClientConnection: Sized {//: 'static + Sized + Send + Sync + Unpin {
 
     //creates a ClientConecction TCP or UDP 
@@ -15,7 +17,7 @@ pub trait ClientConnection: Sized {//: 'static + Sized + Send + Sync + Unpin {
         timeout:Duration) -> Self;
     
     /// function sends query to resolver
-    fn send(&self, dns_query:DnsMessage) -> DnsMessage;
+    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, IoError> ;
 
     //FIXME: iran aqui los geters y seters? la firma
 }

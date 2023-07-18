@@ -3,6 +3,8 @@ use crate::message::DnsMessage;
 
 use std::net::{UdpSocket,SocketAddr, IpAddr};
 use std::time::Duration;
+use std::io::Error as IoError;
+use std::io::ErrorKind;
 
 
 pub struct  ClientUDPConnection {
@@ -24,7 +26,7 @@ impl ClientConnection for ClientUDPConnection {
     }
 
     /// TODO: funcion enviar
-    fn send(&self, dns_query:DnsMessage) -> DnsMessage { 
+    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, IoError> { 
         // TODO: Agregar resultado error 
         println!("[SEND UDP]");
 
@@ -34,38 +36,41 @@ impl ClientConnection for ClientUDPConnection {
 
         let dns_query_bytes = dns_query.to_bytes(); 
 
-        let socket_udp:UdpSocket = UdpSocket::bind("0.0.0.0:0") // FIXME:
-                                    .unwrap_or_else(|error| {
-                                        panic!("Problem Socket UDP {:?}", error);
-                                    });
+        let socket_udp:UdpSocket = match UdpSocket::bind("0.0.0.0:0"){
+            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not bind socket {}", e))),
+            Ok(socket_udp) => socket_udp , 
+        };                          
         
-        // FIXME: pensar si timeout sea tipo Option<Duration>
+        //set read timeout
         match socket_udp.set_read_timeout(Some(timeout)) {
-            Err(_) => panic!("Error setting read timeout for socket"),
+            Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error setting read timeout for socket {}", e))),
             Ok(_) => (),
         }
 
-        socket_udp
-            .send_to(&dns_query_bytes, server_addr)
-            .unwrap_or_else(|e| panic!("Error send {}",e));
+        match socket_udp.send_to(&dns_query_bytes, server_addr){
+            Err(e) =>return Err(IoError::new(ErrorKind::Other, format!("Error: could not send {}", e))),
+            Ok(_) => (),
+        };
         
         println!("[SEND UDP] query sent");
 
         // TODO: caso en que se reciven truncados
         let mut msg: [u8;512] = [0;512];
-        socket_udp
-            .recv_from(&mut msg)
-            .unwrap_or_else(|e| panic!("Error recv {}",e));
+        match socket_udp.recv_from(&mut msg){
+            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not read {}", e))),
+            Ok(_) => (),
+        };
+        
 
         let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
             Ok(response) => response,
-            Err(_) => panic!("Error parsing DNS query"),
+            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not create dns message {}", e))),
         };
         // println!("[SEND UDP] {:?}", msg);
         
         drop(socket_udp);
         
-        return response_dns;
+        return Ok(response_dns);
     }
 
 }

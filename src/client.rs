@@ -4,14 +4,10 @@ pub mod tcp_connection;
 pub mod udp_connection;
 
 use crate::client::client_connection::ClientConnection;
-use crate::message::{DnsMessage};
-use crate::message::class_rclass::Rclass;
-use crate::message::type_rtype::Rtype;
-use std::net::{IpAddr,Ipv4Addr,UdpSocket,SocketAddr};
+use crate::message::DnsMessage;
 
 use rand::{thread_rng, Rng};
 /*
-TODO: send tcp 
 TODO: caso para recibir truncados (no lo hace ahora)
  */
 
@@ -106,7 +102,10 @@ impl <T: ClientConnection> Client<T> {
         let conn: &T = &self.get_conn();
 
         //conn is in charge of send query
-        let dns_response:DnsMessage = conn.send(client_query);
+        let dns_response:DnsMessage = match conn.send(client_query) {
+            Ok(dns_message) => dns_message,
+            Err(e) => panic!("Error: {}",e),
+        };
 
         dns_response
     }
@@ -124,7 +123,7 @@ impl <T: ClientConnection> Client<T> {
     /// assert_eq!(dns_response.get_question().get_qtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
     pub fn query(&mut self, domain_name: &str, qtype: &str, qclass: &str) -> DnsMessage {
-        let dns_message = self.create_dns_query(domain_name, qtype, qclass);
+        let _dns_message = self.create_dns_query(domain_name, qtype, qclass);
         
         let response = self.send_query();
 
@@ -133,6 +132,7 @@ impl <T: ClientConnection> Client<T> {
 
 }
 
+#[allow(dead_code)]
 //Getters
 impl <T: ClientConnection> Client<T> {
 
@@ -145,6 +145,7 @@ impl <T: ClientConnection> Client<T> {
     }
 }
 
+#[allow(dead_code)]
 //Setters
 impl <T: ClientConnection> Client<T>{
 
@@ -162,11 +163,9 @@ impl <T: ClientConnection> Client<T>{
 
 #[cfg(test)]
 mod client_test {
-    use std::{net::{SocketAddr, IpAddr, Ipv4Addr}, time::Duration};
-    use crate::message::{DnsMessage};
+    use std::{net::{IpAddr, Ipv4Addr}, time::Duration};
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
-    use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
@@ -274,9 +273,7 @@ mod client_test {
         assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
     }
 
-    //FIXME: Query timeout tcp
     #[test]
-    #[ignore = "No timeout"]
     #[should_panic]
     fn query_timeout_tcp(){
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
@@ -290,9 +287,7 @@ mod client_test {
         new_client.send_query();
     }
 
-    //FIXME: Query timeout tcp
     #[test]
-    #[ignore = "No timeout"]
     #[should_panic]
     fn query_timeout_udp(){
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
@@ -332,6 +327,7 @@ mod client_test {
         let mut response = new_client.query("www.wrong-domain.cl", "A", "IN");
 
         response.print_dns_message();
+        
     }
 
     //Wrong domain that haves a number at the start

@@ -7,7 +7,7 @@ pub struct SlistElement{
     response_time: u16,
 }
 
-impl SlistElemen{
+impl SlistElement{
     /// function to create a new SlistElement
     /// # Example
     /// ```

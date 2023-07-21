@@ -1,13 +1,14 @@
+use crate::domain_name::DomainName;
 use std::net::{SocketAddr,IpAddr,Ipv4Addr};
 /// This struct is used to represente an element of the slist
 #[derive(Debug)]
 pub struct SlistElement{
-    domain_name: String,
+    domain_name:  DomainName,
     ip_address: IpAddr,
     response_time: u16,
 }
 
-impl SlistElement{
+impl SlistElemen{
     /// function to create a new SlistElement
     /// # Example
     /// ```
@@ -15,12 +16,12 @@ impl SlistElement{
     /// 
     /// ```
     /// # Arguments
-    /// * `domain_name` - A String that represents the domain name of the slist element
+    /// * `domain_name` - A DomainName that represents the domain name of the slist element
     /// * `ip_address` - A IpAddr that represents the ip address of the slist element
     /// * `response_time` - A u16 that represents the response time of the slist element
-    pub fn new(domain_name: String, ip_address: String, response_time: u16) -> SlistElement{
+    pub fn new(domain_name: DomainName, ip_address: IpAddr, response_time: u16) -> SlistElement{
         SlistElement{
-            domain_name: domain_name,
+            domain_name: DomainName,
             ip_address: ip_address,
             response_time: response_time,
         }
@@ -29,7 +30,7 @@ impl SlistElement{
     /// getters and setters for the struct
 impl SlistElement{
 
-    pub fn get_domain_name(&self) -> String{
+    pub fn get_domain_name(&self) -> DomainName{
         self.domain_name.clone()
     }
 
@@ -41,15 +42,15 @@ impl SlistElement{
         self.ip_address.clone()
     }
 
-    pub fn set_domain_name(&mut self, domain_name: String){
-        self.domain_name = domain_name;
+    pub fn set_domain_name(&mut self, domain_name: DomainName){
+        self.domain_name = DomainName
     }
 
     pub fn set_response_time(&mut self, response_time: u16){
         self.response_time = response_time;
     }
 
-    pub fn set_ip_address(&mut self, ip_address: String){
+    pub fn set_ip_address(&mut self, ip_address: IpAddr){
         self.ip_address = ip_address;
     }
 }

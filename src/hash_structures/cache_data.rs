@@ -4,6 +4,7 @@ use crate::message::type_rtype::Rtype;
 use crate::rr_cache::RRCache;
 use crate::host_data;
 use std::collections::HashMap;
+use crate::domain_name::DomainName;
 
 ///type to define the rtype of the cache data
 type rtype = Rtype;
@@ -39,10 +40,10 @@ impl CacheData{
     /// ```
     /// # Arguments
     /// * `rtype` - A Rtype that represents the rtype of the cache data
-    /// * `domain_name` - A String that represents the domain name of the cache data
+    /// * `domain_name` - A DomainName that represents the domain name of the cache data
     /// * `rr_cache` - A RRCache that represents the rr_cache of the cache data
 
-    pub fn add_to_cache_data(&mut self, rtype: Rtype, domain_name: String, rr_cache:RRCache){
+    pub fn add_to_cache_data(&mut self, rtype: Rtype, domain_name: DomainName, rr_cache:RRCache){
         let mut cache_data = self.get_cache_data();
         rr_type_str = Rtype::from_rtype_to_str(rtype);
         if let Some(x) = cache_data.get_mut(&rr_type_str) { 
@@ -67,9 +68,9 @@ impl CacheData{
     /// cache_data.remove_from_cache_data(String::from("uchile.cl"), Rtype::A);
     /// ```
     /// # Arguments
-    /// * `domain_name` - A String that represents the domain name of the cache data
+    /// * `domain_name` - A DomainName that represents the domain name of the cache data
     /// * `rtype` - A Rtype that represents the rtype of the cache data
-    pub fn remove_from_cache_data(&mut self, domain_name: String, rtype: Rtype){
+    pub fn remove_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype){
         let mut cache_data = self.get_cache_data();
         rr_type_str = Rtype::from_rtype_to_str(rtype);
         if let Some(x) = cache_data.get_mut(&rr_type_str) {

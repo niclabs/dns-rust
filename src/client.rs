@@ -5,6 +5,7 @@ pub mod udp_connection;
 
 use crate::client::client_connection::ClientConnection;
 use crate::message::DnsMessage;
+use crate::domain_name::DomainName;
 
 use rand::{thread_rng, Rng};
 /*
@@ -59,7 +60,7 @@ impl <T: ClientConnection> Client<T> {
     /// ```    
     pub fn create_dns_query(
         &mut self,
-        domain_name: &str,
+        domain_name: DomainName,
         qtype: &str,
         qclass: &str,
     ) -> DnsMessage {
@@ -71,7 +72,7 @@ impl <T: ClientConnection> Client<T> {
 
         // Create query msg
         let client_query: DnsMessage = DnsMessage::new_query_message(
-            domain_name.to_string(),
+            domain_name.get_name(),
             qtype, 
             qclass,
             0,
@@ -122,7 +123,7 @@ impl <T: ClientConnection> Client<T> {
     /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
     /// assert_eq!(dns_response.get_question().get_qtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
-    pub fn query(&mut self, domain_name: &str, qtype: &str, qclass: &str) -> DnsMessage {
+    pub fn query(&mut self, domain_name: DomainName, qtype: &str, qclass: &str) -> DnsMessage {
         let _dns_message = self.create_dns_query(domain_name, qtype, qclass);
         
         let response = self.send_query();
@@ -167,6 +168,7 @@ mod client_test {
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
     use crate::message::rdata::Rdata;
+    use crate::domain_name::DomainName;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
     #[test]
@@ -178,9 +180,12 @@ mod client_test {
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp); //se crea un cliente vacio?
 
+        let mut domain_name = DomainName::new();
+
+
 
         // sends query
-        let domain_name= "example.com";
+        domain_name.set_name(String::from("test.test2.com."));
         let qtype = "A"; 
         let qclass= "IN";
         let response = udp_client.query(domain_name, qtype, qclass).to_owned();
@@ -214,7 +219,8 @@ mod client_test {
         let mut tcp_client = Client::new(conn_tcp);
 
         //create query
-        let domain_name= "example.com";
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.test2.com."));
         let qtype = "A"; 
         let qclass= "IN";
         let response = tcp_client.query(domain_name, qtype, qclass).to_owned();
@@ -251,7 +257,9 @@ mod client_test {
 
         let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_udp);
-        let dns_query = new_client.create_dns_query("www.test.com", "A", "IN");
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("www.test.com"));
+        let dns_query = new_client.create_dns_query(domain_name, "A", "IN");
 
         assert_eq!(dns_query.get_question().get_qtype(), Qtype::A);
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
@@ -266,7 +274,9 @@ mod client_test {
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
-        let dns_query = new_client.create_dns_query("www.test.com", "A", "IN");
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("www.test.com"));
+        let dns_query = new_client.create_dns_query(domain_name, "A", "IN");
 
         assert_eq!(dns_query.get_question().get_qtype(), Qtype::A);
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
@@ -281,8 +291,9 @@ mod client_test {
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
-
-        new_client.create_dns_query("www.u-cursos.cl", "A", "IN");
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("www.u-cursos.cl"));
+        new_client.create_dns_query(domain_name, "A", "IN");
 
         new_client.send_query();
     }
@@ -295,9 +306,9 @@ mod client_test {
 
         let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_udp);
-
-        new_client.create_dns_query("www.u-cursos.cl", "A", "IN");
-
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("www.u-cursos.cl"));
+        new_client.create_dns_query(domain_name, "A", "IN");
         new_client.send_query();
     }
     // Querys with error
@@ -311,7 +322,11 @@ mod client_test {
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
-        let mut response = new_client.query("?www.u-cursos.cl", "A", "IN");
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("?www.u-cursos.cl"));
+        let domain_name_copy =domain_name.clone();
+        new_client.create_dns_query(domain_name, "A", "IN");
+        let mut response = new_client.query(domain_name_copy, "A", "IN");
 
         response.print_dns_message();
     }
@@ -324,7 +339,9 @@ mod client_test {
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
-        let mut response = new_client.query("www.wrong-domain.cl", "A", "IN");
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("www.wrong-domain.cl"));
+        let mut response = new_client.query(domain_name, "A", "IN");
 
         response.print_dns_message();
         
@@ -339,7 +356,9 @@ mod client_test {
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
-        let mut response = new_client.query("2www.u-cursos.cl", "A", "IN");
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("2www.u-cursos.cl"));
+        let mut response = new_client.query(domain_name, "A", "IN");
 
         response.print_dns_message();
     }

@@ -56,80 +56,82 @@ impl SlistElement{
 }
 
 #[cfg(test)]
-use std::net::{SocketAddr,IpAddr,Ipv4Addr};
+mod slist_element_test{
+    use std::net::{SocketAddr,IpAddr,Ipv4Addr};
+    
+    //Constructor Test
+    fn new_slist_element(){
+        let domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-//Constructor Test
-fn new_slist_element(){
-    let domain_name = DomainName::new();
-    domain_name.set_name(String::from("uchile.cl"));
-    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+        assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
+        assert_eq!(Ok(slist_element.get_ip_address()), "127.0.0.1".parse());
+        assert_eq!(slist_element.get_response_time(), 4);
+    }
 
-    assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
-    assert_eq!(Ok(slist_element.get_ip_address()), "127.0.0.1".parse());
-    assert_eq!(slist_element.get_response_time(), 4);
-}
+    //Getters and Setters Test
+    fn get_address(){
+        let domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-//Getters and Setters Test
-fn get_address(){
-    let domain_name = DomainName::new();
-    domain_name.set_name(String::from("uchile.cl"));
-    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+        let address = slist_element.get_ip_address();
 
-    let address = slist_element.get_ip_address();
+        assert_eq!(Ok(address), "127.0.0.1".parse());
+    }
 
-    assert_eq!(Ok(address), "127.0.0.1".parse());
-}
+    fn set_ip_address(){
+        let domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-fn set_ip_address(){
-    let domain_name = DomainName::new();
-    domain_name.set_name(String::from("uchile.cl"));
-    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+        assert_eq!(Ok(slist_element.get_address()), "127.0.0.1".parse());
 
-    assert_eq!(Ok(slist_element.get_address()), "127.0.0.1".parse());
+        slist_element.set_ip_address(IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
 
-    slist_element.set_ip_address(IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(Ok(slist_element.get_ip_address()), "192.168.0.1".parse());
+    }
 
-    assert_eq!(Ok(slist_element.get_ip_address()), "192.168.0.1".parse());
-}
+    fn get_response_time(){
+        let domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-fn get_response_time(){
-    let domain_name = DomainName::new();
-    domain_name.set_name(String::from("uchile.cl"));
-    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+        assert_eq!(slist_element.get_response_time(), 4);
+    }
 
-    assert_eq!(slist_element.get_response_time(), 4);
-}
+    fn set_response_time(){
+        let domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-fn set_response_time(){
-    let domain_name = DomainName::new();
-    domain_name.set_name(String::from("uchile.cl"));
-    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+        assert_eq!(slist_element.get_response_time(), 4);
 
-    assert_eq!(slist_element.get_response_time(), 4);
+        slist_element.set_response_time(5);
 
-    slist_element.set_response_time(5);
+        assert_eq!(slist_element.get_response_time(), 5);
+    }
 
-    assert_eq!(slist_element.get_response_time(), 5);
-}
+    fn get_domain_name(){
+        let domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-fn get_domain_name(){
-    let domain_name = DomainName::new();
-    domain_name.set_name(String::from("uchile.cl"));
-    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+        assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
+    }
 
-    assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
-}
+    fn set_domain_name(){
+        let domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-fn set_domain_name(){
-    let domain_name = DomainName::new();
-    domain_name.set_name(String::from("uchile.cl"));
-    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+        assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
 
-    assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
+        let domain_name_2 = DomainName::new();
+        domain_name_2.set_name(String::from("google.com"));
+        slist_element.set_domain_name(domain_name_2);
 
-    let domain_name_2 = DomainName::new();
-    domain_name_2.set_name(String::from("google.com"));
-    slist_element.set_domain_name(domain_name_2);
-
-    assert_eq!(slist_element.get_domain_name().get_name(), String::from("google.com"));
+        assert_eq!(slist_element.get_domain_name().get_name(), String::from("google.com"));
+    }
 }

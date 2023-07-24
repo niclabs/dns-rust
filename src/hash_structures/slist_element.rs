@@ -58,7 +58,8 @@ impl SlistElement{
 #[cfg(test)]
 mod slist_element_test{
     use std::net::{SocketAddr,IpAddr,Ipv4Addr};
-    
+
+    #[test]
     //Constructor Test
     fn new_slist_element(){
         let domain_name = DomainName::new();
@@ -70,6 +71,7 @@ mod slist_element_test{
         assert_eq!(slist_element.get_response_time(), 4);
     }
 
+    #[test]
     //Getters and Setters Test
     fn get_address(){
         let domain_name = DomainName::new();
@@ -81,6 +83,7 @@ mod slist_element_test{
         assert_eq!(Ok(address), "127.0.0.1".parse());
     }
 
+    #[test]
     fn set_ip_address(){
         let domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
@@ -93,6 +96,7 @@ mod slist_element_test{
         assert_eq!(Ok(slist_element.get_ip_address()), "192.168.0.1".parse());
     }
 
+    #[test]
     fn get_response_time(){
         let domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
@@ -101,6 +105,7 @@ mod slist_element_test{
         assert_eq!(slist_element.get_response_time(), 4);
     }
 
+    #[test]
     fn set_response_time(){
         let domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
@@ -113,6 +118,7 @@ mod slist_element_test{
         assert_eq!(slist_element.get_response_time(), 5);
     }
 
+    #[test]
     fn get_domain_name(){
         let domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
@@ -121,6 +127,7 @@ mod slist_element_test{
         assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
     }
 
+    #[test]
     fn set_domain_name(){
         let domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));

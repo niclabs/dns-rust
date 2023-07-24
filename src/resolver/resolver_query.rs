@@ -6,6 +6,7 @@ use crate::message::class_rclass::Rclass;
 use crate::message::type_rtype::Rtype;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
+use crate::domain_name::DomainName;
 use crate::resolver::slist::Slist;
 use crate::resolver::Resolver;
 
@@ -1435,7 +1436,7 @@ impl ResolverQuery {
 // Others utils
 impl ResolverQuery {
     // Add a new element to cache
-    pub fn add_to_cache(&mut self, domain_name: String, resource_record: ResourceRecord) {
+    pub fn add_to_cache(&mut self, domain_name: DomainName, resource_record: ResourceRecord) {
         println!(
             "-------------- Adding to cache: {} ------------------------",
             domain_name.clone()
@@ -1455,7 +1456,7 @@ impl ResolverQuery {
     }
 
     // Add a new element to cache
-    pub fn remove_from_cache(&mut self, domain_name: String, resource_record: ResourceRecord) {
+    pub fn remove_from_cache(&mut self, domain_name: DomainName, resource_record: ResourceRecord) {
         let mut cache = self.get_cache();
         let rr_type = resource_record.get_string_type();
 
@@ -1473,7 +1474,7 @@ impl ResolverQuery {
 
     pub fn exist_cache_data(
         &mut self,
-        domain_name: String,
+        domain_name: DomainName,
         resource_record: ResourceRecord,
     ) -> bool {
         let mut cache = self.get_cache();
@@ -4305,8 +4306,11 @@ mod resolver_query_tests {
          let mut rr2 = rr.clone();
          rr2.set_class(Rclass::CS);
          rr2.set_ttl(2);
-         let domain_name = String::from("127.0.0.0");
-         let domain_name2 = String::from("127.0.1.0");
+         let mut domain_name = DomainName::new();
+         domain_name.set_name("127.0.0.0".to_string());
+         let mut domain_name2 = DomainName::new();
+         domain_name.set_name("127.0.1.0".to_string());
+         
          resolver_query.add_to_cache(domain_name.clone(), rr.clone());
          resolver_query.add_to_cache(domain_name2.clone(), rr2.clone());
        
@@ -4542,7 +4546,8 @@ mod resolver_query_tests {
         let rdata = Rdata::SomeARdata(a_rdata);
         let mut rr = ResourceRecord::new(rdata);
         rr.set_type_code(Rtype::A);
-        let domain_name = String::from("127.0.0.0");
+        let mut domain_name = DomainName::new();
+        domain_name.set_name("127.0.0.0".to_string());
         resolver_query.add_to_cache(domain_name.clone(), rr.clone());
 
         resolver_query.set_rd(true);

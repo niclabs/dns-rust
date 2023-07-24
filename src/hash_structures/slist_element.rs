@@ -60,16 +60,20 @@ use std::net::{SocketAddr,IpAddr,Ipv4Addr};
 
 //Constructor Test
 fn new_slist_element(){
-    let slist_element = SlistElement::new(String::from("uchile.cl"), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+    let domain_name = DomainName::new();
+    domain_name.set_name(String::from("uchile.cl"));
+    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
-    assert_eq!(slist_element.get_domain_name(), String::from("uchile.cl"));
+    assert_eq!(slist_element.get_domain_name().get_name(), String::from("uchile.cl"));
     assert_eq!(Ok(slist_element.get_ip_address()), "127.0.0.1".parse());
     assert_eq!(slist_element.get_response_time(), 4);
 }
 
 //Getters and Setters Test
 fn get_address(){
-    let slist_element = SlistElement::new(String::from("uchile.cl"), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+    let domain_name = DomainName::new();
+    domain_name.set_name(String::from("uchile.cl"));
+    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
     let address = slist_element.get_ip_address();
 

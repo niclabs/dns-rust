@@ -155,4 +155,26 @@ mod tcp_connection_test{
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
     }
 
+    #[test]
+    fn get_timeout(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
+    }
+
+    #[test]
+    fn set_timeout(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
+
+        _conn_new.set_timeout(Duration::from_secs(200));
+
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(200));
+    }
+
 }

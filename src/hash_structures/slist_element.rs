@@ -67,4 +67,11 @@ fn new_slist_element(){
     assert_eq!(slist_element.get_response_time(), 4);
 }
 
+//Getters and Setters Test
+fn get_address(){
+    let slist_element = SlistElement::new(String::from("uchile.cl"), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
 
+    let address = slist_element.get_ip_address();
+
+    assert_eq!(Ok(address), "127.0.0.1".parse());
+}

@@ -76,3 +76,17 @@ impl HostData{
         self.host_hash = host_hash;
     }
 }
+
+#[cfg(test)]
+mod host_data_test{
+    use crate::rr_cache::RRCache;
+    use std::collections::HashMap;
+
+    //Contructor test
+    #[test]
+    fn constructor_test(){
+        let host_data = HostData::new();
+        
+        assert_eq!(host_data.host_hash.is_empty(), true);
+    }
+}

@@ -99,3 +99,17 @@ fn get_response_time(){
 
     assert_eq!(slist_element.get_response_time(), 4);
 }
+
+fn set_response_time(){
+    let domain_name = DomainName::new();
+    domain_name.set_name(String::from("uchile.cl"));
+    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+
+    assert_eq!(slist_element.get_response_time(), 4);
+
+    slist_element.set_response_time(5);
+
+    assert_eq!(slist_element.get_response_time(), 5);
+}
+
+

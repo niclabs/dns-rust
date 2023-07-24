@@ -54,7 +54,7 @@ impl ClientConnection for ClientUDPConnection {
         
         println!("[SEND UDP] query sent");
 
-        // TODO: caso en que se reciven truncados
+        // TODO: caso en que se reciben truncados
         let mut msg: [u8;512] = [0;512];
         match socket_udp.recv_from(&mut msg){
             Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not read {}", e))),

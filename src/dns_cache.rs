@@ -4,6 +4,7 @@ use crate::rr_cache::RRCache;
 use crate::message::type_rtype::Rtype;
 use chrono::prelude::*;
 use std::collections::HashMap;
+use crate::domain_name::DomainName;
 
 #[derive(Clone)]
 // Struct that represents a cache for dns

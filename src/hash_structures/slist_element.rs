@@ -79,3 +79,15 @@ fn get_address(){
 
     assert_eq!(Ok(address), "127.0.0.1".parse());
 }
+
+fn set_ip_address(){
+    let domain_name = DomainName::new();
+    domain_name.set_name(String::from("uchile.cl"));
+    let slist_element = SlistElement::new(domain_name, IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 4);
+
+    assert_eq!(Ok(slist_element.get_address()), "127.0.0.1".parse());
+
+    slist_element.set_ip_address(IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+
+    assert_eq!(Ok(slist_element.get_ip_address()), "192.168.0.1".parse());
+}

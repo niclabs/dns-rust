@@ -131,4 +131,28 @@ mod tcp_connection_test{
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
     }
+
+    //Setters and Getters test
+    #[test]
+    fn get_server_addr(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
+    fn set_server_addr(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+
+        _conn_new.set_server_addr(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+    }
+
 }

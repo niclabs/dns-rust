@@ -10,4 +10,5 @@ COPY . .
 # Resolver port
 EXPOSE 58396
 
-RUN cargo build
+RUN cargo install --path .
+

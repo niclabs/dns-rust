@@ -31,6 +31,14 @@ impl DomainName {
         domain_name
     }
 
+    pub fn new_from_string(domain_name: String) -> Self {
+        let domain_name: DomainName = DomainName { 
+            name: domain_name.clone()
+        };
+
+        domain_name
+    }
+
     // Given an array of bytes, creates a new DomainName and returns the unused bytes
     // what happens if label is longer than 9 ? check this out
     pub fn from_bytes_no_offset(bytes: &[u8]) -> String {

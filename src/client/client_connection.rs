@@ -13,7 +13,7 @@ use std::io::Error as IoError;
 pub trait ClientConnection: Sized {//: 'static + Sized + Send + Sync + Unpin {
 
     //creates a ClientConecction TCP or UDP 
-    fn new(bind_addr:IpAddr,
+    fn new(server_addr:IpAddr,
         timeout:Duration) -> Self;
     
     /// function sends query to resolver

@@ -1,10 +1,6 @@
 mod common;
 
-use dns_rust::{
-    client::{create_client_query,
-            send_client_query},
-    message::{DnsMessage, },
-};
+use dns_rust::message::DnsMessage;
 
 #[test]
 #[ignore]

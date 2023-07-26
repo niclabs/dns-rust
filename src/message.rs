@@ -51,21 +51,21 @@ impl DnsMessage {
     /// 
     /// ```
     /// let dns_query_message =
-    /// DnsMessage::new_query_message("test.com".to_string(), String::from("A"), String::from("IN"), 0, false);
+    /// DnsMessage::new_query_message(DomainName::new_from_str("example.com".to_string()), Qtype::A, Qclass:IN, 0, false);
     ///
     /// assert_eq!(dns_query_message.header.get_rd(), false);
     /// assert_eq!(dns_query_message.question.get_qtype(), Qtype::A);
     /// assert_eq!(dns_query_message.question.get_qclass(), Qclass::IN);
     /// assert_eq!(
     ///     dns_query_message.question.get_qname().get_name(),
-    ///     "test.com".to_string()
+    ///     "example.com".to_string()
     /// );
     /// ```
     ///
-    pub fn new_query_message( //FIXME: tipos de los valores deben ser DomainName, Rtype, Qclass , etc
-        qname: String,
-        qtype: &str,
-        qclass: &str,
+    pub fn new_query_message(
+        qname: DomainName,
+        qtype: Qtype,
+        qclass: Qclass,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -81,15 +81,11 @@ impl DnsMessage {
         header.set_qdcount(qdcount);
 
         let mut question = Question::new();
-        let mut domain_name = DomainName::new();
-
-        domain_name.set_name(qname);
+        let domain_name = qname;
 
         question.set_qname(domain_name);
-        let qtype_qtype = Qtype::from_str_to_qtype(qtype);
-        question.set_qtype(qtype_qtype);
-        let qclass_qclass = Qclass::from_str_to_qclass(qclass);
-        question.set_qclass(qclass_qclass);
+        question.set_qtype(qtype);
+        question.set_qclass(qclass);
 
         let dns_message = DnsMessage {
             header: header,
@@ -275,11 +271,11 @@ impl DnsMessage {
     /// assert_eq!(Rtype::from_rtype_to_int(qtype), 252);
     /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
     /// ```
-    pub fn axfr_query_message(qname: String) -> Self {
+    pub fn axfr_query_message(qname: DomainName) -> Self {
         let mut rng = thread_rng();
         let msg_id = rng.gen();
 
-        let msg = DnsMessage::new_query_message(qname, "AXFR", "IN", 0, false, msg_id);
+        let msg = DnsMessage::new_query_message(qname, Qtype::AXFR, Qclass::IN, 0, false, msg_id);
 
         msg
     }
@@ -880,14 +876,20 @@ mod message_test {
     #[test]
     fn constructor_test() {
         let dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
         assert_eq!(Qtype::from_qtype_to_int(dns_query_message.question.get_qtype()), 1);
         assert_eq!(Qclass::from_qclass_to_int(dns_query_message.question.get_qclass()), 1);
         assert_eq!(
             dns_query_message.question.get_qname().get_name(),
-            "test.com".to_string()
+            "example.com".to_string()
         );
     }
 
@@ -897,7 +899,13 @@ mod message_test {
         header.set_rd(true);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         assert_eq!(dns_query_message.get_header().get_rd(), false);
 
@@ -912,7 +920,13 @@ mod message_test {
         question.set_qclass(Qclass::CS);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         assert_eq!(Qclass::from_qclass_to_int(dns_query_message.get_question().get_qclass()), 1);
 
@@ -929,7 +943,13 @@ mod message_test {
         answer.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         assert_eq!(dns_query_message.get_answer().len(), 0);
 
@@ -946,7 +966,13 @@ mod message_test {
         authority.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         assert_eq!(dns_query_message.get_authority().len(), 0);
 
@@ -963,7 +989,13 @@ mod message_test {
         additional.push(resource_record);
 
         let mut dns_query_message =
-            DnsMessage::new_query_message("test.com".to_string(), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         assert_eq!(dns_query_message.get_additional().len(), 0);
 
@@ -1104,7 +1136,13 @@ mod message_test {
     #[test]
     fn add_answers_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         let mut new_answer = Vec::<ResourceRecord>::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
@@ -1134,7 +1172,8 @@ mod message_test {
     //ToDo: Revisar Práctica 1
     #[test]
     fn axfr_query_message_test() {
-        let dns_message = DnsMessage::axfr_query_message(String::from("example.com"));
+        let dns_message = DnsMessage::axfr_query_message(
+            DomainName::new_from_string("example.com".to_string()));
 
         assert_eq!(
             dns_message.get_question().get_qname().get_name(),
@@ -1172,7 +1211,13 @@ mod message_test {
     #[test]
     fn update_header_counters_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         assert_eq!(dns_query_message.get_header().get_ancount(), 0);
         assert_eq!(dns_query_message.get_header().get_nscount(), 0);
@@ -1219,7 +1264,13 @@ mod message_test {
     #[test]
     fn add_authorities_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
 
         let mut new_authority = Vec::<ResourceRecord>::new();
         let a_rdata3 = Rdata::SomeARdata(ARdata::new());
@@ -1237,8 +1288,14 @@ mod message_test {
     #[test]
     fn add_additionals_test() {
         let mut dns_query_message =
-            DnsMessage::new_query_message(String::from("test.com"), "A", "IN", 0, false, 1);
-
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+                
         let mut new_additional = Vec::<ResourceRecord>::new();
         let a_rdata5 = Rdata::SomeARdata(ARdata::new());
         let rr5 = ResourceRecord::new(a_rdata5);
@@ -1274,33 +1331,33 @@ mod message_test {
         assert_eq!(Qclass::from_qclass_to_int(qclass), 1);
     }
 
-    //ToDo: Revisar
+    //TODO: Revisar
     #[test]
     fn get_question_qtype_a(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "A", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::A, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("A"));
     }
 
-    //ToDo: Revisar
+    //TODO: Revisar
     #[test]
     fn get_question_qtype_ns(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "NS", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::NS, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
         assert_eq!(qtype, String::from("NS"));
     }
 
-    //ToDo: Revisar
+    //TODO: Revisar
     #[test]
     fn get_question_qtype_cname(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "CNAME", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::CNAME, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1310,8 +1367,8 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn get_question_qtype_soa(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "SOA", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::SOA, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1321,8 +1378,8 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn get_question_qtype_wks(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "WKS", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::WKS, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1332,8 +1389,8 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn get_question_qtype_ptr(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "PTR", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::PTR, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1343,8 +1400,8 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn get_question_qtype_hinfo(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "HINFO", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::HINFO, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1354,8 +1411,8 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn get_question_qtype_minfo(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "MINFO", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::MINFO, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1365,8 +1422,8 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn get_question_qtype_mx(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "MX", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::MX, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 
@@ -1376,8 +1433,8 @@ mod message_test {
     //ToDo: Revisar
     #[test]
     fn get_question_qtype_txt(){
-        let name = String::from("value");
-        let dns_message = DnsMessage::new_query_message(name, "TXT", "IN", 1, true, 1);
+        let name:DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_message = DnsMessage::new_query_message(name, Qtype::TXT, Qclass::IN, 1, true, 1);
 
         let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
 

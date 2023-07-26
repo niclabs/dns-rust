@@ -3,21 +3,14 @@ pub mod config;
 pub mod lookup;
 pub mod slist;
 
-use crate::dns_cache;
-use crate::domain_name::{DomainName, self};
-use crate::message::{DnsMessage};
+use crate::message::DnsMessage;
 use crate::resolver::async_resolver::AsyncResolver;
 use crate::resolver::config::ResolverConfig;
-use crate::message::type_rtype::Rtype;
 
-use tokio::runtime::{self,Runtime};
 use tokio::net::{TcpListener,UdpSocket};
-use tokio::io::{BufReader,AsyncBufRead, AsyncBufReadExt, AsyncWriteExt};
-use tokio::sync::broadcast;
-use tokio::pin;
+
 
 use std::error::Error;
-use std::sync::Mutex;
 pub struct Resolver {
     config: ResolverConfig,
 }

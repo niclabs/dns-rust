@@ -3,7 +3,8 @@ pub mod client_connection;
 pub mod tcp_connection;
 pub mod udp_connection;
 
-use crate::client::client_connection::ClientConnection;
+use crate::message::class_qclass::Qclass;
+use crate::{client::client_connection::ClientConnection, message::type_qtype::Qtype};
 use crate::message::DnsMessage;
 use crate::domain_name::DomainName;
 
@@ -72,9 +73,9 @@ impl <T: ClientConnection> Client<T> {
 
         // Create query msg
         let client_query: DnsMessage = DnsMessage::new_query_message(
-            domain_name.get_name(),
-            qtype, 
-            qclass,
+            domain_name,
+            Qtype::from_str_to_qtype(qtype), 
+            Qclass::from_str_to_qclass(qclass),
             0,
             false,
             query_id,

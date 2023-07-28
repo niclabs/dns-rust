@@ -205,4 +205,45 @@ mod host_data_test{
 
         assert_eq!(host_hash_2.len(), 0);
     }
+
+    //get_from_host_data test
+    #[test]
+    fn get_from_host_data(){
+        let mut host_data = HostData::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        host_data.add_to_host_data(domain_name.clone(), rr_cache);
+
+        let host_hash = host_data.get_host_hash();
+
+        assert_eq!(host_hash.len(), 1);
+
+        let host_hash_vec = host_data.get_from_host_data(domain_name.clone()).unwrap();
+
+        assert_eq!(host_hash_vec.len(), 1);
+    }
+
+    //get_from_host_data test with no domain name
+    #[test]
+    fn get_from_host_data_no_domain_name(){
+        let mut host_data = HostData::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        host_data.add_to_host_data(domain_name.clone(), rr_cache);
+
+        let host_hash = host_data.get_host_hash();
+
+        assert_eq!(host_hash.len(), 1);
+
+        let domain_name_2 = DomainName::new();
+        let host_hash_vec = host_data.get_from_host_data(domain_name_2.clone());
+
+        assert!(host_hash_vec.is_none());
+    }
 }

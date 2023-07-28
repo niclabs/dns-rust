@@ -27,8 +27,10 @@ impl HostData{
     /// # Example
     /// ```
     /// let mut host_data = HostData::new();
-    /// let rr_cache = RRCache::new();
-    /// let domain_name = DomainName::new();
+    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record = ResourceRecord::new(a_rdata);
+    /// let rr_cache = RRCache::new(resource_record);
+    /// let mut domain_name = DomainName::new();
     /// domain_name.set_name(String::from("uchile.cl"));
     /// host_data.add_to_host_data(domain_name, rr_cache);
     /// ```
@@ -84,6 +86,9 @@ impl HostData{
 mod host_data_test{
     use crate::rr_cache::RRCache;
     use crate::domain_name::DomainName;
+    use crate::message::rdata::Rdata;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::resource_record::ResourceRecord;
     use std::collections::HashMap;
 
     use super::HostData;
@@ -93,5 +98,21 @@ mod host_data_test{
     fn constructor_test(){
         let host_data = HostData::new();
         assert!(host_data.host_hash.is_empty());
+    }
+
+    //add_to_host_data test
+    #[test]
+    fn add_to_host_data(){
+        let mut host_data = HostData::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        host_data.add_to_host_data(domain_name, rr_cache);
+
+        let host_hash = host_data.get_host_hash();
+
+        assert_eq!(host_hash.len(), 1);
     }
 }

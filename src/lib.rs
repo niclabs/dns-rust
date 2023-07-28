@@ -9,6 +9,9 @@ pub mod resolver;
 pub mod rr_cache;
 pub mod utils;
 
+//pub mod hash structures
+pub mod hash_host_data;
+
 
 
 

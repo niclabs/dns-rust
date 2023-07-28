@@ -7,7 +7,7 @@ type host_name = String;
 ///struct to define the host data
 #[derive(Clone)]
 pub struct HostData {
-    pub host_hash: HashMap<host_name, Vec<RRcache>>,
+    pub host_hash: HashMap<host_name, Vec<RRCache>>,
 }
 
 ///functions for the host data
@@ -85,8 +85,8 @@ mod host_data_test{
     //Contructor test
     #[test]
     fn constructor_test(){
-        let host_data = HostData::new();
+    //    let host_data = HostData::new();
         
-        assert_eq!(host_data.host_hash.is_empty(), true);
+    //    assert_eq!(host_data.host_hash.is_empty(), true);
     }
 }

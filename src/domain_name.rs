@@ -4,7 +4,7 @@ use std::string::String;
 //utils
 use crate::utils::check_label_name;
 
-#[derive(Clone, Default, PartialEq, Debug)]
+#[derive(Clone, Default, PartialEq, Debug, Hash, PartialOrd, Ord, Eq)]
 
 // DNS domain name represented as a sequence of labels, where each label consists of
 // a length octet followed by that number of octets.

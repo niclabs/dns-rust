@@ -1,8 +1,6 @@
-pub mod type_rtype;
-
 use crate::message::type_rtype::Rtype;
 use crate::rr_cache::RRCache;
-use crate::host_data;
+use crate::hash_host_data::HostData;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
 
@@ -15,7 +13,7 @@ type host_data = HostData;
 ///struct to define the cache data
 #[derive(Clone)]
 pub struct CacheData {
-    pub cache_hash: HashMap<rtype, host_data>,
+    pub cache_data: HashMap<rtype, host_data>,
 }
 
 /// functions for the cache data
@@ -45,7 +43,7 @@ impl CacheData{
 
     pub fn add_to_cache_data(&mut self, rtype: Rtype, domain_name: DomainName, rr_cache:RRCache){
         let mut cache_data = self.get_cache_data();
-        rr_type_str = Rtype::from_rtype_to_str(rtype);
+        let rr_type_str = Rtype::from_rtype_to_str(rtype);
         if let Some(x) = cache_data.get_mut(&rr_type_str) { 
             let mut type_hash: HostData = x.clone();
             type_hash.add_to_host_data(domain_name, rr_cache);
@@ -72,7 +70,7 @@ impl CacheData{
     /// * `rtype` - A Rtype that represents the rtype of the cache data
     pub fn remove_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype){
         let mut cache_data = self.get_cache_data();
-        rr_type_str = Rtype::from_rtype_to_str(rtype);
+        let rr_type_str = Rtype::from_rtype_to_str(rtype);
         if let Some(x) = cache_data.get_mut(&rr_type_str) {
             let mut type_hash: HostData = x.clone();
             type_hash.remove_from_host_data(domain_name);

@@ -103,6 +103,16 @@ mod host_data_test{
         assert!(host_data.host_hash.is_empty());
     }
 
+    //Getters and setters test
+    #[test]
+    fn get_host_hash(){
+        let host_data = HostData::new();
+
+        let host_hash = host_data.get_host_hash();
+
+        assert!(host_hash.is_empty());
+    }
+    
     //add_to_host_data test
     #[test]
     fn add_to_host_data(){

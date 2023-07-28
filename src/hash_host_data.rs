@@ -70,6 +70,28 @@ impl HostData{
             self.set_host_hash(host_hash);    
         }
     }
+
+    ///function to get an element from the host data
+    /// # Example
+    /// ```
+    /// let mut host_data = HostData::new();
+    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record = ResourceRecord::new(a_rdata);
+    /// let rr_cache = RRCache::new(resource_record);
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_name(String::from("uchile.cl"));
+    /// host_data.add_to_host_data(domain_name, rr_cache);
+    /// let host_data_2_vec = host_data.get_from_host_data(domain_name);
+    /// ```
+    pub fn get_from_host_data(&self, host_name: DomainName) -> Option<Vec<RRCache>>{
+        let host_hash = self.get_host_hash();
+        if let Some(x) = host_hash.get(&host_name){
+            return Some(x.clone());
+        }
+        else{
+            return None;
+        }
+    }
 }
 
 ///setter and getter for the host data

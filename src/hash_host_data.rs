@@ -92,7 +92,6 @@ mod host_data_test{
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::resource_record::ResourceRecord;
-    use std::arch::x86_64::_CMP_NEQ_OS;
     use std::collections::HashMap;
 
     use super::HostData;
@@ -126,9 +125,11 @@ mod host_data_test{
         let rr_cache_2 = RRCache::new(resource_record_2);
         host_data.add_to_host_data(domain_name.clone(), rr_cache_2);
 
-        assert_eq!(host_hash.len(), 1);
+        let host_hash_2 = host_data.get_host_hash();
 
-        let host_hash_vec = host_hash.get(&domain_name).unwrap();
+        assert_eq!(host_hash_2.len(), 1);
+
+        let host_hash_vec = host_hash_2.get(&domain_name).unwrap();
 
         assert_eq!(host_hash_vec.len(), 2);
     }
@@ -150,6 +151,8 @@ mod host_data_test{
 
         host_data.remove_from_host_data(domain_name.clone());
 
-        assert_eq!(host_hash.len(), 0);
+        let host_hash_2 = host_data.get_host_hash();
+
+        assert_eq!(host_hash_2.len(), 0);
     }
 }

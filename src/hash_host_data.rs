@@ -112,7 +112,25 @@ mod host_data_test{
 
         assert!(host_hash.is_empty());
     }
-    
+
+    #[test]
+    fn set_host_hash(){
+        let mut host_data = HostData::new();
+
+        let mut host_hash = HashMap::new();
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        host_hash.insert(domain_name.clone(), Vec::new());
+
+        assert!(host_data.host_hash.is_empty());
+
+        host_data.set_host_hash(host_hash.clone());
+
+        let host_hash_2 = host_data.get_host_hash();
+
+        assert!(!host_hash_2.is_empty());
+    }
+
     //add_to_host_data test
     #[test]
     fn add_to_host_data(){

@@ -1,13 +1,12 @@
-use crate::rr_cache::RRCache;
+use crate::{rr_cache::RRCache, domain_name::DomainName};
 use std::collections::HashMap;
 
 ///type to define the name of the host
-type host_name = String;
 
 ///struct to define the host data
 #[derive(Clone)]
 pub struct HostData {
-    pub host_hash: HashMap<host_name, Vec<RRCache>>,
+    pub host_hash: HashMap<DomainName, Vec<RRCache>>,
 }
 
 ///functions for the host data
@@ -29,12 +28,14 @@ impl HostData{
     /// ```
     /// let mut host_data = HostData::new();
     /// let rr_cache = RRCache::new();
-    /// host_data.add_to_host_data(String::from("uchile.cl"), rr_cache);
+    /// let domain_name = DomainName::new();
+    /// domain_name.set_name(String::from("uchile.cl"));
+    /// host_data.add_to_host_data(domain_name, rr_cache);
     /// ```
     /// # Arguments
-    /// * `host_name` - A String that represents the name of the host
+    /// * `host_name` - A Domain Name that represents the name of the host
     /// * `rr_cache` - A RRCache that represents the rr_cache of the host
-    pub fn add_to_host_data(&mut self, host_name: String, rr_cache: RRCache) {
+    pub fn add_to_host_data(&mut self, host_name: DomainName, rr_cache: RRCache) {
         let mut host_hash = self.get_host_hash();
         if let Some(y) = host_hash.get_mut(&host_name){
             let mut rr_cache_vec = y.clone();
@@ -54,12 +55,14 @@ impl HostData{
     /// ```
     /// let mut host_data = HostData::new();
     /// let rr_cache = RRCache::new();
-    /// host_data.add_to_host_data(String::from("uchile.cl"), rr_cache);
-    /// host_data.remove_from_host_data(String::from("uchile.cl"));
+    /// let domain_name = DomainName::new();
+    /// domain_name.set_name(String::from("uchile.cl"));
+    /// host_data.add_to_host_data(domain_name, rr_cache);
+    /// host_data.remove_from_host_data(domain_name);
     /// ```
-    pub fn remove_from_host_data(&mut self, host_name: String){
+    pub fn remove_from_host_data(&mut self, host_name: DomainName){
         let mut host_hash = self.get_host_hash();
-        if let Some(x) = host_hash.remove(&host_name){
+        if let Some(_x) = host_hash.remove(&host_name){
             self.set_host_hash(host_hash);    
         }
     }
@@ -68,11 +71,11 @@ impl HostData{
 ///setter and getter for the host data
 impl HostData{
 
-    pub fn get_host_hash(&self) -> HashMap<host_name, Vec<RRCache>> {
+    pub fn get_host_hash(&self) -> HashMap<DomainName, Vec<RRCache>> {
         return self.host_hash.clone();
     }
 
-    pub fn set_host_hash(&mut self, host_hash: HashMap<host_name, Vec<RRCache>>) {
+    pub fn set_host_hash(&mut self, host_hash: HashMap<DomainName, Vec<RRCache>>) {
         self.host_hash = host_hash;
     }
 }

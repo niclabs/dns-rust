@@ -83,13 +83,15 @@ impl HostData{
 #[cfg(test)]
 mod host_data_test{
     use crate::rr_cache::RRCache;
+    use crate::domain_name::DomainName;
     use std::collections::HashMap;
+
+    use super::HostData;
 
     //Contructor test
     #[test]
     fn constructor_test(){
-    //    let host_data = HostData::new();
-        
-    //    assert_eq!(host_data.host_hash.is_empty(), true);
+        let host_data = HostData::new();
+        assert!(host_data.host_hash.is_empty());
     }
 }

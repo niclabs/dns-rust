@@ -10,7 +10,7 @@ services:
     container_name: client
     build: .
     image: dns-rust:latest
-    command: dns_rust client --server 8.8.8.8 --host-name example.com
+    command: dns_rust client --server 8.8.8.8 --name example.com
   tests:
     build: 
       context: .

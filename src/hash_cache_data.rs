@@ -96,6 +96,7 @@ impl CacheData{
 #[cfg(test)]
 mod cache_data_test{
     use crate::message::rdata::txt_rdata::TxtRdata;
+    use crate::message::type_rtype::Rtype;
     use crate::rr_cache::RRCache;
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
@@ -122,5 +123,24 @@ mod cache_data_test{
         let cache_data_hash = cache_data.get_cache_data();
 
         assert!(cache_data_hash.is_empty());
+    }
+
+    #[test]
+    fn set_cache_data(){
+        let mut cache_data = CacheData::new();
+
+        let mut cache_data_hash = HashMap::new();
+        let mut host_data = HostData::new();
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
+        host_data.add_to_host_data(domain_name, rr_cache);
+        cache_data_hash.insert(Rtype::A, host_data);
+
+        cache_data.set_cache_data(cache_data_hash);
+
+        assert_eq!(cache_data.get_cache_data().len(), 1);
     }
 }

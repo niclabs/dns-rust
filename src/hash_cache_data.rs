@@ -36,7 +36,9 @@ impl CacheData{
     /// let a_rdata = Rdata::SomeARdata(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRCache::new(resource_record);
-    /// cache_data.add_to_cache_data(Rtype::A, String::from("uchile.cl"), rr_cache);
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_domain_name(String::from("uchile.cl"));
+    /// cache_data.add_to_cache_data(Rtype::A, domain_name, rr_cache);
     /// ```
     /// # Arguments
     /// * `rtype` - A Rtype that represents the rtype of the cache data
@@ -65,8 +67,10 @@ impl CacheData{
     /// let a_rdata = Rdata::SomeARdata(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRCache::new(resource_record);
-    /// cache_data.add_to_cache_data(Rtype::A, String::from("uchile.cl"), rr_cache);
-    /// cache_data.remove_from_cache_data(String::from("uchile.cl"), Rtype::A);
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_domain_name(String::from("uchile.cl"));
+    /// cache_data.add_to_cache_data(Rtype::A, domain_name, rr_cache);
+    /// cache_data.remove_from_cache_data(domain_name, Rtype::A);
     /// ```
     /// # Arguments
     /// * `domain_name` - A DomainName that represents the domain name of the cache data

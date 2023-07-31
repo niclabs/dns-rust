@@ -229,4 +229,38 @@ mod cache_data_test{
 
         assert!(host_data.get_host_hash().is_empty());
     }
+
+    //Get from cache data test
+    #[test]
+    fn get_from_cache_data(){
+        let mut cache_data = CacheData::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
+
+        cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
+
+        let rr_cache_vec = cache_data.get_from_cache_data(domain_name.clone(), Rtype::A).unwrap();
+
+        assert_eq!(rr_cache_vec.len(), 1);
+
+        let mut new_vec = Vec::new();
+        new_vec.push(String::from("hola"));
+        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let resource_record_2 = ResourceRecord::new(text_rdata);
+        let rr_cache_2 = RRCache::new(resource_record_2);
+
+        cache_data.add_to_cache_data(Rtype::TXT, domain_name.clone(), rr_cache_2);
+
+        let rr_cache_vec_2 = cache_data.get_from_cache_data(domain_name.clone(), Rtype::TXT).unwrap();
+
+        assert_eq!(rr_cache_vec_2.len(), 1);
+
+        let rr_cache_vec_3 = cache_data.get_from_cache_data(DomainName::new(), Rtype::A);
+
+        assert!(rr_cache_vec_3.is_none());
+    }
 }

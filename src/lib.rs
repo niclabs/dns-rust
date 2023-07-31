@@ -13,6 +13,7 @@ pub mod utils;
 pub mod hash_host_data;
 pub mod hash_cache_data;
 pub mod slist_element;
+pub mod hash_truncated_dns_message;
 
 
 

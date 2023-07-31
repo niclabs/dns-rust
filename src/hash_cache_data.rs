@@ -177,4 +177,28 @@ mod cache_data_test{
 
         assert_eq!(cache_data.get_cache_data().len(), 2);
     }
+
+    //Remove from cache data test
+    #[test]
+    fn remove_from_cache_data(){
+        let mut cache_data = CacheData::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
+
+        cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
+
+        assert_eq!(cache_data.get_cache_data().len(), 1);
+
+        cache_data.remove_from_cache_data(domain_name.clone(), Rtype::A);
+
+        let cache_hash = cache_data.get_cache_data();
+
+        let host_data = cache_hash.get(&Rtype::A).unwrap();
+
+        assert!(host_data.get_host_hash().is_empty());
+    }
 }

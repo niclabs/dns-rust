@@ -33,7 +33,9 @@ impl CacheData{
     /// # Example
     /// ```
     /// let mut cache_data = CacheData::new();
-    /// let rr_cache = RRCache::new();
+    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record = ResourceRecord::new(a_rdata);
+    /// let rr_cache = RRCache::new(resource_record);
     /// cache_data.add_to_cache_data(Rtype::A, String::from("uchile.cl"), rr_cache);
     /// ```
     /// # Arguments

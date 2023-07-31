@@ -103,4 +103,24 @@ mod cache_data_test{
     use crate::message::resource_record::ResourceRecord;
     use crate::hash_host_data::HostData;
     use std::collections::HashMap;
+
+    use super::CacheData;
+
+    //Constructor test
+    #[test]
+    fn constructor_test(){
+        let cache_data = CacheData::new();
+
+        assert!(cache_data.cache_data.is_empty());
+    }
+
+    //Getter and setter test
+    #[test]
+    fn get_cache_data(){
+        let cache_data = CacheData::new();
+
+        let cache_data_hash = cache_data.get_cache_data();
+
+        assert!(cache_data_hash.is_empty());
+    }
 }

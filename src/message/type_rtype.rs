@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Debug, Eq,Hash)]
+#[derive(Clone, PartialEq, Debug, Hash, PartialOrd, Ord, Eq)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
     A,

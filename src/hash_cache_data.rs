@@ -79,6 +79,34 @@ impl CacheData{
             self.set_cache_data(cache_data);
         } 
     }
+
+    ///function to get an element from the cache data
+    /// # Example
+    /// ```
+    /// let mut cache_data = CacheData::new();
+    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record = ResourceRecord::new(a_rdata);
+    /// let rr_cache = RRCache::new(resource_record);
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_domain_name(String::from("uchile.cl"));
+    /// 
+    /// cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
+    /// 
+    /// let rr_cache = cache_data.get_from_cache_data(domain_name.clone(), Rtype::A);
+    /// ```
+    /// # Arguments
+    /// * `domain_name` - A DomainName that represents the domain name of the cache data
+    /// * `rtype` - A Rtype that represents the rtype of the cache data
+    pub fn get_from_cache_data(&self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>>{
+        let cache_data = self.get_cache_data();
+        if let Some(x) = cache_data.get(&rtype) {
+            let type_hash: HostData = x.clone();
+            return type_hash.get_from_host_data(domain_name);
+        }
+        else {
+            return None;
+        }
+    }
 }
 
 ///setter and getter for the host data

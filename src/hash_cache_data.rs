@@ -4,16 +4,11 @@ use crate::hash_host_data::HostData;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
 
-///type to define the rtype of the cache data
-type rtype = Rtype;
-
-///type to denine the host data
-type host_data = HostData;
 
 ///struct to define the cache data
 #[derive(Clone)]
 pub struct CacheData {
-    pub cache_data: HashMap<rtype, host_data>,
+    pub cache_data: HashMap<Rtype, HostData>,
 }
 
 /// functions for the cache data
@@ -89,11 +84,11 @@ impl CacheData{
 ///setter and getter for the host data
 impl CacheData{
 
-    pub fn get_cache_data(&self) -> HashMap<rtype, host_data> {
+    pub fn get_cache_data(&self) -> HashMap<Rtype, HostData> {
         return self.cache_data.clone();
     }
 
-    pub fn set_cache_data(&mut self, cache_data: HashMap<rtype, host_data>) {
+    pub fn set_cache_data(&mut self, cache_data: HashMap<Rtype, HostData>) {
         self.cache_data = cache_data;
     }
 }

@@ -36,7 +36,7 @@ use std::vec::Vec;
 /// |      Additional     | RRs holding additional information
 /// +---------------------+
 /// ```
-#[derive (PartialEq)]
+#[derive (PartialEq, Debug)]
 pub struct DnsMessage {
     header: Header,
     question: Question,

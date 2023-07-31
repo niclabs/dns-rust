@@ -19,7 +19,7 @@ use crate::message::type_qtype::Qtype;
 ///
 /// DNS question format of a query.
 /// ```
-#[derive (PartialEq)]
+#[derive (PartialEq, Debug)]
 pub struct Question {
     qname: DomainName,
     // type of query

@@ -54,8 +54,14 @@ impl TruncatedDnsMessage {
     }
 
     /// Function to get a message from the TruncatedDnsMessage.
-    fn get_dns_message(&self, msg_id: &ID) -> Option<&DnsMessage> {
-        return self.truncated_messages.get(msg_id);
+    fn get_dns_message(&self, msg_id: &ID) -> Option<Vec<DnsMessage>> {
+        let truncated_messages = self.get_truncated_messages_hash();
+        if let Some(y) = truncated_messages.get(&msg_id) {
+            return Some(y.clone());
+        }
+        else {
+            return None;
+        }
     }
 }
 

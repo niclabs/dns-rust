@@ -149,4 +149,38 @@ mod truncated_dns_message_test {
 
         assert!(truncated_dns_message.get_truncated_messages_hash().is_empty());
     }
+
+    //Get message test
+    #[test]
+    fn get_dns_message(){
+        let mut truncated_dns_message = TruncatedDnsMessage::new();
+        let dns_message = DnsMessage::new();
+        truncated_dns_message.add_message(1, dns_message);
+
+        let dns_message_2 = DnsMessage::new();
+        truncated_dns_message.add_message(1, dns_message_2);
+
+        assert!(!truncated_dns_message.get_truncated_messages_hash().is_empty());
+
+        let dns_message = truncated_dns_message.get_dns_message(&1).unwrap();
+
+        assert_eq!(dns_message.len(), 2);
+    }
+
+    //Get message test with unexisting ID
+    #[test]
+    fn get_dns_message_no_id(){
+        let mut truncated_dns_message = TruncatedDnsMessage::new();
+        let dns_message = DnsMessage::new();
+        truncated_dns_message.add_message(1, dns_message);
+
+        let dns_message_2 = DnsMessage::new();
+        truncated_dns_message.add_message(1, dns_message_2);
+
+        assert!(!truncated_dns_message.get_truncated_messages_hash().is_empty());
+
+        let dns_message = truncated_dns_message.get_dns_message(&3);
+
+        assert!(dns_message.is_none());
+    }
 }

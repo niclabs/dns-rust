@@ -12,7 +12,7 @@ type ID = u16;
 /// message.
 pub struct TruncatedDnsMessage {
     /// HashMap to save the truncated messages according to their ID.
-    truncated_messages: HashMap<ID, DnsMessage>,
+    truncated_messages: HashMap<ID, Vec<DnsMessage>>,
 }
 
 impl TruncatedDnsMessage {
@@ -24,14 +24,29 @@ impl TruncatedDnsMessage {
     }
 
     /// Function to add a new message to the TruncatedDnsMessage.
-    /// todo: check if the message is already in the TruncatedDnsMessage.
+    /// #Example
+    /// ```
+    /// let mut truncated_dns_message = TruncatedDnsMessage::new();
+    /// let dns_message = DnsMessage::new();
+    /// truncated_dns_message.add_message(1, dns_message);
+    /// ```
     fn add_message(&mut self, msg_id: ID, dns_message: DnsMessage) {
-        self.truncated_messages.insert(msg_id, dns_message);
+        let mut truncated_messages = self.get_truncated_messages_hash();
+        if let Some(y) = truncated_messages.get_mut(&msg_id) {
+            let mut dns_message_vec = y.clone();
+            dns_message_vec.push(dns_message);
+            truncated_messages.insert(msg_id, dns_message_vec);
+        }
+        else {
+            let mut dns_message_vec = Vec::new();
+            dns_message_vec.push(dns_message);
+            truncated_messages.insert(msg_id, dns_message_vec);
+        }
+        self.set_truncated_messages_hash(truncated_messages);
     }
 
     /// Function to remove a message from the TruncatedDnsMessage.
-    fn remove_message(&mut self, msg_id: &ID) -> Option<DnsMessage> {
-        return self.truncated_messages.remove(msg_id);
+    fn remove_message(&mut self, msg_id: &ID){
     }
 
     /// Function to get a message from the TruncatedDnsMessage.
@@ -42,12 +57,12 @@ impl TruncatedDnsMessage {
 
 impl TruncatedDnsMessage {
     /// Function to create a new TruncatedDnsMessage.
-    fn set_truncated_messages_hash(&mut self, truncated_messages_hash: HashMap<ID, DnsMessage>) {
+    fn set_truncated_messages_hash(&mut self, truncated_messages_hash: HashMap<ID, Vec<DnsMessage>>) {
         self.truncated_messages = truncated_messages_hash;
     }
 
     /// Function to get all the messages from the TruncatedDnsMessage.
-    fn get_truncated_messages_hash(&self) -> HashMap<ID, DnsMessage> {
+    fn get_truncated_messages_hash(&self) -> HashMap<ID, Vec<DnsMessage>> {
         return self.truncated_messages.clone();
     }
 }

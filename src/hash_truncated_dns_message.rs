@@ -135,4 +135,18 @@ mod truncated_dns_message_test {
 
         assert!(!truncated_dns_message.get_truncated_messages_hash().is_empty());
     }
+
+    //Remove message test
+    #[test]
+    fn remove_message(){
+        let mut truncated_dns_message = TruncatedDnsMessage::new();
+        let dns_message = DnsMessage::new();
+        truncated_dns_message.add_message(1, dns_message);
+
+        assert!(!truncated_dns_message.get_truncated_messages_hash().is_empty());
+
+        truncated_dns_message.remove_message(&1);
+
+        assert!(truncated_dns_message.get_truncated_messages_hash().is_empty());
+    }
 }

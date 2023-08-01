@@ -58,7 +58,7 @@ impl SlistElement{
 #[cfg(test)]
 mod slist_element_test{
     use std::net::{IpAddr,Ipv4Addr};
-    use crate::{domain_name::DomainName, slist_element::SlistElement};
+    use crate::{domain_name::DomainName, resolver::slist::slist_element::SlistElement};
     #[test]
     //Constructor Test
     fn new_slist_element(){

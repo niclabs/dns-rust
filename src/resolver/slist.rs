@@ -1,3 +1,5 @@
+pub mod slist_element;
+
 use std::collections::HashMap;
 use std::vec::Vec;
 

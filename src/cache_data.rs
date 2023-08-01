@@ -1,6 +1,8 @@
+pub mod host_data;
+
 use crate::message::type_rtype::Rtype;
 use crate::rr_cache::RRCache;
-use crate::hash_host_data::HostData;
+use crate::cache_data::host_data::HostData;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
 
@@ -130,7 +132,7 @@ mod cache_data_test{
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::hash_host_data::HostData;
+    use crate::cache_data::host_data::HostData;
     use std::collections::HashMap;
 
     use super::CacheData;

@@ -90,3 +90,38 @@ impl TruncatedDnsMessage {
         return self.truncated_messages.clone();
     }
 }
+
+#[cfg(test)]
+mod truncated_dns_message_test {
+    use std::collections::HashMap;
+    use crate::message::DnsMessage;
+    use super::TruncatedDnsMessage;
+
+    //Constructor test
+    #[test]
+    fn constructor_test(){
+        let truncated_dns_message = TruncatedDnsMessage::new();
+
+        assert!(truncated_dns_message.truncated_messages.is_empty());
+    }
+
+    //Getter and setter test
+    #[test]
+    fn get_truncated_messages_hash(){
+        let truncated_dns_message = TruncatedDnsMessage::new();
+
+        assert!(truncated_dns_message.get_truncated_messages_hash().is_empty());
+    }
+
+    #[test]
+    fn set_truncated_messages_hash(){
+        let mut truncated_dns_message = TruncatedDnsMessage::new();
+        let mut truncated_messages_hash = HashMap::new();
+        let dns_message = DnsMessage::new();
+        truncated_messages_hash.insert(1, vec![dns_message]);
+
+        truncated_dns_message.set_truncated_messages_hash(truncated_messages_hash.clone());
+
+        assert!(!truncated_dns_message.get_truncated_messages_hash().is_empty());
+    }
+}

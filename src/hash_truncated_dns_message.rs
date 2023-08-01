@@ -47,6 +47,10 @@ impl TruncatedDnsMessage {
 
     /// Function to remove a message from the TruncatedDnsMessage.
     fn remove_message(&mut self, msg_id: &ID){
+        let mut truncated_messages = self.get_truncated_messages_hash();
+        if let Some(y) = truncated_messages.remove(&msg_id) {
+            self.set_truncated_messages_hash(truncated_messages)
+        }
     }
 
     /// Function to get a message from the TruncatedDnsMessage.

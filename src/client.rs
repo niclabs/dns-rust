@@ -161,8 +161,6 @@ impl <T: ClientConnection> Client<T>{
 
 }
 
-
-
 #[cfg(test)]
 mod client_test {
     use std::{net::{IpAddr, Ipv4Addr}, time::Duration};
@@ -182,8 +180,6 @@ mod client_test {
         let mut udp_client = Client::new(conn_udp); //se crea un cliente vacio?
 
         let mut domain_name = DomainName::new();
-
-
 
         // sends query
         domain_name.set_name(String::from("test.test2.com."));

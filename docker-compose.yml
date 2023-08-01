@@ -10,15 +10,11 @@ services:
     container_name: client
     build: .
     image: dns-rust:latest
-    command: dns_rust client --server 8.8.8.8 --name example.com
-  tests:
+  test:
     build: 
       context: .
-      dockerfile: Dockerfile.dev
-    volumes:
-      - coverage:/home/dns-rust/coverage/
     command: cargo test
-    image: dnsrust:test
+    image: dns-rust:latest
 
 volumes:
   coverage:

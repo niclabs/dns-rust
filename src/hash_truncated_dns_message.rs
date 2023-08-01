@@ -46,6 +46,13 @@ impl TruncatedDnsMessage {
     }
 
     /// Function to remove a message from the TruncatedDnsMessage.
+    /// #Example
+    /// ```
+    /// let mut truncated_dns_message = TruncatedDnsMessage::new();
+    /// let dns_message = DnsMessage::new();
+    /// truncated_dns_message.add_message(1, dns_message);
+    /// truncated_dns_message.remove_message(1);
+    /// ```
     fn remove_message(&mut self, msg_id: &ID){
         let mut truncated_messages = self.get_truncated_messages_hash();
         if let Some(y) = truncated_messages.remove(&msg_id) {
@@ -54,6 +61,13 @@ impl TruncatedDnsMessage {
     }
 
     /// Function to get a message from the TruncatedDnsMessage.
+    /// #Example
+    /// ```
+    /// let mut truncated_dns_message = TruncatedDnsMessage::new();
+    /// let dns_message = DnsMessage::new();
+    /// truncated_dns_message.add_message(1, dns_message);
+    /// let dns_message = truncated_dns_message.get_dns_message(1);
+    /// ```
     fn get_dns_message(&self, msg_id: &ID) -> Option<Vec<DnsMessage>> {
         let truncated_messages = self.get_truncated_messages_hash();
         if let Some(y) = truncated_messages.get(&msg_id) {

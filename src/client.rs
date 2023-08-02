@@ -310,15 +310,33 @@ mod client_test {
     }
     // Querys with error
 
-    //Wrong domain starting with "?"
+    //Wrong domain starting with "?" tcp
     #[test]
     #[should_panic]
-    fn wrong_written_domain(){
+    fn wrong_written_domain_tcp(){
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("?www.u-cursos.cl"));
+        let domain_name_copy =domain_name.clone();
+        new_client.create_dns_query(domain_name, "A", "IN");
+        let mut response = new_client.query(domain_name_copy, "A", "IN");
+
+        response.print_dns_message();
+    }
+
+    //Wrong domain starting with "?" udp
+    #[test]
+    #[should_panic]
+    fn wrong_written_domain_udp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_udp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("?www.u-cursos.cl"));
         let domain_name_copy =domain_name.clone();

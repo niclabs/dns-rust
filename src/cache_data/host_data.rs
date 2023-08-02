@@ -1,4 +1,6 @@
-use crate::{rr_cache::RRCache, domain_name::DomainName};
+use chrono::Utc;
+
+use crate::{rr_cache::RRCache, domain_name::DomainName, message::type_rtype::Rtype};
 use std::collections::HashMap;
 
 ///type to define the name of the host
@@ -91,6 +93,26 @@ impl HostData{
         else{
             return None;
         }
+    }
+
+    pub fn get_oldest_used(&mut self) -> DomainName{
+        let mut host = self.get_host_hash();
+        let mut used_in = Utc::now();
+
+        let mut oldest_used_domain_name = DomainName::new();
+
+        for (host_key, host_value) in host {
+            let rr_last_use = host_value[0].get_last_use();
+
+            if rr_last_use <= used_in {
+                used_in = rr_last_use;
+                oldest_used_domain_name = host_key.clone();
+                
+            }
+        }
+
+        return oldest_used_domain_name
+
     }
 }
 

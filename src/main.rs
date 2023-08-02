@@ -1,4 +1,4 @@
-use std::{time::Duration, net::{IpAddr}};
+use std::{time::Duration, net::IpAddr};
 
 use dns_rust::{client::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection}, domain_name::DomainName};
 use clap::{Args, Parser, Subcommand};
@@ -18,12 +18,11 @@ enum Commands {
 /// Client Arguments
 #[derive(Args, Debug)]
 struct ClientArgs {
+    /// Host name to query for IP
+    host_name: String,
     /// DNS server ip
     #[arg(long)]
     server: String,
-    /// Host name to query for IP
-    #[arg(long)]
-    name: String,
     /// Query type
     #[arg(long, default_value_t = String::from("A"))]
     qtype: String,
@@ -44,7 +43,7 @@ pub fn main() {
             let conn = ClientTCPConnection::new(addr.unwrap(), Duration::from_secs(10));
             let mut client = Client::new(conn);
 
-            let mut response = client.query(DomainName::new_from_string(client_args.name.clone()), client_args.qtype.as_str(), client_args.qclass.as_str());
+            let mut response = client.query(DomainName::new_from_string(client_args.host_name.clone()), client_args.qtype.as_str(), client_args.qclass.as_str());
 
             response.print_dns_message()
         }

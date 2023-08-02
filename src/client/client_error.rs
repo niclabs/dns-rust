@@ -1,10 +1,11 @@
 use std::error;
 use std::error::Error;
 use std::fmt;
+use thiserror::Error; 
 
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Error, Clone)]
 
 pub enum ErrorKind {
     /// An error with the TCP connection
@@ -27,9 +28,9 @@ pub struct Error {
     // here, trust has backtrace!
 }
 
-impl Error {
+impl error::Error for Error {
     /// Get the kind of the error
-    pub fn kind(&self) -> &ErrorKind {
+    fn kind(&self) -> &ErrorKind {
         &self.kind
     }
 }

@@ -137,6 +137,11 @@ impl CacheData{
 
 
     }
+
+    pub fn insert(&mut self,rtype:Rtype, host_data: HostData) {
+        self.cache_data.insert(rtype, host_data);
+
+    }
 }
 
 ///setter and getter for the host data

@@ -142,6 +142,11 @@ impl CacheData{
         self.cache_data.insert(rtype, host_data);
 
     }
+
+    pub fn iter(&mut self) -> std::collections::hash_map::Iter<'_, Rtype, HostData>{
+        return self.cache_data.iter()
+
+    }
 }
 
 ///setter and getter for the host data

@@ -1,6 +1,8 @@
 pub mod host_data;
 
-use crate::message::type_rtype::Rtype;
+use chrono::Utc;
+
+use crate::message::type_rtype::{Rtype, self};
 use crate::rr_cache::RRCache;
 use crate::cache_data::host_data::HostData;
 use std::collections::HashMap;
@@ -82,6 +84,22 @@ impl CacheData{
         } 
     }
 
+    pub fn remove_oldest_used(&mut self){
+        let mut cache = self.get_cache_data();
+        let mut used_in = Utc::now();
+        
+        let mut oldest_used_domain_name = DomainName::new();
+        let mut oldest_used_type =Rtype::A;
+        
+        for (key, mut value) in cache {
+            oldest_used_domain_name=value.get_oldest_used();
+            oldest_used_type = key.clone();
+        }
+        
+        self.remove_from_cache_data(oldest_used_domain_name, oldest_used_type);
+    
+    }
+
     ///function to get an element from the cache data
     /// # Example
     /// ```
@@ -109,6 +127,16 @@ impl CacheData{
             return None;
         }
     }
+
+    pub fn update_response_time(&mut self,
+        domain_name: DomainName,
+        rr_type: Rtype,
+        response_time: u32,
+        ip_address: String,
+    ) {
+
+
+    }
 }
 
 ///setter and getter for the host data
@@ -120,6 +148,10 @@ impl CacheData{
 
     pub fn set_cache_data(&mut self, cache_data: HashMap<Rtype, HostData>) {
         self.cache_data = cache_data;
+    }
+
+    pub fn get(&self, rtype : Rtype) -> Option<&HostData>{
+         return self.cache_data.get(&rtype);
     }
 }
 

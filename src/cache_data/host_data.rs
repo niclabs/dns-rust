@@ -114,6 +114,10 @@ impl HostData{
         return oldest_used_domain_name
 
     }
+
+    pub fn insert(&mut self,domain_name:DomainName, rr_cache_vec : Vec<RRCache>) -> Option<Vec<RRCache>>{
+        return self.host_hash.insert(domain_name, rr_cache_vec)
+    }
 }
 
 ///setter and getter for the host data
@@ -125,6 +129,11 @@ impl HostData{
 
     pub fn set_host_hash(&mut self, host_hash: HashMap<DomainName, Vec<RRCache>>) {
         self.host_hash = host_hash;
+    }
+
+    pub fn get(&self,domain_name:&DomainName) -> Option<&Vec<RRCache>>{
+        return self.host_hash.get(domain_name)
+
     }
 }
 

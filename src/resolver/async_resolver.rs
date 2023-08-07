@@ -1,9 +1,15 @@
-use crate::client::config;
+use std::io;
+use std::net::IpAddr;
+
 use crate::dns_cache::DnsCache;
-use crate::domain_name::{DomainName, self};
+use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
-use crate::message::type_rtype::Rtype;
-use crate::resolver::config::{ResolverConfig};
+use crate::message::class_qclass::Qclass;
+use crate::message::type_qtype::Qtype;
+use crate::resolver::config::ResolverConfig;
+
+use rand::{thread_rng, Rng};
+
 
 pub struct AsyncResolver{
     // config: ResolverConfig,  FIXME: ver si conviene para configurara tiposd e consultas que aceptara resolver
@@ -38,6 +44,29 @@ impl AsyncResolver{
     ///Crea una lista con los nombres a consultar, se crea a partir del nombre de domiinio
     pub fn build_names(&self,_full_name: DomainName){
         unimplemented!();
+    }
+
+    pub async fn lookup_ip(&self, domain_name: DomainName) -> Result<DnsMessage, io::Error> {
+        
+        // Create random generator
+        let mut rng = thread_rng();
+        // Create query id
+        let query_id: u16 = rng.gen();
+        // Create query msg
+        let msg: DnsMessage = DnsMessage::new_query_message(
+            domain_name,
+            Qtype::A, 
+            Qclass::IN,
+            0,
+            false,
+            query_id,
+        );
+        
+        Ok(msg)
+    }
+
+    pub async fn lookup(&self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+        unimplemented!()
     }
 
 }

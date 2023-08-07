@@ -3,7 +3,9 @@ pub mod config;
 pub mod lookup;
 pub mod slist;
 
-use crate::message::DnsMessage;
+use crate::message::class_qclass::Qclass;
+use crate::message::type_qtype::Qtype;
+use crate::{message::DnsMessage, domain_name::DomainName};
 use crate::resolver::async_resolver::AsyncResolver;
 use crate::resolver::config::ResolverConfig;
 
@@ -13,6 +15,10 @@ use tokio::net::{TcpListener,UdpSocket};
 use std::error::Error;
 pub struct Resolver {
     config: ResolverConfig,
+}
+
+pub struct StubResolver {
+    async_resolver: AsyncResolver
 }
 
 impl Resolver {
@@ -124,7 +130,27 @@ async fn handle_udp_client(
     Ok(())
 }
 
+impl StubResolver {
+    
+    pub fn new(config: ResolverConfig) -> Self {
 
+        let async_resolver = AsyncResolver::new(&config);
+
+        let stub_resolver = StubResolver {
+            async_resolver 
+        };
+
+        stub_resolver
+    }
+
+    pub fn lookup_ip(&self, domain_name: DomainName) {
+        self.async_resolver.lookup_ip(domain_name);
+    }
+
+    pub fn lookup(&self, domain_name: DomainName, qtype:Qtype, qclass:Qclass) {
+        unimplemented!()
+    }
+}
 
 
 #[cfg(test)]
@@ -142,4 +168,27 @@ mod resolver_test {
         //dig @127.0.0.1 -p 5333 uchile.cl +tcp
         //dig @127.0.0.1 -p 5333 uchile.cl 
     }
+}
+
+
+#[cfg(test)]
+mod stub_resolver_test {
+
+
+    use crate::domain_name::DomainName;
+
+    use super::{StubResolver, config::ResolverConfig};
+
+
+    #[test]
+    fn lookup_ip() {
+        let resolver = StubResolver::new(ResolverConfig::default());
+
+        let response = resolver.lookup_ip(DomainName::new_from_string("example.com".to_string()));
+         
+        // TODO: Add test
+    }
+
+    
+
 }

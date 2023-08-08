@@ -2,6 +2,7 @@ pub mod host_data;
 
 use chrono::Utc;
 
+use crate::message::rdata::Rdata;
 use crate::message::type_rtype::{Rtype, self};
 use crate::rr_cache::RRCache;
 use crate::cache_data::host_data::HostData;
@@ -134,7 +135,48 @@ impl CacheData{
         response_time: u32,
         ip_address: String,
     ) {
+        let mut cache = self.get_cache_data();
+        if let Some(x) = cache.get(&rr_type) {
+            let mut new_x = x.clone();
+            if let Some(y) = new_x.get(&domain_name) {
+                let new_y = y.clone();
+                let mut rr_cache_vec = Vec::<RRCache>::new();
 
+                for mut rr_cache in new_y {
+                    let rr_ip_address = match rr_cache.get_resource_record().get_rdata() {
+                        Rdata::SomeARdata(val) => val.get_address(),
+                        _ => unreachable!(),
+                    };
+
+                    let vec_ip_str_from_string_with_port =
+                        ip_address.split(":").collect::<Vec<&str>>()[0].clone();
+
+                    let vec_ip_str_from_string: Vec<&str> =
+                        vec_ip_str_from_string_with_port.split(".").collect();
+
+                    let mut ip_address_bytes: [u8; 4] = [0; 4];
+                    let mut index = 0;
+
+                    for byte in vec_ip_str_from_string {
+                        let byte = byte.parse::<u8>().unwrap();
+                        ip_address_bytes[index] = byte;
+                        index = index + 1;
+                    }
+
+                    if ip_address_bytes == rr_ip_address {
+                        rr_cache
+                            .set_response_time((response_time + rr_cache.get_response_time()) / 2);
+                    }
+
+                    rr_cache_vec.push(rr_cache.clone());
+                }
+
+                new_x.insert(domain_name, rr_cache_vec.clone());
+
+                cache.insert(rr_type, new_x);
+
+            }
+        }
 
     }
 

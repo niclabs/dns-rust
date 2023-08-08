@@ -96,7 +96,7 @@ impl HostData{
     }
 
     pub fn get_oldest_used(&mut self) -> DomainName{
-        let mut host = self.get_host_hash();
+        let host = self.get_host_hash();
         let mut used_in = Utc::now();
 
         let mut oldest_used_domain_name = DomainName::new();
@@ -276,5 +276,29 @@ mod host_data_test{
         let host_hash_vec = host_data.get_from_host_data(domain_name_2.clone());
 
         assert!(host_hash_vec.is_none());
+    }
+
+    //get test
+    #[test]
+    fn get(){
+        let mut host_data = HostData::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let mut rr_cache = RRCache::new(resource_record);
+        rr_cache.set_response_time(1234433455);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        host_data.add_to_host_data(domain_name.clone(), rr_cache);
+
+        let vec_rr_cache = host_data.get(&domain_name).unwrap();
+
+        let rr_cache_o = vec_rr_cache.get(0).unwrap();
+
+        assert_eq!(1234433455, rr_cache_o.get_response_time())
+
+
+
+               
+
     }
 }

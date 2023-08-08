@@ -1,7 +1,7 @@
 use crate::message::resource_record::ResourceRecord;
 use chrono::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone,PartialEq,Debug)]
 // An structs that represents one element in the dns cache.
 pub struct RRCache {
     // Resource Records of the domain name

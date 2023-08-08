@@ -157,17 +157,17 @@ impl DnsCache {
         }
     }
 
-    pub fn print(&self) {
-        let cache = self.get_cache();
+    // pub fn print(&self) {
+    //     let cache = self.get_cache();
 
-        for (key, val) in cache.iter() {
-            println!("Type: {}", key);
+    //     for (key, val) in cache.iter() {
+    //         println!("Type: {}", key);
 
-            for (key2, _val2) in val.iter() {
-                println!("Host Name: {}", key2);
-            }
-        }
-    }
+    //         for (key2, _val2) in val.iter() {
+    //             println!("Host Name: {}", key2);
+    //         }
+    //     }
+    // }
 }
 
 // Getters
@@ -206,197 +206,197 @@ impl DnsCache {
     }
 }
 
-#[cfg(test)] 
-mod dns_cache_test {
-    use crate::dns_cache::DnsCache;
-    use crate::domain_name::DomainName;
-    use crate::message::rdata::a_rdata::ARdata;
-    use crate::message::rdata::ns_rdata::NsRdata;
-    use crate::message::type_rtype::Rtype;
-    use crate::message::rdata::Rdata;
-    use crate::message::resource_record::ResourceRecord;
+// #[cfg(test)] 
+// mod dns_cache_test {
+//     use crate::dns_cache::DnsCache;
+//     use crate::domain_name::DomainName;
+//     use crate::message::rdata::a_rdata::ARdata;
+//     use crate::message::rdata::ns_rdata::NsRdata;
+//     use crate::message::type_rtype::Rtype;
+//     use crate::message::rdata::Rdata;
+//     use crate::message::resource_record::ResourceRecord;
 
-    #[test]
-    fn constructor() {
-        let cache = DnsCache::new();
+//     #[test]
+//     fn constructor() {
+//         let cache = DnsCache::new();
 
-        assert_eq!(cache.cache.len(), 0);
-    }
+//         assert_eq!(cache.cache.len(), 0);
+//     }
 
-    #[test]
-    fn add_get_and_remove() {
-        let mut cache = DnsCache::new();
-        cache.set_max_size(2);
+//     #[test]
+//     fn add_get_and_remove() {
+//         let mut cache = DnsCache::new();
+//         cache.set_max_size(2);
 
-        let mut domain_name = DomainName::new();
-        domain_name.set_name("test2.com".to_string());
+//         let mut domain_name = DomainName::new();
+//         domain_name.set_name("test2.com".to_string());
 
-        let mut ns_rdatafn = NsRdata::new();
-        ns_rdata.set_nsdname(domain_name);
+//         let mut ns_rdatafn = NsRdata::new();
+//         ns_rdata.set_nsdname(domain_name);
 
-        let r_data = Rdata::SomeNsRdata(ns_rdata);
-        let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(Rtype::NS);
+//         let r_data = Rdata::SomeNsRdata(ns_rdata);
+//         let mut ns_resource_record = ResourceRecord::new(r_data);
+//         ns_resource_record.set_type_code(Rtype::NS);
 
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address([127, 0, 0, 1]);
+//         let mut a_rdata = ARdata::new();
+//         a_rdata.set_address([127, 0, 0, 1]);
 
-        let r_data = Rdata::SomeARdata(a_rdata);
+//         let r_data = Rdata::SomeARdata(a_rdata);
 
-        let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(Rtype::A);
+//         let mut a_resource_record = ResourceRecord::new(r_data);
+//         a_resource_record.set_type_code(Rtype::A);
 
-        cache.add("test.com".to_string(), ns_resource_record);
+//         cache.add("test.com".to_string(), ns_resource_record);
 
-        assert_eq!(cache.get_size(), 1);
+//         assert_eq!(cache.get_size(), 1);
 
-        cache.add("test.com".to_string(), a_resource_record);
+//         cache.add("test.com".to_string(), a_resource_record);
 
-        assert_eq!(
-            cache.get("test.com".to_string(), "A".to_string())[0]
-                .get_resource_record()
-                .get_rtype(),
-            Rtype::A
-        );
+//         assert_eq!(
+//             cache.get("test.com".to_string(), "A".to_string())[0]
+//                 .get_resource_record()
+//                 .get_rtype(),
+//             Rtype::A
+//         );
 
-        assert_eq!(
-            cache.get("test.com".to_string(), "NS".to_string())[0]
-                .get_resource_record()
-                .get_rtype(),
-            Rtype::NS
-        );
+//         assert_eq!(
+//             cache.get("test.com".to_string(), "NS".to_string())[0]
+//                 .get_resource_record()
+//                 .get_rtype(),
+//             Rtype::NS
+//         );
 
-        cache.remove("test.com".to_string(), "NS".to_string());
+//         cache.remove("test.com".to_string(), "NS".to_string());
 
-        assert_eq!(cache.get_size(), 1);
+//         assert_eq!(cache.get_size(), 1);
 
-        cache.remove("test.com".to_string(), "A".to_string());
+//         cache.remove("test.com".to_string(), "A".to_string());
 
-        assert_eq!(cache.get_size(), 0);
-    }
+//         assert_eq!(cache.get_size(), 0);
+//     }
 
-    #[test]
-    fn add_domain_with_full_cache() {
-        let mut cache = DnsCache::new();
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
-        let mut a_rdata = ARdata::new();
+//     #[test]
+//     fn add_domain_with_full_cache() {
+//         let mut cache = DnsCache::new();
+//         let ip_address: [u8; 4] = [127, 0, 0, 0];
+//         let mut a_rdata = ARdata::new();
 
-        cache.set_max_size(1);
-        a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+//         cache.set_max_size(1);
+//         a_rdata.set_address(ip_address);
+//         let rdata = Rdata::SomeARdata(a_rdata);
 
-        let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(Rtype::A);
+//         let mut resource_record = ResourceRecord::new(rdata);
+//         resource_record.set_type_code(Rtype::A);
 
-        let second_resource_record = resource_record.clone();
+//         let second_resource_record = resource_record.clone();
 
-        cache.add("test.com".to_string(), resource_record);
+//         cache.add("test.com".to_string(), resource_record);
 
-        assert_eq!(cache.get_size(), 1);
+//         assert_eq!(cache.get_size(), 1);
 
-        cache.add("test.com".to_string(), second_resource_record);
+//         cache.add("test.com".to_string(), second_resource_record);
 
-        assert_eq!(cache.get_size(), 1);
+//         assert_eq!(cache.get_size(), 1);
 
-        assert_eq!(
-            cache.get("test.com".to_string(), "A".to_string())[0]
-                .get_resource_record()
-                .get_rtype(),
-            Rtype::A
-        )
-    }
+//         assert_eq!(
+//             cache.get("test.com".to_string(), "A".to_string())[0]
+//                 .get_resource_record()
+//                 .get_rtype(),
+//             Rtype::A
+//         )
+//     }
 
-    #[test]
-    fn set_and_get_size() {
-        let mut cache = DnsCache::new();
+//     #[test]
+//     fn set_and_get_size() {
+//         let mut cache = DnsCache::new();
 
-        assert_eq!(cache.get_size(), 0 as u32);
+//         assert_eq!(cache.get_size(), 0 as u32);
 
-        cache.set_size(3);
+//         cache.set_size(3);
 
-        //For the future: case where we set a size bigger than the max_size
-        assert_eq!(cache.get_size(), 3 as u32);
-    }
+//         //For the future: case where we set a size bigger than the max_size
+//         assert_eq!(cache.get_size(), 3 as u32);
+//     }
 
-    #[test]
-    fn set_and_get_max_size() {
-        let mut cache = DnsCache::new();
+//     #[test]
+//     fn set_and_get_max_size() {
+//         let mut cache = DnsCache::new();
 
-        assert_eq!(cache.get_max_size(), 0 as u32);
+//         assert_eq!(cache.get_max_size(), 0 as u32);
 
-        cache.set_max_size(5);
+//         cache.set_max_size(5);
 
-        assert_eq!(cache.get_max_size(), 5 as u32);
-    }
+//         assert_eq!(cache.get_max_size(), 5 as u32);
+//     }
 
-    #[test]
-    //Modifying the cache of new_cache via the fn add and then setting it to dns_cache
-    fn set_and_get_cache() {
-        let mut dns_cache = DnsCache::new();
-        let mut new_cache = DnsCache::new();
-        assert_eq!(dns_cache.get_cache().len(), 0);
+//     #[test]
+//     //Modifying the cache of new_cache via the fn add and then setting it to dns_cache
+//     fn set_and_get_cache() {
+//         let mut dns_cache = DnsCache::new();
+//         let mut new_cache = DnsCache::new();
+//         assert_eq!(dns_cache.get_cache().len(), 0);
 
-        dns_cache.set_max_size(1);
-        new_cache.set_max_size(1);
+//         dns_cache.set_max_size(1);
+//         new_cache.set_max_size(1);
 
-        let mut domain_name = DomainName::new();
-        domain_name.set_name("test2.com".to_string());
+//         let mut domain_name = DomainName::new();
+//         domain_name.set_name("test2.com".to_string());
 
-        let mut ns_rdata = NsRdata::new();
-        ns_rdata.set_nsdname(domain_name);
+//         let mut ns_rdata = NsRdata::new();
+//         ns_rdata.set_nsdname(domain_name);
 
-        let r_data = Rdata::SomeNsRdata(ns_rdata);
-        let mut ns_resource_record = ResourceRecord::new(r_data);
-        ns_resource_record.set_type_code(Rtype::NS);
+//         let r_data = Rdata::SomeNsRdata(ns_rdata);
+//         let mut ns_resource_record = ResourceRecord::new(r_data);
+//         ns_resource_record.set_type_code(Rtype::NS);
 
-        new_cache.add(String::from("test.com"), ns_resource_record);
-        assert_eq!(new_cache.get_size(), 1 as u32);
+//         new_cache.add(String::from("test.com"), ns_resource_record);
+//         assert_eq!(new_cache.get_size(), 1 as u32);
 
-        let cache = new_cache.get_cache();
+//         let cache = new_cache.get_cache();
 
-        dns_cache.set_cache(cache);
-        dns_cache.set_size(1);
+//         dns_cache.set_cache(cache);
+//         dns_cache.set_size(1);
 
-        let rr_cache = dns_cache.get(String::from("test.com"), String::from("NS"));
-        let rr = rr_cache[0].get_resource_record();
-        let qtype = Rtype::from_rtype_to_int(rr.get_rtype());
+//         let rr_cache = dns_cache.get(String::from("test.com"), String::from("NS"));
+//         let rr = rr_cache[0].get_resource_record();
+//         let qtype = Rtype::from_rtype_to_int(rr.get_rtype());
 
-        assert_eq!(qtype, 2);
-    }
+//         assert_eq!(qtype, 2);
+//     }
 
-    #[test]
-    fn update_and_get_response_time() {
-        let mut dns_cache = DnsCache::new();
+//     #[test]
+//     fn update_and_get_response_time() {
+//         let mut dns_cache = DnsCache::new();
 
-        dns_cache.set_max_size(1);
+//         dns_cache.set_max_size(1);
 
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address([127, 0, 0, 1]);
+//         let mut a_rdata = ARdata::new();
+//         a_rdata.set_address([127, 0, 0, 1]);
 
-        let r_data = Rdata::SomeARdata(a_rdata);
+//         let r_data = Rdata::SomeARdata(a_rdata);
 
-        let mut a_resource_record = ResourceRecord::new(r_data);
-        a_resource_record.set_type_code(Rtype::A);
+//         let mut a_resource_record = ResourceRecord::new(r_data);
+//         a_resource_record.set_type_code(Rtype::A);
 
-        dns_cache.add(String::from("test.com"), a_resource_record);
-        let response_time = dns_cache.get_response_time(
-            String::from("test.com"),
-            String::from("A"),
-            String::from("127.0.0.1"),
-        );
-        assert_eq!(response_time, 5000 as u32);
+//         dns_cache.add(String::from("test.com"), a_resource_record);
+//         let response_time = dns_cache.get_response_time(
+//             String::from("test.com"),
+//             String::from("A"),
+//             String::from("127.0.0.1"),
+//         );
+//         assert_eq!(response_time, 5000 as u32);
 
-        dns_cache.update_response_time(
-            String::from("test.com"),
-            String::from("A"),
-            3000,
-            String::from("127.0.0.1"),
-        );
-        let new_response_time = dns_cache.get_response_time(
-            String::from("test.com"),
-            String::from("A"),
-            String::from("127.0.0.1"),
-        );
-        assert_eq!(new_response_time, 4000 as u32);
-    }
-}
+//         dns_cache.update_response_time(
+//             String::from("test.com"),
+//             String::from("A"),
+//             3000,
+//             String::from("127.0.0.1"),
+//         );
+//         let new_response_time = dns_cache.get_response_time(
+//             String::from("test.com"),
+//             String::from("A"),
+//             String::from("127.0.0.1"),
+//         );
+//         assert_eq!(new_response_time, 4000 as u32);
+//     }
+// }

@@ -128,7 +128,9 @@ impl HostData{
 
     }
     
-    ///function to insert a host data into the host data
+    ///function to insert a domain name and a new value to be associated
+    /// and return the value that was associated before, or none if 
+    /// the domain name didn't exist before
     /// # Example
     /// ```
     /// let mut host_data = HostData::new();
@@ -139,8 +141,12 @@ impl HostData{
     /// let mut domain_name = DomainName::new();
     /// domain_name.set_name(String::from("uchile.cl"));
     /// host_data.add_to_host_data(domain_name, rr_cache);
-    /// let host_data_2 = get_oldest_used.get_from_host_data(domain_name);
-    /// host_data.insert(host_data_2);
+    /// let mut domain_name_new = DomainName::new();
+    /// domain_name_new.set_name(String::from("inserted"));
+    /// let a_rdata_2 = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record_2 = ResourceRecord::new(a_rdata);
+    /// let mut rr_cache_2 = RRCache::new(resource_record);
+    /// host_data.insert(domain_name_new, rr_cache_2);
     /// ```
     pub fn insert(&mut self,domain_name:DomainName, rr_cache_vec : Vec<RRCache>) -> Option<Vec<RRCache>>{
         return self.host_hash.insert(domain_name, rr_cache_vec)
@@ -350,17 +356,28 @@ mod host_data_test{
         assert_eq!("expected".to_string(), oldest_name)        
     }
 
-     //get oldest used test
+     //get insert  used test
      #[test]
      fn insert(){
         let mut host_data = HostData::new();
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let mut rr_cache = RRCache::new(resource_record);
-        rr_cache.set_last_use(Utc::now());
+        rr_cache.set_response_time(12);
+
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
         host_data.add_to_host_data(domain_name, rr_cache);
+        let mut domain_name_new = DomainName::new();
+        domain_name_new.set_name(String::from("inserted"));
+        let a_rdata_2 = Rdata::SomeARdata(ARdata::new());
+        let resource_record_2 = ResourceRecord::new(a_rdata_2);
+        let rr_cache_2 = RRCache::new(resource_record_2);
+
+        let mut rr_vec = Vec::new();
+        rr_vec.push(rr_cache_2);
+        let expected = host_data.insert(domain_name_new, rr_vec);
+        assert_eq!(expected, None)
         
      }
 

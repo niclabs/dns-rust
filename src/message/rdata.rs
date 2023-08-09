@@ -402,9 +402,7 @@ mod resolver_query_tests {
     fn from_bytes_a_ch_rdata(){
         let data_bytes = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 10, 0, 1, 0, 3];
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
-        let mut domain_name = DomainName::new();
         let name = String::from("test.com");
-        domain_name.set_name(name.clone());
 
         match rdata {
             Rdata::SomeAChRdata(val) => {

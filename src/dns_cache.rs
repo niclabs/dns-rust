@@ -232,6 +232,14 @@ mod dns_cache_test {
         assert_eq!(cache.get_max_size(), 5);
     }
 
+    #[test]
+    fn set_and_get_size(){
+        let mut cache = DnsCache::new();
+        assert_eq!(cache.get_size(), 0);
+        cache.set_size(5);
+        assert_eq!(cache.get_size(), 5);
+    }
+
 //     #[test]
 //     fn add_get_and_remove() {
 //         let mut cache = DnsCache::new();

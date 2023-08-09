@@ -223,6 +223,15 @@ mod dns_cache_test {
         assert!(cache.cache.cache_data.is_empty());
     }
 
+    //Setters and getters test
+    #[test]
+    fn get_and_set_max_size(){
+        let mut cache = DnsCache::new();
+        assert_eq!(cache.get_max_size(), 0);
+        cache.set_max_size(5);
+        assert_eq!(cache.get_max_size(), 5);
+    }
+
 //     #[test]
 //     fn add_get_and_remove() {
 //         let mut cache = DnsCache::new();

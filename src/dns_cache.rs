@@ -206,22 +206,22 @@ impl DnsCache {
     }
 }
 
-// #[cfg(test)] 
-// mod dns_cache_test {
-//     use crate::dns_cache::DnsCache;
-//     use crate::domain_name::DomainName;
-//     use crate::message::rdata::a_rdata::ARdata;
-//     use crate::message::rdata::ns_rdata::NsRdata;
-//     use crate::message::type_rtype::Rtype;
-//     use crate::message::rdata::Rdata;
-//     use crate::message::resource_record::ResourceRecord;
+#[cfg(test)] 
+mod dns_cache_test {
+    use crate::dns_cache::DnsCache;
+     use crate::domain_name::DomainName;
+     use crate::message::rdata::a_rdata::ARdata;
+     use crate::message::rdata::ns_rdata::NsRdata;
+     use crate::message::type_rtype::Rtype;
+     use crate::message::rdata::Rdata;
+     use crate::message::resource_record::ResourceRecord;
 
-//     #[test]
-//     fn constructor() {
-//         let cache = DnsCache::new();
-
-//         assert_eq!(cache.cache.len(), 0);
-//     }
+    //Constructor test 
+    #[test]
+    fn constructor_test(){
+        let cache = DnsCache::new();
+        assert!(cache.cache.cache_data.is_empty());
+    }
 
 //     #[test]
 //     fn add_get_and_remove() {
@@ -255,7 +255,8 @@ impl DnsCache {
 //         assert_eq!(
 //             cache.get("test.com".to_string(), "A".to_string())[0]
 //                 .get_resource_record()
-//                 .get_rtype(),
+//                 .get_rtype(),mod dns_cache_test {
+//
 //             Rtype::A
 //         );
 
@@ -399,4 +400,4 @@ impl DnsCache {
 //         );
 //         assert_eq!(new_response_time, 4000 as u32);
 //     }
-// }
+}

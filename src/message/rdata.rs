@@ -456,4 +456,20 @@ mod resolver_query_tests {
             _ => {}
         }     
     }
+
+    #[test]
+    fn from_bytes_mx_rdata(){
+        let data_bytes = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 15, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        match rdata {
+            Rdata::SomeMxRdata(val) => {
+                assert_eq!(val.get_exchange().get_name(), domain_name.get_name());
+                assert_eq!(val.get_preference(), 128);
+            }
+            _ => {}
+        }     
+    }
 }

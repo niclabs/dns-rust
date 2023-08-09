@@ -525,4 +525,18 @@ mod resolver_query_tests {
             _ => {}
         }     
     }
+
+    #[test]
+    fn from_bytes_txt_rdata(){
+        let data_bytes = [8, 100, 99, 99, 32, 116, 101, 115, 116, 0, 0, 16, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let text = vec!["dcc test".to_string()];
+
+        match rdata {
+            Rdata::SomeTxtRdata(val) => {
+                assert_eq!(val.get_text(), text);
+            }
+            _ => {}
+        }
+    }
 }

@@ -414,4 +414,16 @@ mod resolver_query_tests {
             _ => {}
         }
     }
+
+    #[test]
+    fn from_bytes_a_rdata(){
+        let data_bytes = [128, 0, 0, 1, 0, 1, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::SomeARdata(val) => {
+                assert_eq!(val.get_address(), [128, 0, 0, 1]);
+            }
+            _ => {}
+        }
+    }
 }

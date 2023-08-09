@@ -209,12 +209,16 @@ impl DnsCache {
 #[cfg(test)] 
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
-     use crate::domain_name::DomainName;
-     use crate::message::rdata::a_rdata::ARdata;
-     use crate::message::rdata::ns_rdata::NsRdata;
-     use crate::message::type_rtype::Rtype;
-     use crate::message::rdata::Rdata;
-     use crate::message::resource_record::ResourceRecord;
+    use crate::cache_data::CacheData;
+    use crate::cache_data::host_data::HostData;
+    use crate::rr_cache::RRCache;
+    use crate::domain_name::DomainName;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::ns_rdata::NsRdata;
+    use crate::message::type_rtype::Rtype;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
+    use std::collections::HashMap;
 
     //Constructor test 
     #[test]
@@ -238,6 +242,28 @@ mod dns_cache_test {
         assert_eq!(cache.get_size(), 0);
         cache.set_size(5);
         assert_eq!(cache.get_size(), 5);
+    }
+
+    #[test]
+    fn set_and_get_cache(){
+        let mut cache = DnsCache::new();
+        assert!(cache.get_cache().get_cache_data().is_empty());
+        let mut cache_data = CacheData::new();
+        let mut cache_data_hash = HashMap::new();
+        let mut host_data = HostData::new();
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
+        host_data.add_to_host_data(domain_name, rr_cache);
+        cache_data_hash.insert(Rtype::A, host_data);
+
+        cache_data.set_cache_data(cache_data_hash);
+
+        cache.set_cache(cache_data);
+
+        assert!(!cache.get_cache().get_cache_data().is_empty());
     }
 
 //     #[test]

@@ -500,4 +500,29 @@ mod resolver_query_tests {
             _ => {}
         }     
     }
+
+    #[test]
+    fn from_bytes_soa_rdata(){
+        let data_bytes = [4, 116, 101, 115, 116,
+        3, 99, 111, 109,
+        0, 4, 116, 101, 115, 116,
+        3, 99, 111, 109,
+        0, 0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1, 0, 6, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        match rdata {
+            Rdata::SomeSoaRdata(val) => {
+                assert_eq!(val.get_mname().get_name(), domain_name.get_name());
+                assert_eq!(val.get_rname().get_name(), domain_name.get_name());
+                assert_eq!(val.get_serial(), 512);
+                assert_eq!(val.get_refresh(), 8);
+                assert_eq!(val.get_retry(), 4);
+                assert_eq!(val.get_expire(), 2);
+                assert_eq!(val.get_minimum(), 1);
+            }
+            _ => {}
+        }     
+    }
 }

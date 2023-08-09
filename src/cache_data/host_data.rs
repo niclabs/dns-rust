@@ -106,7 +106,7 @@ impl HostData{
     /// let mut domain_name = DomainName::new();
     /// domain_name.set_name(String::from("uchile.cl"));
     /// host_data.add_to_host_data(domain_name, rr_cache);
-    /// let host_data_2_vec = get_oldest_used.get_from_host_data(domain_name);
+    /// let host_data_2 = get_oldest_used.get_from_host_data(domain_name);
     /// ```
     pub fn get_oldest_used(&mut self) -> DomainName{
         let host = self.get_host_hash();
@@ -127,7 +127,21 @@ impl HostData{
         return oldest_used_domain_name
 
     }
-
+    
+    ///function to insert a host data into the host data
+    /// # Example
+    /// ```
+    /// let mut host_data = HostData::new();
+    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record = ResourceRecord::new(a_rdata);
+    /// let mut rr_cache = RRCache::new(resource_record);
+    /// rr_cache.set_last_use(Utc::now());
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_name(String::from("uchile.cl"));
+    /// host_data.add_to_host_data(domain_name, rr_cache);
+    /// let host_data_2 = get_oldest_used.get_from_host_data(domain_name);
+    /// host_data.insert(host_data_2);
+    /// ```
     pub fn insert(&mut self,domain_name:DomainName, rr_cache_vec : Vec<RRCache>) -> Option<Vec<RRCache>>{
         return self.host_hash.insert(domain_name, rr_cache_vec)
     }
@@ -335,6 +349,20 @@ mod host_data_test{
 
         assert_eq!("expected".to_string(), oldest_name)        
     }
+
+     //get oldest used test
+     #[test]
+     fn insert(){
+        let mut host_data = HostData::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let mut rr_cache = RRCache::new(resource_record);
+        rr_cache.set_last_use(Utc::now());
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        host_data.add_to_host_data(domain_name, rr_cache);
+        
+     }
 
 
 }

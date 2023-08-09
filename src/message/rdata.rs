@@ -485,4 +485,19 @@ mod resolver_query_tests {
             _ => {}
         }     
     }
+
+    #[test]
+    fn from_bytes_ptr_rdata(){
+        let data_bytes = [4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0, 0, 12, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.test2.com"));
+
+        match rdata {
+            Rdata::SomePtrRdata(val) => {
+                assert_eq!(val.get_ptrdname().get_name(), domain_name.get_name());
+            }
+            _ => {}
+        }     
+    }
 }

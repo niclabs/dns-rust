@@ -440,4 +440,20 @@ mod resolver_query_tests {
             _ => {}
         }     
     }
+
+    #[test]
+    fn from_bytes_hinfo_rdata(){
+        let data_bytes = [99, 112, 117, 0, 111, 115, 0, 0, 13, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let cpu = String::from("cpu");
+        let os = String::from("os");
+
+        match rdata {
+            Rdata::SomeHinfoRdata(val) => {
+                assert_eq!(val.get_cpu(), cpu);
+                assert_eq!(val.get_os(), os);
+            }
+            _ => {}
+        }     
+    }
 }

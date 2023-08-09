@@ -95,6 +95,19 @@ impl HostData{
         }
     }
 
+    ///function to get the oldest used 
+    /// # Example
+    /// ```
+    /// let mut host_data = HostData::new();
+    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record = ResourceRecord::new(a_rdata);
+    /// let rr_cache = RRCache::new(resource_record);
+    /// rr_cache.set_last_use(Utc::now());
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_name(String::from("uchile.cl"));
+    /// host_data.add_to_host_data(domain_name, rr_cache);
+    /// let host_data_2_vec = get_oldest_used.get_from_host_data(domain_name);
+    /// ```
     pub fn get_oldest_used(&mut self) -> DomainName{
         let host = self.get_host_hash();
         let mut used_in = Utc::now();
@@ -139,6 +152,7 @@ impl HostData{
 
 #[cfg(test)]
 mod host_data_test{
+    use chrono::Utc;
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::rr_cache::RRCache;
     use crate::domain_name::DomainName;
@@ -295,10 +309,32 @@ mod host_data_test{
         let rr_cache_o = vec_rr_cache.get(0).unwrap();
 
         assert_eq!(1234433455, rr_cache_o.get_response_time())
-
-
-
-               
-
     }
+
+    //get oldest used test
+    #[test]
+    fn get_oldest_used(){
+        let mut host_data = HostData::new();
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let mut rr_cache = RRCache::new(resource_record);
+        rr_cache.set_last_use(Utc::now());
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("expected"));
+    
+        let mut new_vec = Vec::new();
+        new_vec.push(String::from("uchile.cl"));
+        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let resource_record_2 = ResourceRecord::new(text_rdata);
+        let mut rr_cache_2 = RRCache::new(resource_record_2);
+        rr_cache_2.set_last_use(Utc::now());
+        host_data.add_to_host_data(domain_name.clone(), rr_cache_2);
+
+        let oldest_used = host_data.get_oldest_used();
+        let oldest_name = oldest_used.get_name();
+
+        assert_eq!("expected".to_string(), oldest_name)        
+    }
+
+
 }

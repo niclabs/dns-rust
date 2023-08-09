@@ -86,8 +86,7 @@ impl CacheData{
     }
 
     pub fn remove_oldest_used(&mut self){
-        let mut cache = self.get_cache_data();
-        let mut used_in = Utc::now();
+        let cache = self.get_cache_data();
         
         let mut oldest_used_domain_name = DomainName::new();
         let mut oldest_used_type =Rtype::A;

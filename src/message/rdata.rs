@@ -206,7 +206,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
-    use crate::message::resource_record::{ToBytes};
+    use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
     use super:: a_ch_rdata::AChRdata;
     use super::a_rdata::ARdata;
@@ -395,5 +395,23 @@ mod resolver_query_tests {
             expected_bytes.push(byte);
         }
         assert_eq!(bytes, expected_bytes);
+    }
+
+    //from bytes tests
+    #[test]
+    fn from_bytes_a_ch_rdata(){
+        let data_bytes = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 10, 0, 1, 0, 3];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let mut domain_name = DomainName::new();
+        let name = String::from("test.com");
+        domain_name.set_name(name.clone());
+
+        match rdata {
+            Rdata::SomeAChRdata(val) => {
+                assert_eq!(val.get_ch_address(), 10);
+                assert_eq!(val.get_domain_name().get_name(), name);
+            }
+            _ => {}
+        }
     }
 }

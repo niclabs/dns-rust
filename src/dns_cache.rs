@@ -349,65 +349,6 @@ mod dns_cache_test {
 //             Rtype::A
 //         )
 //     }
-
-//     #[test]
-//     fn set_and_get_size() {
-//         let mut cache = DnsCache::new();
-
-//         assert_eq!(cache.get_size(), 0 as u32);
-
-//         cache.set_size(3);
-
-//         //For the future: case where we set a size bigger than the max_size
-//         assert_eq!(cache.get_size(), 3 as u32);
-//     }
-
-//     #[test]
-//     fn set_and_get_max_size() {
-//         let mut cache = DnsCache::new();
-
-//         assert_eq!(cache.get_max_size(), 0 as u32);
-
-//         cache.set_max_size(5);
-
-//         assert_eq!(cache.get_max_size(), 5 as u32);
-//     }
-
-//     #[test]
-//     //Modifying the cache of new_cache via the fn add and then setting it to dns_cache
-//     fn set_and_get_cache() {
-//         let mut dns_cache = DnsCache::new();
-//         let mut new_cache = DnsCache::new();
-//         assert_eq!(dns_cache.get_cache().len(), 0);
-
-//         dns_cache.set_max_size(1);
-//         new_cache.set_max_size(1);
-
-//         let mut domain_name = DomainName::new();
-//         domain_name.set_name("test2.com".to_string());
-
-//         let mut ns_rdata = NsRdata::new();
-//         ns_rdata.set_nsdname(domain_name);
-
-//         let r_data = Rdata::SomeNsRdata(ns_rdata);
-//         let mut ns_resource_record = ResourceRecord::new(r_data);
-//         ns_resource_record.set_type_code(Rtype::NS);
-
-//         new_cache.add(String::from("test.com"), ns_resource_record);
-//         assert_eq!(new_cache.get_size(), 1 as u32);
-
-//         let cache = new_cache.get_cache();
-
-//         dns_cache.set_cache(cache);
-//         dns_cache.set_size(1);
-
-//         let rr_cache = dns_cache.get(String::from("test.com"), String::from("NS"));
-//         let rr = rr_cache[0].get_resource_record();
-//         let qtype = Rtype::from_rtype_to_int(rr.get_rtype());
-
-//         assert_eq!(qtype, 2);
-//     }
-
 //     #[test]
 //     fn update_and_get_response_time() {
 //         let mut dns_cache = DnsCache::new();

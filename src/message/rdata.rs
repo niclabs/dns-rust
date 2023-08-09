@@ -539,4 +539,11 @@ mod resolver_query_tests {
             _ => {}
         }
     }
+
+    #[test]
+    #[should_panic]
+    fn from_bytes_format_error(){
+        let data_bytes = [];
+        let _rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+    }
 }

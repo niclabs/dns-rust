@@ -426,4 +426,18 @@ mod resolver_query_tests {
             _ => {}
         }
     }
+
+    #[test]
+    fn from_bytes_cname_rdata(){
+        let data_bytes = [5, 99, 110, 97, 109, 101, 0, 0, 5, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let name = String::from("cname");
+
+        match rdata {
+            Rdata::SomeCnameRdata(val) => {
+                assert_eq!(val.get_cname().get_name(), name);
+            }
+            _ => {}
+        }     
+    }
 }

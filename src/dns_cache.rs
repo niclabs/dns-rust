@@ -39,7 +39,9 @@ impl DnsCache {
 
     // Adds an element to cache
     pub fn add(&mut self,rtype: Rtype, domain_name: DomainName, rr_cache:RRCache) {
-        self.get_cache().add_to_cache_data(rtype,domain_name,rr_cache);
+        let mut cache_data = self.get_cache();
+        cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
+        self.set_cache(cache_data);
     }
 
     // Removes an element from cache
@@ -266,59 +268,25 @@ mod dns_cache_test {
         assert!(!cache.get_cache().get_cache_data().is_empty());
     }
 
-//     #[test]
-//     fn add_get_and_remove() {
-//         let mut cache = DnsCache::new();
-//         cache.set_max_size(2);
+    //Add test
+    #[test]
+    fn add_to_cache_data(){
+        let mut cache = DnsCache::new();
 
-//         let mut domain_name = DomainName::new();
-//         domain_name.set_name("test2.com".to_string());
+        cache.set_max_size(2);
 
-//         let mut ns_rdatafn = NsRdata::new();
-//         ns_rdata.set_nsdname(domain_name);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let rr_cache = RRCache::new(resource_record);
 
-//         let r_data = Rdata::SomeNsRdata(ns_rdata);
-//         let mut ns_resource_record = ResourceRecord::new(r_data);
-//         ns_resource_record.set_type_code(Rtype::NS);
+        assert!(cache.get_cache().get_cache_data().is_empty());
 
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address([127, 0, 0, 1]);
+        cache.add(Rtype::A, domain_name, rr_cache);
 
-//         let r_data = Rdata::SomeARdata(a_rdata);
-
-//         let mut a_resource_record = ResourceRecord::new(r_data);
-//         a_resource_record.set_type_code(Rtype::A);
-
-//         cache.add("test.com".to_string(), ns_resource_record);
-
-//         assert_eq!(cache.get_size(), 1);
-
-//         cache.add("test.com".to_string(), a_resource_record);
-
-//         assert_eq!(
-//             cache.get("test.com".to_string(), "A".to_string())[0]
-//                 .get_resource_record()
-//                 .get_rtype(),mod dns_cache_test {
-//
-//             Rtype::A
-//         );
-
-//         assert_eq!(
-//             cache.get("test.com".to_string(), "NS".to_string())[0]
-//                 .get_resource_record()
-//                 .get_rtype(),
-//             Rtype::NS
-//         );
-
-//         cache.remove("test.com".to_string(), "NS".to_string());
-
-//         assert_eq!(cache.get_size(), 1);
-
-//         cache.remove("test.com".to_string(), "A".to_string());
-
-//         assert_eq!(cache.get_size(), 0);
-//     }
-
+        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
+    }
 //     #[test]
 //     fn add_domain_with_full_cache() {
 //         let mut cache = DnsCache::new();

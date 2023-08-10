@@ -1,6 +1,6 @@
 use chrono::Utc;
 
-use crate::{rr_cache::RRCache, domain_name::DomainName, message::type_rtype::Rtype};
+use crate::{rr_cache::RRCache, domain_name::DomainName};
 use std::collections::HashMap;
 
 ///type to define the name of the host

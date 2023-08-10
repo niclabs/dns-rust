@@ -216,6 +216,7 @@ mod dns_cache_test {
     use crate::rr_cache::RRCache;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::type_rtype::Rtype;
     use crate::message::rdata::Rdata;
@@ -283,9 +284,19 @@ mod dns_cache_test {
 
         assert!(cache.get_cache().get_cache_data().is_empty());
 
-        cache.add(Rtype::A, domain_name, rr_cache);
+        cache.add(Rtype::A, domain_name.clone(), rr_cache);
 
         assert_eq!(cache.get_cache().get_cache_data().len(), 1);
+
+        let mut new_vec = Vec::new();
+        new_vec.push(String::from("hola"));
+        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let resource_record_2 = ResourceRecord::new(text_rdata);
+        let rr_cache_2 = RRCache::new(resource_record_2);
+
+        cache.add(Rtype::TXT, domain_name.clone(), rr_cache_2);
+
+        assert_eq!(cache.get_cache().get_cache_data().len(), 2);
     }
 //     #[test]
 //     fn add_domain_with_full_cache() {

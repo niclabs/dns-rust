@@ -85,6 +85,23 @@ impl CacheData{
         } 
     }
 
+    ///function to remove the oldest element from the cache data
+    /// # Example
+    /// ```
+    /// let mut cache_data = CacheData::new();
+    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let resource_record = ResourceRecord::new(a_rdata);
+    /// let rr_cache = RRCache::new(resource_record);
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_domain_name(String::from("uchile.cl"));
+    /// cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
+    /// cache_data.add_to_cache_data(Rtype::A, domain_name)
+    /// cache_data.remove_oldest_used(domain_name, Rtype::A);
+    /// ```
+    /// # Arguments
+    /// * `domain_name` - A DomainName that represents the domain name of the cache data
+    /// * `rtype` - A Rtype that represents the rtype of the cache data
+
     pub fn remove_oldest_used(&mut self){
         let cache = self.get_cache_data();
         
@@ -208,6 +225,10 @@ impl CacheData{
 
 #[cfg(test)]
 mod cache_data_test{
+    use chrono::{Utc, Duration};
+    use std::thread::sleep;
+    use std::time::Duration as StdDuration;
+
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::type_rtype::Rtype;
     use crate::rr_cache::RRCache;
@@ -347,5 +368,43 @@ mod cache_data_test{
         let rr_cache_vec_3 = cache_data.get_from_cache_data(DomainName::new(), Rtype::A);
 
         assert!(rr_cache_vec_3.is_none());
+    }
+
+    //remove oldest used test
+    #[test]
+    fn remove_oldest_used(){
+        let mut cache_data = CacheData::new();
+
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        let mut rr_cache = RRCache::new(resource_record);
+        let now = Utc::now();
+        let time_back = Duration::seconds(3600); 
+        let new_time = now - time_back; 
+        rr_cache.set_last_use(new_time);
+        let mut domain_name_1 = DomainName::new();
+        domain_name_1.set_name(String::from("expected"));
+        let mut domain_name_2 = DomainName::new();
+        domain_name_2.set_name(String::from("expected"));
+    
+        let mut new_vec = Vec::new();
+        new_vec.push(String::from("uchile.cl"));
+        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let resource_record_2 = ResourceRecord::new(text_rdata);
+        let mut rr_cache_2 = RRCache::new(resource_record_2);
+        rr_cache_2.set_last_use(Utc::now());
+
+
+        cache_data.add_to_cache_data(Rtype::A, domain_name_1.clone(), rr_cache);
+        cache_data.add_to_cache_data(Rtype::SOA, domain_name_2.clone(), rr_cache_2);
+
+        cache_data.remove_oldest_used();
+        let vec_rr_cache_soa_expected = cache_data.get_from_cache_data(domain_name_1, Rtype::SOA).unwrap();
+        let a = vec_rr_cache_soa_expected.len();
+        assert_eq!(a,1);
+
+        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::A);
+
+        assert_eq!(vec_rr_cache_a_expected, None);
     }
 }

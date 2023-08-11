@@ -315,6 +315,32 @@ mod dns_cache_test {
         assert_eq!(cache.get_cache().get_cache_data().len(), 2);
         assert_eq!(cache.get_size(), 2)
     }
+
+    //Add domain with full cache test
+    #[test]
+    fn add_domain_with_full_cache(){
+        let mut cache = DnsCache::new();
+
+        cache.set_max_size(1);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        cache.add(Rtype::A, domain_name.clone(), resource_record);
+
+        assert_eq!(cache.get_size(), 1);
+
+        let mut new_vec = Vec::new();
+        new_vec.push(String::from("hola"));
+        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let resource_record_2 = ResourceRecord::new(text_rdata);
+
+        cache.add(Rtype::TXT, domain_name.clone(), resource_record_2);
+
+        assert_eq!(cache.get_size(), 1);
+    }
 //     #[test]
 //     fn add_domain_with_full_cache() {
 //         let mut cache = DnsCache::new();

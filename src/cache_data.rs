@@ -75,14 +75,16 @@ impl CacheData{
     /// # Arguments
     /// * `domain_name` - A DomainName that represents the domain name of the cache data
     /// * `rtype` - A Rtype that represents the rtype of the cache data
-    pub fn remove_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype){
+    pub fn remove_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype) -> u32{
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get_mut(&rtype) {
             let mut type_hash: HostData = x.clone();
-            type_hash.remove_from_host_data(domain_name);
+            let length = type_hash.remove_from_host_data(domain_name);
             cache_data.insert(rtype, type_hash);
             self.set_cache_data(cache_data);
-        } 
+            return length;
+        }
+        return 0; 
     }
 
     ///function to remove the oldest element from the cache data

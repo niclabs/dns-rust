@@ -312,6 +312,7 @@ mod dns_cache_test {
         cache.add(Rtype::TXT, domain_name.clone(), resource_record_2);
 
         assert_eq!(cache.get_cache().get_cache_data().len(), 2);
+        assert_eq!(cache.get_size(), 2)
     }
 //     #[test]
 //     fn add_domain_with_full_cache() {

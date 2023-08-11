@@ -73,7 +73,7 @@ impl DnsCache {
 
         cache.remove_oldest_used();
 
-        
+        self.set_cache(cache);
     }
 
     // Gets the response time from a domain name and type resource record

@@ -342,36 +342,6 @@ mod dns_cache_test {
         assert_eq!(cache.get_size(), 1);
     }
 //     #[test]
-//     fn add_domain_with_full_cache() {
-//         let mut cache = DnsCache::new();
-//         let ip_address: [u8; 4] = [127, 0, 0, 0];
-//         let mut a_rdata = ARdata::new();
-
-//         cache.set_max_size(1);
-//         a_rdata.set_address(ip_address);
-//         let rdata = Rdata::SomeARdata(a_rdata);
-
-//         let mut resource_record = ResourceRecord::new(rdata);
-//         resource_record.set_type_code(Rtype::A);
-
-//         let second_resource_record = resource_record.clone();
-
-//         cache.add("test.com".to_string(), resource_record);
-
-//         assert_eq!(cache.get_size(), 1);
-
-//         cache.add("test.com".to_string(), second_resource_record);
-
-//         assert_eq!(cache.get_size(), 1);
-
-//         assert_eq!(
-//             cache.get("test.com".to_string(), "A".to_string())[0]
-//                 .get_resource_record()
-//                 .get_rtype(),
-//             Rtype::A
-//         )
-//     }
-//     #[test]
 //     fn update_and_get_response_time() {
 //         let mut dns_cache = DnsCache::new();
 

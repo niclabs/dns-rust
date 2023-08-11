@@ -341,6 +341,8 @@ mod dns_cache_test {
 
         assert_eq!(cache.get_size(), 1);
     }
+
+    //Remaining test: Remove, get, remove_oldest_used, get_response_time, update_response_time
 //     #[test]
 //     fn update_and_get_response_time() {
 //         let mut dns_cache = DnsCache::new();

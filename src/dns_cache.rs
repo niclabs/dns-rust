@@ -51,6 +51,7 @@ impl DnsCache {
         let mut cache_data = self.get_cache();
         cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
         self.set_cache(cache_data);
+        self.set_size(self.get_size() + 1);
     }
 
     // Removes an element from cache

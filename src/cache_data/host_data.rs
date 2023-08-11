@@ -66,13 +66,11 @@ impl HostData{
     /// host_data.add_to_host_data(domain_name, rr_cache);
     /// host_data.remove_from_host_data(domain_name);
     /// ```
-    pub fn remove_from_host_data(&mut self, host_name: DomainName) -> u32{
+    pub fn remove_from_host_data(&mut self, host_name: DomainName){
         let mut host_hash = self.get_host_hash();
         if let Some(_x) = host_hash.remove(&host_name){
-            self.set_host_hash(host_hash);
-            return _x.len() as u32;    
+            self.set_host_hash(host_hash);    
         }
-        return 0;
     }
 
     ///function to get an element from the host data

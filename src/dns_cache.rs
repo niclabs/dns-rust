@@ -39,6 +39,15 @@ impl DnsCache {
 
     // Adds an element to cache
     pub fn add(&mut self,rtype: Rtype, domain_name: DomainName, rr_cache:RRCache) {
+        //See if max size is 0
+        if self.max_size < 1 {
+            return;
+        }
+
+        // see cache space
+        if self.get_size() >= self.max_size {
+            self.remove_oldest_used();
+        }
         let mut cache_data = self.get_cache();
         cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
         self.set_cache(cache_data);

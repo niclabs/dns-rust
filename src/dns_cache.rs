@@ -60,9 +60,10 @@ impl DnsCache {
     // Removes an element from cache
     pub fn remove(&mut self, domain_name: DomainName, rtype: Rtype) {
         let mut cache_data = self.get_cache();
-        cache_data.remove_from_cache_data(domain_name, rtype);
+        let length = cache_data.remove_from_cache_data(domain_name, rtype);
         //Size needs to be modified if something was removed
-        self.set_cache(cache_data);   
+        self.set_cache(cache_data);
+        self.set_size(self.get_size() - length as u32);   
     }
 
     // Given a domain_name, gets an element from cache

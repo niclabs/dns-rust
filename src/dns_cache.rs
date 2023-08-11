@@ -63,7 +63,7 @@ impl DnsCache {
         let length = cache_data.remove_from_cache_data(domain_name, rtype);
         //Size needs to be modified if something was removed
         self.set_cache(cache_data);
-        self.set_size(self.get_size() - length as u32);   
+        self.set_size(self.get_size() - length as u32);  
     }
 
     // Given a domain_name, gets an element from cache
@@ -77,9 +77,10 @@ impl DnsCache {
         let mut cache = self.get_cache();
         let mut used_in = Utc::now();
 
-        cache.remove_oldest_used();
-
+        let length = cache.remove_oldest_used();
+        println!("Cache size: {}", self.get_size());
         self.set_cache(cache);
+        self.set_size(self.get_size() - length as u32); 
     }
 
     // Gets the response time from a domain name and type resource record
@@ -291,7 +292,7 @@ mod dns_cache_test {
     fn add_to_cache_data(){
         let mut cache = DnsCache::new();
 
-        cache.set_max_size(2);
+        cache.set_max_size(1);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));

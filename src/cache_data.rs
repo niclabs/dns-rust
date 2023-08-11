@@ -104,7 +104,7 @@ impl CacheData{
     /// * `domain_name` - A DomainName that represents the domain name of the cache data
     /// * `rtype` - A Rtype that represents the rtype of the cache data
 
-    pub fn remove_oldest_used(&mut self){
+    pub fn remove_oldest_used(&mut self) -> u32{
         let cache = self.get_cache_data();
         
         let mut oldest_used_domain_name = DomainName::new();
@@ -115,8 +115,8 @@ impl CacheData{
             oldest_used_type = key.clone();
         }
         
-        self.remove_from_cache_data(oldest_used_domain_name, oldest_used_type);
-    
+        let length = self.remove_from_cache_data(oldest_used_domain_name, oldest_used_type);
+        length
     }
 
     ///function to get an element from the cache data

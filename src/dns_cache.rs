@@ -292,7 +292,7 @@ mod dns_cache_test {
     fn add_to_cache_data(){
         let mut cache = DnsCache::new();
 
-        cache.set_max_size(1);
+        cache.set_max_size(2);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));

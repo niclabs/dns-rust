@@ -1,6 +1,6 @@
 use crate::cache_data::CacheData;
 use crate::message::rdata::Rdata;
-use crate::message::resource_record::ResourceRecord;
+use crate::message::resource_record::{ResourceRecord, self};
 use crate::rr_cache::RRCache;
 use crate::message::type_rtype::Rtype;
 use chrono::prelude::*;
@@ -38,7 +38,7 @@ impl DnsCache {
     }
 
     // Adds an element to cache
-    pub fn add(&mut self,rtype: Rtype, domain_name: DomainName, rr_cache:RRCache) {
+    pub fn add(&mut self,rtype: Rtype, domain_name: DomainName, resource_record: ResourceRecord) {
         //See if max size is 0
         if self.max_size < 1 {
             return;
@@ -48,6 +48,9 @@ impl DnsCache {
         if self.get_size() >= self.max_size {
             self.remove_oldest_used();
         }
+
+        let rr_cache = RRCache::new(resource_record);
+
         let mut cache_data = self.get_cache();
         cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
         self.set_cache(cache_data);
@@ -293,11 +296,10 @@ mod dns_cache_test {
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRCache::new(resource_record);
 
         assert!(cache.get_cache().get_cache_data().is_empty());
 
-        cache.add(Rtype::A, domain_name.clone(), rr_cache);
+        cache.add(Rtype::A, domain_name.clone(), resource_record);
 
         assert_eq!(cache.get_cache().get_cache_data().len(), 1);
 
@@ -305,9 +307,8 @@ mod dns_cache_test {
         new_vec.push(String::from("hola"));
         let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
-        let rr_cache_2 = RRCache::new(resource_record_2);
 
-        cache.add(Rtype::TXT, domain_name.clone(), rr_cache_2);
+        cache.add(Rtype::TXT, domain_name.clone(), resource_record_2);
 
         assert_eq!(cache.get_cache().get_cache_data().len(), 2);
     }

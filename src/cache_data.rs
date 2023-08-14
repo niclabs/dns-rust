@@ -136,11 +136,20 @@ impl CacheData{
     /// # Arguments
     /// * `domain_name` - A DomainName that represents the domain name of the cache data
     /// * `rtype` - A Rtype that represents the rtype of the cache data
-    pub fn get_from_cache_data(&self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>>{
-        let cache_data = self.get_cache_data();
+    pub fn get_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>>{
+        let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get(&rtype) {
-            let type_hash: HostData = x.clone();
-            return type_hash.get_from_host_data(domain_name);
+            let mut type_hash: HostData = x.clone();
+            let new_tuple = type_hash.get_from_host_data(domain_name).unwrap();
+            let rr_cache_vec = new_tuple.0;
+            let new_host_data = new_tuple.1;
+            let old_host_data = type_hash.get_host_hash();
+            if new_host_data != old_host_data {
+                type_hash.set_host_hash(new_host_data); 
+                cache_data.insert(rtype, type_hash);
+            }
+            self.set_cache_data(cache_data);
+            return Some(rr_cache_vec);
         }
         else {
             return None;

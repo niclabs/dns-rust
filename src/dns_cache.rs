@@ -68,9 +68,11 @@ impl DnsCache {
     }
 
     // Given a domain_name, gets an element from cache
-    pub fn get(&self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>> {
+    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>> {
         let mut cache = self.get_cache();
-        return cache.get_from_cache_data(domain_name, rtype)
+        let rr_cache_vec = cache.get_from_cache_data(domain_name, rtype);
+        self.set_cache(cache);
+        return rr_cache_vec;
     }
 
     // Removes the resource records from a domain name and type which were the oldest used

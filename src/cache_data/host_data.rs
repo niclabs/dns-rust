@@ -87,10 +87,18 @@ impl HostData{
     /// host_data.add_to_host_data(domain_name, rr_cache);
     /// let host_data_2_vec = host_data.get_from_host_data(domain_name);
     /// ```
-    pub fn get_from_host_data(&self, host_name: DomainName) -> Option<Vec<RRCache>>{
-        let host_hash = self.get_host_hash();
+    pub fn get_from_host_data(&self, host_name: DomainName) -> Option<(Vec<RRCache>, HashMap<DomainName, Vec<RRCache>>)>{
+        let mut host_hash = self.get_host_hash();
         if let Some(x) = host_hash.get(&host_name){
-            return Some(x.clone());
+            let new_x = x.clone();
+            let mut rr_cache_vec = Vec::<RRCache>::new();
+            for mut rr_cache in new_x{
+                rr_cache.set_last_use(Utc::now());
+                rr_cache_vec.push(rr_cache.clone());
+            }
+            host_hash.insert(host_name, rr_cache_vec.clone());
+
+            return Some((rr_cache_vec, host_hash));
         }
         else{
             return None;
@@ -290,7 +298,7 @@ mod host_data_test{
 
         let host_hash_vec = host_data.get_from_host_data(domain_name.clone()).unwrap();
 
-        assert_eq!(host_hash_vec.len(), 1);
+        assert_eq!(host_hash_vec.0.len(), 1);
     }
 
     //get_from_host_data test with no domain name

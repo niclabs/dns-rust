@@ -38,7 +38,7 @@ impl DnsCache {
     }
 
     // Adds an element to cache
-    pub fn add(&mut self,rtype: Rtype, domain_name: DomainName, resource_record: ResourceRecord) {
+    pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord) {
         //See if max size is 0
         if self.max_size < 1 {
             return;
@@ -49,6 +49,7 @@ impl DnsCache {
             self.remove_oldest_used();
         }
 
+        let rtype = resource_record.get_rtype();
         let rr_cache = RRCache::new(resource_record);
 
         let mut cache_data = self.get_cache();
@@ -301,7 +302,7 @@ mod dns_cache_test {
 
         assert!(cache.get_cache().get_cache_data().is_empty());
 
-        cache.add(Rtype::A, domain_name.clone(), resource_record);
+        cache.add(domain_name.clone(), resource_record);
 
         assert_eq!(cache.get_cache().get_cache_data().len(), 1);
 
@@ -310,7 +311,7 @@ mod dns_cache_test {
         let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
 
-        cache.add(Rtype::TXT, domain_name.clone(), resource_record_2);
+        cache.add(domain_name.clone(), resource_record_2);
 
         assert_eq!(cache.get_cache().get_cache_data().len(), 2);
         assert_eq!(cache.get_size(), 2)
@@ -328,7 +329,7 @@ mod dns_cache_test {
         let a_rdata = Rdata::SomeARdata(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
 
-        cache.add(Rtype::A, domain_name.clone(), resource_record);
+        cache.add(domain_name.clone(), resource_record);
 
         assert_eq!(cache.get_size(), 1);
 
@@ -337,7 +338,7 @@ mod dns_cache_test {
         let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
 
-        cache.add(Rtype::TXT, domain_name.clone(), resource_record_2);
+        cache.add(domain_name.clone(), resource_record_2);
 
         assert_eq!(cache.get_size(), 1);
     }

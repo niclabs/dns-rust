@@ -341,6 +341,10 @@ mod dns_cache_test {
         cache.add(domain_name.clone(), resource_record_2);
 
         assert_eq!(cache.get_size(), 1);
+
+        let cache_element = cache.get(domain_name.clone(), Rtype::TXT).unwrap();
+
+        assert_eq!(cache_element.len(), 1);
     }
 
     //Remaining test: Remove, get, remove_oldest_used, get_response_time, update_response_time

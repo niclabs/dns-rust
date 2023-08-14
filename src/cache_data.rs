@@ -390,7 +390,7 @@ mod cache_data_test{
         let new_time = now - time_back; 
         rr_cache.set_last_use(new_time);
         let mut domain_name_1 = DomainName::new();
-        domain_name_1.set_name(String::from("expected"));
+        domain_name_1.set_name(String::from("notexpected"));
         let mut domain_name_2 = DomainName::new();
         domain_name_2.set_name(String::from("expected"));
     
@@ -403,15 +403,14 @@ mod cache_data_test{
 
 
         cache_data.add_to_cache_data(Rtype::A, domain_name_1.clone(), rr_cache);
-        cache_data.add_to_cache_data(Rtype::SOA, domain_name_2.clone(), rr_cache_2);
+        cache_data.add_to_cache_data(Rtype::TXT, domain_name_2.clone(), rr_cache_2);
 
-        cache_data.remove_oldest_used();
-        let vec_rr_cache_soa_expected = cache_data.get_from_cache_data(domain_name_1, Rtype::SOA).unwrap();
-        let a = vec_rr_cache_soa_expected.len();
+        let a = cache_data.remove_oldest_used();
+        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_1, Rtype::A).unwrap();
+        let vec_rr_cache_txt_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::TXT).unwrap();
+
         assert_eq!(a,1);
-
-        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::A).unwrap();
-
         assert_eq!(vec_rr_cache_a_expected.len(), 0);
+        assert_eq!(vec_rr_cache_txt_expected.len(), 1);
     }
 }

@@ -318,9 +318,9 @@ mod host_data_test{
         assert_eq!(host_hash.len(), 1);
 
         let domain_name_2 = DomainName::new();
-        let host_hash_vec = host_data.get_from_host_data(domain_name_2.clone());
+        let host_hash_vec = host_data.get_from_host_data(domain_name_2.clone()).unwrap();
 
-        assert!(host_hash_vec.is_none());
+        assert_eq!(host_hash_vec.len(),0);
     }
 
     //get test

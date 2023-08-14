@@ -140,19 +140,13 @@ impl CacheData{
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get(&rtype) {
             let mut type_hash: HostData = x.clone();
-            let new_tuple = type_hash.get_from_host_data(domain_name).unwrap();
-            let rr_cache_vec = new_tuple.0;
-            let new_host_data = new_tuple.1;
-            let old_host_data = type_hash.get_host_hash();
-            if new_host_data != old_host_data {
-                type_hash.set_host_hash(new_host_data); 
-                cache_data.insert(rtype, type_hash);
-            }
+            let rr_cache_vec = type_hash.get_from_host_data(domain_name).unwrap(); 
+            cache_data.insert(rtype, type_hash);
             self.set_cache_data(cache_data);
             return Some(rr_cache_vec);
         }
         else {
-            return None;
+            return Some(Vec::new());
         }
     }
 
@@ -360,6 +354,8 @@ mod cache_data_test{
 
         cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
 
+        assert!(!cache_data.get_cache_data().is_empty());
+
         let rr_cache_vec = cache_data.get_from_cache_data(domain_name.clone(), Rtype::A).unwrap();
 
         assert_eq!(rr_cache_vec.len(), 1);
@@ -376,9 +372,9 @@ mod cache_data_test{
 
         assert_eq!(rr_cache_vec_2.len(), 1);
 
-        let rr_cache_vec_3 = cache_data.get_from_cache_data(DomainName::new(), Rtype::A);
+        let rr_cache_vec_3 = cache_data.get_from_cache_data(DomainName::new(), Rtype::A).unwrap();
 
-        assert!(rr_cache_vec_3.is_none());
+        assert!(rr_cache_vec_3.is_empty());
     }
 
     //remove oldest used test

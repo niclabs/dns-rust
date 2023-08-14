@@ -411,7 +411,26 @@ mod dns_cache_test {
 
         assert_eq!(cache_element.len(), 1);
     }
-    //Remaining test: get, remove_oldest_used, get_response_time, update_response_time
+
+    //Get and update response time
+    #[test]
+    fn get_and_update_response_time(){
+        let mut cache = DnsCache::new();
+
+        cache.set_max_size(2);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        assert!(cache.get_cache().get_cache_data().is_empty());
+
+        cache.add(domain_name.clone(), resource_record);
+
+        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
+    }
+    //Remaining test: get_response_time, update_response_time
 //     #[test]
 //     fn update_and_get_response_time() {
 //         let mut dns_cache = DnsCache::new();

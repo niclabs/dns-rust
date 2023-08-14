@@ -410,8 +410,8 @@ mod cache_data_test{
         let a = vec_rr_cache_soa_expected.len();
         assert_eq!(a,1);
 
-        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::A);
+        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::A).unwrap();
 
-        assert_eq!(vec_rr_cache_a_expected, None);
+        assert_eq!(vec_rr_cache_a_expected.len(), 0);
     }
 }

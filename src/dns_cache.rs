@@ -7,6 +7,7 @@ use chrono::prelude::*;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
 use crate::cache_data::host_data::HostData;
+use std::cmp;
 
 #[derive(Clone)]
 // Struct that represents a cache for dns
@@ -64,7 +65,7 @@ impl DnsCache {
         let length = cache_data.remove_from_cache_data(domain_name, rtype);
         //Size needs to be modified if something was removed
         self.set_cache(cache_data);
-        self.set_size(self.get_size() - length as u32);  
+        self.set_size(cmp::min(self.get_size() - length as u32, 0));  
     }
 
     // Given a domain_name, gets an element from cache
@@ -82,7 +83,7 @@ impl DnsCache {
 
         let length = cache.remove_oldest_used();
         self.set_cache(cache);
-        self.set_size(self.get_size() - length as u32); 
+        self.set_size(cmp::min(self.get_size() - length as u32, 0)); 
     }
 
     // Gets the response time from a domain name and type resource record

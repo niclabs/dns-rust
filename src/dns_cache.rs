@@ -79,7 +79,6 @@ impl DnsCache {
         let mut used_in = Utc::now();
 
         let length = cache.remove_oldest_used();
-        println!("Cache size: {}", self.get_size());
         self.set_cache(cache);
         self.set_size(self.get_size() - length as u32); 
     }

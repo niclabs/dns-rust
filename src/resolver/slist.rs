@@ -21,7 +21,7 @@ use std::vec::Vec;
 // "close" the resolver is to SNAME."
 pub struct Slist {
     zone_name_equivalent: i32,
-    ns_list: Vec<HashMap<String, String>>,
+    ns_list: Vec<HashMap<String, String>>, // TODO: Cambiar a otra forma de representacion?
 }
 
 impl Slist {

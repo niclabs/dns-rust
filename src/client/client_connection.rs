@@ -5,10 +5,9 @@
 // use crate::client::udp_connection::UDPConnection;
 // use crate::client::tcp_connection::TCPConnection;
 
-use crate::message::{DnsMessage};
-use std::net::{IpAddr};
+use crate::message::DnsMessage;
+use std::net::IpAddr;
 use std::time::Duration;
-use std::io::Error as IoError;
 
 use super::client_error::ClientError;
 

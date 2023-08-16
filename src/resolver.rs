@@ -2,6 +2,7 @@ pub mod async_resolver;
 pub mod config;
 pub mod lookup;
 pub mod slist;
+pub mod resolver_error;
 
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;

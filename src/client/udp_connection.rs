@@ -6,6 +6,8 @@ use std::time::Duration;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
 
+use super::client_error::ClientError;
+
 
 pub struct  ClientUDPConnection {
     /// addr to connect
@@ -26,7 +28,7 @@ impl ClientConnection for ClientUDPConnection {
     }
 
     /// TODO: funcion enviar
-    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, IoError> { 
+    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, ClientError> { 
         // TODO: Agregar resultado error 
         println!("[SEND UDP]");
 
@@ -37,18 +39,18 @@ impl ClientConnection for ClientUDPConnection {
         let dns_query_bytes = dns_query.to_bytes(); 
 
         let socket_udp:UdpSocket = match UdpSocket::bind("0.0.0.0:0"){
-            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not bind socket {}", e))),
+            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not bind socket {}", e))).map_err(Into::into),
             Ok(socket_udp) => socket_udp , 
         };                          
         
         //set read timeout
         match socket_udp.set_read_timeout(Some(timeout)) {
-            Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error setting read timeout for socket {}", e))),
+            Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error setting read timeout for socket {}", e))).map_err(Into::into),
             Ok(_) => (),
         }
 
         match socket_udp.send_to(&dns_query_bytes, server_addr){
-            Err(e) =>return Err(IoError::new(ErrorKind::Other, format!("Error: could not send {}", e))),
+            Err(e) =>return Err(IoError::new(ErrorKind::Other, format!("Error: could not send {}", e))).map_err(Into::into),
             Ok(_) => (),
         };
         
@@ -57,14 +59,14 @@ impl ClientConnection for ClientUDPConnection {
         // TODO: caso en que se reciben truncados
         let mut msg: [u8;512] = [0;512];
         match socket_udp.recv_from(&mut msg){
-            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not read {}", e))),
+            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not read {}", e))).map_err(Into::into),
             Ok(_) => (),
         };
         
 
         let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
             Ok(response) => response,
-            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not create dns message {}", e))),
+            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not create dns message {}", e))).map_err(Into::into),
         };
         // println!("[SEND UDP] {:?}", msg);
         

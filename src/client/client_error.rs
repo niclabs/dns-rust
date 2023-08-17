@@ -1,51 +1,26 @@
-use std::error;
-use std::error::Error;
 use std::fmt;
-use thiserror::Error; 
+use std::fmt::Debug;
 
-pub type Result<T> = std::result::Result<T, Error>;
+#[derive(thiserror::Error)]
+#[non_exhaustive] 
+/// Common error type to hold errors from Client.
+pub enum ClientError {
+    /// An error io connection.
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
 
-#[derive(Debug, Error, Clone)]
-
-pub enum ErrorKind {
-    /// An error with the TCP connection
-    TCPError,
+    /// An error with a message to display.
+    #[error("{0}")]
+    Message(&'static str), 
 }
 
-/// Implemetation for Clone trait
-impl Clone for ErrorKind {
-    fn clone(&self) -> Self {
-        use self::ErrorKind::*;
+// Debug trait implementation for `?` formatting
+impl Debug for ClientError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use self::ClientError::*;
         match self {
-            TCPError => TCPError,
+            Io(err) => write!(f, "io error: {}", err),
+            Message(err) => write!(f, "{}", err),
         }
-    }
-}
-
-#[derive(Debug, Error, Clone)]
-pub struct Error {
-    kind: ErrorKind,
-    // here, trust has backtrace!
-}
-
-impl error::Error for Error {
-    /// Get the kind of the error
-    fn kind(&self) -> &ErrorKind {
-        &self.kind
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::ErrorKind::*;
-        match self.kind {
-            TCPError => write!(f, "TCP Error"),
-        }
-    }
-}
-
-impl From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Error {
-        Error { kind }
     }
 }

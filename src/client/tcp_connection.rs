@@ -1,5 +1,7 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
+use super::client_error::ClientError;
+
 
 use std::io::{Write, Read};
 use std::net::{TcpStream,SocketAddr,IpAddr};
@@ -7,6 +9,8 @@ use std::time::Duration;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
 
+
+type ClientResult<T> = Result<T, ClientError>;
 
 pub struct ClientTCPConnection {
     //addr client
@@ -26,16 +30,19 @@ impl ClientConnection for ClientTCPConnection {
     }
 
     /// creates socket tcp, sends query and receive response
-    fn send(&self, dns_query: DnsMessage) -> Result<DnsMessage, IoError> {
+    fn send(&self, dns_query: DnsMessage) -> ClientResult<DnsMessage> {
         println!("[SEND TCP]");
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
         let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
 
-        let mut stream: TcpStream = match TcpStream::connect_timeout(&server_addr,timeout){
-            Ok(stream) => stream,
-            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error connect {}", e))),
-        };
+        // let mut stream: TcpStream = match TcpStream::connect_timeout(&server_addr,timeout){
+        //     Ok(stream) => stream,
+        //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error connect {}", e))),
+        // };
+
+        let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
+        
     
         //Add len of message len
         let msg_length: u16 = bytes.len() as u16;
@@ -43,23 +50,26 @@ impl ClientConnection for ClientTCPConnection {
         let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
     
         //Set read timeout
-        match stream.set_read_timeout(Some(timeout)) {
-            Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: setting read timeout for socket"))),
-            Ok(_) => (),
-        }
+        // match stream.set_read_timeout(Some(timeout)) {
+        //     Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: setting read timeout for socket"))),
+        //     Ok(_) => (),
+        // }
+        stream.set_read_timeout(Some(timeout))?;
     
-        match stream.write(&full_msg) {
-            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not write to stream {}", e))),
-            Ok(_) => (),
-        }
+        // match stream.write(&full_msg) {
+        //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not write to stream {}", e))),
+        //     Ok(_) => (),
+        // }
+        stream.write(&full_msg)?;
         println!("[SEND TCP] query sent");
     
         //Read response
         let mut msg_size_response: [u8; 2] = [0; 2];
-        match stream.read_exact(&mut msg_size_response) {
-            Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error: could not read stream {}", e))),
-            Ok(_) => (),
-        }
+        // match stream.read_exact(&mut msg_size_response) {
+        //     Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error: could not read stream {}", e))),
+        //     Ok(_) => (),
+        // }
+        stream.read_exact(&mut msg_size_response)?;
     
         let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
         let mut vec_msg: Vec<u8> = Vec::new();
@@ -68,7 +78,7 @@ impl ClientConnection for ClientTCPConnection {
             let mut msg = [0; 512];
             let number_of_bytes_msg = match stream.read(&mut msg) {
                 Ok(n) if n > 0 => n,
-                _ => return Err(IoError::new(ErrorKind::Other, format!("Error: no data received "))),
+                _ => return Err(IoError::new(ErrorKind::Other, format!("Error: no data received "))).map_err(Into::into),
                 
             };
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
@@ -76,7 +86,7 @@ impl ClientConnection for ClientTCPConnection {
 
         let response_dns: DnsMessage = match DnsMessage::from_bytes(&vec_msg) {
             Ok(response) => response,
-            Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: creating dns message "))),
+            Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: creating dns message "))).map_err(Into::into),
         };
         // println!("[SEND TCP] {:?}", vec_msg);
     
@@ -175,6 +185,20 @@ mod tcp_connection_test{
         _conn_new.set_timeout(Duration::from_secs(200));
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(200));
+    }
+
+    #[test]
+    fn send() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let _port: u16 = 8088;
+        let timeout = Duration::from_secs(100);
+
+        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let dns_msg = DnsMessage::new();
+        let response = conn_new.send(dns_msg);
+        println!("{:?}", response);
+
+
     }
 
 }

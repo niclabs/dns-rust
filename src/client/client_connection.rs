@@ -5,10 +5,11 @@
 // use crate::client::udp_connection::UDPConnection;
 // use crate::client::tcp_connection::TCPConnection;
 
-use crate::message::{DnsMessage};
-use std::net::{IpAddr};
+use crate::message::DnsMessage;
+use std::net::IpAddr;
 use std::time::Duration;
-use std::io::Error as IoError;
+
+use super::client_error::ClientError;
 
 pub trait ClientConnection: Sized {//: 'static + Sized + Send + Sync + Unpin {
 
@@ -17,7 +18,7 @@ pub trait ClientConnection: Sized {//: 'static + Sized + Send + Sync + Unpin {
         timeout:Duration) -> Self;
     
     /// function sends query to resolver
-    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, IoError> ;
+    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, ClientError> ;
 
     //FIXME: iran aqui los geters y seters? la firma
 }

@@ -1,4 +1,4 @@
-use chrono::{Utc, DateTime};
+use chrono::Utc;
 
 use crate::{rr_cache::RRCache, domain_name::DomainName};
 use std::collections::HashMap;
@@ -119,7 +119,7 @@ impl HostData{
     /// host_data.add_to_host_data(domain_name, rr_cache);
     /// let host_data_2 = get_oldest_used.get_from_host_data(domain_name);
     /// ```
-    pub fn get_oldest_used(&mut self)-> (DomainName,DateTime<Utc>){
+    pub fn get_oldest_used(&mut self) -> DomainName{
         let host = self.get_host_hash();
         let mut used_in = Utc::now();
 
@@ -135,7 +135,7 @@ impl HostData{
             }
         }
 
-        return (oldest_used_domain_name,used_in);
+        return oldest_used_domain_name
 
     }
     
@@ -362,10 +362,9 @@ mod host_data_test{
         host_data.add_to_host_data(domain_name.clone(), rr_cache_2);
 
         let oldest_used = host_data.get_oldest_used();
-        let oldest_name = oldest_used.0;
+        let oldest_name = oldest_used.get_name();
 
-
-        assert_eq!("expected".to_string(), oldest_name.get_name())        
+        assert_eq!("expected".to_string(), oldest_name)        
     }
 
      //get insert  used test

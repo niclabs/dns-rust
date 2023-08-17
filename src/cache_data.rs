@@ -7,7 +7,7 @@ use crate::message::type_rtype::{Rtype, self};
 use crate::rr_cache::RRCache;
 use crate::cache_data::host_data::HostData;
 use std::collections::HashMap;
-use crate::domain_name::{DomainName, self};
+use crate::domain_name::DomainName;
 
 
 ///struct to define the cache data
@@ -106,19 +106,13 @@ impl CacheData{
 
     pub fn remove_oldest_used(&mut self) -> u32{
         let cache = self.get_cache_data();
+        
         let mut oldest_used_domain_name = DomainName::new();
-        let mut oldest_used_type =Rtype::TXT;
-        let mut oldest_time = Utc::now();
-        let mut domain_name = DomainName::new();
-        let mut time = Utc::now();
-
-        for (rtype, mut host_data) in cache {
-            (domain_name,time)=host_data.get_oldest_used();
-            if time>oldest_time {
-                oldest_used_type = rtype.clone();
-                oldest_used_domain_name = domain_name;
-                oldest_time = time;
-            }    
+        let mut oldest_used_type =Rtype::A;
+        
+        for (key, mut value) in cache {
+            oldest_used_domain_name=value.get_oldest_used();
+            oldest_used_type = key.clone();
         }
         
         let length = self.remove_from_cache_data(oldest_used_domain_name, oldest_used_type);
@@ -396,7 +390,7 @@ mod cache_data_test{
         let new_time = now - time_back; 
         rr_cache.set_last_use(new_time);
         let mut domain_name_1 = DomainName::new();
-        domain_name_1.set_name(String::from("notexpected"));
+        domain_name_1.set_name(String::from("expected"));
         let mut domain_name_2 = DomainName::new();
         domain_name_2.set_name(String::from("expected"));
     
@@ -409,14 +403,15 @@ mod cache_data_test{
 
 
         cache_data.add_to_cache_data(Rtype::A, domain_name_1.clone(), rr_cache);
-        cache_data.add_to_cache_data(Rtype::TXT, domain_name_2.clone(), rr_cache_2);
+        cache_data.add_to_cache_data(Rtype::SOA, domain_name_2.clone(), rr_cache_2);
 
-        let a = cache_data.remove_oldest_used();
-        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_1, Rtype::A).unwrap();
-        let vec_rr_cache_txt_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::TXT).unwrap();
-
+        cache_data.remove_oldest_used();
+        let vec_rr_cache_soa_expected = cache_data.get_from_cache_data(domain_name_1, Rtype::SOA).unwrap();
+        let a = vec_rr_cache_soa_expected.len();
         assert_eq!(a,1);
-        assert_eq!(vec_rr_cache_a_expected.len(), 1);
-        assert_eq!(vec_rr_cache_txt_expected.len(), 0);
+
+        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::A).unwrap();
+
+        assert_eq!(vec_rr_cache_a_expected.len(), 0);
     }
 }

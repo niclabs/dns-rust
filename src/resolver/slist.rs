@@ -1,7 +1,9 @@
 pub mod slist_element;
 
-use std::collections::HashMap;
+use std::net::IpAddr;
 use std::vec::Vec;
+use crate::domain_name::DomainName;
+use crate::resolver::slist::slist_element::SlistElement;
 
 #[derive(Clone)]
 // Struct that represents the Slist estructure from RFC 1034 page 33.
@@ -21,7 +23,7 @@ use std::vec::Vec;
 // "close" the resolver is to SNAME."
 pub struct Slist {
     zone_name_equivalent: i32,
-    ns_list: Vec<HashMap<String, String>>, // TODO: Cambiar a otra forma de representacion?
+    ns_list: Vec<SlistElement>,
 }
 
 impl Slist {
@@ -38,7 +40,7 @@ impl Slist {
     pub fn new() -> Self {
         let slist = Slist {
             zone_name_equivalent: -1,
-            ns_list: Vec::new(),
+            ns_list: Vec::<SlistElement>::new(),
         };
 
         slist
@@ -57,11 +59,11 @@ impl Slist {
     // assert_eq!(slist.get_ns_list().len(), 1);
     // '''
     //
-    pub fn insert(&mut self, name: String, ip_address: String, response_time: u32) {
-        let mut new_element = HashMap::new();
-        new_element.insert("name".to_string(), name);
+    pub fn insert(&mut self, name: DomainName, ip_address: IpAddr, response_time: u32) {
+        let mut new_element = SlistElement::new(name, ip_address, response_time);
+        /* new_element.insert("name".to_string(), name);
         new_element.insert("ip_address".to_string(), ip_address);
-        new_element.insert("response_time".to_string(), response_time.to_string());
+        new_element.insert("response_time".to_string(), response_time.to_string()); */
 
         let mut ns_list = self.get_ns_list();
         ns_list.push(new_element);
@@ -86,12 +88,12 @@ impl Slist {
     // assert_eq!(slist.get_ns_list().len(), 0);
     // '''
     //
-    pub fn delete(&mut self, name: String) {
+    pub fn delete(&mut self, name: DomainName) {
         let mut ns_list = self.get_ns_list();
         let mut index = 0;
 
         for ns in ns_list.iter() {
-            if *ns.get("name").unwrap() == name {
+            if *ns.get_domain_name().get_name() == name.get_name() {
                 ns_list.remove(index);
                 break;
             };
@@ -121,15 +123,14 @@ impl Slist {
     // );
     // '''
     //
-    pub fn update_response_time(&mut self, name: String, response_time: u32) {
+    pub fn update_response_time(&mut self, name: DomainName, response_time: u32) {
         let ns_list = self.get_ns_list();
         let mut index = 0;
         let mut new_ns_list = Vec::new();
 
         for mut ns in ns_list.into_iter() {
-            if *(ns.get(&"name".to_string()).unwrap()) == name {
-                ns.remove(&"response_time".to_string());
-                ns.insert("response_time".to_string(), response_time.to_string());
+            if *(ns.get_domain_name().get_name()) == name.get_name() {
+                ns.set_response_time(response_time);
             };
             new_ns_list.push(ns.clone());
             index = index + 1;
@@ -139,12 +140,12 @@ impl Slist {
     }
 
     // Gets the first ns from the list
-    pub fn get_first(&self) -> HashMap<String, String> {
+    pub fn get_first(&self) -> SlistElement {
         let ns_list = self.get_ns_list();
         ns_list[0].clone()
     }
 
-    pub fn get(&self, index: u16) -> HashMap<String, String> {
+    pub fn get(&self, index: u16) -> SlistElement {
         let ns_list = self.get_ns_list();
 
         ns_list[index as usize].clone()
@@ -175,17 +176,11 @@ impl Slist {
     // '''
     //
     pub fn sort(&mut self) {
-        let sort_by_response_time = |k: &HashMap<String, String>, j: &HashMap<String, String>| {
+        let sort_by_response_time = |k: &SlistElement, j: &SlistElement| {
             let a = k
-                .get(&"response_time".to_string())
-                .unwrap()
-                .parse::<u32>()
-                .unwrap();
+                .get_response_time();
             let b = j
-                .get(&"response_time".to_string())
-                .unwrap()
-                .parse::<u32>()
-                .unwrap();
+                .get_response_time();
 
             a.partial_cmp(&b).unwrap()
         };
@@ -212,7 +207,7 @@ impl Slist {
     }
 
     // Gets the ns list from the slist
-    pub fn get_ns_list(&self) -> Vec<HashMap<String, String>> {
+    pub fn get_ns_list(&self) -> Vec<SlistElement> {
         self.ns_list.clone()
     }
 }
@@ -225,15 +220,17 @@ impl Slist {
     }
 
     // Sets the ns list attribute with a new value
-    pub fn set_ns_list(&mut self, ns_list: Vec<HashMap<String, String>>) {
+    pub fn set_ns_list(&mut self, ns_list: Vec<SlistElement>) {
         self.ns_list = ns_list;
     }
 }
 
 #[cfg(test)]
 mod slist_test {
+    use crate::domain_name::DomainName;
     use crate::resolver::slist::Slist;
-    use std::collections::HashMap;
+    use crate::resolver::slist::slist_element::SlistElement;
+    use std::net::{IpAddr,Ipv4Addr};
     use std::vec::Vec;
 
     #[test]
@@ -262,7 +259,10 @@ mod slist_test {
         assert_eq!(slist.get_ns_list().len(), 0);
 
         let mut ns_list = Vec::new();
-        let ns = HashMap::new();
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let ns = SlistElement::new(domain_name, ip_address, 4);
 
         ns_list.push(ns);
 
@@ -277,11 +277,14 @@ mod slist_test {
 
         assert_eq!(slist.get_ns_list().len(), 0);
 
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        slist.insert(domain_name.clone(), ip_address.clone(), 5000);
 
         assert_eq!(slist.get_ns_list().len(), 1);
 
-        slist.delete("test.com".to_string());
+        slist.delete(domain_name.clone());
 
         assert_eq!(slist.get_ns_list().len(), 0);
     }
@@ -290,76 +293,102 @@ mod slist_test {
     fn get_first_test() {
         let mut slist = Slist::new();
 
-        let mut first_element = HashMap::new();
+        
 
-        let name = "VENERA.ISI.EDU".to_string();
-        let ip_address = "128.9.0.32".to_string();
+        let mut name = DomainName::new();
+        name.set_name(String::from("VENERA.ISI.EDU"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(128, 9, 0, 32));
         let response_time = 5000;
 
-        first_element.insert("name".to_string(), name);
-        first_element.insert("ip_address".to_string(), ip_address);
-        first_element.insert("response_time".to_string(), response_time.to_string());
+        let mut first_element = SlistElement::new(name.clone(), ip_address.clone(), response_time.clone());
 
-        slist.insert("VENERA.ISI.EDU".to_string(), "128.9.0.32".to_string(), 5000);
-        slist.insert("XX.LCS.MIT.EDU".to_string(), "10.0.0.44".to_string(), 5001);
+        slist.insert(name.clone(), ip_address.clone(), 5000);
 
-        assert_eq!(slist.get_first(), first_element);
+        let mut name_2 = DomainName::new();
+        name_2.set_name(String::from("XX.LCS.MIT.EDU"));
+        let ip_address_2 = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 44));
+        slist.insert(name_2, ip_address_2, 5001);
+
+        let first = slist.get_first();
+        assert_eq!(first.get_domain_name(), first_element.get_domain_name());
+        assert_eq!(first.get_ip_address(), first_element.get_ip_address());
+        assert_eq!(first.get_response_time(), first_element.get_response_time());
     }
 
     #[test]
     fn get_test() {
         let mut slist = Slist::new();
-        let mut some_element = HashMap::new();
 
-        let name = "VENERA.ISI.EDU".to_string();
-        let ip_address = "128.9.0.32".to_string();
+        let mut name = DomainName::new();
+        name.set_name(String::from("VENERA.ISI.EDU"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(128, 9, 0, 32));
         let response_time = 5000;
 
-        some_element.insert("name".to_string(), name);
-        some_element.insert("ip_address".to_string(), ip_address);
-        some_element.insert("response_time".to_string(), response_time.to_string());
+        let some_element = SlistElement::new(name.clone(), ip_address.clone(), response_time.clone());
 
-        slist.insert("VAXA.ISI.EDU".to_string(), "128.9.0.33".to_string(), 5000);
-        slist.insert("XX.LCS.MIT.EDU".to_string(), "10.0.0.44".to_string(), 5001);
-        slist.insert("VENERA.ISI.EDU".to_string(), "128.9.0.32".to_string(), 5000);
+        let mut name_2 = DomainName::new();
+        name_2.set_name(String::from("VAXA.ISI.EDU"));
+        let ip_address_2 = IpAddr::V4(Ipv4Addr::new(128, 9, 0, 33));
+        slist.insert(name_2.clone(), ip_address_2.clone(), 5000);
 
-        assert_eq!(slist.get(2 as u16), some_element);
+        let mut name_3 = DomainName::new();
+        name_3.set_name(String::from("XX.LCS.MIT.EDU"));
+        let ip_address_3 = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 44));
+
+        slist.insert(name_3.clone(), ip_address_3.clone(), 5001);
+
+        slist.insert(name.clone(), ip_address.clone(), 5000);
+
+        let third_element = slist.get(2 as u16);
+        assert_eq!(third_element.get_domain_name(), some_element.get_domain_name());
+        assert_eq!(third_element.get_ip_address(), some_element.get_ip_address());
+        assert_eq!(third_element.get_response_time(), some_element.get_response_time());
     }
 
     #[test]
     fn update_response_time_test() {
         let mut slist = Slist::new();
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        slist.insert(domain_name.clone(), ip_address.clone(), 5000);
 
         assert_eq!(
-            *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            5000.to_string()
+            slist.get_first().get_response_time(),
+            5000
         );
 
-        slist.update_response_time("test.com".to_string(), 2000);
+        slist.update_response_time(domain_name.clone(), 2000);
 
         assert_eq!(
-            *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            2000.to_string()
+            slist.get_first().get_response_time(),
+            2000
         );
     }
 
     #[test]
     fn sort_test() {
         let mut slist = Slist::new();
-        slist.insert("test.com".to_string(), "127.0.0.1".to_string(), 5000);
-        slist.insert("test2.com".to_string(), "127.0.0.1".to_string(), 2000);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        slist.insert(domain_name.clone(), ip_address.clone(), 5000);
+        
+        let mut domain_name_2 = DomainName::new();
+        domain_name_2.set_name(String::from("test2.com"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        slist.insert(domain_name.clone(), ip_address.clone(), 2000);
 
         assert_eq!(
-            *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            5000.to_string()
+            slist.get_first().get_response_time(),
+            5000
         );
         assert_eq!(slist.get_ns_list().len(), 2);
 
         slist.sort();
         assert_eq!(
-            *slist.get_first().get(&"response_time".to_string()).unwrap(),
-            2000.to_string()
+            slist.get_first().get_response_time(),
+            2000
         );
         assert_eq!(slist.get_ns_list().len(), 2);
     }

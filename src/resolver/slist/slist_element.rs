@@ -1,11 +1,11 @@
 use crate::domain_name::DomainName;
 use std::net::IpAddr;
 /// This struct is used to represente an element of the slist
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SlistElement{
     domain_name:  DomainName,
     ip_address: IpAddr,
-    response_time: u16,
+    response_time: u32,
 }
 
 impl SlistElement{
@@ -19,7 +19,7 @@ impl SlistElement{
     /// * `domain_name` - A DomainName that represents the domain name of the slist element
     /// * `ip_address` - A IpAddr that represents the ip address of the slist element
     /// * `response_time` - A u16 that represents the response time of the slist element
-    pub fn new(domain_name: DomainName, ip_address: IpAddr, response_time: u16) -> SlistElement{
+    pub fn new(domain_name: DomainName, ip_address: IpAddr, response_time: u32) -> SlistElement{
         SlistElement{
             domain_name: domain_name,
             ip_address: ip_address,
@@ -34,7 +34,7 @@ impl SlistElement{
         self.domain_name.clone()
     }
 
-    pub fn get_response_time(&self) -> u16{
+    pub fn get_response_time(&self) -> u32{
         self.response_time.clone()
     }
 
@@ -46,7 +46,7 @@ impl SlistElement{
         self.domain_name = domain_name
     }
 
-    pub fn set_response_time(&mut self, response_time: u16){
+    pub fn set_response_time(&mut self, response_time: u32){
         self.response_time = response_time;
     }
 

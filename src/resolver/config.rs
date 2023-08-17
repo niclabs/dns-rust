@@ -98,7 +98,9 @@ impl ResolverConfig{
 #[cfg(test)]
 mod tests_resolver_config {
     use std::net::{IpAddr, Ipv4Addr};
+    use crate::domain_name::DomainName;
     use crate::resolver::slist::Slist;
+    use crate::resolver::slist::slist_element::SlistElement;
     use std::collections::HashMap;
     use super::*;
 
@@ -112,7 +114,13 @@ mod tests_resolver_config {
 
         let mut sbelt = Slist::new();
         let mut ns_list = Vec::new();
-        let servers = HashMap::new();
+
+        let mut name = DomainName::new();
+        name.set_name(String::from("VENERA.ISI.EDU"));
+        let ip_address = IpAddr::V4(Ipv4Addr::new(128, 9, 0, 32));
+        let response_time = 5000;
+
+        let servers = SlistElement::new(name.clone(), ip_address.clone(), response_time.clone());
         // TODO: agregar server al hashmap
         ns_list.push(servers);
 

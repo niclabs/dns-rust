@@ -2,6 +2,7 @@ use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
 use crate::message::Rtype;
+use std::net::IpAddr;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
@@ -16,15 +17,17 @@ use std::str::SplitWhitespace;
 /// ```
 pub struct ARdata {
     /// A 32 bit Internet address.
-    address: [u8; 4],
+    address: IpAddr,
 }
 
 impl ToBytes for ARdata {
     /// Returns a `Vec<u8>` of bytes that represents the A RDATA.
     fn to_bytes(&self) -> Vec<u8> {
-        let bytes: Vec<u8> = self.get_address().to_vec();
-
-        bytes
+        let address = self.get_address();
+        match address {
+            IpAddr::V4(val) => val.octets().to_vec(),
+            IpAddr::V6(val) => val.octets().to_vec(),
+        }
     }
 }
 
@@ -40,8 +43,9 @@ impl FromBytes<Result<Self, &'static str>> for ARdata {
         let mut a_rdata = ARdata::new();
 
         let array_bytes = [bytes[0], bytes[1], bytes[2], bytes[3]];
+        let ip_address = IpAddr::from(array_bytes);
 
-        a_rdata.set_address(array_bytes);
+        a_rdata.set_address(ip_address);
 
         Ok(a_rdata)
     }
@@ -59,13 +63,14 @@ impl ARdata {
     /// assert_eq!(a_rdata.address[3], 0);
     /// ```
     pub fn new() -> Self {
+        let array = [0 as u8, 0 as u8, 0 as u8, 0 as u8];
+        let ip_address = IpAddr::from(array);
         let a_rdata = ARdata {
-            address: [0 as u8, 0 as u8, 0 as u8, 0 as u8],
+            address: ip_address,
         };
 
         a_rdata
     }
-
     /// Returns a `ResourceRecord` from the given values.
     /// 
     /// # Examples
@@ -108,8 +113,8 @@ impl ARdata {
             address[index] = numb_byte;
             index = index + 1;
         }
-
-        a_rdata.set_address(address);
+        let ip_address = IpAddr::from(address);
+        a_rdata.set_address(ip_address);
 
         let rdata = Rdata::SomeARdata(a_rdata);
 
@@ -134,11 +139,15 @@ impl ARdata {
 
         let mut ip_address = "".to_string();
 
-        for num in ip.iter() {
+        let ip_vec = match ip {
+            IpAddr::V4(val) => val.octets().to_vec(),
+            IpAddr::V6(val) => val.octets().to_vec(),
+        };
+
+        for num in ip_vec.iter(){
             ip_address.push_str(num.to_string().as_str());
             ip_address.push_str(".");
         }
-
         ip_address.pop();
 
         ip_address
@@ -148,7 +157,7 @@ impl ARdata {
 // Getters
 impl ARdata {
     /// Gets the `address` attribute from ARdata.
-    pub fn get_address(&self) -> [u8; 4] {
+    pub fn get_address(&self) -> IpAddr {
         self.address
     }
 }
@@ -156,7 +165,7 @@ impl ARdata {
 // Setters
 impl ARdata {
     /// Sets the `address` attibute with the given value.
-    pub fn set_address(&mut self, address: [u8; 4]) {
+    pub fn set_address(&mut self, address: IpAddr) {
         self.address = address;
     }
 }
@@ -167,39 +176,31 @@ mod a_rdata_test {
     use crate::message::rdata::Rdata;
     use crate::message::Rclass;
     use crate::message::Rtype;
+    use std::net::IpAddr;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
     fn constructor_test() {
         let a_rdata = ARdata::new();
-        assert_eq!(a_rdata.address[0], 0);
-        assert_eq!(a_rdata.address[1], 0);
-        assert_eq!(a_rdata.address[2], 0);
-        assert_eq!(a_rdata.address[3], 0);
+        assert_eq!(a_rdata.address, IpAddr::from([0, 0, 0, 0]));
     }
 
     #[test]
     fn set_and_get_address_test() {
         let mut a_rdata = ARdata::new();
 
-        assert_eq!(a_rdata.get_address()[0], 0);
-        assert_eq!(a_rdata.get_address()[1], 0);
-        assert_eq!(a_rdata.get_address()[2], 0);
-        assert_eq!(a_rdata.get_address()[3], 0);
+        assert_eq!(a_rdata.get_address(), IpAddr::from([0, 0, 0, 0]));
 
-        a_rdata.set_address([127, 0, 0, 1]);
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
 
-        assert_eq!(a_rdata.get_address()[0], 127);
-        assert_eq!(a_rdata.get_address()[1], 0);
-        assert_eq!(a_rdata.get_address()[2], 0);
-        assert_eq!(a_rdata.get_address()[3], 1);
+        assert_eq!(a_rdata.get_address(), IpAddr::from([127, 0, 0, 1]));
     }
 
     #[test]
     fn to_bytes_test() {
         let mut a_rdata = ARdata::new();
 
-        a_rdata.set_address([127, 0, 0, 1]);
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
 
         let a_rdata_to_bytes = a_rdata.to_bytes();
 
@@ -214,17 +215,14 @@ mod a_rdata_test {
         let bytes: [u8; 4] = [128, 0, 0, 1];
         let a_rdata = ARdata::from_bytes(&bytes, &bytes).unwrap();
 
-        assert_eq!(a_rdata.get_address()[0], 128);
-        assert_eq!(a_rdata.get_address()[1], 0);
-        assert_eq!(a_rdata.get_address()[2], 0);
-        assert_eq!(a_rdata.get_address()[3], 1);
+        assert_eq!(a_rdata.get_address(), IpAddr::from([128, 0, 0, 1]));
     }
 
     #[test]
     fn get_string_address_test() {
         let mut a_rdata = ARdata::new();
 
-        a_rdata.set_address([127, 0, 0, 1]);
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
 
         assert_eq!(a_rdata.get_string_address(), "127.0.0.1");
     }
@@ -249,7 +247,7 @@ mod a_rdata_test {
 
         let a_rdata = a_rr.get_rdata();
         match a_rdata {
-            Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
+            Rdata::SomeARdata(val) => assert_eq!(val.get_address(), IpAddr::from([204, 13, 100, 3])),
             _ => {}
         }
     }

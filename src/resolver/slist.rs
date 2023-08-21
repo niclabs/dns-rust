@@ -60,7 +60,7 @@ impl Slist {
     // '''
     //
     pub fn insert(&mut self, name: DomainName, ip_address: IpAddr, response_time: u32) {
-        let mut new_element = SlistElement::new(name, ip_address, response_time);
+        let new_element = SlistElement::new(name, ip_address, response_time);
         /* new_element.insert("name".to_string(), name);
         new_element.insert("ip_address".to_string(), ip_address);
         new_element.insert("response_time".to_string(), response_time.to_string()); */

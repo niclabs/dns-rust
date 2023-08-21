@@ -300,7 +300,7 @@ mod slist_test {
         let ip_address = IpAddr::V4(Ipv4Addr::new(128, 9, 0, 32));
         let response_time = 5000;
 
-        let mut first_element = SlistElement::new(name.clone(), ip_address.clone(), response_time.clone());
+        let first_element = SlistElement::new(name.clone(), ip_address.clone(), response_time.clone());
 
         slist.insert(name.clone(), ip_address.clone(), 5000);
 

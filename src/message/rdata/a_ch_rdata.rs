@@ -192,6 +192,7 @@ mod a_ch_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::Rtype;
     use crate::message::Rclass;
+    use std::net::IpAddr;
     use crate::message::rdata::a_ch_rdata::AChRdata;
     use crate::message::rdata::{ARdata, Rdata};
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -218,7 +219,7 @@ mod a_ch_rdata_test {
     fn to_bytes_test() {
         let mut a_rdata = ARdata::new();
 
-        a_rdata.set_address([127, 0, 0, 1]);
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
 
         let a_rdata_to_bytes = a_rdata.to_bytes();
 
@@ -233,10 +234,7 @@ mod a_ch_rdata_test {
         let bytes: [u8; 4] = [128, 0, 0, 1];
         let a_rdata = ARdata::from_bytes(&bytes, &bytes).unwrap();
 
-        assert_eq!(a_rdata.get_address()[0], 128);
-        assert_eq!(a_rdata.get_address()[1], 0);
-        assert_eq!(a_rdata.get_address()[2], 0);
-        assert_eq!(a_rdata.get_address()[3], 1);
+        assert_eq!(a_rdata.get_address(), IpAddr::from([128, 0, 0, 1]));
     }
 
     #[test]
@@ -322,7 +320,7 @@ mod a_ch_rdata_test {
 
         let ach_rdata = ach_rr.get_rdata();
         match ach_rdata {
-            Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
+            Rdata::SomeARdata(val) => assert_eq!(val.get_address(), IpAddr::from([204, 13, 100, 3])),
             _ => {}
         }
     }

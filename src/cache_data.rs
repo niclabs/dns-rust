@@ -5,6 +5,7 @@ use chrono::Utc;
 use crate::message::rdata::Rdata;
 use crate::message::type_rtype::{Rtype, self};
 use crate::rr_cache::RRCache;
+use std::net::IpAddr;
 use crate::cache_data::host_data::HostData;
 use std::collections::HashMap;
 use crate::domain_name::{DomainName, self};

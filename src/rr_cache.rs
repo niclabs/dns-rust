@@ -77,11 +77,12 @@ mod rr_cache_test {
     use crate::message::type_rtype::Rtype;
     use crate::message::resource_record::ResourceRecord;
     use crate::rr_cache::RRCache;
+    use std::net::IpAddr;
     use chrono::prelude::*;
 
     #[test]
     fn constructor_test() {
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let ip_address: IpAddr = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);
@@ -98,7 +99,7 @@ mod rr_cache_test {
 
     #[test]
     fn set_and_get_resource_record() {
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let ip_address: IpAddr = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);
@@ -111,7 +112,7 @@ mod rr_cache_test {
 
         assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_rtype()), 1);
 
-        let second_ip_address: [u8; 4] = [127, 0, 0, 0];
+        let second_ip_address: IpAddr = IpAddr::from([127, 0, 0, 0]);
         let mut second_a_rdata = ARdata::new();
 
         second_a_rdata.set_address(second_ip_address);
@@ -127,7 +128,7 @@ mod rr_cache_test {
 
     #[test]
     fn set_and_get_response_time() {
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let ip_address: IpAddr = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);
@@ -147,7 +148,7 @@ mod rr_cache_test {
 
     #[test]
     fn set_and_get_last_use() {
-        let ip_address: [u8; 4] = [127, 0, 0, 0];
+        let ip_address: IpAddr = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);

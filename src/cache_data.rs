@@ -175,7 +175,7 @@ impl CacheData{
                         Rdata::SomeARdata(val) => val.get_address(),
                         _ => unreachable!(),
                     };
-
+                    //Lo transforma de string a [u8;4] en estos 2 procesos
                     let vec_ip_str_from_string_with_port =
                         ip_address.split(":").collect::<Vec<&str>>()[0].clone();
 

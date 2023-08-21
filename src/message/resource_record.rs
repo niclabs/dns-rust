@@ -528,13 +528,14 @@ mod resource_record_test {
     use crate::message::rdata::Rdata;
     use crate::message::Rtype;
     use crate::message::Rclass;
+    use std::net::IpAddr;
     use crate::message::resource_record::ResourceRecord;
 
     #[test]
     fn constructor_a_test() {
         let mut a_rdata = Rdata::SomeARdata(ARdata::new());
         match a_rdata {
-            Rdata::SomeARdata(ref mut val) => val.set_address([127, 0, 0, 1]),
+            Rdata::SomeARdata(ref mut val) => val.set_address(IpAddr::from([127, 0, 0, 1])),
             _ => unreachable!(),
         }
 
@@ -550,7 +551,7 @@ mod resource_record_test {
                 Rdata::SomeARdata(val) => val.get_address(),
                 _ => unreachable!(),
             },
-            [127, 0, 0, 1]
+            IpAddr::from([127, 0, 0, 1])
         );
     }
 

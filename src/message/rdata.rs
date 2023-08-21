@@ -217,6 +217,7 @@ mod resolver_query_tests {
     use super::ptr_rdata::PtrRdata;
     use super::soa_rdata::SoaRdata;
     use super::txt_rdata::TxtRdata;
+    use std::net::IpAddr;
 
     #[test]
     fn to_bytes_rdata(){
@@ -419,7 +420,7 @@ mod resolver_query_tests {
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
         match rdata {
             Rdata::SomeARdata(val) => {
-                assert_eq!(val.get_address(), [128, 0, 0, 1]);
+                assert_eq!(val.get_address(), IpAddr::from([128, 0, 0, 1]));
             }
             _ => {}
         }

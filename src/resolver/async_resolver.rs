@@ -5,7 +5,7 @@ use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
-use crate::resolver::{config::ResolverConfig,lookup::Lookup};
+use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
 
 
 use std::time::Duration;
@@ -34,15 +34,28 @@ impl AsyncResolver{
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
 
         // TODO: Revisar cache
+        let cache = DnsCache::new();
+
+        let hosts = vec![IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)),
+                                         IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1))];
+
+        let final_ip : Option<IpAddr> = None; 
         
-        let lookup_ip = Lookup::lookup(
-            domain_name_struct,
-            Qtype::A,
-            Qclass::IN,
-            self.config.get_sbelt(),
-            self.cache.clone(),
-            Duration::from_secs(2) //TODO: Agregar timeout a la configuracion de resolver
-            );  //TODO: Transformarlo en un futuro .await
+        let response = LookupIpFutureStub::lookup(hosts,cache, final_ip).await;
+
+
+        // pub fn lookup(
+        //     hosts: Vec<IpAddr>,
+        //     cache:DnsCache,
+        //     final_ip: IpAddr,
+        // let lookup_ip = Lookup::lookup(
+        //     domain_name_struct,
+        //     Qtype::A,
+        //     Qclass::IN,
+        //     self.config.get_sbelt(),
+        //     self.cache.clone(),
+        //     Duration::from_secs(2) //TODO: Agregar timeout a la configuracion de resolver
+        //     );  //TODO: Transformarlo en un futuro .await
 
         // TODO: Eliminar esto 
         let localhost_v4 = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));

@@ -1,3 +1,4 @@
+use crate::cache_data::host_data;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
@@ -8,13 +9,60 @@ use crate::message::type_qtype::Qtype;
 use crate::client::client_connection::ClientConnection;
 use crate::resolver::slist::Slist;
 
-use std::{time::Duration, future::Future};
+use std::{time::Duration};
 use rand::{thread_rng, Rng};
 use std::pin::Pin;
 use std::task::{Poll,Context};
 //TODO: Eliminar librerias
 use std::net::{IpAddr,Ipv4Addr};
 use std::io;
+use futures_util::{future::Future,future};
+
+use super::Resolver;
+use super::resolver_error::ResolverError;
+
+
+//Future returned fron AsyncResolver when performing a lookup with rtype A
+pub struct LookupIpFutureStub {
+    // Servers for lookups
+    hosts: Vec<IpAddr>,
+    query: Result<IpAddr, ResolverError>,
+    final_ip: Option<IpAddr>
+}
+
+
+impl  Future for LookupIpFutureStub {
+    type Output = Result<IpAddr, ResolverError>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        unimplemented!();
+        
+    }
+    
+}
+
+impl LookupIpFutureStub {
+    pub fn lookup(
+        hosts: Vec<IpAddr>,
+        cache:DnsCache,
+        final_ip: Option<IpAddr>
+    ) -> Self {
+        
+        Self { 
+            hosts: hosts,
+            query: Err(ResolverError::Message("NONE")),
+            final_ip:final_ip
+        }
+
+    }
+    
+}
+
+
+
+
+
+
 
 
 //Lookup seria el nuevo ResolverQuery

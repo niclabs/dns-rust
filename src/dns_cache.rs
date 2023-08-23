@@ -4,6 +4,7 @@ use crate::message::resource_record::{ResourceRecord, self};
 use crate::rr_cache::RRCache;
 use crate::message::type_rtype::Rtype;
 use chrono::prelude::*;
+use std::net::IpAddr;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
 use crate::cache_data::host_data::HostData;
@@ -91,7 +92,7 @@ impl DnsCache {
         &mut self,
         domain_name: DomainName,
         rr_type: Rtype,
-        ip_address: String,
+        ip_address: IpAddr,
     ) -> u32 {
         let rr_cache_vec = self.get(domain_name, rr_type).unwrap();
 
@@ -100,24 +101,8 @@ impl DnsCache {
                 Rdata::SomeARdata(val) => val.get_address(),
                 _ => unreachable!(),
             };
-
-            let vec_ip_str_from_string_with_port =
-                ip_address.split(":").collect::<Vec<&str>>()[0].clone();
-
-            let vec_ip_str_from_string: Vec<&str> =
-                vec_ip_str_from_string_with_port.split(".").collect();
-
-            let mut ip_address_bytes: [u8; 4] = [0; 4];
-
-            let mut index = 0;
-
-            for byte in vec_ip_str_from_string {
-                let byte = byte.parse::<u8>().unwrap();
-                ip_address_bytes[index] = byte;
-                index = index + 1;
-            }
-
-            if ip_address_bytes == rr_ip_address {
+            
+            if ip_address == rr_ip_address {
                 return rr_cache.get_response_time();
             }
         }
@@ -132,7 +117,7 @@ impl DnsCache {
         domain_name: DomainName,
         rr_type: Rtype,
         response_time: u32,
-        ip_address: String,
+        ip_address: IpAddr,
     ) {
         let mut cache = self.get_cache();
 
@@ -148,22 +133,7 @@ impl DnsCache {
                         _ => unreachable!(),
                     };
 
-                    let vec_ip_str_from_string_with_port =
-                        ip_address.split(":").collect::<Vec<&str>>()[0].clone();
-
-                    let vec_ip_str_from_string: Vec<&str> =
-                        vec_ip_str_from_string_with_port.split(".").collect();
-
-                    let mut ip_address_bytes: [u8; 4] = [0; 4];
-                    let mut index = 0;
-
-                    for byte in vec_ip_str_from_string {
-                        let byte = byte.parse::<u8>().unwrap();
-                        ip_address_bytes[index] = byte;
-                        index = index + 1;
-                    }
-
-                    if ip_address_bytes == rr_ip_address {
+                    if ip_address == rr_ip_address {
                         rr_cache
                             .set_response_time((response_time + rr_cache.get_response_time()) / 2);
                     }

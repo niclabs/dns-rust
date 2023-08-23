@@ -194,7 +194,7 @@ mod client_test {
             let a_rdata = answer.get_rdata();
             match a_rdata {
                 Rdata::SomeARdata(val) => {
-                    assert_eq!(val.get_address(), expected_ip)
+                    assert_eq!(val.get_address(), IpAddr::from(expected_ip))
                 },
                 _ => {}
             }
@@ -228,7 +228,7 @@ mod client_test {
             let a_rdata = answer.get_rdata();
             match a_rdata {
                 Rdata::SomeARdata(val) => {
-                    assert_eq!(val.get_address(), expected_ip)
+                    assert_eq!(val.get_address(), IpAddr::from(expected_ip))
                 },
                 _ => {}
             }

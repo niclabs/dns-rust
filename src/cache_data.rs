@@ -161,7 +161,7 @@ impl CacheData{
         domain_name: DomainName,
         rr_type: Rtype,
         response_time: u32,
-        ip_address: String,
+        ip_address: IpAddr,
     ) {
         let mut cache = self.get_cache_data();
         if let Some(x) = cache.get(&rr_type) {
@@ -175,23 +175,8 @@ impl CacheData{
                         Rdata::SomeARdata(val) => val.get_address(),
                         _ => unreachable!(),
                     };
-                    //Lo transforma de string a [u8;4] en estos 2 procesos
-                    let vec_ip_str_from_string_with_port =
-                        ip_address.split(":").collect::<Vec<&str>>()[0].clone();
-
-                    let vec_ip_str_from_string: Vec<&str> =
-                        vec_ip_str_from_string_with_port.split(".").collect();
-
-                    let mut ip_address_bytes: [u8; 4] = [0; 4];
-                    let mut index = 0;
-
-                    for byte in vec_ip_str_from_string {
-                        let byte = byte.parse::<u8>().unwrap();
-                        ip_address_bytes[index] = byte;
-                        index = index + 1;
-                    }
-
-                    if ip_address_bytes == rr_ip_address {
+                    
+                    if ip_address == rr_ip_address {
                         rr_cache
                             .set_response_time((response_time + rr_cache.get_response_time()) / 2);
                     }

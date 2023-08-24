@@ -60,7 +60,6 @@ impl  Future for LookupIpFutureStub {
                 //First poll
                 println!("[POLL FUTURE] Poll::Ready(Error)");
                 true
-
             }
 
             _ => {
@@ -72,14 +71,14 @@ impl  Future for LookupIpFutureStub {
 
         if should_retry {
             println!("[POLL FUTURE] should try");
-            self.query = LookupIpFutureStub::lookup_stub(self.name.clone()).boxed();
+            self.query = lookup_stub(self.name.clone()).boxed();
+    
             println!("[POLL FUTURE] do lookup stub");
         }
 
-
+        println!("[POLL FUTURE] return");
         return Poll::Pending;
-        
-        
+
     }
     
 }
@@ -101,33 +100,29 @@ impl LookupIpFutureStub {
         }
 
     }
-
-    async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
-        name: DomainName
-        
-    ) -> Result<IpAddr,ResolverError> {
-        println!("[LOOKUP STUB]");
-
-
-        //TODO: Buscar en cache
-
-
-        //FIXME: sea parametro que se pase
-        let server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
-        let timeout:Duration = Duration::new(2, 0);
-
-        
-        //Connection type
-        let conn = ClientUDPConnection::new(server, timeout);
-        let mut udp_client = Client::new(conn);
-        let response = udp_client.query(name, "A","IN" ).to_owned();
-
-        println!("[LOOKUP STUB] response = {:?}",response);
-
-        Err(ResolverError::Message("Not implemented"))
-    }
-    
 }
+
+pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
+    name: DomainName
+) -> Result<IpAddr,ResolverError> {
+    println!("[LOOKUP STUB]");
+
+    //TODO: Buscar en cache
+
+    //FIXME: sea parametro que se pase
+    let server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    let timeout:Duration = Duration::new(2, 0);
+    
+    //Connection type
+    let conn = ClientUDPConnection::new(server, timeout);
+    let mut udp_client = Client::new(conn);
+    let response = udp_client.query(name, "A","IN" );
+
+    println!("[LOOKUP STUB] response = {:?}",response);
+
+    Err(ResolverError::Message("Not implemented"))
+}
+
 
 
 

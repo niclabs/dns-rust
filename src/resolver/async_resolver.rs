@@ -56,11 +56,6 @@ impl AsyncResolver{
 
 }
 
-//Getters
-impl AsyncResolver{
-
-}
-
 #[cfg(test)]
 mod async_resolver_test {
     use tokio::runtime::Runtime;
@@ -94,8 +89,5 @@ mod async_resolver_test {
 
         println!("[TEST => {}]",response);
     }
-
-
-    
 
 }

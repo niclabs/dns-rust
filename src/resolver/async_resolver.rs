@@ -6,6 +6,7 @@ use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
+use crate::message::rdata::Rdata;
 
 
 use std::time::Duration;
@@ -13,8 +14,8 @@ use std::time::Duration;
 pub struct AsyncResolver{
     // config: ResolverConfig,  FIXME: ver si conviene para configurara tiposd e consultas que aceptara resolver
     cache: DnsCache,
-    config: ResolverConfig
-    // runtime:Mutex<Runtime> //FIXME: obliga correr fun async
+    config: ResolverConfig,
+// runtime:Mutex<Runtime> //FIXME: obliga correr fun async
 
 }
 
@@ -35,19 +36,25 @@ impl AsyncResolver{
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
 
         // TODO: Revisar cache
-        let cache = DnsCache::new();
-
-        let hosts = vec![IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)),
-                                         IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1))];
 
         //Async query
-        let response = LookupIpFutureStub::lookup(domain_name_struct,hosts,cache, None).await;
+        let response = LookupIpFutureStub::lookup(domain_name_struct).await;
 
         println!("[LOOKUP IP RESPONSE => {:?}]",response);
+        let ip_addr = match response {
+            Ok(val) => {
+                let rdata = val.get_answer()[0].get_rdata();
+    
+                match rdata {
+                    Rdata::SomeARdata(ip) => ip.get_address(), // Supongo que A es el tipo correcto
+                    _ => IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+                }
+            }
+            _ => panic!("[ERROR]"),
+        };
 
         // TODO: Eliminar esto 
-        let localhost_v4 = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
-        Ok(localhost_v4)   
+        Ok(ip_addr)   
     }
 
     pub async fn lookup(&self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {

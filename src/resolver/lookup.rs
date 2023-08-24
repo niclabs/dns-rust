@@ -12,6 +12,7 @@ use crate::resolver::slist::Slist;
 use std::{time::Duration};
 use chrono::DateTime;
 use futures_util::FutureExt;
+use futures_util::future::Pending;
 use rand::{thread_rng, Rng};
 use std::pin::Pin;
 use std::task::{Poll,Context};
@@ -19,92 +20,68 @@ use std::task::{Poll,Context};
 use std::net::{IpAddr,Ipv4Addr};
 use std::io;
 use futures_util::{future::Future,future};
-
+use std::thread;
+use tokio::time::sleep;
 use super::Resolver;
 use super::resolver_error::ResolverError;
+use crate::message::rdata::Rdata;
 
 
 //Future returned fron AsyncResolver when performing a lookup with rtype A
 pub struct LookupIpFutureStub {
-    name: DomainName,
-    // Servers for lookups
-    hosts: Vec<IpAddr>,
-    // cache: DnsCache,
-    query: Pin< Box< dyn Future <Output = Result<IpAddr, ResolverError >>  > >,
-    final_ip: Option<IpAddr>
+    name: DomainName,    // cache: DnsCache,
+    query: Pin< Box< dyn Future <Output = Result<DnsMessage, ResolverError >>  > >,
 }
 
 
 impl  Future for LookupIpFutureStub {
-    type Output = Result<IpAddr, ResolverError>;
+    type Output = Result<DnsMessage, ResolverError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         println!("[POLL FUTURE]");
 
-        //Try polling answer query
-        let response:Poll<Result<IpAddr, ResolverError>> = self.query.as_mut().poll(cx);  
-        println!("[POLL FUTURE] theres response? => {:?}",response);
+        loop {
+            let query = self.query.as_mut().poll(cx);
+            println!("[POLL] query ");
 
-
-        let should_retry = match response { 
-            //If query is not Ready Pending
-            Poll::Pending => {
-                println!("[POLL FUTURE] pending");
-                return  Poll::Pending},
-
-            //If query is ready 
-            Poll::Ready(Ok(answer)) => {
-                println!("[POLL FUTURE] Ok");
-                false},
-            Poll::Ready(Err(message)) =>{  //FIXME: cambiar a otro tipo el inicial
-                //First poll
-                println!("[POLL FUTURE] Poll::Ready(Error)");
-                true
+            match query {
+                Poll::Pending => {
+                    println!("  [Pending]");
+                    return Poll::Pending;
+                },
+                Poll::Ready(Err(_)) => {
+                    println!("  [ready err]");
+                    self.query = Box::pin(lookup_stub(self.name.clone()));
+                },
+                Poll::Ready(Ok(ip_addr)) => {
+                    println!("  [Ready]");
+                    return Poll::Ready(Ok(ip_addr));
+                }
             }
-
-            _ => {
-                println!("[POLL FUTURE] otro");
-                true
-
-            }
-        };
-
-        if should_retry {
-            println!("[POLL FUTURE] should try");
-            self.query = lookup_stub(self.name.clone()).boxed();
-    
-            println!("[POLL FUTURE] do lookup stub");
         }
-
-        println!("[POLL FUTURE] return");
-        return Poll::Pending;
-
     }
-    
+
 }
+    
+
 
 impl LookupIpFutureStub {
     pub fn lookup(
-        name: DomainName,
-        hosts: Vec<IpAddr>,
-        cache:DnsCache,
-        final_ip: Option<IpAddr>
+        name: DomainName
     ) -> Self {
         println!("[LOOKUP FUTURE]");
         
         Self { 
             name: name,
-            hosts: hosts,
             query: future::err(ResolverError::Message("Empty")).boxed(), //FIXME: cambiar a otro tipo el error/inicio
-            final_ip:final_ip
-        }
+            }
 
     }
 }
 
 pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName
-) -> Result<IpAddr,ResolverError> {
+) -> Result<DnsMessage,ResolverError> {
     println!("[LOOKUP STUB]");
 
     //TODO: Buscar en cache
@@ -118,11 +95,10 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
     let mut udp_client = Client::new(conn);
     let response = udp_client.query(name, "A","IN" );
 
-    println!("[LOOKUP STUB] response = {:?}",response);
+    // println!("[LOOKUP STUB] response = {:?}",response);
 
-    Err(ResolverError::Message("Not implemented"))
+    Ok(response)
 }
-
 
 
 

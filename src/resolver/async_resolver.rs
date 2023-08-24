@@ -29,6 +29,7 @@ impl AsyncResolver{
     } 
     
     pub async fn lookup_ip(&self, domain_name: &str) -> Result<IpAddr, io::Error> {
+        println!("[LOOKUP IP ASYNCRESOLVER]");
         
         // TODO: verificaciones
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -39,23 +40,10 @@ impl AsyncResolver{
         let hosts = vec![IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)),
                                          IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1))];
 
-        let final_ip : Option<IpAddr> = None; 
-        
-        let response = LookupIpFutureStub::lookup(hosts,cache, final_ip).await;
+        //Async query
+        let response = LookupIpFutureStub::lookup(domain_name_struct,hosts,cache, None).await;
 
-
-        // pub fn lookup(
-        //     hosts: Vec<IpAddr>,
-        //     cache:DnsCache,
-        //     final_ip: IpAddr,
-        // let lookup_ip = Lookup::lookup(
-        //     domain_name_struct,
-        //     Qtype::A,
-        //     Qclass::IN,
-        //     self.config.get_sbelt(),
-        //     self.cache.clone(),
-        //     Duration::from_secs(2) //TODO: Agregar timeout a la configuracion de resolver
-        //     );  //TODO: Transformarlo en un futuro .await
+        println!("[LOOKUP IP RESPONSE => {:?}]",response);
 
         // TODO: Eliminar esto 
         let localhost_v4 = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
@@ -95,6 +83,19 @@ mod async_resolver_test {
         // TODO: add assert test ip niclabs.cl
 
     }
+
+    #[tokio::test]
+    #[ignore]
+    async fn lookupip_example() {
+
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+      
+        let response = resolver.lookup_ip("example.com").await.unwrap();
+
+        println!("[TEST => {}]",response);
+    }
+
+
     
 
 }

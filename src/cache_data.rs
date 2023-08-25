@@ -166,29 +166,9 @@ impl CacheData{
         let mut cache = self.get_cache_data();
         if let Some(x) = cache.get(&rr_type) {
             let mut new_x = x.clone();
-            if let Some(y) = new_x.get(&domain_name) {
-                let new_y = y.clone();
-                let mut rr_cache_vec = Vec::<RRCache>::new();
-
-                for mut rr_cache in new_y {
-                    let rr_ip_address = match rr_cache.get_resource_record().get_rdata() {
-                        Rdata::SomeARdata(val) => val.get_address(),
-                        _ => unreachable!(),
-                    };
-                    
-                    if ip_address == rr_ip_address {
-                        rr_cache
-                            .set_response_time((response_time + rr_cache.get_response_time()) / 2);
-                    }
-
-                    rr_cache_vec.push(rr_cache.clone());
-                }
-
-                new_x.insert(domain_name, rr_cache_vec.clone());
-
-                cache.insert(rr_type, new_x);
-
-            }
+            new_x.update_response_time(ip_address, response_time, domain_name);
+            cache.insert(rr_type, new_x);
+            self.set_cache_data(cache);
         }
 
     }

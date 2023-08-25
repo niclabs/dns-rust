@@ -232,7 +232,7 @@ mod host_data_test{
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::resource_record::ResourceRecord;
-    use std::collections::HashMap;
+    use std::{collections::HashMap, net::IpAddr};
 
     use super::HostData;
 
@@ -435,5 +435,28 @@ mod host_data_test{
         
      }
 
+    //update response time test
+    #[test]
+    fn update_response_time(){
+        let mut host_data = HostData::new();
+        let ip_address = IpAddr::from([127, 0, 0, 1]);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        let mut rr_cache = RRCache::new(resource_record);
+        rr_cache.set_response_time(1000);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        host_data.add_to_host_data(domain_name.clone(), rr_cache);
+        host_data.update_response_time(ip_address, 2000, domain_name.clone());
 
+        let host_hash = host_data.get_host_hash();
+
+        let rr_cache_vec = host_hash.get(&domain_name).unwrap();
+
+        let rr_cache = rr_cache_vec.get(0).unwrap();
+
+        assert_eq!(2500, rr_cache.get_response_time())
+    }
 }

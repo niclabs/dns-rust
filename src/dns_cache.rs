@@ -407,5 +407,5 @@ mod dns_cache_test {
             assert_eq!(rr_cache.get_response_time(), 4500);
         }
     }
-    //Remaining test: update_response_time
+    //Remaining test: get_response_time
 }

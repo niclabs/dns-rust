@@ -1,7 +1,7 @@
 use chrono::{Utc, DateTime};
 
-use crate::{rr_cache::RRCache, domain_name::DomainName};
-use std::collections::HashMap;
+use crate::{rr_cache::RRCache, domain_name::DomainName, message::rdata::Rdata};
+use std::{collections::HashMap, net::IpAddr};
 
 ///type to define the name of the host
 
@@ -162,6 +162,48 @@ impl HostData{
     pub fn insert(&mut self,domain_name:DomainName, rr_cache_vec : Vec<RRCache>) -> Option<Vec<RRCache>>{
         return self.host_hash.insert(domain_name, rr_cache_vec)
     }
+
+    ///function to update the response time
+    /// # Example
+    /// ```
+    /// let mut host_data = HostData::new();
+    /// let ip_address = IpAddr::from([127, 0, 0, 1]);
+    /// let a_rdata = ARdata::new();
+    /// a_rdata.set_address(ip_address);
+    /// let rdata = Rdata::SomeARdata(a_rdata);
+    /// let resource_record = ResourceRecord::new(rdata);
+    /// let mut rr_cache = RRCache::new(resource_record);
+    /// rr_cache.set_response_time(1000);
+    /// let mut domain_name = DomainName::new();
+    /// domain_name.set_name(String::from("uchile.cl"));
+    /// host_data.add_to_host_data(domain_name, rr_cache);
+    /// host_data.update_response_time(ip_address, 2000, domain_name);
+    /// ```
+    pub fn update_response_time(&mut self, ip_address: IpAddr, response_time: u32, domain_name: DomainName){
+        let mut host_hash = self.get_host_hash();
+        if let Some(x) = host_hash.get(&domain_name){
+            let  rr_cache_vec = x.clone();
+
+            let mut new_rr_cache_vec = Vec::<RRCache>::new();
+
+            for mut rr_cache in rr_cache_vec{
+                let rr_ip_address = match rr_cache.get_resource_record().get_rdata() {
+                    Rdata::SomeARdata(val) => val.get_address(),
+                    _ => unreachable!(),
+                };
+
+                if rr_ip_address == ip_address{
+                    rr_cache.set_response_time(response_time + rr_cache.get_response_time()/2);
+                }
+
+                new_rr_cache_vec.push(rr_cache.clone());
+            }
+            host_hash.insert(domain_name, new_rr_cache_vec);
+
+            self.set_host_hash(host_hash);
+        }
+    }
+
 }
 
 ///setter and getter for the host data

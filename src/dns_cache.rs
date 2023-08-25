@@ -188,7 +188,7 @@ mod dns_cache_test {
     use crate::message::type_rtype::Rtype;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-    use std::collections::HashMap;
+    use std::{collections::HashMap, net::IpAddr};
 
     //Constructor test 
     #[test]
@@ -376,40 +376,36 @@ mod dns_cache_test {
 
         assert_eq!(cache.get_cache().get_cache_data().len(), 1);
     }
-    //Remaining test: get_response_time, update_response_time
-//     #[test]
-//     fn update_and_get_response_time() {
-//         let mut dns_cache = DnsCache::new();
 
-//         dns_cache.set_max_size(1);
+    //Update response time test
+    #[test]
+    fn update_response_time(){
+        let mut cache = DnsCache::new();
 
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address([127, 0, 0, 1]);
+        cache.set_max_size(2);
 
-//         let r_data = Rdata::SomeARdata(a_rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let ip_address = IpAddr::from([127, 0, 0, 1]);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
 
-//         let mut a_resource_record = ResourceRecord::new(r_data);
-//         a_resource_record.set_type_code(Rtype::A);
+        assert!(cache.get_cache().get_cache_data().is_empty());
 
-//         dns_cache.add(String::from("test.com"), a_resource_record);
-//         let response_time = dns_cache.get_response_time(
-//             String::from("test.com"),
-//             String::from("A"),
-//             String::from("127.0.0.1"),
-//         );
-//         assert_eq!(response_time, 5000 as u32);
+        cache.add(domain_name.clone(), resource_record);
 
-//         dns_cache.update_response_time(
-//             String::from("test.com"),
-//             String::from("A"),
-//             3000,
-//             String::from("127.0.0.1"),
-//         );
-//         let new_response_time = dns_cache.get_response_time(
-//             String::from("test.com"),
-//             String::from("A"),
-//             String::from("127.0.0.1"),
-//         );
-//         assert_eq!(new_response_time, 4000 as u32);
-//     }
+        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
+
+        cache.update_response_time(domain_name.clone(), Rtype::A, 2000, ip_address.clone());
+
+        let rr_cache_vec = cache.get(domain_name.clone(), Rtype::A).unwrap();
+
+        //Default response time in RFC 1034/1035 is 5000 so new response time should be 4500
+        for rr_cache in rr_cache_vec {
+            assert_eq!(rr_cache.get_response_time(), 4500);
+        }
+    }
+    //Remaining test: update_response_time
 }

@@ -432,5 +432,12 @@ mod dns_cache_test {
 
         //Default response time in RFC 1034/1035 is 5000
         assert_eq!(response_time, 5000);
+
+        cache.update_response_time(domain_name.clone(), Rtype::A, 2000, ip_address.clone());
+
+        let response_time_2 = cache.get_response_time(domain_name.clone(), Rtype::A, ip_address.clone());
+
+        //Default response time in RFC 1034/1035 is 5000 so new response time should be 4500 because 5000/2 + 2000/2 = 4500
+        assert_eq!(response_time_2, 4500);
     }
 }

@@ -110,12 +110,10 @@ impl CacheData{
         let mut oldest_used_domain_name = DomainName::new();
         let mut oldest_used_type =Rtype::TXT;
         let mut oldest_time = Utc::now();
-        let mut domain_name = DomainName::new();
-        let mut time = Utc::now();
 
         for (rtype, mut host_data) in cache {
-            (domain_name,time)=host_data.get_oldest_used();
-            if time>oldest_time {
+            let (domain_name,time)=host_data.get_oldest_used();
+            if time <= oldest_time {
                 oldest_used_type = rtype.clone();
                 oldest_used_domain_name = domain_name;
                 oldest_time = time;
@@ -380,8 +378,10 @@ mod cache_data_test{
         cache_data.add_to_cache_data(Rtype::A, domain_name_1.clone(), rr_cache);
         cache_data.add_to_cache_data(Rtype::TXT, domain_name_2.clone(), rr_cache_2);
 
-        let a = cache_data.remove_oldest_used();
         let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_1, Rtype::A).unwrap();
+        
+        let a = cache_data.remove_oldest_used();
+        
         let vec_rr_cache_txt_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::TXT).unwrap();
 
         assert_eq!(a,1);

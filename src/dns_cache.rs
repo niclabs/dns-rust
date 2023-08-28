@@ -408,4 +408,29 @@ mod dns_cache_test {
         }
     }
     //Remaining test: get_response_time
+    #[test]
+    fn get_response_time(){
+        let mut cache = DnsCache::new();
+
+        cache.set_max_size(2);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+        let ip_address = IpAddr::from([127, 0, 0, 1]);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+
+        assert!(cache.get_cache().get_cache_data().is_empty());
+
+        cache.add(domain_name.clone(), resource_record);
+
+        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
+
+        let response_time = cache.get_response_time(domain_name.clone(), Rtype::A, ip_address.clone());
+
+        //Default response time in RFC 1034/1035 is 5000
+        assert_eq!(response_time, 5000);
+    }
 }

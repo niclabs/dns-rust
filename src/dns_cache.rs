@@ -80,7 +80,6 @@ impl DnsCache {
     // Removes the resource records from a domain name and type which were the oldest used
     pub fn remove_oldest_used(&mut self) {
         let mut cache = self.get_cache();
-        let mut used_in = Utc::now();
 
         let length = cache.remove_oldest_used();
         self.set_cache(cache);

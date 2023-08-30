@@ -102,7 +102,7 @@ impl HostData{
             return Some(rr_cache_vec);
         }
         else{
-            return Some(Vec::new());
+            return None;
         }
     }
 

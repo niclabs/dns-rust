@@ -1,31 +1,17 @@
-use crate::cache_data::host_data;
 use crate::client::udp_connection::ClientUDPConnection;
-use crate::dns_cache::DnsCache;
-use crate::domain_name::{DomainName, self};
-use crate::message::type_rtype::Rtype;
+use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
-use crate::message::class_qclass::Qclass;
-use crate::message::type_qtype::Qtype;
 use crate::client::{client_connection::ClientConnection,Client};
-use crate::resolver::slist::Slist;
 
-use std::{time::Duration};
-use chrono::DateTime;
+
 use futures_util::FutureExt;
-use futures_util::future::Pending;
-use rand::{thread_rng, Rng};
 use std::pin::Pin;
 use std::task::{Poll,Context};
 //TODO: Eliminar librerias
 use std::net::{IpAddr,Ipv4Addr};
-use std::io;
 use futures_util::{future::Future,future};
-use std::thread;
-use tokio::time::sleep;
-use super::Resolver;
 use super::resolver_error::ResolverError;
-use crate::message::rdata::Rdata;
-
+use std::time::Duration;
 
 //Future returned fron AsyncResolver when performing a lookup with rtype A
 pub struct LookupIpFutureStub {

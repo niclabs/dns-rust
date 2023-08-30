@@ -1,5 +1,5 @@
 use crate::message::type_rtype::Rtype;
-use crate::domain_name::DomainName;
+use crate::domain_name::{DomainName, self};
 
 pub fn check_label_name(name: String) -> bool {
     if name.len() > 63 || name.len() == 0 {
@@ -43,10 +43,11 @@ pub fn domain_validity_syntax(domain_name: DomainName) -> Result<DomainName, &'s
 }
 
 // checks if host_name is writtena as an reverse query
-pub fn is_reverse_query(host_name: String) -> bool {
+pub fn is_reverse_query(host_name: DomainName) -> bool {
     let mut is_reverse_query: bool = false;
-    let labels = host_name.split(".");
-    let length_ip = host_name.split(".").count();
+    let domain_name_string = host_name.get_name();
+    let labels = domain_name_string.split(".");
+    let length_ip = domain_name_string.split(".").count();
 
     if length_ip != 4 {
         return is_reverse_query;

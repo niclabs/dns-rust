@@ -8,15 +8,11 @@ use crate::message::type_qtype::Qtype;
 use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
 use crate::message::rdata::Rdata;
 
-
-use std::time::Duration;
-
 pub struct AsyncResolver{
     // config: ResolverConfig,  FIXME: ver si conviene para configurara tiposd e consultas que aceptara resolver
     cache: DnsCache,
     config: ResolverConfig,
 // runtime:Mutex<Runtime> //FIXME: obliga correr fun async
-
 }
 
 impl AsyncResolver{
@@ -57,6 +53,7 @@ impl AsyncResolver{
         Ok(ip_addr)   
     }
 
+    #[allow(unused_variables)]
     pub async fn lookup(&self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
         unimplemented!()
     }

@@ -20,12 +20,13 @@ pub fn check_label_name(name: String) -> bool {
 }
 
 // validity checks should be performed insuring that the file is syntactically correct
-pub fn domain_validity_syntax(domain_name: String) -> Result<String, &'static str> {
-    if domain_name.eq("@") {
+pub fn domain_validity_syntax(domain_name: DomainName) -> Result<DomainName, &'static str> {
+    let domain_name_string = domain_name.get_name();
+    if domain_name_string.eq("@") {
         return Ok(domain_name);
     }
     let mut empty_label = false;
-    for label in domain_name.split(".") {
+    for label in domain_name_string.split(".") {
         if empty_label {
             return Err("Error: Empty label is only allowed at the end of a hostname.");
         }

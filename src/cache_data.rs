@@ -350,8 +350,7 @@ mod cache_data_test{
     }
 
     //remove oldest used test
-    #[test]//TODO: fix this test
-    #[ignore]
+    #[test]
     fn remove_oldest_used(){
         let mut cache_data = CacheData::new();
 
@@ -378,11 +377,12 @@ mod cache_data_test{
         cache_data.add_to_cache_data(Rtype::A, domain_name_1.clone(), rr_cache);
         cache_data.add_to_cache_data(Rtype::TXT, domain_name_2.clone(), rr_cache_2);
 
-        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_1, Rtype::A).unwrap();
+        let _vec_rr_cache_a = cache_data.get_from_cache_data(domain_name_1.clone(), Rtype::A).unwrap();
         
         let a = cache_data.remove_oldest_used();
         
         let vec_rr_cache_txt_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::TXT).unwrap();
+        let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_1.clone(), Rtype::A).unwrap();
 
         assert_eq!(a,1);
         assert_eq!(vec_rr_cache_a_expected.len(), 1);

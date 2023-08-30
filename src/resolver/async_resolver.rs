@@ -34,7 +34,7 @@ impl AsyncResolver{
         // TODO: Revisar cache
 
         //Async query
-        let response = LookupIpFutureStub::lookup(domain_name_struct).await;
+        let response = LookupIpFutureStub::lookup(domain_name_struct, self.cache.clone()).await;
 
         println!("[LOOKUP IP RESPONSE => {:?}]",response);
         let ip_addr = match response {

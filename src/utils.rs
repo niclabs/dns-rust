@@ -80,6 +80,7 @@ pub fn get_string_stype(stype: Rtype) -> String {
 #[cfg(test)]
 mod utils_test {
     use crate::utils::is_reverse_query;
+    use crate::domain_name::{DomainName, self};
 
     use super::check_label_name;
     use super::domain_validity_syntax;
@@ -133,28 +134,38 @@ mod utils_test {
 
     #[test]
     fn domain_validity_syntax_empty_dom() {
-        let ok = Ok(String::from(""));
+        let mut expected_domain_name = DomainName::new();
+        expected_domain_name.set_name(String::from(""));
+        let ok = Ok(expected_domain_name.clone());
+        let mut domain_name = DomainName::new();
         let empty_dom = String::from("");
+        domain_name.set_name(empty_dom);
 
-        let empty_dom_validity = domain_validity_syntax(empty_dom);
+        let empty_dom_validity = domain_validity_syntax(domain_name);
 
         assert_eq!(empty_dom_validity, ok);
     }
 
     #[test]
     fn domain_validity_syntax_valid_dom() {
-        let ok = Ok(String::from("label1.label2."));
+        let mut expected_domain_name = DomainName::new();
+        expected_domain_name.set_name(String::from("label1.label2."));
+        let ok = Ok(expected_domain_name);
+        let mut domain_name = DomainName::new();
         let valid_dom = String::from("label1.label2.");
+        domain_name.set_name(valid_dom);
 
-        let valid_dom_validity = domain_validity_syntax(valid_dom);
+        let valid_dom_validity = domain_validity_syntax(domain_name);
 
         assert_eq!(valid_dom_validity, ok);
     }
 
     #[test]
     fn domain_validity_syntax_wrong_middle_dom() {
+        let mut domain_name = DomainName::new();
         let wrong_middle_dom = String::from("label1..label2");
-        let wrong_middle_dom_validity = domain_validity_syntax(wrong_middle_dom);
+        domain_name.set_name(wrong_middle_dom.clone());
+        let wrong_middle_dom_validity = domain_validity_syntax(domain_name);
 
         assert_eq!(
             wrong_middle_dom_validity,
@@ -164,8 +175,10 @@ mod utils_test {
 
     #[test]
     fn domain_validity_syntax_wrong_init_dom() {
+        let mut domain_name = DomainName::new();
         let wrong_init_dom = String::from(".label");
-        let wrong_init_dom_validity = domain_validity_syntax(wrong_init_dom);
+        domain_name.set_name(wrong_init_dom);
+        let wrong_init_dom_validity = domain_validity_syntax(domain_name);
 
         assert_eq!(
             wrong_init_dom_validity,
@@ -175,17 +188,21 @@ mod utils_test {
 
     #[test]
     fn domain_validity_syntax_at_domain_name() {
+        let mut domain_name = DomainName::new();
         let at_str = String::from("@");
-        let ok = Ok(at_str.clone());
-        let at_str_validity = domain_validity_syntax(at_str);
+        domain_name.set_name(at_str.clone());
+        let ok = Ok(domain_name.clone());
+        let at_str_validity = domain_validity_syntax(domain_name);
 
         assert_eq!(at_str_validity, ok);
     }
 
     #[test]
     fn domain_validity_syntax_syntactically_incorrect_dom() {
+        let mut domain_name = DomainName::new();
         let incorrect_dom = String::from("label1.2badlabel.test");
-        let incorrect_dom_validity = domain_validity_syntax(incorrect_dom);
+        domain_name.set_name(incorrect_dom.clone());
+        let incorrect_dom_validity = domain_validity_syntax(domain_name);
 
         assert_eq!(
             incorrect_dom_validity,
@@ -195,13 +212,18 @@ mod utils_test {
 
     #[test]
     fn domain_validity_syntax_syntactically_correct_dom() {
+        let mut domain_name_1 = DomainName::new();
         let correct_dom_1 = String::from("label1.label2.test");
-        let correct_dom_2 = String::from("label1.label2.test.");
+        domain_name_1.set_name(correct_dom_1.clone());
 
-        let ok_dom_1 = Ok(correct_dom_1.clone());
-        let ok_dom_2 = Ok(correct_dom_2.clone());
-        let correct_dom_1_validity = domain_validity_syntax(correct_dom_1);
-        let correct_dom_2_validity = domain_validity_syntax(correct_dom_2);
+        let mut domain_name_2 = DomainName::new();
+        let correct_dom_2 = String::from("label1.label2.test.");
+        domain_name_2.set_name(correct_dom_2.clone());
+
+        let ok_dom_1 = Ok(domain_name_1.clone());
+        let ok_dom_2 = Ok(domain_name_2.clone());
+        let correct_dom_1_validity = domain_validity_syntax(domain_name_1);
+        let correct_dom_2_validity = domain_validity_syntax(domain_name_2);
 
         assert_eq!(correct_dom_1_validity, ok_dom_1);
         assert_eq!(correct_dom_2_validity, ok_dom_2);
@@ -209,19 +231,25 @@ mod utils_test {
 
     #[test]
     fn is_reverse_query_dom() {
+        let mut domain_name = DomainName::new();
         let dom_str = String::from("not_inverse.com");
-        assert_eq!(is_reverse_query(dom_str), false);
+        domain_name.set_name(dom_str.clone());
+        assert!(!is_reverse_query(domain_name));
     }
 
     #[test]
     fn is_reverse_query_ip() {
+        let mut domain_name = DomainName::new();
         let ip_str = String::from("10.1.0.52");
-        assert_eq!(is_reverse_query(ip_str), true);
+        domain_name.set_name(ip_str.clone());
+        assert!(is_reverse_query(domain_name));
     }
 
     #[test]
     fn is_reverse_query_num() {
+        let mut domain_name = DomainName::new();
         let num_str = String::from("100");
-        assert_eq!(is_reverse_query(num_str), false);
+        domain_name.set_name(num_str.clone());
+        assert!(!is_reverse_query(domain_name));
     }
 }

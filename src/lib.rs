@@ -10,7 +10,6 @@ pub mod rr_cache;
 pub mod utils;
 
 //pub mod hash structures
-pub mod cache_data;
 pub mod truncated_dns_message;
 
 

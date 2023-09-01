@@ -1,4 +1,6 @@
-use crate::cache_data::CacheData;
+pub mod cache_data;
+
+use crate::dns_cache::cache_data::CacheData;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{ResourceRecord, self};
 use crate::rr_cache::RRCache;
@@ -7,7 +9,7 @@ use chrono::prelude::*;
 use std::net::IpAddr;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
-use crate::cache_data::host_data::HostData;
+use crate::dns_cache::cache_data::host_data::HostData;
 use std::cmp;
 
 #[derive(Clone)]
@@ -177,8 +179,8 @@ impl DnsCache {
 #[cfg(test)] 
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
-    use crate::cache_data::CacheData;
-    use crate::cache_data::host_data::HostData;
+    use crate::dns_cache::cache_data::CacheData;
+    use crate::dns_cache::cache_data::host_data::HostData;
     use crate::rr_cache::RRCache;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;

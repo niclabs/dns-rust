@@ -6,7 +6,7 @@ use crate::message::rdata::Rdata;
 use crate::message::type_rtype::{Rtype, self};
 use crate::rr_cache::RRCache;
 use std::net::IpAddr;
-use crate::cache_data::host_data::HostData;
+use crate::dns_cache::cache_data::host_data::HostData;
 use std::collections::HashMap;
 use crate::domain_name::{DomainName, self};
 
@@ -211,7 +211,7 @@ mod cache_data_test{
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::cache_data::host_data::HostData;
+    use crate::dns_cache::cache_data::host_data::HostData;
     use std::{collections::HashMap, net::IpAddr};
 
 

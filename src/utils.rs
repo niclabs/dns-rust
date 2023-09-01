@@ -42,7 +42,7 @@ pub fn domain_validity_syntax(domain_name: DomainName) -> Result<DomainName, &'s
     return Ok(domain_name);
 }
 
-// checks if host_name is writtena as an reverse query
+// checks if host_name is writtena as an inverse query
 pub fn is_inverse_query(host_name: DomainName) -> bool {
     let mut is_reverse_query: bool = false;
     let domain_name_string = host_name.get_name();

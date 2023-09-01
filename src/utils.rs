@@ -230,7 +230,7 @@ mod utils_test {
     }
 
     #[test]
-    fn is_reverse_query_dom() {
+    fn is_inverse_query_dom() {
         let mut domain_name = DomainName::new();
         let dom_str = String::from("not_inverse.com");
         domain_name.set_name(dom_str.clone());
@@ -238,7 +238,7 @@ mod utils_test {
     }
 
     #[test]
-    fn is_reverse_query_ip() {
+    fn is_inverse_query_ip() {
         let mut domain_name = DomainName::new();
         let ip_str = String::from("10.1.0.52");
         domain_name.set_name(ip_str.clone());
@@ -246,7 +246,7 @@ mod utils_test {
     }
 
     #[test]
-    fn is_reverse_query_num() {
+    fn is_inverse_query_num() {
         let mut domain_name = DomainName::new();
         let num_str = String::from("100");
         domain_name.set_name(num_str.clone());

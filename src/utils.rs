@@ -79,7 +79,7 @@ pub fn get_string_stype(stype: Rtype) -> String {
 
 #[cfg(test)]
 mod utils_test {
-    use crate::utils::is_reverse_query;
+    use crate::utils::is_inverse_query;
     use crate::domain_name::{DomainName, self};
 
     use super::check_label_name;
@@ -234,7 +234,7 @@ mod utils_test {
         let mut domain_name = DomainName::new();
         let dom_str = String::from("not_inverse.com");
         domain_name.set_name(dom_str.clone());
-        assert!(!is_reverse_query(domain_name));
+        assert!(!is_inverse_query(domain_name));
     }
 
     #[test]
@@ -242,7 +242,7 @@ mod utils_test {
         let mut domain_name = DomainName::new();
         let ip_str = String::from("10.1.0.52");
         domain_name.set_name(ip_str.clone());
-        assert!(is_reverse_query(domain_name));
+        assert!(is_inverse_query(domain_name));
     }
 
     #[test]
@@ -250,6 +250,6 @@ mod utils_test {
         let mut domain_name = DomainName::new();
         let num_str = String::from("100");
         domain_name.set_name(num_str.clone());
-        assert!(!is_reverse_query(domain_name));
+        assert!(!is_inverse_query(domain_name));
     }
 }

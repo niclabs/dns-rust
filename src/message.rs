@@ -1474,4 +1474,18 @@ mod message_test {
         let result = dns_query_message.check_op_code().unwrap();
         assert_eq!(result, ());
     }
+
+    #[test]
+    fn check_op_code_error(){
+        let dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string(" ".to_string()),
+                Qtype::AXFR,
+                Qclass::IN,
+                1,
+                false,
+                1);
+        let result = dns_query_message.check_op_code().unwrap_err();
+        assert_eq!(result, "IQuery not Implemented");
+    }
 }

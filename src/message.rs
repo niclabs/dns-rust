@@ -789,6 +789,25 @@ impl DnsMessage {
             }
         }
     }
+
+    ///Checks the Op_code of a message
+    ///
+    /// # Example
+    /// ```
+    /// let mut msg = DnsMessage::new();
+    /// let mut header = Header::new();
+    /// header.set_op_code(1);
+    /// msg.set_header(header);
+    /// let result = msg.check_op_code();
+    pub fn check_op_code(&self) -> Result<(), &'static str>{
+        let header = self.get_header();
+        let op_code = header.get_op_code();
+        match op_code {
+            1 => Err("IQuery not Implemented") ,
+            _ => Ok(())
+        }
+    }
+
 }
 
 // Getters

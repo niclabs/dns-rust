@@ -799,6 +799,7 @@ impl DnsMessage {
     /// header.set_op_code(1);
     /// msg.set_header(header);
     /// let result = msg.check_op_code();
+    /// ```
     pub fn check_op_code(&self) -> Result<(), &'static str>{
         let header = self.get_header();
         let op_code = header.get_op_code();

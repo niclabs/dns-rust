@@ -42,35 +42,6 @@ pub fn domain_validity_syntax(domain_name: DomainName) -> Result<DomainName, &'s
     return Ok(domain_name);
 }
 
-// checks if host_name is writtena as an inverse query
-pub fn is_inverse_query(host_name: DomainName) -> bool {
-    let mut is_reverse_query: bool = false;
-    let domain_name_string = host_name.get_name();
-    let labels = domain_name_string.split(".");
-    let length_ip = domain_name_string.split(".").count();
-
-    if length_ip != 4 {
-        return is_reverse_query;
-    }
-
-    for label in labels {
-        let label_char = label.chars();
-
-        //if it's reverse query should be a number
-        for char in label_char {
-            //verified if it's a number
-            is_reverse_query = char.is_ascii_digit();
-
-            //if not a number is not a reverse query
-            if is_reverse_query == false {
-                return is_reverse_query;
-            }
-        }
-    }
-
-    return is_reverse_query;
-}
-
 /// Given the value of the STYPE, obtains its corresponding string.
 pub fn get_string_stype(stype: Rtype) -> String {
     let s_type = Rtype::from_rtype_to_str(stype);
@@ -79,7 +50,6 @@ pub fn get_string_stype(stype: Rtype) -> String {
 
 #[cfg(test)]
 mod utils_test {
-    use crate::utils::is_inverse_query;
     use crate::domain_name::{DomainName, self};
 
     use super::check_label_name;
@@ -227,29 +197,5 @@ mod utils_test {
 
         assert_eq!(correct_dom_1_validity, ok_dom_1);
         assert_eq!(correct_dom_2_validity, ok_dom_2);
-    }
-
-    #[test]
-    fn is_inverse_query_dom() {
-        let mut domain_name = DomainName::new();
-        let dom_str = String::from("not_inverse.com");
-        domain_name.set_name(dom_str.clone());
-        assert!(!is_inverse_query(domain_name));
-    }
-
-    #[test]
-    fn is_inverse_query_ip() {
-        let mut domain_name = DomainName::new();
-        let ip_str = String::from("10.1.0.52");
-        domain_name.set_name(ip_str.clone());
-        assert!(is_inverse_query(domain_name));
-    }
-
-    #[test]
-    fn is_inverse_query_num() {
-        let mut domain_name = DomainName::new();
-        let num_str = String::from("100");
-        domain_name.set_name(num_str.clone());
-        assert!(!is_inverse_query(domain_name));
     }
 }

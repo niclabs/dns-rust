@@ -1460,4 +1460,18 @@ mod message_test {
 
         assert_eq!(qtype, String::from("TXT"));
     }
+
+    #[test]
+    fn check_op_code_no_error(){
+        let dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        let result = dns_query_message.check_op_code().unwrap();
+        assert_eq!(result, ());
+    }
 }

@@ -254,9 +254,7 @@ mod domain_name_test {
         ];
         let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test).unwrap();
 
-        println!("{}", domain_name.get_name());
-
-        // assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
+        assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
     }
 
     #[test]

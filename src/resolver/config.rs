@@ -1,6 +1,8 @@
-use crate::resolver::slist::Slist;
+use crate::{resolver::slist::Slist, client::{client_connection::ClientConnection, udp_connection::ClientUDPConnection}};
+use crate::client::client_connection::ClientConnectionType;
+// use crate::client::udp_connection::ClientUDPConnection;
 
-use std::{net::{IpAddr,SocketAddr,Ipv4Addr, UdpSocket}, default};
+use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 pub struct ResolverConfig{
     //Servers
@@ -13,29 +15,40 @@ pub struct ResolverConfig{
     cache_available: bool,
     //Uses recursive 
     recursive_available: bool,
+    //Connection type
+    conn: ClientConnectionType,
 }
 
 impl ResolverConfig {
-    pub fn new(sbelt: Option<Slist>, resolver_addr: IpAddr) -> Self {
+    pub fn new(sbelt: Option<Slist>, resolver_addr: IpAddr,conn:ClientConnectionType) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
             sbelt: sbelt.unwrap_or_else(Slist::new),
             addr: SocketAddr::new(resolver_addr, 53),
             retry: 30,
             cache_available: true,
             recursive_available: false,
+            conn: conn,
         };
 
         resolver_config
     }
 
     pub fn default()-> Self {
-        //TODO: crea un resolver con los valores por defecto
+
+        //FIXME: these are examples values
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(20);
+
+        let client_udp = ClientUDPConnection::new(google_server, timeout);
+        let conn = ClientConnectionType::UDP(client_udp);
+    
         let resolver_config: ResolverConfig = ResolverConfig {
             sbelt: Slist::new(),
             addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
             retry: 30,
             cache_available: true,
-            recursive_available: false
+            recursive_available: false,
+            conn: conn,
         };
 
         resolver_config
@@ -64,6 +77,10 @@ impl ResolverConfig {
 
     pub fn get_recursive_available(&self) -> bool{
         self.recursive_available
+    }
+
+    pub fn get_conn(&self) -> ClientConnectionType {
+        self.conn.clone()
     }
 
 
@@ -101,7 +118,7 @@ mod tests_resolver_config {
     use crate::domain_name::DomainName;
     use crate::resolver::slist::Slist;
     use crate::resolver::slist::slist_element::SlistElement;
-    use std::collections::HashMap;
+    // use std::collections::HashMap;
     use super::*;
 
     #[test]
@@ -126,7 +143,12 @@ mod tests_resolver_config {
 
         sbelt.set_ns_list(ns_list);
 
-        let mut config = ResolverConfig::new(Some(sbelt),resolver_addr);
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(20);
+        let type_conn = ClientUDPConnection::new(google_server, timeout);
+        let conn = ClientConnectionType::UDP(type_conn);
+        
+        let mut config = ResolverConfig::new(Some(sbelt),resolver_addr,conn);
 
         //config default
         let config_default = ResolverConfig::default();

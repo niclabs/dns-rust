@@ -11,7 +11,7 @@ use std::io::ErrorKind;
 
 
 type ClientResult<T> = Result<T, ClientError>;
-
+#[derive(Clone,Copy)]
 pub struct ClientTCPConnection {
     //addr client
     server_addr: IpAddr,
@@ -22,7 +22,7 @@ pub struct ClientTCPConnection {
 impl ClientConnection for ClientTCPConnection {
 
     ///Creates UDPConnection
-    fn new(server_addr:IpAddr, timeout:Duration) -> ClientTCPConnection {
+    fn new(server_addr:IpAddr, timeout:Duration) -> Self {
         ClientTCPConnection {
             server_addr: server_addr,
             timeout: timeout,
@@ -30,7 +30,7 @@ impl ClientConnection for ClientTCPConnection {
     }
 
     /// creates socket tcp, sends query and receive response
-    fn send(&self, dns_query: DnsMessage) -> ClientResult<DnsMessage> {
+    fn send(self, dns_query: DnsMessage) -> ClientResult<DnsMessage> {
         println!("[SEND TCP]");
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
@@ -54,7 +54,7 @@ impl ClientConnection for ClientTCPConnection {
         //     Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: setting read timeout for socket"))),
         //     Ok(_) => (),
         // }
-        stream.set_read_timeout(Some(timeout))?;
+        stream.set_read_timeout(Some(timeout))?; 
     
         // match stream.write(&full_msg) {
         //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not write to stream {}", e))),

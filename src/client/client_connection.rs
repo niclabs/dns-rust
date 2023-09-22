@@ -1,24 +1,25 @@
-/// Trait for client connections
-// use crate::message::rdata::Rdata;
-// use crate::client::tcp_connection::TCPConecction;
-// pub mod tcp_connection::TCPConecction
-// use crate::client::udp_connection::UDPConnection;
-// use crate::client::tcp_connection::TCPConnection;
+use crate::client::tcp_connection::ClientTCPConnection;
+
+
+use crate::client::udp_connection::ClientUDPConnection;
 
 use crate::message::DnsMessage;
-use std::net::IpAddr;
-use std::time::Duration;
+use std::{net::IpAddr,time::Duration};
 
 use super::client_error::ClientError;
 
-pub trait ClientConnection: Sized {//: 'static + Sized + Send + Sync + Unpin {
+pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin 
 
-    //creates a ClientConecction TCP or UDP 
+    //Creates a ClientConecction 
     fn new(server_addr:IpAddr,
         timeout:Duration) -> Self;
-    
-    /// function sends query to resolver
-    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, ClientError> ;
 
-    //FIXME: iran aqui los geters y seters? la firma
+    //Sends query 
+    fn send(self,dns_query:DnsMessage) -> Result<DnsMessage, ClientError> ;
+}
+
+#[derive(Clone)]
+pub enum ClientConnectionType {
+    UDP(ClientUDPConnection),
+    TCP(ClientTCPConnection),
 }

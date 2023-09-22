@@ -8,7 +8,7 @@ use std::io::ErrorKind;
 
 use super::client_error::ClientError;
 
-
+#[derive(Clone,Copy)]
 pub struct  ClientUDPConnection {
     /// addr to connect
     server_addr: IpAddr,
@@ -19,7 +19,7 @@ pub struct  ClientUDPConnection {
 impl ClientConnection for ClientUDPConnection {
 
     /// Creates ClientUDPConnection
-    fn new(server_addr:IpAddr, timeout:Duration) -> ClientUDPConnection {
+    fn new(server_addr:IpAddr, timeout:Duration) -> Self {
         
         ClientUDPConnection {
             server_addr: server_addr,
@@ -28,7 +28,7 @@ impl ClientConnection for ClientUDPConnection {
     }
 
     /// TODO: funcion enviar
-    fn send(&self, dns_query:DnsMessage) -> Result<DnsMessage, ClientError> { 
+    fn send(self, dns_query:DnsMessage) -> Result<DnsMessage, ClientError> { 
         // TODO: Agregar resultado error 
         println!("[SEND UDP]");
 
@@ -38,7 +38,7 @@ impl ClientConnection for ClientUDPConnection {
 
         let dns_query_bytes = dns_query.to_bytes(); 
 
-        let socket_udp:UdpSocket = match UdpSocket::bind("0.0.0.0:0"){
+        let socket_udp:UdpSocket = match UdpSocket::bind("0.0.0.0:0"){ //FIXME:
             Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not bind socket {}", e))).map_err(Into::into),
             Ok(socket_udp) => socket_udp , 
         };                          
@@ -113,7 +113,7 @@ mod udp_connection_test{
 
         // let domain_name = String::from("uchile.cl");
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let timeout = Duration::from_secs(2);
+        let timeout = Duration::from_secs(100);
         let _conn_new = ClientUDPConnection::new(ip_addr, timeout);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));

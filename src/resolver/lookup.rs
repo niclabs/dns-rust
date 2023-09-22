@@ -8,6 +8,7 @@ use crate::client::{client_connection::ClientConnection,Client};
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::message::question::Question;
+use crate::client::client_error::ClientError;
 
 use futures_util::FutureExt;
 use std::pin::Pin;
@@ -17,16 +18,17 @@ use std::net::{IpAddr,Ipv4Addr};
 use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
 use std::time::Duration;
+use crate::client::client_connection::ClientConnectionType;
 
 //Future returned fron AsyncResolver when performing a lookup with rtype A
-pub struct LookupIpFutureStub {
+pub struct LookupIpFutureStub  {
     name: DomainName,    // cache: DnsCache,
     query: Pin< Box< dyn Future <Output = Result<DnsMessage, ResolverError >>  > >,
-    cache: DnsCache
+    cache: DnsCache,
+    conn: ClientConnectionType,
 }
 
-
-impl  Future for LookupIpFutureStub {
+impl Future for LookupIpFutureStub{ 
     type Output = Result<DnsMessage, ResolverError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -43,7 +45,7 @@ impl  Future for LookupIpFutureStub {
                 },
                 Poll::Ready(Err(_)) => {
                     println!("  [ready err]");
-                    self.query = Box::pin(lookup_stub(self.name.clone(), self.cache.clone()));
+                    self.query = Box::pin(lookup_stub(self.name.clone(), self.cache.clone(),self.conn.clone()));
                 },
                 Poll::Ready(Ok(ip_addr)) => {
                     println!("  [Ready]");
@@ -57,63 +59,83 @@ impl  Future for LookupIpFutureStub {
     
 
 
-impl LookupIpFutureStub {
+impl LookupIpFutureStub{
     pub fn lookup(
         name: DomainName,
-        cache:DnsCache
+        cache:DnsCache,
+        conn: ClientConnectionType,
     ) -> Self {
         println!("[LOOKUP FUTURE]");
         
         Self { 
             name: name,
             query: future::err(ResolverError::Message("Empty")).boxed(), //FIXME: cambiar a otro tipo el error/inicio
-            cache: cache
+            cache: cache,
+            conn: conn,
             }
 
     }
 }
 
-pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
+pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
-    mut cache: DnsCache
+    mut cache: DnsCache,
+    conn: ClientConnectionType,
 ) -> Result<DnsMessage,ResolverError> {
     println!("[LOOKUP STUB]");
-    //FIXME: change values
-    let server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
-    let timeout:Duration = Duration::new(2, 0);
+    // //FIXME: change values
+    // let server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    // let timeout:Duration = Duration::new(2, 0);
     
-    //Connection type
-    let conn = ClientUDPConnection::new(server, timeout);
-    let mut udp_client = Client::new(conn);
+    // //Connection type
+    // let conn = ClientUDPConnection::new(server, timeout);
+    //Create query 
+    let mut query = DnsMessage::new_query_message(
+        DomainName::new_from_string("example.com".to_string()),
+        Qtype::A,
+        Qclass::IN,
+        0,
+        false,
+        1
+    );
 
+    let mut question = Question::new();
+    question.set_qclass(Qclass::IN);
+    query.set_question(question);
+
+
+
+    //Loop up in cache
     if let Some(cache_lookup) = cache.get(name.clone(), Rtype::A) {
-        //Create query 
-        let mut response_query = DnsMessage::new_query_message(
-            DomainName::new_from_string("example.com".to_string()),
-            Qtype::A,
-            Qclass::IN,
-            0,
-            false,
-            1
-        );
-
-        let mut question = Question::new();
-        question.set_qclass(Qclass::IN);
-        response_query.set_question(question);
+        println!("[LOOKUP STUB] cached data {:?}",cache_lookup);
 
         //Add Answer
         let answer: Vec<ResourceRecord> = cache_lookup
                                             .iter()
                                             .map(|rr_cache_value| rr_cache_value.get_resource_record())
                                             .collect::<Vec<ResourceRecord>>();
-        response_query.set_answer(answer);
-        return Ok(response_query);
+        query.set_answer(answer);
+        return Ok(query);
     }
-    let response = udp_client.query(name, "A","IN" );
 
-    // println!("[LOOKUP STUB] response = {:?}",response);
+    //FIXME:
+    let responseResult: Result<DnsMessage, ResolverError> = match conn {
+        ClientConnectionType::TCP(client_conn) => {
+            match client_conn.send(query) {
+                Err(_) => Err(ResolverError::Message("Error: Receiving DNS message")),
+                Ok(val) => Ok(val),
+            }
+        }
+        ClientConnectionType::UDP(client_conn) => {
+            match client_conn.send(query) {
+                Err(_) => Err(ResolverError::Message("Error: Receiving DNS message")),
+                Ok(val) => Ok(val),
+            }
+        }
+    };
 
-    Ok(response)
+    println!("[LOOKUP STUB] return");
+    responseResult
 }
 
 

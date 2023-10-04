@@ -28,7 +28,7 @@ pub struct Header {
     /// Operation code
     op_code: u8,
 
-    /// Flags
+    /// Flags TODO: escribir significado
     aa: bool,
     tc: bool,
     rd: bool,

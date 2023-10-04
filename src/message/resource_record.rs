@@ -38,7 +38,7 @@ pub struct ResourceRecord {
     /// Specifies the meaning of the data in the RDATA.
     rtype: Rtype,
     /// Specifies the class of the data in the RDATA.
-    class: Rclass,
+    class: Rclass,//FIXME: Change to rclass
     /// Specifies the time interval (in seconds) that the resource record may be cached before it should be discarded.
     ttl: u32,
     /// Specifies the length in octets of the RDATA field.

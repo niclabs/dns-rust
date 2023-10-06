@@ -28,11 +28,11 @@ pub struct Header {
     /// Operation code
     op_code: u8,
 
-    /// Flags TODO: escribir significado
-    aa: bool,
-    tc: bool,
-    rd: bool,
-    ra: bool,
+    /// Flags
+    aa: bool, // Authoritative Answer
+    tc: bool, // TrunCation
+    rd: bool, // Recursion Desired
+    ra: bool, // Recursion Available
 
     /// Reserved
     #[allow(dead_code)]

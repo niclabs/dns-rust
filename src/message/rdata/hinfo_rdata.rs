@@ -154,7 +154,7 @@ impl HinfoRdata {
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::HINFO);
         let rclass = Rclass::from_str_to_rclass(class);
-        resource_record.set_class(rclass);
+        resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(cpu.len() as u16 + os.len() as u16);
 
@@ -258,7 +258,7 @@ mod hinfo_rdata_test {
 
         let hinfo_rdata = hinfo_rr.get_rdata();
 
-        assert_eq!(hinfo_rr.get_class(), Rclass::IN);
+        assert_eq!(hinfo_rr.get_rclass(), Rclass::IN);
         assert_eq!(hinfo_rr.get_name().get_name(), "dcc.cl");
         assert_eq!(hinfo_rr.get_ttl(), 15);
         assert_eq!(hinfo_rr.get_rtype(), Rtype::HINFO);

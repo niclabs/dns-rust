@@ -117,7 +117,7 @@ impl NsRdata {
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::NS);
         let rclass = Rclass::from_str_to_rclass(class);
-        resource_record.set_class(rclass);
+        resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
 
@@ -211,7 +211,7 @@ mod ns_rdata_test {
             String::from("uchile.cl"), 
             String::from("uchile.cl"));
 
-         assert_eq!(nsrdata_rr.get_class(), Rclass::IN);
+         assert_eq!(nsrdata_rr.get_rclass(), Rclass::IN);
          assert_eq!(nsrdata_rr.get_ttl(), 35);
          assert_eq!(nsrdata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(nsrdata_rr.get_rdlength(), 5);

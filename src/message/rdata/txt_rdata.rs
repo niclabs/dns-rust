@@ -124,7 +124,7 @@ impl TxtRdata {
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::TXT);
         let rclass = Rclass::from_str_to_rclass(class);
-        resource_record.set_class(rclass);
+        resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(rd_lenght as u16);
 
@@ -202,7 +202,7 @@ mod txt_rdata_test {
             "IN",
             String::from("uchile.cl"));
 
-        assert_eq!(txtrdata_rr.get_class(), Rclass::IN);
+        assert_eq!(txtrdata_rr.get_rclass(), Rclass::IN);
         assert_eq!(txtrdata_rr.get_ttl(), 25);
         assert_eq!(txtrdata_rr.get_rdlength(), 3);
         assert_eq!(txtrdata_rr.get_name().get_name(), String::from("uchile.cl"));

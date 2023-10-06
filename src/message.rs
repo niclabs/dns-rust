@@ -1067,7 +1067,7 @@ mod message_test {
 
         assert_eq!(answer[0].get_name().get_name(), String::from("dcc.cl"));
         assert_eq!(Rtype::from_rtype_to_int(answer[0].get_rtype()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(answer[0].get_class()), 1);
+        assert_eq!(Rclass::from_rclass_to_int(answer[0].get_rclass()), 1);
         assert_eq!(answer[0].get_ttl(), 5642);
         assert_eq!(answer[0].get_rdlength(), 6);
         assert_eq!(
@@ -1114,7 +1114,7 @@ mod message_test {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::TXT);
-        resource_record.set_class(Rclass::IN);
+        resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);
 

@@ -153,7 +153,7 @@ impl AChRdata {
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::A);
         let rclass = Rclass::from_str_to_rclass(class);
-        resource_record.set_class(rclass);
+        resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
 
@@ -312,7 +312,7 @@ mod a_ch_rdata_test {
             "admin.googleplex".to_string(), 
             "edu".to_string());
 
-        assert_eq!(ach_rr.get_class(), Rclass::CH);
+        assert_eq!(ach_rr.get_rclass(), Rclass::CH);
         assert_eq!(ach_rr.get_name().get_name(), String::from("admin.googleplex"));
         assert_eq!(ach_rr.get_rtype(), Rtype::A);
         assert_eq!(ach_rr.get_ttl(), 0);

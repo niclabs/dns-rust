@@ -281,7 +281,7 @@ impl SoaRdata {
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::SOA);
         let rclass = Rclass::from_str_to_rclass(class);
-        resource_record.set_class(rclass);
+        resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(20 + m_name_str.len() as u16 + r_name_str.len() as u16 + 4);
 
@@ -713,7 +713,7 @@ mod soa_rdata_test {
          let (soardata_rr, minimum) = soardata_rr_min;
 
          assert_eq!(minimum, 150);
-         assert_eq!(soardata_rr.get_class(), Rclass::IN);
+         assert_eq!(soardata_rr.get_rclass(), Rclass::IN);
          assert_eq!(soardata_rr.get_ttl(), 56);
          assert_eq!(soardata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(soardata_rr.get_rdlength(), 35);

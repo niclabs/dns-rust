@@ -99,7 +99,7 @@ impl CnameRdata {
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::CNAME);
         let rclass = Rclass::from_str_to_rclass(class);
-        resource_record.set_class(rclass);
+        resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
 
@@ -186,7 +186,7 @@ mod cname_rdata_test {
             "admin1.googleplex.edu".to_string(),
         );
 
-        assert_eq!(cname_rr.get_class(), Rclass::IN);
+        assert_eq!(cname_rr.get_rclass(), Rclass::IN);
         assert_eq!(
             cname_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")

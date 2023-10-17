@@ -9,24 +9,18 @@ use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::message::question::Question;
 use crate::client::client_error::ClientError;
-
-use std::sync::Arc;
 use futures_util::{FutureExt,task::Waker};
-use tokio::io::AsyncWriteExt;
 use std::pin::Pin;
 use std::task::{Poll,Context};
 //TODO: Eliminar librerias
-use std::net::{IpAddr,Ipv4Addr};
 use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
-use std::time::Duration;
-use std::sync:: Mutex;
+use std::sync:: {Mutex,Arc};
 use crate::client::client_connection::ClientConnectionType;
-
 //Future returned fron AsyncResolver when performing a lookup with rtype A
 pub struct LookupIpFutureStub  {
     name: DomainName,    // cache: DnsCache,
-    query:Pin< Box< dyn Future<Output = Result<DnsMessage, ResolverError>> >>,
+    query: Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
     cache: DnsCache,
     conn: ClientConnectionType,
     waker: Option<Waker>,
@@ -38,7 +32,7 @@ impl Future for LookupIpFutureStub{
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         println!("[POLL FUTURE]");
 
-        let query = self.query.as_mut().poll(cx);
+        let query = self.query.lock().unwrap().as_mut().poll(cx)  ;
         println!("[POLL query {:?}",query);
 
         match query {
@@ -49,9 +43,10 @@ impl Future for LookupIpFutureStub{
             Poll::Ready(Err(_)) => {
                 println!("  [ready empty]");
                 self.waker = Some(cx.waker().clone());
+                
 
                 tokio::spawn(
-                    lookup_stub(self.name.clone(),self.cache.clone(),self.conn.clone(),self.waker.clone()));
+                    lookup_stub(self.name.clone(),self.cache.clone(),self.conn.clone(),self.waker.clone(),self.query.clone()));
                 println!("  [return pending]");
                 return Poll::Pending;
             },
@@ -70,11 +65,11 @@ impl LookupIpFutureStub{
         cache:DnsCache,
         conn: ClientConnectionType,
     ) -> Self {
-        println!("[LOOKUP CREATE FUTURE]");;        
+        println!("[LOOKUP CREATE FUTURE]");
         
         Self { 
             name: name,
-            query: future::err(ResolverError::Message("Empty")).boxed(), //FIXME: cambiar a otro tipo el error/inicio
+            query:  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
             cache: cache,
             conn: conn,
             waker: None,
@@ -88,9 +83,10 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     mut cache: DnsCache,
     conn: ClientConnectionType,
     waker: Option<Waker>,
-    // query:Pin< Box< dyn Future <Output = Result<DnsMessage, ResolverError >>  > >,
+    query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
 ) -> Result<DnsMessage,ResolverError> {
     println!("[LOOKUP STUB]");
+
 
     let mut new_query = DnsMessage::new_query_message(
         DomainName::new_from_string("example.com".to_string()),
@@ -121,7 +117,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     }
 
     //FIXME:
-    let responseResult: Result<DnsMessage, ResolverError> = match conn {
+    let response_result: Result<DnsMessage, ResolverError> = match conn {
         ClientConnectionType::TCP(client_conn) => {
             match client_conn.send(new_query) {
                 Err(_) => Err(ResolverError::Message("Error: Receiving DNS message")),
@@ -145,7 +141,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     }
 
     println!("[LOOKUP STUB] return");
-    responseResult
+    response_result
 }
 
 
@@ -171,8 +167,9 @@ mod async_resolver_test {
     
         let client_udp = ClientUDPConnection::new(google_server, timeout);
         let conn = ClientConnectionType::UDP(client_udp);
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed()));
     
-        let result = lookup_stub(name, cache, conn, waker).await;
+        let result = lookup_stub(name, cache, conn, waker,query).await;
         println!("[Test Result ] {:?}", result);
     }
 

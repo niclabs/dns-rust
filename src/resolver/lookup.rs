@@ -44,9 +44,9 @@ impl Future for LookupIpFutureStub{
                 println!("  [ready empty]");
                 self.waker = Some(cx.waker().clone());
                 
-
+                let referenced_query = Arc::clone(&self.query); //same as self.query.clone()
                 tokio::spawn(
-                    lookup_stub(self.name.clone(),self.cache.clone(),self.conn.clone(),self.waker.clone(),self.query.clone()));
+                    lookup_stub(self.name.clone(),self.cache.clone(),self.conn.clone(),self.waker.clone(),referenced_query));
                 println!("  [return pending]");
                 return Poll::Pending;
             },
@@ -83,8 +83,8 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     mut cache: DnsCache,
     conn: ClientConnectionType,
     waker: Option<Waker>,
-    query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
-) -> Result<DnsMessage,ResolverError> {
+    referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
+) {
     println!("[LOOKUP STUB]");
 
 
@@ -113,7 +113,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                                             .map(|rr_cache_value| rr_cache_value.get_resource_record())
                                             .collect::<Vec<ResourceRecord>>();
         new_query.set_answer(answer);
-        return Ok(new_query);
+        // return Ok(new_query);
     }
 
     //FIXME:
@@ -133,15 +133,19 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                     Ok(val)},
             }
         }
-    };    
-    //para que en siguient eciclo de tokio despierte esta task
+    };  
+
+    let mut future_query = referenced_query.lock().unwrap();
+    *future_query = future::ready(response_result).boxed(); // TODO: check if it workingas expected
+    
+    //wake up task
     if let Some(waker) = waker {
         println!("[LOOKUP STUB] wake");
         waker.wake();
     }
 
     println!("[LOOKUP STUB] return");
-    response_result
+    
 }
 
 
@@ -169,8 +173,8 @@ mod async_resolver_test {
         let conn = ClientConnectionType::UDP(client_udp);
         let query =  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed()));
     
-        let result = lookup_stub(name, cache, conn, waker,query).await;
-        println!("[Test Result ] {:?}", result);
+        lookup_stub(name, cache, conn, waker,query).await;
+        // println!("[Test Result ] {:?}", result);
     }
 
 

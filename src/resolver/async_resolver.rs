@@ -1,7 +1,6 @@
 use std::io;
 use std::net::{IpAddr, Ipv4Addr};
 
-use crate::client::client_connection::ClientConnection;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
@@ -95,17 +94,6 @@ mod async_resolver_test {
         let response = resolver.lookup_ip("example.com", "UDP").await.unwrap();
 
         println!("[TEST FINISH=> {}]",response);
-
-
-        
+   
     }
-
-    // #[test]
-    // fn test_spawn() {
-
-    //     let resolver = AsyncResolver::new(ResolverConfig::default());
-
-    //     let handle = tokio::spawn(resolver.lookup_ip("example.com", "UDP"));
-    //    unimplemented!();
-    // }
 }

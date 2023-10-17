@@ -36,7 +36,7 @@ impl AsyncResolver {
 
         //Async query
         let response = LookupIpFutureStub::lookup(domain_name_struct, self.cache.clone(),conn).await;
-
+        
         println!("[LOOKUP IP RESPONSE => {:?}]",response);
         let ip_addr = match response {
             Ok(val) => {
@@ -66,6 +66,7 @@ mod async_resolver_test {
     // use tokio::runtime::Runtime;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
+    
 
     
     // #[test]
@@ -87,12 +88,24 @@ mod async_resolver_test {
     #[tokio::test]
     #[ignore]
     async fn lookupip_example() {
+        println!("[TEST INIT]");
 
         let resolver = AsyncResolver::new(ResolverConfig::default());
       
         let response = resolver.lookup_ip("example.com", "UDP").await.unwrap();
 
-        println!("[TEST => {}]",response);
+        println!("[TEST FINISH=> {}]",response);
+
+
+        
     }
 
+    // #[test]
+    // fn test_spawn() {
+
+    //     let resolver = AsyncResolver::new(ResolverConfig::default());
+
+    //     let handle = tokio::spawn(resolver.lookup_ip("example.com", "UDP"));
+    //    unimplemented!();
+    // }
 }

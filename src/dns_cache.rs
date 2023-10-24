@@ -2,14 +2,14 @@ pub mod cache_data;
 
 use crate::dns_cache::cache_data::CacheData;
 use crate::message::rdata::Rdata;
-use crate::message::resource_record::{ResourceRecord, self};
+use crate::message::resource_record::ResourceRecord;
 use crate::rr_cache::RRCache;
 use crate::message::type_rtype::Rtype;
-use chrono::prelude::*;
+//use chrono::prelude::*;
 use std::net::IpAddr;
-use std::collections::HashMap;
+//use std::collections::HashMap;
 use crate::domain_name::DomainName;
-use crate::dns_cache::cache_data::host_data::HostData;
+//use crate::dns_cache::cache_data::host_data::HostData;
 use std::cmp;
 
 #[derive(Clone)]
@@ -185,7 +185,7 @@ mod dns_cache_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
-    use crate::message::rdata::ns_rdata::NsRdata;
+    //use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::type_rtype::Rtype;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;

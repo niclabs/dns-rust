@@ -1,14 +1,12 @@
-use crate::client::udp_connection::ClientUDPConnection;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::type_rtype::Rtype;
 use crate::message::resource_record::ResourceRecord;
-use crate::client::{client_connection::ClientConnection,Client};
+use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::message::question::Question;
-use crate::client::client_error::ClientError;
 use futures_util::{FutureExt,task::Waker};
 use std::pin::Pin;
 use std::task::{Poll,Context};
@@ -154,6 +152,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
 #[cfg(test)]
 mod async_resolver_test {
     // use tokio::runtime::Runtime;
+    use crate::client::udp_connection::ClientUDPConnection;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use super::lookup_stub;
     use tokio::time::Duration;

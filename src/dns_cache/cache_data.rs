@@ -1,14 +1,13 @@
 pub mod host_data;
 
 use chrono::Utc;
-
-use crate::message::rdata::Rdata;
-use crate::message::type_rtype::{Rtype, self};
+//use crate::message::rdata::Rdata;
+use crate::message::type_rtype::Rtype;
 use crate::rr_cache::RRCache;
 use std::net::IpAddr;
 use crate::dns_cache::cache_data::host_data::HostData;
 use std::collections::HashMap;
-use crate::domain_name::{DomainName, self};
+use crate::domain_name::DomainName;
 
 
 ///struct to define the cache data
@@ -201,10 +200,10 @@ impl CacheData{
 #[cfg(test)]
 mod cache_data_test{
     use chrono::{Utc, Duration};
-    use std::thread::sleep;
-    use std::time::Duration as StdDuration;
+    //use std::thread::sleep;
+    //use std::time::Duration as StdDuration;
 
-    use crate::{message::rdata::txt_rdata::TxtRdata, rr_cache};
+    use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::type_rtype::Rtype;
     use crate::rr_cache::RRCache;
     use crate::domain_name::DomainName;
@@ -216,7 +215,7 @@ mod cache_data_test{
 
 
 
-    use super::{CacheData, host_data};
+    use super::CacheData;
 
     //Constructor test
     #[test]

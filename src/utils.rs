@@ -1,5 +1,5 @@
 use crate::message::type_rtype::Rtype;
-use crate::domain_name::{DomainName, self};
+use crate::domain_name::DomainName;
 
 pub fn check_label_name(name: String) -> bool {
     if name.len() > 63 || name.len() == 0 {
@@ -50,7 +50,7 @@ pub fn get_string_stype(stype: Rtype) -> String {
 
 #[cfg(test)]
 mod utils_test {
-    use crate::domain_name::{DomainName, self};
+    use crate::domain_name::DomainName;
 
     use super::check_label_name;
     use super::domain_validity_syntax;

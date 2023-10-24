@@ -93,7 +93,7 @@ impl ResolverConfig{
         self.sbelt = sbelt;
     }
 
-    pub fn set_Addr(&mut self,addr:SocketAddr){
+    pub fn set_ddr(&mut self,addr:SocketAddr){
         self.addr = addr;
     }
 
@@ -114,44 +114,44 @@ impl ResolverConfig{
 
 #[cfg(test)]
 mod tests_resolver_config {
-    use std::net::{IpAddr, Ipv4Addr};
-    use crate::domain_name::DomainName;
-    use crate::resolver::slist::Slist;
-    use crate::resolver::slist::slist_element::SlistElement;
+    //use std::net::{IpAddr, Ipv4Addr};
+    //use crate::domain_name::DomainName;
+    //use crate::resolver::slist::Slist;
+    //use crate::resolver::slist::slist_element::SlistElement;
     // use std::collections::HashMap;
-    use super::*;
+    //use super::*;
 
     #[test]
     fn example() {
-        let resolver_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    //    let resolver_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
 
-        let addr1: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 2));
-        let addr2: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 3));
-        let addr3: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 4));
+     //   let addr1: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 2));
+       // let addr2: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 3));
+        //let addr3: IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 4));
 
-        let mut sbelt = Slist::new();
-        let mut ns_list = Vec::new();
+        //let mut sbelt = Slist::new();
+        //let mut ns_list = Vec::new();
 
-        let mut name = DomainName::new();
-        name.set_name(String::from("VENERA.ISI.EDU"));
-        let ip_address = IpAddr::V4(Ipv4Addr::new(128, 9, 0, 32));
-        let response_time = 5000;
+        //let mut name = DomainName::new();
+        //name.set_name(String::from("VENERA.ISI.EDU"));
+        //let ip_address = IpAddr::V4(Ipv4Addr::new(128, 9, 0, 32));
+        //let response_time = 5000;
 
-        let servers = SlistElement::new(name.clone(), ip_address.clone(), response_time.clone());
+        //let servers = SlistElement::new(name.clone(), ip_address.clone(), response_time.clone());
         // TODO: agregar server al hashmap
-        ns_list.push(servers);
+        //ns_list.push(servers);
 
-        sbelt.set_ns_list(ns_list);
+        //sbelt.set_ns_list(ns_list);
 
-        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-        let timeout: Duration = Duration::from_secs(20);
-        let type_conn = ClientUDPConnection::new(google_server, timeout);
-        let conn = ClientConnectionType::UDP(type_conn);
+        //let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        //let timeout: Duration = Duration::from_secs(20);
+        //let type_conn = ClientUDPConnection::new(google_server, timeout);
+       // let conn = ClientConnectionType::UDP(type_conn);
         
-        let mut config = ResolverConfig::new(Some(sbelt),resolver_addr,conn);
+       // let mut config = ResolverConfig::new(Some(sbelt),resolver_addr,conn);
 
         //config default
-        let config_default = ResolverConfig::default();
+        //let config_default = ResolverConfig::default();
         
 
 

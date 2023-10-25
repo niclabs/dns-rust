@@ -10,6 +10,7 @@ use crate::message::question::Question;
 use futures_util::{FutureExt,task::Waker};
 use std::pin::Pin;
 use std::task::{Poll,Context};
+use rand::{thread_rng, Rng};
 //TODO: Eliminar librerias
 use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
@@ -85,21 +86,20 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
 ) {
     println!("[LOOKUP STUB]");
 
+    // Create random generator
+    let mut rng = thread_rng();
+
+    // Create query id
+    let query_id: u16 = rng.gen();
 
     let mut new_query = DnsMessage::new_query_message(
-        DomainName::new_from_string("example.com".to_string()),
+        name.clone(),
         Qtype::A,
         Qclass::IN,
         0,
         false,
-        1
+        query_id
     );
-
-    let mut question = Question::new();
-    question.set_qclass(Qclass::IN);
-    new_query.set_question(question);
-
-
 
     //Loop up in cache
     if let Some(cache_lookup) = cache.get(name.clone(), Rtype::A) {
@@ -132,6 +132,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
             }
         }
     };  
+    println!("[] {:?}",response_result);
 
     let mut future_query = referenced_query.lock().unwrap();
     *future_query = future::ready(response_result).boxed(); // TODO: check if it workingas expected

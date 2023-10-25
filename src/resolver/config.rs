@@ -1,12 +1,10 @@
-use crate::{resolver::slist::Slist, client::{client_connection::ClientConnection, udp_connection::ClientUDPConnection}};
-use crate::client::client_connection::ClientConnectionType;
-// use crate::client::udp_connection::ClientUDPConnection;
+use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 
-use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
+use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
 
 pub struct ResolverConfig{
     //Servers
-    name_servers: Vec<SocketAddr>,
+    name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>,
     //Addres of resolver
     addr: SocketAddr,
     //Queries quantity for each query, before the resolver panic in a Temporary Error
@@ -15,19 +13,16 @@ pub struct ResolverConfig{
     cache_available: bool,
     //Uses recursive 
     recursive_available: bool,
-    //Connection type
-    conn: ClientConnectionType,
 }
 
 impl ResolverConfig {
-    pub fn new(sbelt: Option<Slist>, resolver_addr: IpAddr,conn:ClientConnectionType) -> Self {
+    pub fn new(resolver_addr: IpAddr) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
-            sbelt: sbelt.unwrap_or_else(Slist::new),
+            name_servers: Vec::new(),
             addr: SocketAddr::new(resolver_addr, 53),
             retry: 30,
             cache_available: true,
             recursive_available: false,
-            conn: conn,
         };
 
         resolver_config
@@ -39,16 +34,15 @@ impl ResolverConfig {
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(20);
 
-        let client_udp = ClientUDPConnection::new(google_server, timeout);
-        let conn = ClientConnectionType::UDP(client_udp);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
     
         let resolver_config: ResolverConfig = ResolverConfig {
-            sbelt: Slist::new(),
+            name_servers: vec![(conn_udp,conn_tcp)],
             addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
             retry: 30,
             cache_available: true,
             recursive_available: false,
-            conn: conn,
         };
 
         resolver_config
@@ -59,8 +53,8 @@ impl ResolverConfig {
 ///Getters
 impl ResolverConfig {
 
-    pub fn get_sbelt(&self) -> &Slist {
-        &self.sbelt
+    pub fn get_name_servers(&self) -> Vec<(ClientUDPConnection,ClientTCPConnection)>{
+        self.name_servers.clone()
     }
 
     pub fn get_addr(&self) -> SocketAddr {
@@ -79,18 +73,13 @@ impl ResolverConfig {
         self.recursive_available
     }
 
-    pub fn get_conn(&self) -> ClientConnectionType {
-        self.conn.clone()
-    }
-
-
 }
 
 ///Setters
 impl ResolverConfig{
 
-    pub fn set_sbelt(&mut self,sbelt: Slist ) {
-        self.sbelt = sbelt;
+    pub fn set_name_servers(&mut self,list_name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>) {
+        self.name_servers = list_name_servers;
     }
 
     pub fn set_ddr(&mut self,addr:SocketAddr){

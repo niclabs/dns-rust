@@ -26,15 +26,16 @@ impl AsyncResolver {
     
     pub async fn lookup_ip(&self, domain_name: &str, transport_protocol: &str) -> Result<IpAddr, io::Error> {
         println!("[LOOKUP IP ASYNCRESOLVER]");
+        //TODO: when TCP is given first use this conn
         
         // TODO: verificaciones
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
 
         //Get connection type
-        let conn: ClientConnectionType = self.config.get_conn();
+        let name_servers= self.config.get_name_servers();
 
         //Async query
-        let response = LookupIpFutureStub::lookup(domain_name_struct, self.cache.clone(),conn).await;
+        let response = LookupIpFutureStub::lookup(domain_name_struct, self.cache.clone(),name_servers).await;
         
         println!("[LOOKUP IP RESPONSE => {:?}]",response);
         let ip_addr = match response {

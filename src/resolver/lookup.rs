@@ -6,7 +6,6 @@ use crate::message::resource_record::ResourceRecord;
 use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
-use crate::message::question::Question;
 use futures_util::{FutureExt,task::Waker};
 use std::pin::Pin;
 use std::task::{Poll,Context};
@@ -19,7 +18,7 @@ use crate::client::client_connection::ClientConnectionType;
 //Future returned fron AsyncResolver when performing a lookup with rtype A
 pub struct LookupIpFutureStub  {
     name: DomainName,    // cache: DnsCache,
-    query: Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
+    query_answer: Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
     cache: DnsCache,
     conn: ClientConnectionType,
     waker: Option<Waker>,
@@ -31,7 +30,7 @@ impl Future for LookupIpFutureStub{
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         println!("[POLL FUTURE]");
 
-        let query = self.query.lock().unwrap().as_mut().poll(cx)  ;
+        let query = self.query_answer.lock().unwrap().as_mut().poll(cx)  ;
         println!("[POLL query {:?}",query);
 
         match query {
@@ -43,7 +42,7 @@ impl Future for LookupIpFutureStub{
                 println!("  [ready empty]");
                 self.waker = Some(cx.waker().clone());
                 
-                let referenced_query = Arc::clone(&self.query); //same as self.query.clone()
+                let referenced_query = Arc::clone(&self.query_answer); //same as self.query.clone()
                 tokio::spawn(
                     lookup_stub(self.name.clone(),self.cache.clone(),self.conn.clone(),self.waker.clone(),referenced_query));
                 println!("  [return pending]");
@@ -68,7 +67,7 @@ impl LookupIpFutureStub{
         
         Self { 
             name: name,
-            query:  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
+            query_answer:  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
             cache: cache,
             conn: conn,
             waker: None,
@@ -101,7 +100,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
         query_id
     );
 
-    //Loop up in cache
+    // Loop up in cache
     if let Some(cache_lookup) = cache.get(name.clone(), Rtype::A) {
         println!("[LOOKUP STUB] cached data {:?}",cache_lookup);
 
@@ -114,6 +113,9 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
         // return Ok(new_query);
     }
 
+
+    //loop
+
     //FIXME:
     let response_result: Result<DnsMessage, ResolverError> = match conn {
         ClientConnectionType::TCP(client_conn) => {
@@ -124,6 +126,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                 },
             }
         }
+
         ClientConnectionType::UDP(client_conn) => {
             match client_conn.send(new_query) {
                 Err(_) => Err(ResolverError::Message("Error: Receiving DNS message")),

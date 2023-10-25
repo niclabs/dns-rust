@@ -6,7 +6,7 @@ use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 pub struct ResolverConfig{
     //Servers
-    sbelt: Slist,
+    name_servers: Vec<SocketAddr>,
     //Addres of resolver
     addr: SocketAddr,
     //Queries quantity for each query, before the resolver panic in a Temporary Error

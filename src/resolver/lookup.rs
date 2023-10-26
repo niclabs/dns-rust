@@ -14,7 +14,7 @@ use rand::{thread_rng, Rng};
 use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
 use std::sync:: {Mutex,Arc};
-use crate::client::client_connection::ClientConnectionType;
+// use crate::client::client_connection::ClientConnectionType;
 
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
@@ -25,6 +25,7 @@ pub struct LookupIpFutureStub  {
     cache: DnsCache,
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
+    conn_type: String,
 }
 
 impl Future for LookupIpFutureStub{ 
@@ -46,7 +47,7 @@ impl Future for LookupIpFutureStub{
                 
                 let referenced_query = Arc::clone(&self.query_answer); //same as self.query.clone()
                 tokio::spawn(
-                    lookup_stub(self.name.clone(),self.cache.clone(),self.name_servers.clone(),self.waker.clone(),referenced_query));
+                    lookup_stub(self.name.clone(),self.cache.clone(),self.name_servers.clone(),self.waker.clone(),referenced_query,self.conn_type.clone()));
                 println!("  [return pending]");
                 return Poll::Pending;
             },
@@ -64,6 +65,7 @@ impl LookupIpFutureStub{
         name: DomainName,
         cache:DnsCache,
         name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
+        conn_type: &str
     ) -> Self {
         println!("[LOOKUP CREATE FUTURE]");
         
@@ -73,6 +75,7 @@ impl LookupIpFutureStub{
             cache: cache,
             name_servers: name_servers,
             waker: None,
+            conn_type: conn_type.to_string()
             }
 
     }
@@ -84,6 +87,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
     referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
+    conn_type: String,
 ) {
     println!("[LOOKUP STUB]");
 
@@ -119,22 +123,36 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     let mut response = new_query.clone().to_owned();
     response.get_header().set_rcode(2); 
 
-    //loop
+    // Send query to name servers
     for (conn_udp,conn_tcp) in name_servers.iter() { 
         
-        // UDP
-        let result_response = conn_udp.send(new_query.clone());
-        match result_response {
-            Ok(response_ok) => {
-                response = response_ok;
-                println!("***********************************");
-                break;
-            },
-            Err(_) => (),//TODO: when udp dont workout send with
-        };
-
-
-        //TCP
+        match conn_type.as_str() { 
+            "UDP" => {
+                let result_response = conn_udp.send(new_query.clone());
+                
+                match result_response {
+                    Ok(response_ok) => {
+                        response = response_ok;
+                        break;
+                    }
+                    Err(_) => {
+                        // TODO: when udp do not works use TCP
+                    }
+                }
+            }
+            "TCP" => {
+                let result_response = conn_tcp.send(new_query.clone());
+                
+                match result_response {
+                    Ok(response_ok) => {
+                        response = response_ok;
+                        break;
+                    }
+                    Err(_) => ()
+                }
+            }
+            _ => continue,
+        }
     }
    
     // println!("[] {:?}",response);
@@ -179,9 +197,11 @@ mod async_resolver_test {
 
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+
+        let conn_type = String::from("UDP");
     
         let name_servers = vec![(conn_udp,conn_tcp)];
-        lookup_stub(name, cache, name_servers, waker,query).await;
+        lookup_stub(name, cache, name_servers, waker,query,conn_type).await;
         // println!("[Test Result ] {:?}", result);
     }
 

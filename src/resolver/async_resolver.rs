@@ -7,7 +7,6 @@ use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
 use crate::message::rdata::Rdata;
-use crate::client::client_connection::ClientConnectionType;
 
 pub struct AsyncResolver{
     cache: DnsCache,
@@ -31,11 +30,14 @@ impl AsyncResolver {
         // TODO: verificaciones
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
 
-        //Get connection type
+        // Get connection type
         let name_servers= self.config.get_name_servers();
 
+        // Connection type
+        let conn_type = transport_protocol;
+
         //Async query
-        let response = LookupIpFutureStub::lookup(domain_name_struct, self.cache.clone(),name_servers).await;
+        let response = LookupIpFutureStub::lookup(domain_name_struct, self.cache.clone(),name_servers, conn_type).await;
         
         println!("[LOOKUP IP RESPONSE => {:?}]",response);
         let ip_addr = match response {

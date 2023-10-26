@@ -34,7 +34,6 @@ impl Future for LookupIpFutureStub{
         println!("[POLL FUTURE]");
 
         let query = self.query_answer.lock().unwrap().as_mut().poll(cx)  ;
-        println!("[POLL query {:?}",query);
 
         match query {
             Poll::Pending => {
@@ -116,27 +115,32 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
         // return Ok(new_query);
     }
 
-    // Create Server failure query //FIXME:
+    // Create Server failure query 
     let mut response = new_query.clone().to_owned();
     response.get_header().set_rcode(2); 
 
     //loop
     for (conn_udp,conn_tcp) in name_servers.iter() { 
         
+        // UDP
         let result_response = conn_udp.send(new_query.clone());
         match result_response {
             Ok(response_ok) => {
                 response = response_ok;
+                println!("***********************************");
                 break;
             },
-            Err(_) => (),   
+            Err(_) => (),//TODO: when udp dont workout send with
         };
+
+
+        //TCP
     }
    
-    println!("[] {:?}",response);
+    // println!("[] {:?}",response);
 
-    // let mut future_query = referenced_query.lock().unwrap();
-    // *future_query = future::ready(response_result).boxed(); // TODO: check if it workingas expected
+    let mut future_query = referenced_query.lock().unwrap();
+    *future_query = future::ready(Ok(response)).boxed(); // TODO: check if it workingas expected
     
     //wake up task
     if let Some(waker) = waker {

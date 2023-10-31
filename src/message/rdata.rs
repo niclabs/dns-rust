@@ -454,6 +454,20 @@ mod resolver_query_tests {
     }
 
     #[test]
+    fn from_bytes_dname_rdata(){
+        let data_bytes = [5, 100, 110, 97, 109, 101, 0, 0, 39, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let name = String::from("dname");
+
+        match rdata {
+            Rdata::SomeCnameRdata(val) => {
+                assert_eq!(val.get_cname().get_name(), name);
+            }
+            _ => {}
+        }     
+    }
+
+    #[test]
     fn from_bytes_hinfo_rdata(){
         let data_bytes = [99, 112, 117, 0, 111, 115, 0, 0, 13, 0, 1];
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();

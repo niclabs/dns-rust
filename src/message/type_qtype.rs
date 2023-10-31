@@ -13,6 +13,7 @@ pub enum Qtype {
     TXT,
     DNAME,
     ANY,
+    TSIG,
     AXFR,
     MAILB,
     MAILA,
@@ -36,6 +37,7 @@ impl Qtype{
             Qtype::TXT => 16,
             Qtype::DNAME => 39,
             Qtype::AXFR => 252,
+            Qtype::TSIG => 250,
             Qtype::MAILB => 253,
             Qtype::MAILA => 254,
             Qtype::ANY => 255,
@@ -56,6 +58,7 @@ impl Qtype{
             Qtype::MX => String::from("MX"),
             Qtype::TXT => String::from("TXT"),
             Qtype::DNAME => String::from("DNAME"),
+            Qtype::TSIG => String::from("TSIG"),
             Qtype::AXFR => String::from("AXFR"),
             Qtype::MAILB => String::from("MAILB"),
             Qtype::MAILA => String::from("MAILA"),
@@ -64,7 +67,7 @@ impl Qtype{
         }
     }
 
-    /// Function to get the String equivalent of a type
+    /// Function to get the int equivalent of a type
     pub fn from_int_to_qtype(val: u16) -> Qtype{
         match val {
             1 => Qtype::A,
@@ -78,6 +81,7 @@ impl Qtype{
             15 => Qtype::MX,
             16 => Qtype::TXT,
             39 => Qtype::DNAME,
+            250 => Qtype::TSIG,
             252 => Qtype::AXFR,
             253 => Qtype::MAILB,
             254 => Qtype::MAILA,
@@ -100,6 +104,7 @@ impl Qtype{
             "MX" => Qtype::MX,
             "TXT" => Qtype::TXT,
             "DNAME" => Qtype::DNAME,
+            "TSIG" => Qtype::TSIG,
             "AXFR" => Qtype::AXFR,
             "MAILB" => Qtype::MAILB,
             "MAILA" => Qtype::MAILA,

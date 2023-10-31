@@ -12,6 +12,7 @@ pub enum Rtype {
     MX,
     TXT,
     DNAME,
+    TSIG,
     UNKNOWN(u16),
 }
 
@@ -31,6 +32,7 @@ impl Rtype{
             Rtype::MX => 15,
             Rtype::TXT => 16,
             Rtype::DNAME => 39,
+            Rtype::TSIG => 250,
             Rtype::UNKNOWN(val) => val
         }
     }
@@ -48,11 +50,12 @@ impl Rtype{
             Rtype::MX => String::from("MX"),
             Rtype::TXT => String::from("TXT"),
             Rtype::DNAME => String::from("DNAME"),
+            Rtype::TSIG => String::from("TSIG"),
             Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
     }
 
-    /// Function to get the String equivalent of a type
+    /// Function to get the int equivalent of a type
     pub fn from_int_to_rtype(val: u16) -> Rtype{
         match val {
             1 => Rtype::A,
@@ -66,6 +69,7 @@ impl Rtype{
             15 => Rtype::MX,
             16 => Rtype::TXT,
             39 => Rtype::DNAME,
+            250 => Rtype::TSIG,
             _ => Rtype::UNKNOWN(val),
         }
     }
@@ -84,6 +88,7 @@ impl Rtype{
             "MX" => Rtype::MX,
             "TXT" => Rtype::TXT,
             "DNAME" => Rtype::DNAME,
+            "TSIG" => Rtype::TSIG,
             _ => Rtype::UNKNOWN(99),
         }
     }

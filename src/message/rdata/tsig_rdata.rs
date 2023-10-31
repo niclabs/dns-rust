@@ -20,6 +20,81 @@ pub struct TSigRdata {
     other_data: Vec<u8>,
 }
 
+impl ToBytes for TSigRdata{
+    /// Returns a `Vec<u8>` of bytes that represents the TSig RDATA.
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+
+        let algorithm_name_bytes = self.get_algorithm_name().to_bytes();
+
+        for byte in algorithm_name_bytes.as_slice() {
+            bytes.push(*byte);
+        }
+        
+        let time_signed = self.get_time_signed();
+
+        bytes.push((time_signed >> 56) as u8);
+
+        bytes.push((time_signed >> 48) as u8);
+
+        bytes.push((time_signed >> 40) as u8);
+
+        bytes.push((time_signed >> 32) as u8);
+
+        bytes.push((time_signed >> 24) as u8);
+
+        bytes.push((time_signed >> 16) as u8);
+
+        bytes.push((time_signed >> 8) as u8);
+
+        bytes.push(time_signed as u8);
+        
+        let fudge = self.get_fudge();
+
+        bytes.push((fudge >> 8) as u8);
+
+        bytes.push(fudge as u8);
+
+        let mac_size = self.get_mac_size();
+
+        bytes.push((mac_size >> 8) as u8);
+
+        bytes.push(mac_size as u8);
+
+        let mac = self.get_mac();
+
+        for byte in mac.as_slice() {
+            bytes.push(*byte);
+        }
+
+        let original_id = self.get_original_id();
+
+        bytes.push((original_id >> 8) as u8);
+
+        bytes.push(original_id as u8);
+
+        let error = self.get_error();
+
+        bytes.push((error >> 8) as u8);
+
+        bytes.push(error as u8);
+
+        let other_len = self.get_other_len();
+
+        bytes.push((other_len >> 8) as u8);
+
+        bytes.push(other_len as u8);    
+
+        let other_data = self.get_other_data();
+
+        for byte in other_data.as_slice() {
+            bytes.push(*byte);
+        }
+
+        bytes
+    }
+}
+
 impl TSigRdata {
     /// Creates a new TSigRdata with default values
     ///

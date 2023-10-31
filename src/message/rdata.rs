@@ -7,6 +7,7 @@ pub mod ns_rdata;
 pub mod ptr_rdata;
 pub mod soa_rdata;
 pub mod txt_rdata;
+pub mod tsig_rdata;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
 use a_ch_rdata::AChRdata;
@@ -18,6 +19,7 @@ use ns_rdata::NsRdata;
 use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
+use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]
 
@@ -209,6 +211,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::SomeTxtRdata(rdata))
             }
             //////////////////////////////////////////////////////////////
+            
 
             _ => Err("Format Error"),
         };

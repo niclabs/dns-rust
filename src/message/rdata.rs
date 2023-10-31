@@ -187,7 +187,20 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::SomeTxtRdata(rdata))
             }
-            ////////////////////////////////////////////////////////////
+            ///////////////////////////////////////////////////////////////////////////
+            39 => {
+                let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeCnameRdata(rdata.unwrap()))
+            }
+
             //////////////// Replace the next line when type  OPT is implemented ////////////
             41 => {
                 println!("OPT");

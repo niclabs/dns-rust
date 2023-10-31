@@ -11,6 +11,7 @@ pub enum Rtype {
     WKS,
     MX,
     TXT,
+    DNAME,
     UNKNOWN(u16),
 }
 
@@ -29,6 +30,7 @@ impl Rtype{
             Rtype::MINFO => 14,
             Rtype::MX => 15,
             Rtype::TXT => 16,
+            Rtype::DNAME => 39,
             Rtype::UNKNOWN(val) => val
         }
     }
@@ -45,6 +47,7 @@ impl Rtype{
             Rtype::MINFO => String::from("MINFO"),
             Rtype::MX => String::from("MX"),
             Rtype::TXT => String::from("TXT"),
+            Rtype::DNAME => String::from("DNAME"),
             Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
     }
@@ -62,6 +65,7 @@ impl Rtype{
             14 => Rtype::MINFO,
             15 => Rtype::MX,
             16 => Rtype::TXT,
+            39 => Rtype::DNAME,
             _ => Rtype::UNKNOWN(val),
         }
     }
@@ -79,6 +83,7 @@ impl Rtype{
             "MINFO" => Rtype::MINFO,
             "MX" => Rtype::MX,
             "TXT" => Rtype::TXT,
+            "DNAME" => Rtype::DNAME,
             _ => Rtype::UNKNOWN(99),
         }
     }

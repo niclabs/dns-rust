@@ -95,6 +95,55 @@ impl ToBytes for TSigRdata{
     }
 }
 
+impl FromBytes<Result<Self, &'static str>> for TSigRdata{
+
+    /// Creates a new `TSigRdata` from an array of bytes.
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let algorithm_name_result = DomainName::from_bytes(bytes, full_msg);
+
+        match algorithm_name_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (algorithm_name, bytes_without_algorithm_name) = algorithm_name_result.unwrap();
+
+        let mut tsig_rdata = TSigRdata::new();
+
+        tsig_rdata.set_algorithm_name(algorithm_name);
+
+        tsig_rdata.set_time_signed_from_bytes(&bytes_without_algorithm_name[0..8]);
+
+        tsig_rdata.set_fudge_from_bytes(&bytes_without_algorithm_name[8..10]);
+
+        tsig_rdata.set_mac_size_from_bytes(&bytes_without_algorithm_name[10..12]);
+
+        let mac_size = tsig_rdata.get_mac_size();
+
+        let mac = bytes_without_algorithm_name[12..(12 + mac_size as usize)].to_vec();
+
+        tsig_rdata.set_mac(mac);
+
+        let bytes_without_mac = &bytes_without_algorithm_name[(12 + mac_size as usize)..];
+
+        tsig_rdata.set_original_id_from_bytes(&bytes_without_mac[0..2]);
+
+        tsig_rdata.set_error_from_bytes(&bytes_without_mac[2..4]);
+
+        tsig_rdata.set_other_len_from_bytes(&bytes_without_mac[4..6]);
+
+        let other_len = tsig_rdata.get_other_len();
+
+        let other_data = bytes_without_mac[6..(6 + other_len as usize)].to_vec();
+
+        tsig_rdata.set_other_data(other_data);
+
+        Ok(tsig_rdata)
+    }
+}
+
 impl TSigRdata {
     /// Creates a new TSigRdata with default values
     ///
@@ -114,6 +163,55 @@ impl TSigRdata {
             other_len: 0,
             other_data: Vec::new(),
         }
+    }
+
+
+    /// Set the time signed attribute from an array of bytes.
+    fn set_time_signed_from_bytes(&mut self, bytes: &[u8]){
+        let time_signed = (bytes[0] as u64) << 56 
+                                | (bytes[1] as u64) << 48 
+                                | (bytes[2] as u64) << 40 
+                                | (bytes[3] as u64) << 32 
+                                | (bytes[4] as u64) << 24 
+                                | (bytes[5] as u64) << 16 
+                                | (bytes[6] as u64) << 8 
+                                | bytes[7] as u64;
+        self.set_time_signed(time_signed);
+    }
+
+    /// Set the fudge attribute from an array of bytes.
+    fn set_fudge_from_bytes(&mut self, bytes: &[u8]){
+        let fudge = (bytes[0] as u16) << 8 | bytes[1] as u16;
+
+        self.set_fudge(fudge);
+    }
+
+    /// Set the mac_size attribute from an array of bytes.
+    fn set_mac_size_from_bytes(&mut self, bytes: &[u8]){
+        let mac_size = (bytes[0] as u16) << 8 | bytes[1] as u16;
+
+        self.set_mac_size(mac_size);
+    }
+
+    /// Set the original_id attribute from an array of bytes.
+    fn set_original_id_from_bytes(&mut self, bytes: &[u8]){
+        let original_id = (bytes[0] as u16) << 8 | bytes[1] as u16;
+
+        self.set_original_id(original_id);
+    }
+
+    /// Set the error attribute from an array of bytes.
+    fn set_error_from_bytes(&mut self, bytes: &[u8]){
+        let error = (bytes[0] as u16) << 8 | bytes[1] as u16;
+
+        self.set_error(error);
+    }
+
+    /// Set the other_len attribute from an array of bytes.
+    fn set_other_len_from_bytes(&mut self, bytes: &[u8]){
+        let other_len = (bytes[0] as u16) << 8 | bytes[1] as u16;
+
+        self.set_other_len(other_len);
     }
 }
 

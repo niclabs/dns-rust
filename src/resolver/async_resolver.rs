@@ -123,5 +123,17 @@ mod async_resolver_test {
    
     }
 
+    #[tokio::test]
+    async fn host_name_to_host_address_translation() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let ip_address = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        
+        assert!(ip_address.is_ipv4());
+    
+        assert!(!ip_address.is_unspecified());
+    }
+
 
 }

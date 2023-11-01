@@ -1,8 +1,3 @@
-use crate::client::tcp_connection::ClientTCPConnection;
-
-
-use crate::client::udp_connection::ClientUDPConnection;
-
 use crate::message::DnsMessage;
 use std::{net::IpAddr,time::Duration};
 
@@ -18,7 +13,7 @@ pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin
     fn send(self,dns_query:DnsMessage) -> Result<DnsMessage, ClientError> ;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum ConnectionProtocol {
     UDP,
     TCP,

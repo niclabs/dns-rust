@@ -19,7 +19,19 @@ pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin
 }
 
 #[derive(Clone)]
-pub enum ClientConnectionType {
-    UDP(ClientUDPConnection),
-    TCP(ClientTCPConnection),
+pub enum ConnectionProtocol {
+    UDP,
+    TCP,
+    UNKNOWN,
+}
+
+impl ConnectionProtocol {
+    /// Function to connection type base on a str
+    pub fn from_str_to_connection_type(conn: &str) -> ConnectionProtocol{
+        match conn {
+            "UDP" => ConnectionProtocol::UDP,
+            "TCP" => ConnectionProtocol::TCP,
+            _ => ConnectionProtocol::UNKNOWN,
+        }
+    } 
 }

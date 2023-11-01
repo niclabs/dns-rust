@@ -7,6 +7,8 @@ use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
 use crate::message::rdata::Rdata;
+use crate::client::client_connection::ConnectionProtocol;
+use crate::resolver::resolver_error::ResolverError;
 
 pub struct AsyncResolver{
     cache: DnsCache,
@@ -23,21 +25,25 @@ impl AsyncResolver {
         async_resolver
     } 
     
-    pub async fn lookup_ip(&self, domain_name: &str, transport_protocol: &str) -> Result<IpAddr, io::Error> {
+    pub async fn lookup_ip(&self, domain_name: &str, transport_protocol: &str) -> Result<IpAddr, ResolverError> {
         println!("[LOOKUP IP ASYNCRESOLVER]");
-        //TODO: when TCP is given first use this conn
-        
-        // TODO: verificaciones
+
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
+
+        let transport_protocol_struct = ConnectionProtocol::from_str_to_connection_type(transport_protocol);
+
+        let result = self.inner_lookup_ip(domain_name_struct, transport_protocol_struct).await;
+        result
+           
+    }
+
+    async fn inner_lookup_ip(&self, domain_name: DomainName, transport_protocol: ConnectionProtocol) -> Result<IpAddr, ResolverError> {
 
         // Get connection type
         let name_servers= self.config.get_name_servers();
 
-        // Connection type
-        let conn_type = transport_protocol;
-
         //Async query
-        let response = LookupIpFutureStub::lookup(domain_name_struct, self.cache.clone(),name_servers, conn_type).await;
+        let response = LookupIpFutureStub::lookup(domain_name, self.cache.clone(),name_servers, transport_protocol).await;
         
         println!("[LOOKUP IP RESPONSE => {:?}]",response);
         let ip_addr = match response {
@@ -53,12 +59,7 @@ impl AsyncResolver {
         };
 
         // TODO: Eliminar esto 
-        Ok(ip_addr)   
-    }
-
-    #[allow(unused_variables)]
-    pub async fn lookup(&self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
-        unimplemented!()
+        Ok(ip_addr)
     }
 
 }
@@ -98,4 +99,6 @@ mod async_resolver_test {
         println!("[TEST FINISH=> {}]",response);
    
     }
+
+
 }

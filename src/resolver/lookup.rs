@@ -14,7 +14,7 @@ use rand::{thread_rng, Rng};
 use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
 use std::sync:: {Mutex,Arc};
-// use crate::client::client_connection::ClientConnectionType;
+use crate::client::client_connection::ConnectionProtocol;
 
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
@@ -25,7 +25,7 @@ pub struct LookupIpFutureStub  {
     cache: DnsCache,
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
-    conn_type: String,
+    transport_protocol: ConnectionProtocol,
 }
 
 impl Future for LookupIpFutureStub{ 
@@ -47,7 +47,7 @@ impl Future for LookupIpFutureStub{
                 
                 let referenced_query = Arc::clone(&self.query_answer); //same as self.query.clone()
                 tokio::spawn(
-                    lookup_stub(self.name.clone(),self.cache.clone(),self.name_servers.clone(),self.waker.clone(),referenced_query,self.conn_type.clone()));
+                    lookup_stub(self.name.clone(),self.cache.clone(),self.name_servers.clone(),self.waker.clone(),referenced_query,self.transport_protocol.clone()));
                 println!("  [return pending]");
                 return Poll::Pending;
             },
@@ -65,7 +65,7 @@ impl LookupIpFutureStub{
         name: DomainName,
         cache:DnsCache,
         name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
-        conn_type: &str
+        transport_protocol: ConnectionProtocol,
     ) -> Self {
         println!("[LOOKUP CREATE FUTURE]");
         
@@ -75,7 +75,7 @@ impl LookupIpFutureStub{
             cache: cache,
             name_servers: name_servers,
             waker: None,
-            conn_type: conn_type.to_string()
+            transport_protocol: transport_protocol
             }
 
     }
@@ -87,7 +87,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
     referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
-    conn_type: String,
+    transport_protocol: ConnectionProtocol,
 ) {
     println!("[LOOKUP STUB]");
 
@@ -126,8 +126,8 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     // Send query to name servers
     for (conn_udp,conn_tcp) in name_servers.iter() { 
         
-        match conn_type.as_str() { 
-            "UDP" => {
+        match transport_protocol { 
+            ConnectionProtocol::UDP=> {
                 let result_response = conn_udp.send(new_query.clone());
                 
                 match result_response {
@@ -140,7 +140,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                     }
                 }
             }
-            "TCP" => {
+            ConnectionProtocol::TCP => {
                 let result_response = conn_tcp.send(new_query.clone());
                 
                 match result_response {
@@ -198,10 +198,10 @@ mod async_resolver_test {
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
 
-        let conn_type = String::from("UDP");
-    
+        let transport_protocol = ConnectionProtocol::UDP;
+        
         let name_servers = vec![(conn_udp,conn_tcp)];
-        lookup_stub(name, cache, name_servers, waker,query,conn_type).await;
+        lookup_stub(name, cache, name_servers, waker,query,transport_protocol).await;
         // println!("[Test Result ] {:?}", result);
     }
 

@@ -11,7 +11,7 @@ use crate::resolver::async_resolver::AsyncResolver;
 use crate::resolver::config::ResolverConfig;
 use crate::{resolver::slist::Slist, client::client_connection::ClientConnection};
 use tokio::net::{TcpListener,UdpSocket};
-use crate::client::client_connection::ClientConnectionType;
+use crate::client::client_connection::ConnectionProtocol;
 
 use std::error::Error;
 pub struct Resolver {

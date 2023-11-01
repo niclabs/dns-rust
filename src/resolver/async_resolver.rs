@@ -65,30 +65,29 @@ impl AsyncResolver {
 
 #[cfg(test)]
 mod async_resolver_test {
-    // use tokio::runtime::Runtime;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
     
 
     
-    // #[test]
-    // fn lookup_ip() {
-
-    //     let resolver = AsyncResolver::new(ResolverConfig::default());
-        
-    //     let runtime = Runtime::new().unwrap();
-    //     let response = runtime.block_on(resolver.lookup_ip("example.com"));
-
-    //     // TODO: add assert test Ip example.com
-
-    //     let response = runtime.block_on(resolver.lookup_ip("niclabs.cl"));
-
-    //     // TODO: add assert test ip niclabs.cl
-
-    // }
-
     #[tokio::test]
-    #[ignore]
+     async fn lookup_ip() {
+
+         let resolver = AsyncResolver::new(ResolverConfig::default());
+        
+         //let runtime = Runtime::new().unwrap();
+         let response = resolver.lookup_ip("example.com", "UDP");
+
+         println!("[TEST FINISH=> {}]",response.await.unwrap());
+         // TODO: add assert test Ip example.com
+
+         //let response = runtime.block_on(resolver.lookup_ip("niclabs.cl","TCP"));
+
+         // TODO: add assert test ip niclabs.cl
+
+     }
+
+     #[tokio::test]
     async fn lookupip_example() {
         println!("[TEST INIT]");
 

@@ -89,7 +89,9 @@ impl AsyncResolver {
 
 #[cfg(test)]
 mod async_resolver_test {
+    use crate::client::config::TIMEOUT;
     use crate::resolver::config::ResolverConfig;
+    use crate::resolver::resolver_error::ResolverError;
     use super::AsyncResolver;
     
 
@@ -148,6 +150,38 @@ mod async_resolver_test {
     //     // Por ejemplo, si esperas que la dirección IP "192.168.0.1" se traduzca a "ejemplo.com":
     //     assert_eq!(domain_name, "ejemplo.com", "El nombre de dominio debe ser 'ejemplo.com'");
     // }
+    
+    #[tokio::test]
+    async fn timeout() {
+        // Crea una instancia de tu resolutor con la configuración adecuada
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+    
+        // Intenta resolver un nombre de dominio que no existe o no está accesible
+        let domain_name = "nonexistent-example.com";
+        let transport_protocol = "UDP";
+    
+        // Configura un timeout corto para la resolución (ajusta según tus necesidades)
+        let timeout_duration = std::time::Duration::from_secs(2);
+        
+        let result = tokio::time::timeout(timeout_duration, async {
+            resolver.lookup_ip(domain_name, transport_protocol).await
+        }).await;
+        
+
+        
+        // Verifica que el resultado sea un error de timeout
+        match result {
+            Ok(Ok(_)) => {
+                panic!("Se esperaba un error de timeout, pero se resolvió exitosamente");
+            }
+            Ok(Err(err)) => {
+               assert!(true);
+            }
+            Err(_) => {
+                panic!("El timeout no se manejó correctamente");
+            }
+        }
+    }
 
 
 }

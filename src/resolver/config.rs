@@ -2,7 +2,7 @@ use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientT
 
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
 
-pub struct ResolverConfig{
+pub struct ResolverConfig {
     //Servers
     name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>,
     //Addres of resolver

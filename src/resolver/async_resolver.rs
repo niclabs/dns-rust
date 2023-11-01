@@ -24,7 +24,11 @@ impl AsyncResolver {
         };
         async_resolver
     } 
-    
+
+    /// RFC 1034
+    /// 5.2. Client-resolver interface
+    /// 
+    /// Host name to host address translation
     pub async fn lookup_ip(&self, domain_name: &str, transport_protocol: &str) -> Result<IpAddr, ResolverError> {
         println!("[LOOKUP IP ASYNCRESOLVER]");
 
@@ -61,6 +65,25 @@ impl AsyncResolver {
         // TODO: Eliminar esto 
         Ok(ip_addr)
     }
+
+    /// RFC 1034
+    /// 5.2. Client-resolver interface
+    /// 
+    /// Host address to host name translation
+    pub async fn reverse_query() {
+        unimplemented!()
+    }
+
+    /// RFC 1034
+    /// Client-resolver interface
+    /// 
+    /// General lookup function
+    pub async fn lookup() {
+        unimplemented!()
+    }
+
+
+
 
 }
 

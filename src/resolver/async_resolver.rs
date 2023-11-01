@@ -87,9 +87,12 @@ impl AsyncResolver {
 
 #[cfg(test)]
 mod async_resolver_test {
+    use crate::client::config::TIMEOUT;
     use crate::resolver::config::ResolverConfig;
+    use crate::resolver::resolver_error::ResolverError;
     use super::AsyncResolver;
     
+    #[ignore]
     #[tokio::test]
     async fn lookup_ip() {
 
@@ -106,4 +109,79 @@ mod async_resolver_test {
         // TODO: add assert test ip niclabs.cl
 
     }
+
+    #[ignore]
+    #[tokio::test]
+    async fn lookupip_example() {
+        println!("[TEST INIT]");
+
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+      
+        let response = resolver.lookup_ip("example.com", "UDP").await.unwrap();
+
+        println!("[TEST FINISH=> {}]",response);
+   
+    }
+
+    #[ignore]
+    #[tokio::test]
+    async fn host_name_to_host_address_translation() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let ip_address = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        
+        assert!(ip_address.is_ipv4());
+    
+        assert!(!ip_address.is_unspecified());
+    }
+
+    // async fn reverse_query() {
+    //     let resolver = AsyncResolver::new(ResolverConfig::default());
+    //     let ip_address = "192.168.0.1"; 
+    //     let domain_name = resolver.reverse_query(ip_address).await;
+    
+    //     // Realiza aserciones para verificar que domain_name contiene un nombre de dominio válido.
+    //     assert!(!domain_name.is_empty(), "El nombre de dominio no debe estar vacío");
+    
+    //     // Debe verificar que devuelve el nombre de dominio correspondiente a la dirección IP dada.
+    //     // Dependiendo de tu implementación, puedes comparar el resultado con un valor esperado.
+    //     // Por ejemplo, si esperas que la dirección IP "192.168.0.1" se traduzca a "ejemplo.com":
+    //     assert_eq!(domain_name, "ejemplo.com", "El nombre de dominio debe ser 'ejemplo.com'");
+    // }
+    
+    #[ignore]
+    #[tokio::test]
+    async fn timeout() {
+        // Crea una instancia de tu resolutor con la configuración adecuada
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+    
+        // Intenta resolver un nombre de dominio que no existe o no está accesible
+        let domain_name = "nonexistent-example.com";
+        let transport_protocol = "UDP";
+    
+        // Configura un timeout corto para la resolución (ajusta según tus necesidades)
+        let timeout_duration = std::time::Duration::from_secs(2);
+        
+        let result = tokio::time::timeout(timeout_duration, async {
+            resolver.lookup_ip(domain_name, transport_protocol).await
+        }).await;
+        
+
+        
+        // Verifica que el resultado sea un error de timeout
+        match result {
+            Ok(Ok(_)) => {
+                panic!("Se esperaba un error de timeout, pero se resolvió exitosamente");
+            }
+            Ok(Err(err)) => {
+               assert!(true);
+            }
+            Err(_) => {
+                panic!("El timeout no se manejó correctamente");
+            }
+        }
+    }
+
+
 }

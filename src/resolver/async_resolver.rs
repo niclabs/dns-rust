@@ -135,5 +135,19 @@ mod async_resolver_test {
         assert!(!ip_address.is_unspecified());
     }
 
+    // async fn reverse_query() {
+    //     let resolver = AsyncResolver::new(ResolverConfig::default());
+    //     let ip_address = "192.168.0.1"; 
+    //     let domain_name = resolver.reverse_query(ip_address).await;
+    
+    //     // Realiza aserciones para verificar que domain_name contiene un nombre de dominio válido.
+    //     assert!(!domain_name.is_empty(), "El nombre de dominio no debe estar vacío");
+    
+    //     // Debe verificar que devuelve el nombre de dominio correspondiente a la dirección IP dada.
+    //     // Dependiendo de tu implementación, puedes comparar el resultado con un valor esperado.
+    //     // Por ejemplo, si esperas que la dirección IP "192.168.0.1" se traduzca a "ejemplo.com":
+    //     assert_eq!(domain_name, "ejemplo.com", "El nombre de dominio debe ser 'ejemplo.com'");
+    // }
+
 
 }

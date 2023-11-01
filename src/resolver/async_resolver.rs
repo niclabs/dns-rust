@@ -1,10 +1,10 @@
-use std::io;
+//use std::io;
 use std::net::{IpAddr, Ipv4Addr};
 
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
-use crate::message::class_qclass::Qclass;
-use crate::message::type_qtype::Qtype;
+//use crate::message::class_qclass::Qclass;
+//use crate::message::type_qtype::Qtype;
 use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
 use crate::message::rdata::Rdata;
 use crate::client::client_connection::ConnectionProtocol;

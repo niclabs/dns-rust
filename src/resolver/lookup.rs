@@ -173,6 +173,8 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     let mut future_query = referenced_query.lock().unwrap();
     *future_query = future::ready(Ok(response)).boxed();
 
+    //FIXME: increase counter
+
     println!("[LOOKUP STUB] return");
     
 }

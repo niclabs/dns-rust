@@ -705,6 +705,9 @@ impl DnsMessage {
                     Rdata::SomeTxtRdata(val) => {
                         println!("Txt: {:#?}", val.get_text())
                     }
+
+                    Rdata::SomeTSigRdata(_val) => {
+                    }
                 }
             }
 
@@ -745,6 +748,8 @@ impl DnsMessage {
                     Rdata::SomeTxtRdata(val) => {
                         println!("Txt: {:#?}", val.get_text())
                     }
+                    Rdata::SomeTSigRdata(_val) => {
+                    }
                 }
             }
 
@@ -784,6 +789,8 @@ impl DnsMessage {
                     }
                     Rdata::SomeTxtRdata(val) => {
                         println!("Txt: {:#?}", val.get_text())
+                    }
+                    Rdata::SomeTSigRdata(_val) => {
                     }
                 }
             }

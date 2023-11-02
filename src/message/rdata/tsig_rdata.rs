@@ -284,47 +284,47 @@ impl TSigRdata {
 impl TSigRdata {
 
     /// Gets the algorithm_name attribute from TSigRdata
-    fn get_algorithm_name(&self) -> DomainName {
+    pub fn get_algorithm_name(&self) -> DomainName {
         self.algorithm_name.clone()
     }
 
     /// Gets the time_signed attribute from TSigRdata
-    fn get_time_signed(&self) -> u64 {
-        self.time_signed
+    pub fn get_time_signed(&self) -> u64 {
+        self.time_signed.clone()
     }
 
     /// Gets the fudge attribute from TSigRdata
-    fn get_fudge(&self) -> u16 {
-        self.fudge
+    pub fn get_fudge(&self) -> u16 {
+        self.fudge.clone()
     }
     
     /// Gets the mac_size attribute from TSigRdata
-    fn get_mac_size(&self) -> u16 {
-        self.mac_size
+    pub fn get_mac_size(&self) -> u16 {
+        self.mac_size.clone()
     }
 
     /// Gets the mac attribute from TSigRdata
-    fn get_mac(&self) -> Vec<u8> {
+    pub fn get_mac(&self) -> Vec<u8> {
         self.mac.clone()
     }
 
     /// Gets the original_id attribute from TSigRdata
-    fn get_original_id(&self) -> u16 {
-        self.original_id
+    pub fn get_original_id(&self) -> u16 {
+        self.original_id.clone()
     }
 
     /// Gets the error attribute from TSigRdata
-    fn get_error(&self) -> u16 {
-        self.error
+    pub fn get_error(&self) -> u16 {
+        self.error.clone()
     }
 
     /// Gets the other_len attribute from TSigRdata
-    fn get_other_len(&self) -> u16 {
-        self.other_len
+    pub fn get_other_len(&self) -> u16 {
+        self.other_len.clone()
     }
 
     /// Gets the other_data attribute from TSigRdata
-    fn get_other_data(&self) -> Vec<u8> {
+    pub fn get_other_data(&self) -> Vec<u8> {
         self.other_data.clone()
     }
 }
@@ -375,5 +375,126 @@ impl TSigRdata{
     /// Sets the other_data attibute with a value
     fn set_other_data(&mut self, other_data: Vec<u8>) {
         self.other_data = other_data;
+    }
+}
+
+#[cfg(test)]
+mod tsig_rdata_test {
+    use crate::domain_name::DomainName;
+    use crate::message::rdata::Rdata;
+    use crate::message::Rtype;
+    use crate::message::Rclass; 
+    use crate::message::rdata::tsig_rdata::TSigRdata;
+    use crate::message::resource_record::{FromBytes, ToBytes};
+
+    #[test]
+    fn constructor_test(){
+        let tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.algorithm_name.get_name(), String::from(""));
+        assert_eq!(tsig_rdata.time_signed, 0);
+        assert_eq!(tsig_rdata.fudge, 0);
+        assert_eq!(tsig_rdata.mac_size, 0);
+        assert_eq!(tsig_rdata.mac, Vec::new());
+        assert_eq!(tsig_rdata.original_id, 0);
+        assert_eq!(tsig_rdata.error, 0);
+        assert_eq!(tsig_rdata.other_len, 0);
+        assert_eq!(tsig_rdata.other_data, Vec::new());
+    }
+
+    #[test]
+    fn set_and_get_algorithm_name(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_algorithm_name().get_name(), String::from(""));
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test_name"));
+
+        tsig_rdata.set_algorithm_name(domain_name);
+
+        assert_eq!(tsig_rdata.get_algorithm_name().get_name(), String::from("test_name"));
+    }
+
+    #[test]
+    fn set_and_get_time_signed(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_time_signed(), 0);
+
+        tsig_rdata.set_time_signed(123456789);
+
+        assert_eq!(tsig_rdata.get_time_signed(), 123456789);
+    }
+
+    #[test]
+    fn set_and_get_fudge(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_fudge(), 0);
+
+        tsig_rdata.set_fudge(1234);
+
+        assert_eq!(tsig_rdata.get_fudge(), 1234);
+    }
+
+    #[test]
+    fn set_and_get_mac_size(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_mac_size(), 0);
+
+        tsig_rdata.set_mac_size(1234);
+
+        assert_eq!(tsig_rdata.get_mac_size(), 1234);
+    }
+
+    #[test]
+    fn set_and_get_mac(){
+        let mac_str = "A1B2C3D4";
+        let mac = mac_str.as_bytes().chunks(2)
+            .map(|b: &[u8]| u8::from_str_radix(std::str::from_utf8(b).unwrap(), 16).unwrap())
+            .collect::<Vec<u8>>();
+
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_mac(), Vec::new());
+
+        tsig_rdata.set_mac(mac.clone());
+
+        assert_eq!(tsig_rdata.get_mac(), mac);
+    }
+
+    #[test]
+    fn set_and_get_original_id(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_original_id(), 0);
+
+        tsig_rdata.set_original_id(1234);
+
+        assert_eq!(tsig_rdata.get_original_id(), 1234);
+    }
+
+    #[test]
+    fn set_and_get_error(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_error(), 0);
+
+        tsig_rdata.set_error(1234);
+
+        assert_eq!(tsig_rdata.get_error(), 1234);
+    }
+
+    #[test]
+    fn set_and_get_other_len(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_other_len(), 0);
+
+        tsig_rdata.set_other_len(1234);
+
+        assert_eq!(tsig_rdata.get_other_len(), 1234);
     }
 }

@@ -93,6 +93,11 @@ mod async_resolver_test {
     use crate::resolver::resolver_error::ResolverError;
     use super::AsyncResolver;
     
+    //TODO: test constructor
+
+    //TODO: test inner_lookup
+
+
     #[ignore]
     #[tokio::test]
     async fn lookup_ip() {
@@ -185,4 +190,15 @@ mod async_resolver_test {
     }
 
 
+    //TODO: test max number of retry
+
+    //TODO: use UDP
+
+    //TODO: use TCP
+
+    //TODO: use UDP but fails and use TCP
+
+    //TODO: diferent types of errors
+
+    //TODO: bad domain name written
 }

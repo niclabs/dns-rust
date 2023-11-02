@@ -415,4 +415,15 @@ mod tsig_rdata_test {
 
         assert_eq!(tsig_rdata.get_algorithm_name().get_name(), String::from("test_name"));
     }
+
+    #[test]
+    fn set_and_get_time_signed(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_time_signed(), 0);
+
+        tsig_rdata.set_time_signed(123456789);
+
+        assert_eq!(tsig_rdata.get_time_signed(), 123456789);
+    }
 }

@@ -11,7 +11,7 @@ use std::io::ErrorKind;
 
 
 type ClientResult<T> = Result<T, ClientError>;
-#[derive(Clone,Copy)]
+#[derive(Clone,Copy, Debug, PartialEq, Eq)]
 pub struct ClientTCPConnection {
     /// Client address
     server_addr: IpAddr,

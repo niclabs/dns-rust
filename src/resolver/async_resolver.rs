@@ -32,6 +32,16 @@ impl AsyncResolver {
 
     /// Creates a new `AsyncResolver` with the given configuration.
     /// 
+    /// # Example
+    /// ```
+    /// use std::time::Duration;
+    /// use dns_resolver::resolver::config::ResolverConfig;
+    /// use dns_resolver::resolver::async_resolver::AsyncResolver;
+    /// 
+    /// let config = ReolverConfig::default();
+    /// let resolver = AsyncResolver::new(config.clone());
+    /// assert_eq!(resolver.config, config);
+    /// ```
     pub fn new(config: ResolverConfig)-> Self {
         let async_resolver = AsyncResolver {
             cache: DnsCache::new(),
@@ -119,9 +129,14 @@ mod async_resolver_test {
         assert_eq!(resolver.config.get_timeout(), Duration::from_secs(TIMEOUT));
     }
 
-
     //TODO: test inner_lookup
-
+    // #[tokio::test]
+    // async fn inner_lookup() {
+    //     let mut resolver = AsyncResolver::new(ResolverConfig::default());
+    //     let domain_name = "example.com";
+    //     let response = resolver.inner_lookup(domain_name).await;
+    //     assert!(response.is_ok());
+    // }
 
     #[ignore]
     #[tokio::test]

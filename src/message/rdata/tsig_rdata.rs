@@ -497,4 +497,20 @@ mod tsig_rdata_test {
 
         assert_eq!(tsig_rdata.get_other_len(), 1234);
     }
+
+    #[test]
+    fn set_and_get_oher_data(){
+        let other_data_str = "A1B2C3D4";
+        let other_data = other_data_str.as_bytes().chunks(2)
+            .map(|b: &[u8]| u8::from_str_radix(std::str::from_utf8(b).unwrap(), 16).unwrap())
+            .collect::<Vec<u8>>();
+
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_other_data(), Vec::new());
+
+        tsig_rdata.set_other_data(other_data.clone());
+
+        assert_eq!(tsig_rdata.get_other_data(), other_data);
+    }
 }

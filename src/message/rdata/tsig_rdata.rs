@@ -9,14 +9,23 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 /// [RFC 8945](https://tools.ietf.org/html/rfc8945#section-3.5)
 
 pub struct TSigRdata {
+    /// The algorithm name in domain name format
     algorithm_name: DomainName,
+    /// Seconds since 1-Jan-70 UTC
     time_signed: u64,
+    /// Seconds of error permitted in time_signed
     fudge: u16,
+    /// Total number of octets in MAC
     mac_size: u16,
+    /// MAC of the message
     mac: Vec<u8>,
+    /// Original ID of the message
     original_id: u16,
+    /// expanded RCODE covering TSIG processing.
     error: u16,
+    /// Length in octets of the other_data field
     other_len: u16,
+    /// Other data empty unless error == BADTIME
     other_data: Vec<u8>,
 }
 

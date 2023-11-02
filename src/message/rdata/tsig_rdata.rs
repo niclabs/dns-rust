@@ -475,4 +475,15 @@ mod tsig_rdata_test {
 
         assert_eq!(tsig_rdata.get_original_id(), 1234);
     }
+
+    #[test]
+    fn set_and_get_error(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_error(), 0);
+
+        tsig_rdata.set_error(1234);
+
+        assert_eq!(tsig_rdata.get_error(), 1234);
+    }
 }

@@ -246,6 +246,7 @@ mod resolver_query_tests {
     use super::ptr_rdata::PtrRdata;
     use super::soa_rdata::SoaRdata;
     use super::txt_rdata::TxtRdata;
+    use super::tsig_rdata::TSigRdata;
     use std::net::IpAddr;
 
     #[test]
@@ -424,6 +425,36 @@ mod resolver_query_tests {
         for byte in bytes_to_test{
             expected_bytes.push(byte);
         }
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_tsigrdata(){
+        let expected_bytes = vec![
+        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
+        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
+        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+        ];
+
+        let mut tsig_rdata = TSigRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("hmac-md5.sig-alg.reg.int"));
+        tsig_rdata.set_algorithm_name(domain_name);
+        tsig_rdata.set_time_signed(123456789);
+        tsig_rdata.set_fudge(1234);
+        tsig_rdata.set_mac_size(4);
+        tsig_rdata.set_mac(vec![0xA1, 0xB2, 0xC3, 0xD4]);
+        tsig_rdata.set_original_id(1234);
+        tsig_rdata.set_error(0);
+        tsig_rdata.set_other_len(0);
+        tsig_rdata.set_other_data(Vec::new());
+
+        let rdata = Rdata::SomeTSigRdata(tsig_rdata);
+        let bytes = rdata.to_bytes();
+
         assert_eq!(bytes, expected_bytes);
     }
 

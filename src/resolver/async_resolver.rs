@@ -116,7 +116,7 @@ mod async_resolver_test {
         let config = ResolverConfig::default();
         let resolver = AsyncResolver::new(config.clone());
         assert_eq!(resolver.config, config);
-        assert_eq!(resolver.config.get_timeout(), Duration::from_secs(10));
+        assert_eq!(resolver.config.get_timeout(), Duration::from_secs(TIMEOUT));
     }
 
 

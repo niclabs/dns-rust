@@ -13,7 +13,7 @@ pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin
     fn send(self,dns_query:DnsMessage) -> Result<DnsMessage, ClientError> ;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ConnectionProtocol {
     UDP,
     TCP,

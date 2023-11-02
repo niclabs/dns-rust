@@ -385,10 +385,7 @@ impl TSigRdata{
 mod tsig_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
-    use crate::message::Rtype;
-    use crate::message::Rclass; 
     use crate::message::rdata::tsig_rdata::TSigRdata;
-    use crate::message::resource_record;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]

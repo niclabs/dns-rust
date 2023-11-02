@@ -448,4 +448,31 @@ mod tsig_rdata_test {
 
         assert_eq!(tsig_rdata.get_mac_size(), 1234);
     }
+
+    #[test]
+    fn set_and_get_mac(){
+        let mac_str = "A1B2C3D4";
+        let mac = mac_str.as_bytes().chunks(2)
+            .map(|b: &[u8]| u8::from_str_radix(std::str::from_utf8(b).unwrap(), 16).unwrap())
+            .collect::<Vec<u8>>();
+
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_mac(), Vec::new());
+
+        tsig_rdata.set_mac(mac.clone());
+
+        assert_eq!(tsig_rdata.get_mac(), mac);
+    }
+
+    #[test]
+    fn set_and_get_original_id(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_original_id(), 0);
+
+        tsig_rdata.set_original_id(1234);
+
+        assert_eq!(tsig_rdata.get_original_id(), 1234);
+    }
 }

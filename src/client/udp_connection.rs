@@ -8,7 +8,7 @@ use std::io::ErrorKind;
 
 use super::client_error::ClientError;
 
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct  ClientUDPConnection {
     /// addr to connect
     server_addr: IpAddr,

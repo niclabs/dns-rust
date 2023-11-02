@@ -163,7 +163,8 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                 }
             }
             _ => continue,
-        }  
+        } 
+        println!("response {:?}",response) ;
 
         retry_count = retry_count + 1;
     }
@@ -182,7 +183,6 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
 
 #[cfg(test)]
 mod async_resolver_test {
-    use crate::dns_cache::cache_data;
     // use tokio::runtime::Runtime;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
@@ -232,29 +232,23 @@ mod async_resolver_test {
     async fn lookup_stub_max_tries(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
+        let timeout = Duration::from_secs(2);
 
         let mut config: ResolverConfig = ResolverConfig::default();
+        let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
+        
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
+        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(1);
-
         let cache = DnsCache::new();
-        let waker = None;
-    
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed()));
 
-        // Create vector of name servers
-        let non_existente_server:IpAddr = IpAddr::V4(Ipv4Addr::new(234,1 ,4, 44));
-        let timeout: Duration = Duration::from_secs(20);
+        let response_future = LookupIpFutureStub::lookup(domain_name, config, cache).await;
+        println!("response_future {:?}",response_future);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existente_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existente_server, timeout);
-
-        let name_servers = vec![(conn_udp,conn_tcp)];
-
-        lookup_stub(domain_name, cache, name_servers, waker,query,config).await;
-
-        //FIXME: is not working
-
-
+        assert_eq!(response_future.is_ok(), true);    
+        assert_eq!(response_future.unwrap().get_header().get_ancount(), 0);
+        // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
     }
 
      

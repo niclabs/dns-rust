@@ -79,6 +79,11 @@ impl AsyncResolver {
         }
     }
 
+    /// Host name to address translation.
+    /// 
+    /// Performs a DNS lookup for the given domain name and returns the 
+    /// corresponding IP address. This lookup is done asynchronously using
+    /// the future `LookupIpFutureStub`.
     async fn inner_lookup(&self, domain_name: DomainName) -> Result<DnsMessage, ResolverError> {
 
         // Async query
@@ -130,13 +135,13 @@ mod async_resolver_test {
     }
 
     //TODO: test inner_lookup
-    // #[tokio::test]
-    // async fn inner_lookup() {
-    //     let mut resolver = AsyncResolver::new(ResolverConfig::default());
-    //     let domain_name = "example.com";
-    //     let response = resolver.inner_lookup(domain_name).await;
-    //     assert!(response.is_ok());
-    // }
+    #[tokio::test]
+    async fn inner_lookup() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let response = resolver.inner_lookup(domain_name).await;
+        assert!(response.is_ok());
+    }
 
     #[ignore]
     #[tokio::test]

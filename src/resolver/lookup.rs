@@ -32,20 +32,17 @@ impl Future for LookupIpFutureStub{
     type Output = Result<DnsMessage, ResolverError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        println!("[POLL FUTURE]");
 
         let query = self.query_answer.lock().unwrap().as_mut().poll(cx)  ;
 
         match query {
             Poll::Pending => {
-                println!("  [return pending]");
                 return Poll::Pending;
             },
             Poll::Ready(Err(_)) => {
-                println!("  [ready empty]");
                 self.waker = Some(cx.waker().clone());
                 
-                let referenced_query = Arc::clone(&self.query_answer); //same as self.query.clone()
+                let referenced_query = Arc::clone(&self.query_answer); 
                 tokio::spawn(
                     lookup_stub(
                         self.name.clone(),
@@ -54,11 +51,10 @@ impl Future for LookupIpFutureStub{
                         self.waker.clone(),
                         referenced_query,
                         self.config.clone()));
-                println!("  [return pending]");
+                
                 return Poll::Pending;
             },
             Poll::Ready(Ok(ip_addr)) => {
-                println!("  [return ready]");
                 return Poll::Ready(Ok(ip_addr));
             }
         }
@@ -72,7 +68,6 @@ impl LookupIpFutureStub {
         config: ResolverConfig,
         cache: DnsCache
     ) -> Self {
-        println!("[LOOKUP CREATE FUTURE]");
         
         Self { 
             name: name,
@@ -93,7 +88,6 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
     config: ResolverConfig,
 ) {
-    println!("[LOOKUP STUB]");
 
     // Create random generator
     let mut rng = thread_rng();
@@ -112,15 +106,14 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     );
 
     if let Some(cache_lookup) = cache.get(name.clone(), Rtype::A) {
-        println!("[LOOKUP STUB] cached data {:?}",cache_lookup);
 
-        //Add Answer
+        // Add Answer
         let answer: Vec<ResourceRecord> = cache_lookup
                                             .iter()
                                             .map(|rr_cache_value| rr_cache_value.get_resource_record())
                                             .collect::<Vec<ResourceRecord>>();
         new_query.set_answer(answer);
-        // return Ok(new_query);
+
     }
 
     // Create Server failure query 
@@ -130,10 +123,8 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     let mut retry_count = 0;
 
     for (conn_udp,conn_tcp) in name_servers.iter() { 
-        println!("[LOOKUP STUB] retry {}",retry_count);
         
         if retry_count > config.get_retry() {
-            println!("[LOOKUP STUB] max tries");
             break;
         }
         
@@ -164,19 +155,16 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
             }
             _ => continue,
         } 
-        println!("response {:?}",response) ;
 
         retry_count = retry_count + 1;
     }
 
     // Wake up task
     if let Some(waker) = waker {
-        println!("  [wake up task]");
         waker.wake();
     }
     let mut future_query = referenced_query.lock().unwrap();
     *future_query = future::ready(Ok(response.clone())).boxed();
-    println!("[save answer]")
    
 }
 
@@ -220,12 +208,6 @@ mod async_resolver_test {
     }
 
     // TODO: test poll (not shure)
-
-    // TODO: lookup_stub test
-
-    // TODO: lookup_stub test save query in lookup struct
-
-    // TODO: lookup_stub numer of retries
 
     #[ignore]
     #[tokio::test]

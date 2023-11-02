@@ -401,4 +401,18 @@ mod tsig_rdata_test {
         assert_eq!(tsig_rdata.other_len, 0);
         assert_eq!(tsig_rdata.other_data, Vec::new());
     }
+
+    #[test]
+    fn set_and_get_algorithm_name(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_algorithm_name().get_name(), String::from(""));
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test_name"));
+
+        tsig_rdata.set_algorithm_name(domain_name);
+
+        assert_eq!(tsig_rdata.get_algorithm_name().get_name(), String::from("test_name"));
+    }
 }

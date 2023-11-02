@@ -162,4 +162,19 @@ impl ResolverConfig{
 #[cfg(test)]
 mod tests_resolver_config {
     //TODO: FK test config and documentation
+
+    use crate::client::{config::TIMEOUT, client_connection::ConnectionProtocol};
+    use crate::resolver::config::ResolverConfig;
+    use std::net::{IpAddr,Ipv4Addr, SocketAddr};
+    use std::time::Duration;
+
+    #[test]
+    fn create_resolver_config() {
+        let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let protocol = ConnectionProtocol::UDP;
+        let timeout = Duration::from_secs(TIMEOUT);
+        let resolver_config = ResolverConfig::new(addr, protocol, timeout);
+
+        assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 53));
+    }
 }

@@ -27,12 +27,8 @@ impl ClientConnection for ClientUDPConnection {
         }
     }
 
-    /// TODO: funcion enviar
     fn send(self, dns_query:DnsMessage) -> Result<DnsMessage, ClientError> { 
-        // TODO: Agregar resultado error 
-        println!("[SEND UDP]");
 
-        // let bind_addr = bind_addr.unwrap_or_else();
         let timeout:Duration = self.timeout;
         let server_addr = SocketAddr::new(self.get_server_addr(), 53);
 
@@ -43,7 +39,7 @@ impl ClientConnection for ClientUDPConnection {
             Ok(socket_udp) => socket_udp , 
         };                          
         
-        //set read timeout
+        // Set read timeout
         match socket_udp.set_read_timeout(Some(timeout)) {
             Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error setting read timeout for socket {}", e))).map_err(Into::into),
             Ok(_) => (),
@@ -53,23 +49,18 @@ impl ClientConnection for ClientUDPConnection {
             Err(e) =>return Err(IoError::new(ErrorKind::Other, format!("Error: could not send {}", e))).map_err(Into::into),
             Ok(_) => (),
         };
-        
-        println!("[SEND UDP] query sent");
 
-        // TODO: caso en que se reciben truncados
         let mut msg: [u8;512] = [0;512];
         match socket_udp.recv_from(&mut msg){
             Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not read {}", e))).map_err(Into::into),
             Ok(_) => (),
         };
-        
 
         let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
             Ok(response) => response,
             Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not create dns message {}", e))).map_err(Into::into),
         };
-        // println!("[SEND UDP] {:?}", msg);
-        
+
         drop(socket_udp);
         
         return Ok(response_dns);
@@ -106,6 +97,9 @@ impl ClientUDPConnection {
 #[cfg(test)]
 mod udp_connection_test{
     
+    use crate::domain_name::DomainName;
+    use crate::message::type_qtype::Qtype;
+    use crate::message::class_qclass::Qclass;
     use super::*;
     use std::net::{IpAddr,Ipv4Addr};
     #[test]
@@ -120,7 +114,7 @@ mod udp_connection_test{
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
     }
 
-    //Setters and Getters test
+    // Setters and Getters test
     #[test]
     fn get_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
@@ -164,4 +158,29 @@ mod udp_connection_test{
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(200));
     }
+
+    #[test]
+    fn send_timeout(){
+
+        let server_addr_non_existent = IpAddr::V4(Ipv4Addr::new(234,1 ,4, 44));
+        let timeout = Duration::from_secs(2);
+
+        let conn = ClientUDPConnection::new(server_addr_non_existent, timeout);
+
+        let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_query =
+        DnsMessage::new_query_message(
+            domain_name,
+            Qtype::A,
+            Qclass::IN,
+            0,
+            false,
+            1);
+        
+        let result = conn.send(dns_query);
+
+        assert!(result.is_err());
+    }
+
+
 }

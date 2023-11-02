@@ -1,4 +1,3 @@
-use crate::domain_name;
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::Rtype;

@@ -8,8 +8,23 @@ use crate::message::rdata::Rdata;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::resolver::resolver_error::ResolverError;
 
+/// Asynchronous resolver for DNS queries.
+/// 
+/// This struct contains a cache and a configuration for the resolver. 
+/// The cache is used to store the responses of the queries and the
+/// configuration is used to set the parameters of the resolver.
+/// 
+/// The `AsyncResolver` struct is used to send queries to a DNS server in 
+/// a asynchronous way. This means that the queries are sent and the
+/// resolver continues with the execution of the program without waiting
+/// for the response of the query.
+/// 
+/// Each query corresponds to a future that is going to be spawned using
+/// `lookup_ip` method. 
 pub struct AsyncResolver{
+    /// Cache for the resolver.
     cache: DnsCache,
+    /// Configuration for the resolver.
     config: ResolverConfig ,
 }
 

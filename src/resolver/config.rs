@@ -2,7 +2,7 @@ use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientT
 use crate::client::client_connection::ConnectionProtocol;
 
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 
 /// Configuration for resolver
 /// 

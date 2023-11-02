@@ -336,47 +336,47 @@ impl TSigRdata {
 impl TSigRdata{
 
     /// Sets the algorithm_name attibute with a value
-    fn set_algorithm_name(&mut self, algorithm_name: DomainName) {
+    pub fn set_algorithm_name(&mut self, algorithm_name: DomainName) {
         self.algorithm_name = algorithm_name;
     }
 
     /// Sets the time_signed attibute with a value
-    fn set_time_signed(&mut self, time_signed: u64) {
+    pub fn set_time_signed(&mut self, time_signed: u64) {
         self.time_signed = time_signed;
     }
 
     /// Sets the fudge attibute with a value
-    fn set_fudge(&mut self, fudge: u16) {
+    pub fn set_fudge(&mut self, fudge: u16) {
         self.fudge = fudge;
     }
 
     /// Sets the mac_size attibute with a value
-    fn set_mac_size(&mut self, mac_size: u16) {
+    pub fn set_mac_size(&mut self, mac_size: u16) {
         self.mac_size = mac_size;
     }
 
     /// Sets the mac attibute with a value
-    fn set_mac(&mut self, mac: Vec<u8>) {
+    pub fn set_mac(&mut self, mac: Vec<u8>) {
         self.mac = mac;
     }
 
     /// Sets the original_id attibute with a value
-    fn set_original_id(&mut self, original_id: u16) {
+    pub fn set_original_id(&mut self, original_id: u16) {
         self.original_id = original_id;
     }
 
     /// Sets the error attibute with a value
-    fn set_error(&mut self, error: u16) {
+    pub fn set_error(&mut self, error: u16) {
         self.error = error;
     }
 
     /// Sets the other_len attibute with a value
-    fn set_other_len(&mut self, other_len: u16) {
+    pub fn set_other_len(&mut self, other_len: u16) {
         self.other_len = other_len;
     }
 
     /// Sets the other_data attibute with a value
-    fn set_other_data(&mut self, other_data: Vec<u8>) {
+    pub fn set_other_data(&mut self, other_data: Vec<u8>) {
         self.other_data = other_data;
     }
 }

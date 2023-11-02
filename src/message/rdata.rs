@@ -35,6 +35,7 @@ pub enum Rdata {
     SomeCnameRdata(CnameRdata),
     SomeHinfoRdata(HinfoRdata),
     ////// Define here more rdata types //////
+    SomeTSigRdata(TSigRdata),
 }
 
 impl ToBytes for Rdata {
@@ -63,6 +64,7 @@ impl ToBytes for Rdata {
             Rdata::SomeTxtRdata(val) => val.to_bytes(),
             Rdata::SomeCnameRdata(val) => val.to_bytes(),
             Rdata::SomeHinfoRdata(val) => val.to_bytes(),
+            Rdata::SomeTSigRdata(val) => val.to_bytes(),
         }
     }
 }
@@ -212,7 +214,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
             }
             //////////////////////////////////////////////////////////////
             
+            250 => {
+                let rdata = TSigRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SomeTSigRdata(rdata.unwrap()))
+            }
             _ => Err("Format Error"),
         };
 

@@ -426,4 +426,15 @@ mod tsig_rdata_test {
 
         assert_eq!(tsig_rdata.get_time_signed(), 123456789);
     }
+
+    #[test]
+    fn set_and_get_fudge(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        assert_eq!(tsig_rdata.get_fudge(), 0);
+
+        tsig_rdata.set_fudge(1234);
+
+        assert_eq!(tsig_rdata.get_fudge(), 1234);
+    }
 }

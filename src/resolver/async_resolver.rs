@@ -69,13 +69,13 @@ impl AsyncResolver {
         match response {
             Ok(val) => {
                 let rdata = val.get_answer()[0].get_rdata();
-    
+                
                 match rdata {
                     Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
-                    _ => Err(ResolverError::Message("Error Response")),
+                    _ => Err(ResolverError::Message("Error Response"))?,
                 }
             }
-            Err(_) => Err(ResolverError::Message("Error Response")),
+            Err(_) => Err(ResolverError::Message("Error Response"))?,
         }
     }
 

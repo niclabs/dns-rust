@@ -30,8 +30,10 @@ pub struct AsyncResolver{
 
 impl AsyncResolver {
 
-    pub fn new(config: ResolverConfig)-> Self{
-        let async_resolver = AsyncResolver{
+    /// Creates a new `AsyncResolver` with the given configuration.
+    /// 
+    pub fn new(config: ResolverConfig)-> Self {
+        let async_resolver = AsyncResolver {
             cache: DnsCache::new(),
             config: config,
         };
@@ -109,6 +111,7 @@ mod async_resolver_test {
     use super::AsyncResolver;
     
     //TODO: test constructor
+
 
     //TODO: test inner_lookup
 

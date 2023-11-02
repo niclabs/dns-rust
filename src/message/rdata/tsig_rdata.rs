@@ -513,4 +513,35 @@ mod tsig_rdata_test {
 
         assert_eq!(tsig_rdata.get_other_data(), other_data);
     }
+
+    #[test]
+    fn to_bytes_test(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("hmac-md5.sig-alg.reg.int"));
+        tsig_rdata.set_algorithm_name(domain_name);
+        tsig_rdata.set_time_signed(123456789);
+        tsig_rdata.set_fudge(1234);
+        tsig_rdata.set_mac_size(4);
+        tsig_rdata.set_mac(vec![0xA1, 0xB2, 0xC3, 0xD4]);
+        tsig_rdata.set_original_id(1234);
+        tsig_rdata.set_error(0);
+        tsig_rdata.set_other_len(0);
+        tsig_rdata.set_other_data(Vec::new());
+
+        let bytes_to_test = tsig_rdata.to_bytes();
+
+        let bytes = vec![
+        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
+        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
+        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+        ];
+
+        for i in 0..bytes.len() {
+            assert_eq!(bytes_to_test[i], bytes[i]);
+        }
+    }
 }

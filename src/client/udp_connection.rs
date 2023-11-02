@@ -182,5 +182,28 @@ mod udp_connection_test{
         assert!(result.is_err());
     }
 
+    #[test]
+    fn send_query_udp(){
+
+        let server_addr_non_existent = IpAddr::V4(Ipv4Addr::new(8,8 ,8, 8));
+        let timeout = Duration::from_secs(2);
+
+        let conn = ClientUDPConnection::new(server_addr_non_existent, timeout);
+
+        let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_query =
+        DnsMessage::new_query_message(
+            domain_name,
+            Qtype::A,
+            Qclass::IN,
+            0,
+            false,
+            1);
+        
+        let result = conn.send(dns_query);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap().get_answer().len() > 0);
+    }
 
 }

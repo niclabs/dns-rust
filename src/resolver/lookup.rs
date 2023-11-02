@@ -130,6 +130,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     let retry_count = 0;
 
     for (conn_udp,conn_tcp) in name_servers.iter() { 
+        println!("[LOOKUP STUB] retry {}",retry_count);
         
         if retry_count > config.get_retry() {
             break;
@@ -161,22 +162,17 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                 }
             }
             _ => continue,
-        }
-
-        // Wake up task
-        if let Some(ref waker) = waker {
-            println!("[LOOKUP STUB] wake");
-            waker.clone().wake();
-        }
+        }  
     }
 
+    // Wake up task
+    if let Some(waker) = waker {
+        waker.wake();
+    }
     let mut future_query = referenced_query.lock().unwrap();
-    *future_query = future::ready(Ok(response)).boxed();
+    *future_query = future::ready(Ok(response.clone())).boxed();
 
-    //FIXME: increase counter
-
-    println!("[LOOKUP STUB] return");
-    
+    //FIXME: increase counter    
 }
 
 

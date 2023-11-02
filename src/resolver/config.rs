@@ -3,24 +3,45 @@ use crate::client::client_connection::ConnectionProtocol;
 
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
 #[derive(Clone)]
+
+/// Configuration for resolver
+/// 
+/// This struct contains all the necessary configurations to create a new
+/// resolver. This includes a list of connections to Name Servers, the socket
+/// address of the resolver, the quantity of retries before the resolver
+/// panic in a Temporary Error, availability of cache and recursive queries, 
+/// the chosen transport protocol and the timeout for the connections.
 pub struct ResolverConfig {
-    /// Servers
-    name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>,
-    /// Resolver address
+    /// Vector of tuples with the UDP and TCP connections to a Name Server.
+    name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
+    /// Socket address of the resolver.
     bind_addr: SocketAddr,
-    /// Queries quantity for each query, before the resolver panic in a Temporary Error
+    /// Maximum quantity of queries for each sent query. 
+    /// 
+    /// If this number is surpassed, the resolver is expected to panic in 
+    /// a Temporary Error.
     retry: u16,
-    /// Uses cache or not
+    /// Availability of cache in this resolver.
+    /// 
+    /// This is whether the resolver uses cache or not.
     cache_available: bool,
-    /// Uses recursive 
+    /// Availability of recursive queries in this resolver.
+    /// 
+    /// This is whether the resolver uses recursive queries or not.
     recursive_available: bool,
-    /// Transport for query
+    /// Transport protocol for queries.
+    /// 
+    /// This is the transport protocol used by the resolver to send queries
+    /// and corresponds to `ConnectionProtocol` enum type.
     protocol: ConnectionProtocol,
-    /// Timeout for connections
+    /// Timeout for connections.
+    /// 
+    /// This corresponds a `Duration` type.
     timeout: Duration,
 }
 
 impl ResolverConfig {
+    /// Creates a ResolverConfig with the given address, protocol and timeout
     pub fn new(resolver_addr: IpAddr, protocol: ConnectionProtocol, timeout: Duration) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),

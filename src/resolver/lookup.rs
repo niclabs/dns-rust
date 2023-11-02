@@ -133,6 +133,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
         println!("[LOOKUP STUB] retry {}",retry_count);
         
         if retry_count > config.get_retry() {
+            println!("[LOOKUP STUB] max tries");
             break;
         }
         
@@ -169,20 +170,20 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
 
     // Wake up task
     if let Some(waker) = waker {
+        println!("  [wake up task]");
         waker.wake();
     }
     let mut future_query = referenced_query.lock().unwrap();
     *future_query = future::ready(Ok(response.clone())).boxed();
+    println!("[save answer]")
    
 }
 
 
-
-
 #[cfg(test)]
 mod async_resolver_test {
+    use crate::dns_cache::cache_data;
     // use tokio::runtime::Runtime;
-    use crate::client::udp_connection::ClientUDPConnection;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
@@ -225,10 +226,41 @@ mod async_resolver_test {
     // TODO: lookup_stub test save query in lookup struct
 
     // TODO: lookup_stub numer of retries
+
+    #[ignore]
+    #[tokio::test]
+    async fn lookup_stub_max_tries(){
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+
+        let mut config: ResolverConfig = ResolverConfig::default();
+        config.set_retry(1);
+
+        let cache = DnsCache::new();
+        let waker = None;
+    
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed()));
+
+        // Create vector of name servers
+        let non_existente_server:IpAddr = IpAddr::V4(Ipv4Addr::new(234,1 ,4, 44));
+        let timeout: Duration = Duration::from_secs(20);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existente_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existente_server, timeout);
+
+        let name_servers = vec![(conn_udp,conn_tcp)];
+
+        lookup_stub(domain_name, cache, name_servers, waker,query,config).await;
+
+        //FIXME: is not working
+
+
+    }
+
      
     #[tokio::test]
-    async fn lookup_stub_test() {
-        let name = DomainName::new_from_string("example.com".to_string());
+    async fn lookup_stub_response() {
+        let domain_name = DomainName::new_from_string("example.com".to_string());
         let cache = DnsCache::new();
         let waker = None;
     
@@ -244,7 +276,7 @@ mod async_resolver_test {
         let config = ResolverConfig::default();
         
         let name_servers = vec![(conn_udp,conn_tcp)];
-        lookup_stub(name, cache, name_servers, waker,query,config).await;
-        // println!("[Test Result ] {:?}", result);
+        lookup_stub(domain_name, cache, name_servers, waker,query,config).await;
+
     }   
 }

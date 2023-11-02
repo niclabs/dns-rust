@@ -1,9 +1,12 @@
+use crate::domain_name;
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::Rtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use std::str::SplitWhitespace;
 
+#[derive(Clone, PartialEq, Debug)]
 /// Struct for the TSIG RData
 /// [RFC 2845](https://tools.ietf.org/html/rfc2845#section-3.5)
 /// [RFC 8945](https://tools.ietf.org/html/rfc8945#section-3.5)
@@ -174,6 +177,60 @@ impl TSigRdata {
         }
     }
 
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: &str,
+        host_name: String,
+        origin: String,
+    ) -> ResourceRecord{
+        let mut tsig_rdata = TSigRdata::new();
+
+        let algorithm_name_str = values.next().unwrap();
+        let time_signed = values.next().unwrap().parse::<u64>().unwrap();
+        let fudge = values.next().unwrap().parse::<u16>().unwrap();
+        let mac_size = values.next().unwrap().parse::<u16>().unwrap();
+        let mac_str = values.next().unwrap();
+        let original_id = values.next().unwrap().parse::<u16>().unwrap();
+        let error = values.next().unwrap().parse::<u16>().unwrap();
+        let other_len = values.next().unwrap().parse::<u16>().unwrap();
+        let other_data_str = values.next().unwrap();
+
+        let algorithm_name = DomainName::from_master_file(algorithm_name_str.to_string(), origin.clone());
+        let mac = mac_str.as_bytes().chunks(2)
+            .map(|b: &[u8]| u8::from_str_radix(std::str::from_utf8(b).unwrap(), 16).unwrap())
+            .collect::<Vec<u8>>();
+        let other_data = other_data_str.as_bytes().chunks(2)
+            .map(|b: &[u8]| u8::from_str_radix(std::str::from_utf8(b).unwrap(), 16).unwrap())
+            .collect::<Vec<u8>>();
+
+        tsig_rdata.set_algorithm_name(algorithm_name);
+        tsig_rdata.set_time_signed(time_signed);
+        tsig_rdata.set_fudge(fudge);
+        tsig_rdata.set_mac_size(mac_size);
+        tsig_rdata.set_mac(mac);
+        tsig_rdata.set_original_id(original_id);
+        tsig_rdata.set_error(error);
+        tsig_rdata.set_other_len(other_len);
+        tsig_rdata.set_other_data(other_data);
+
+        let rdata = Rdata::SomeTSigRdata(tsig_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(Rtype::TSIG);
+
+        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_rclass(rclass);
+        resource_record.set_ttl(ttl);
+        let rdlength = algorithm_name_str.len() as u16 + 18 + mac_size + other_len;
+        resource_record.set_rdlength(rdlength);
+
+        resource_record
+    }
 
     /// Set the time signed attribute from an array of bytes.
     fn set_time_signed_from_bytes(&mut self, bytes: &[u8]){

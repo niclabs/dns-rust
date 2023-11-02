@@ -193,7 +193,10 @@ impl TSigRdata {
         let original_id = values.next().unwrap().parse::<u16>().unwrap();
         let error = values.next().unwrap().parse::<u16>().unwrap();
         let other_len = values.next().unwrap().parse::<u16>().unwrap();
-        let other_data_str = values.next().unwrap();
+        let mut other_data_str = "";
+        if other_len != 0 {
+            other_data_str = values.next().unwrap();
+        }
 
         let algorithm_name = DomainName::from_master_file(algorithm_name_str.to_string(), origin.clone());
         let mac = mac_str.as_bytes().chunks(2)
@@ -333,47 +336,47 @@ impl TSigRdata {
 impl TSigRdata{
 
     /// Sets the algorithm_name attibute with a value
-    fn set_algorithm_name(&mut self, algorithm_name: DomainName) {
+    pub fn set_algorithm_name(&mut self, algorithm_name: DomainName) {
         self.algorithm_name = algorithm_name;
     }
 
     /// Sets the time_signed attibute with a value
-    fn set_time_signed(&mut self, time_signed: u64) {
+    pub fn set_time_signed(&mut self, time_signed: u64) {
         self.time_signed = time_signed;
     }
 
     /// Sets the fudge attibute with a value
-    fn set_fudge(&mut self, fudge: u16) {
+    pub fn set_fudge(&mut self, fudge: u16) {
         self.fudge = fudge;
     }
 
     /// Sets the mac_size attibute with a value
-    fn set_mac_size(&mut self, mac_size: u16) {
+    pub fn set_mac_size(&mut self, mac_size: u16) {
         self.mac_size = mac_size;
     }
 
     /// Sets the mac attibute with a value
-    fn set_mac(&mut self, mac: Vec<u8>) {
+    pub fn set_mac(&mut self, mac: Vec<u8>) {
         self.mac = mac;
     }
 
     /// Sets the original_id attibute with a value
-    fn set_original_id(&mut self, original_id: u16) {
+    pub fn set_original_id(&mut self, original_id: u16) {
         self.original_id = original_id;
     }
 
     /// Sets the error attibute with a value
-    fn set_error(&mut self, error: u16) {
+    pub fn set_error(&mut self, error: u16) {
         self.error = error;
     }
 
     /// Sets the other_len attibute with a value
-    fn set_other_len(&mut self, other_len: u16) {
+    pub fn set_other_len(&mut self, other_len: u16) {
         self.other_len = other_len;
     }
 
     /// Sets the other_data attibute with a value
-    fn set_other_data(&mut self, other_data: Vec<u8>) {
+    pub fn set_other_data(&mut self, other_data: Vec<u8>) {
         self.other_data = other_data;
     }
 }
@@ -382,8 +385,6 @@ impl TSigRdata{
 mod tsig_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
-    use crate::message::Rtype;
-    use crate::message::Rclass; 
     use crate::message::rdata::tsig_rdata::TSigRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -512,5 +513,96 @@ mod tsig_rdata_test {
         tsig_rdata.set_other_data(other_data.clone());
 
         assert_eq!(tsig_rdata.get_other_data(), other_data);
+    }
+
+    #[test]
+    fn to_bytes_test(){
+        let mut tsig_rdata = TSigRdata::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("hmac-md5.sig-alg.reg.int"));
+        tsig_rdata.set_algorithm_name(domain_name);
+        tsig_rdata.set_time_signed(123456789);
+        tsig_rdata.set_fudge(1234);
+        tsig_rdata.set_mac_size(4);
+        tsig_rdata.set_mac(vec![0xA1, 0xB2, 0xC3, 0xD4]);
+        tsig_rdata.set_original_id(1234);
+        tsig_rdata.set_error(0);
+        tsig_rdata.set_other_len(0);
+        tsig_rdata.set_other_data(Vec::new());
+
+        let bytes_to_test = tsig_rdata.to_bytes();
+
+        let bytes = vec![
+        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
+        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
+        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+        ];
+
+        for i in 0..bytes.len() {
+            assert_eq!(bytes_to_test[i], bytes[i]);
+        }
+    }
+
+    #[test]
+    fn from_bytes_test(){
+        let bytes = vec![
+        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
+        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
+        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+        ];
+
+        let tsig_rdata_result = TSigRdata::from_bytes(&bytes, &bytes);
+
+        let tsig_rdata = tsig_rdata_result.unwrap();
+
+        assert_eq!(tsig_rdata.get_algorithm_name().get_name(), String::from("hmac-md5.sig-alg.reg.int"));
+        assert_eq!(tsig_rdata.get_time_signed(), 123456789);
+        assert_eq!(tsig_rdata.get_fudge(), 1234);
+        assert_eq!(tsig_rdata.get_mac_size(), 4);
+        assert_eq!(tsig_rdata.get_mac(), vec![0xA1, 0xB2, 0xC3, 0xD4]);
+        assert_eq!(tsig_rdata.get_original_id(), 1234);
+        assert_eq!(tsig_rdata.get_error(), 0);
+        assert_eq!(tsig_rdata.get_other_len(), 0);
+        assert_eq!(tsig_rdata.get_other_data(), Vec::new());
+    }
+
+    #[test]
+    fn rr_from_master_file_test(){
+        let resource_record = TSigRdata::rr_from_master_file(
+        "hmac-md5.sig-alg.reg.int.
+        123456789
+        1234
+        4
+        A1B2C3D4
+        1234
+        0
+        0".split_whitespace(),
+        56, 
+        "IN", 
+        String::from("uchile.cl"),
+        String::from("uchile.cl"));
+
+        let expected_values = [String::from("hmac-md5.sig-alg.reg.int."), String::from("123456789"),
+                                            String::from("1234"), String::from("4"), String::from("A1 B2 C3 D4"),
+                                            String::from("1234"),String::from("0"),String::from("0")];
+        
+        let rdata = resource_record.get_rdata();
+
+        match rdata {
+            Rdata::SomeTSigRdata(val) => assert_eq!([val.get_algorithm_name().get_name(),
+            val.get_time_signed().to_string(),
+            val.get_fudge().to_string(),
+            val.get_mac_size().to_string(),
+            val.get_mac().iter().map(|b| format!("{:X}", b)).collect::<Vec<String>>().join(" "),
+            val.get_original_id().to_string(),
+            val.get_error().to_string(),
+            val.get_other_len().to_string()], expected_values),
+            _ => {},
+        }
     }
 }

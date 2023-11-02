@@ -126,7 +126,10 @@ mod tcp_connection_test{
     
     use super::*;
     use std::net::{IpAddr,Ipv4Addr};
-    
+    use crate::domain_name::DomainName;
+    use crate::message::type_qtype::Qtype;
+    use crate::message::class_qclass::Qclass;
+        
 
     #[test]
     fn create_tcp() {
@@ -188,17 +191,42 @@ mod tcp_connection_test{
     }
 
     #[test]
-    fn send() {
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+    fn send_query_tcp(){
+
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let _port: u16 = 8088;
-        let timeout = Duration::from_secs(100);
+        let timeout = Duration::from_secs(2);
 
         let conn_new = ClientTCPConnection::new(ip_addr,timeout);
-        let dns_msg = DnsMessage::new();
-        let response = conn_new.send(dns_msg);
-        println!("{:?}", response);
-
-
+        let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
+        let dns_query =
+        DnsMessage::new_query_message(
+            domain_name,
+            Qtype::A,
+            Qclass::IN,
+            0,
+            false,
+            1);
+        let response = conn_new.send(dns_query);
+        
+        assert!(response.is_ok());
+        assert!(response.unwrap().get_answer().len() > 0);
     }
+
+    #[test]
+    fn send_timeout() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let _port: u16 = 8088;
+        let timeout = Duration::from_secs(2);
+
+        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let dns_query = DnsMessage::new();
+        let response = conn_new.send(dns_query);
+
+        assert!(response.is_err());
+    }
+
+
+
 
 }

@@ -193,7 +193,10 @@ impl TSigRdata {
         let original_id = values.next().unwrap().parse::<u16>().unwrap();
         let error = values.next().unwrap().parse::<u16>().unwrap();
         let other_len = values.next().unwrap().parse::<u16>().unwrap();
-        let other_data_str = values.next().unwrap();
+        let mut other_data_str = "";
+        if other_len != 0 {
+            other_data_str = values.next().unwrap();
+        }
 
         let algorithm_name = DomainName::from_master_file(algorithm_name_str.to_string(), origin.clone());
         let mac = mac_str.as_bytes().chunks(2)
@@ -385,6 +388,7 @@ mod tsig_rdata_test {
     use crate::message::Rtype;
     use crate::message::Rclass; 
     use crate::message::rdata::tsig_rdata::TSigRdata;
+    use crate::message::resource_record;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
@@ -568,5 +572,40 @@ mod tsig_rdata_test {
         assert_eq!(tsig_rdata.get_error(), 0);
         assert_eq!(tsig_rdata.get_other_len(), 0);
         assert_eq!(tsig_rdata.get_other_data(), Vec::new());
+    }
+
+    #[test]
+    fn rr_from_master_file_test(){
+        let resource_record = TSigRdata::rr_from_master_file(
+        "hmac-md5.sig-alg.reg.int.
+        123456789
+        1234
+        4
+        A1B2C3D4
+        1234
+        0
+        0".split_whitespace(),
+        56, 
+        "IN", 
+        String::from("uchile.cl"),
+        String::from("uchile.cl"));
+
+        let expected_values = [String::from("hmac-md5.sig-alg.reg.int."), String::from("123456789"),
+                                            String::from("1234"), String::from("4"), String::from("A1 B2 C3 D4"),
+                                            String::from("1234"),String::from("0"),String::from("0")];
+        
+        let rdata = resource_record.get_rdata();
+
+        match rdata {
+            Rdata::SomeTSigRdata(val) => assert_eq!([val.get_algorithm_name().get_name(),
+            val.get_time_signed().to_string(),
+            val.get_fudge().to_string(),
+            val.get_mac_size().to_string(),
+            val.get_mac().iter().map(|b| format!("{:X}", b)).collect::<Vec<String>>().join(" "),
+            val.get_original_id().to_string(),
+            val.get_error().to_string(),
+            val.get_other_len().to_string()], expected_values),
+            _ => {},
+        }
     }
 }

@@ -121,6 +121,7 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use crate::client::config::TIMEOUT;
+    use crate::domain_name::DomainName;
     use crate::resolver::config::ResolverConfig;
     use crate::resolver::resolver_error::ResolverError;
     use super::AsyncResolver;
@@ -137,8 +138,9 @@ mod async_resolver_test {
     //TODO: test inner_lookup
     #[tokio::test]
     async fn inner_lookup() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        let domain_name = "example.com";
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name).await;
         assert!(response.is_ok());
     }

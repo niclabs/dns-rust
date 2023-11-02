@@ -109,8 +109,15 @@ mod async_resolver_test {
     use crate::resolver::config::ResolverConfig;
     use crate::resolver::resolver_error::ResolverError;
     use super::AsyncResolver;
+    use std::time::Duration;
     
-    //TODO: test constructor
+    #[test]
+    fn create_async_resolver() {
+        let config = ResolverConfig::default();
+        let resolver = AsyncResolver::new(config.clone());
+        assert_eq!(resolver.config, config);
+        assert_eq!(resolver.config.get_timeout(), Duration::from_secs(10));
+    }
 
 
     //TODO: test inner_lookup

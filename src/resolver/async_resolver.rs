@@ -60,7 +60,7 @@ impl AsyncResolver {
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
 
-        let transport_protocol_struct = ConnectionProtocol::from_str_to_connection_type(transport_protocol);
+        let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
         let response = self.inner_lookup(domain_name_struct).await;

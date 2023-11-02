@@ -20,9 +20,10 @@ pub enum ConnectionProtocol {
     UNKNOWN,
 }
 
-impl ConnectionProtocol {
+impl From<&str> for ConnectionProtocol {
     /// Function to connection type base on a str
-    pub fn from_str_to_connection_type(conn: &str) -> ConnectionProtocol{
+    // from_str_to_connection_type
+    fn from(conn: &str) -> ConnectionProtocol {
         match conn {
             "UDP" => ConnectionProtocol::UDP,
             "TCP" => ConnectionProtocol::TCP,

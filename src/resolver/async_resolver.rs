@@ -84,6 +84,18 @@ impl AsyncResolver {
     /// Performs a DNS lookup for the given domain name and returns the 
     /// corresponding IP address. This lookup is done asynchronously using
     /// the future `LookupIpFutureStub`.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use dns_resolver::resolver::config::ResolverConfig;
+    /// use dns_resolver::resolver::async_resolver::AsyncResolver;
+    /// 
+    /// let resolver = AsyncResolver::new(ResolverConfig::default());
+    /// let domain_name = DomainName::new_from_string("example.com".to_string());
+    /// let response = resolver.inner_lookup(domain_name).await;
+    /// assert!(response.is_ok());
+    /// ```
     async fn inner_lookup(&self, domain_name: DomainName) -> Result<DnsMessage, ResolverError> {
 
         // Async query

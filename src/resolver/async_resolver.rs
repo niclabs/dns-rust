@@ -38,6 +38,7 @@ impl AsyncResolver {
 
         let response = self.inner_lookup(domain_name_struct).await;
         
+        //TODO: parse header and personalised error type 
         match response {
             Ok(val) => {
                 let rdata = val.get_answer()[0].get_rdata();

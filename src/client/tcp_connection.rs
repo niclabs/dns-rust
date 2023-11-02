@@ -13,9 +13,9 @@ use std::io::ErrorKind;
 type ClientResult<T> = Result<T, ClientError>;
 #[derive(Clone,Copy)]
 pub struct ClientTCPConnection {
-    //addr client
+    /// Client address
     server_addr: IpAddr,
-    //timeout read time
+    /// Read time timeout
     timeout: Duration,
 }
 

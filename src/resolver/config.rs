@@ -25,6 +25,10 @@ pub struct ResolverConfig {
     /// 
     /// This is whether the resolver uses cache or not.
     cache_available: bool,
+    /// Activation of cache in this resolver.
+    /// 
+    /// This is whether the resolver uses cache or not when it is available.
+    cache_enabled: bool,
     /// Availability of recursive queries in this resolver.
     /// 
     /// This is whether the resolver uses recursive queries or not.
@@ -48,6 +52,7 @@ impl ResolverConfig {
             bind_addr: SocketAddr::new(resolver_addr, 53),
             retry: 30,
             cache_available: true,
+            cache_enabled: true,
             recursive_available: false,
             protocol: protocol,
             timeout: timeout,
@@ -71,6 +76,7 @@ impl ResolverConfig {
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
             retry: 30,
             cache_available: true,
+            cache_enabled: true,
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,
             timeout: timeout,

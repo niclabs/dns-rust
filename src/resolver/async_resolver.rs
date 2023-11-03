@@ -135,7 +135,6 @@ mod async_resolver_test {
     use crate::client::config::TIMEOUT;
     use crate::domain_name::DomainName;
     use crate::resolver::config::ResolverConfig;
-    use crate::resolver::resolver_error::ResolverError;
     use super::AsyncResolver;
     use std::time::Duration;
     
@@ -158,7 +157,7 @@ mod async_resolver_test {
     }
 
     #[ignore]
-    #[tokio::test]
+    #[tokio::test] //TODO
     async fn lookup_ip() {
 
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -176,7 +175,7 @@ mod async_resolver_test {
     }
 
     #[ignore]
-    #[tokio::test]
+    #[tokio::test]  //TODO
     async fn lookupip_example() {
         println!("[TEST INIT]");
 

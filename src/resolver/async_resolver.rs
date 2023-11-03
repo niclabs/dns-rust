@@ -238,7 +238,7 @@ mod async_resolver_test {
             Ok(Ok(_)) => {
                 panic!("Se esperaba un error de timeout, pero se resolvió exitosamente");
             }
-            Ok(Err(err)) => {
+            Ok(Err(_err)) => {
                assert!(true);
             }
             Err(_) => {

@@ -1,10 +1,10 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
-
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 
-/// Configuration for resolver
+/// Configuration for the resolver.
 /// 
 /// This struct contains all the necessary configurations to create a new
 /// resolver. This includes a list of connections to Name Servers, the socket
@@ -45,7 +45,22 @@ pub struct ResolverConfig {
 }
 
 impl ResolverConfig {
-    /// Creates a ResolverConfig with the given address, protocol and timeout
+    /// Creates a ResolverConfig with the given address, protocol and timeout.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::time::Duration;
+    /// use dns_resolver::client::client_connection::ConnectionProtocol;
+    /// use dns_resolver::resolver::config::ResolverConfig;
+    /// 
+    /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+    /// let protocol = ConnectionProtocol::UDP;
+    /// let timeout = Duration::from_secs(TIMEOUT);
+    /// let resolver_config = ResolverConfig::new(addr, protocol, timeout);
+    /// assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 53));
+    /// ```
     pub fn new(resolver_addr: IpAddr, protocol: ConnectionProtocol, timeout: Duration) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),
@@ -57,16 +72,13 @@ impl ResolverConfig {
             protocol: protocol,
             timeout: timeout,
         };
-
         resolver_config
     }
     
     pub fn default()-> Self {
-        
         // FIXME: these are examples values
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
         let timeout = Duration::from_secs(10);
-
     
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
@@ -81,12 +93,28 @@ impl ResolverConfig {
             protocol: ConnectionProtocol::UDP,
             timeout: timeout,
         };
-
         resolver_config
     }
 
+    /// Adds a new Name Server to the list of Name Servers.
+    /// 
+    /// This corresponds to a tuple of UDP and TCP connections to a Name Server
+    /// of the type `(ClientUDPConnection, ClientTCPConnection)`.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::time::Duration;
+    /// use dns_resolver::client::client_connection::ConnectionProtocol;
+    /// use dns_resolver::resolver::config::ResolverConfig;
+    /// 
+    /// let mut resolver_config = ResolverConfig::default();
+    /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+    /// resolver_config.add_servers(addr);
+    /// assert_eq!(resolver_config.get_name_servers().len(), 2);
+    /// ```
     pub fn add_servers(&mut self, addr: IpAddr) {
-
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout);
         
@@ -96,8 +124,6 @@ impl ResolverConfig {
     pub fn remove_server(&mut self) {
         self.name_servers = Vec::new();
     }
-
-
 }
 
 ///Getters
@@ -182,5 +208,13 @@ mod tests_resolver_config {
         let resolver_config = ResolverConfig::new(addr, protocol, timeout);
 
         assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 53));
+    }
+
+    #[test]
+    fn add_servers() {
+        let mut resolver_config = ResolverConfig::default();
+        let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        resolver_config.add_servers(addr);
+        assert_eq!(resolver_config.get_name_servers().len(), 2);
     }
 }

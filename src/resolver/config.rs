@@ -197,6 +197,11 @@ impl ResolverConfig{
     }
 
     /// Sets whether the cache is enabled or not.
+    pub fn set_cache_enabled(&mut self, cache_enabled:bool) {
+        self.cache_enabled = cache_enabled;
+    }
+
+    /// Sets whether the cache is enabled or not.
     pub fn set_recursive_available(&mut self, recursive_available:bool) {
         self.recursive_available = recursive_available;
     }

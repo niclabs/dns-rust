@@ -19,16 +19,27 @@ use crate::resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
 
-/// Future returned fron AsyncResolver when performing a lookup with rtype A
-pub struct LookupIpFutureStub  {
+/// Future returned from `AsyncResolver` when performing a lookup with Rtype A.
+/// 
+/// This implementation of `Future` is used to send a single query to a DNS server.
+/// When this future is polled by `AsyncResolver`, 
+pub struct LookupIpFutureStub {
+    /// Domain Name associated with the query.
     name: DomainName,
+    /// Resolver configuration.
     config: ResolverConfig,
+    /// Future that contains the response of the query.
+    /// 
+    /// The `Output` of this future is a `Result<DnsMessage, ResolverError>`.
+    /// The returned `DnsMessage` contains the corresponding response of the query.
     query_answer: Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
+    /// Cache for the resolver.
     cache: DnsCache,
+    /// Waker for the future.
     waker: Option<Waker>,
 }
 
-impl Future for LookupIpFutureStub{ 
+impl Future for LookupIpFutureStub { 
     type Output = Result<DnsMessage, ResolverError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -59,10 +70,15 @@ impl Future for LookupIpFutureStub{
             }
         }
     }
-
 }
     
 impl LookupIpFutureStub {
+
+    /// Creates a new `LookupIpFutureStub` with the given configuration.
+    /// 
+    /// The resulting future created by default contains an empty `DnsMessage`
+    /// which is going to be replaced by the response of the query after
+    /// `LookupIpFutureStub` is polled.
     pub fn lookup(
         name: DomainName,
         config: ResolverConfig,
@@ -72,11 +88,11 @@ impl LookupIpFutureStub {
         Self { 
             name: name,
             config: config,
-            query_answer:  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
+            query_answer:  
+            Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
             cache: cache,
             waker: None,
         }
-
     }
 
 }

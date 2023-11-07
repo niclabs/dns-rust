@@ -121,8 +121,24 @@ impl ResolverConfig {
         self.name_servers.push((conn_udp,conn_tcp));
     }
 
-    // TODO: remove all servers??
-    pub fn remove_server(&mut self) {
+    /// Remove all servers from the list of Name Servers.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::time::Duration;
+    /// use dns_resolver::client::client_connection::ConnectionProtocol;
+    /// use dns_resolver::resolver::config::ResolverConfig;
+    /// 
+    /// let mut resolver_config = ResolverConfig::default();
+    /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+    /// resolver_config.add_servers(addr);
+    /// assert_eq!(resolver_config.get_name_servers().len(), 2);
+    /// resolver_config.remove_servers();
+    /// assert_eq!(resolver_config.get_name_servers().len(), 0);
+    /// ```
+    pub fn remove_servers(&mut self) {
         self.name_servers = Vec::new();
     }
 }
@@ -344,5 +360,15 @@ mod tests_resolver_config {
         resolver_config.set_cache_enabled(false);
 
         assert_eq!(resolver_config.get_cache_enabled(), false);
+    }
+
+    #[test]
+    fn remove_servers() {
+        let mut resolver_config = ResolverConfig::default();
+        let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        resolver_config.add_servers(addr);
+        assert_eq!(resolver_config.get_name_servers().len(), 2);
+        resolver_config.remove_servers();
+        assert_eq!(resolver_config.get_name_servers().len(), 0);
     }
 }

@@ -292,5 +292,16 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_cache_available(), false);
     }
 
+    #[test]
+    fn get_and_set_recursive_available() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_recursive_available(), false);
+
+        resolver_config.set_recursive_available(true);
+
+        assert_eq!(resolver_config.get_recursive_available(), true);
+    }
+
  
 }

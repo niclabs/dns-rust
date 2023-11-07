@@ -192,17 +192,17 @@ impl ResolverConfig{
     }
 
     /// Sets whether the cache is enabled or not.
-    pub fn set_recursive_available(&mut self,recursive_available:bool) {
+    pub fn set_recursive_available(&mut self, recursive_available:bool) {
         self.recursive_available = recursive_available;
     }
 
     /// Sets the transport protocol for queries.
-    pub fn set_protocol(&mut self,protocol:ConnectionProtocol) {
+    pub fn set_protocol(&mut self, protocol:ConnectionProtocol) {
         self.protocol = protocol;
     }
 
     /// Sets the timeout for connections.
-    pub fn set_timeout(&mut self,timeout: Duration) {
+    pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = timeout;
     }
 }
@@ -301,6 +301,17 @@ mod tests_resolver_config {
         resolver_config.set_recursive_available(true);
 
         assert_eq!(resolver_config.get_recursive_available(), true);
+    }
+
+    #[test]
+    fn get_and_set_protocol() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_protocol(), ConnectionProtocol::UDP);
+
+        resolver_config.set_protocol(ConnectionProtocol::TCP);
+
+        assert_eq!(resolver_config.get_protocol(), ConnectionProtocol::TCP);
     }
 
  

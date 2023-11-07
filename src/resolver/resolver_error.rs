@@ -12,6 +12,10 @@ pub enum ResolverError {
     /// An error with a message to display.
     #[error("{0}")]
     Message(&'static str), 
+
+    /// An error when the answer is empty.
+    #[error("empty query")]
+    EmptyQuery,
 }
 
 // Debug trait implementation for `?` formatting
@@ -20,7 +24,8 @@ impl Debug for ResolverError {
         use self::ResolverError::*;
         match self {
             Io(err) => write!(f, "io error: {}", err),
-            Message(err) => write!(f, "{}", err),
+            Message(err) => write!(f, "Error Response: {}", err),
+            EmptyQuery => write!(f, "Empty query"),
         }
     }
 }

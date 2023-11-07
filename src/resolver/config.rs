@@ -121,6 +121,7 @@ impl ResolverConfig {
         self.name_servers.push((conn_udp,conn_tcp));
     }
 
+    // TODO: remove all servers??
     pub fn remove_server(&mut self) {
         self.name_servers = Vec::new();
     }
@@ -195,6 +196,9 @@ impl ResolverConfig{
 mod tests_resolver_config {
     //TODO: FK test config and documentation
 
+    use crate::client::client_connection::ClientConnection;
+    use crate::client::tcp_connection::ClientTCPConnection;
+    use crate::client::udp_connection::ClientUDPConnection;
     use crate::client::{config::TIMEOUT, client_connection::ConnectionProtocol};
     use crate::resolver::config::ResolverConfig;
     use std::net::{IpAddr,Ipv4Addr, SocketAddr};
@@ -217,4 +221,26 @@ mod tests_resolver_config {
         resolver_config.add_servers(addr);
         assert_eq!(resolver_config.get_name_servers().len(), 2);
     }
+
+    #[test]
+    fn get_and_set_name_servers() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_name_servers().len(), 1);
+
+        let addr_1 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let tcp_conn_1 = ClientTCPConnection::new(addr_1, Duration::from_secs(TIMEOUT));
+        let udp_conn_1 = ClientUDPConnection::new(addr_1, Duration::from_secs(TIMEOUT));
+
+        let addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
+        let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
+        let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
+
+        let name_servers = vec![(udp_conn_1, tcp_conn_1), (udp_conn_2, tcp_conn_2)];
+        resolver_config.set_name_servers(name_servers.clone());
+
+        assert_eq!(resolver_config.get_name_servers(), name_servers);
+    }
+
+ 
 }

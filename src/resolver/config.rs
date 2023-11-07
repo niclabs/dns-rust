@@ -270,5 +270,16 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 10));
     }
 
+    #[test]
+    fn get_and_set_retry() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_retry(), 30);
+
+        resolver_config.set_retry(10);
+
+        assert_eq!(resolver_config.get_retry(), 10);
+    }
+
  
 }

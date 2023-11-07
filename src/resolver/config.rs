@@ -130,30 +130,38 @@ impl ResolverConfig {
 ///Getters
 impl ResolverConfig {
 
-    pub fn get_name_servers(&self) -> Vec<(ClientUDPConnection,ClientTCPConnection)>{
+    /// Returns the list of Name Servers.
+    pub fn get_name_servers(&self) -> Vec<(ClientUDPConnection,ClientTCPConnection)> {
         self.name_servers.clone()
     }
 
+    /// Returns the socket address of the resolver.
     pub fn get_addr(&self) -> SocketAddr {
         self.bind_addr
     }
 
-    pub fn get_retry(&self) -> u16{
+    /// Returns the quantity of retries before the resolver panic in a
+    /// Temporary Error.
+    pub fn get_retry(&self) -> u16 {
         self.retry
     }
 
-    pub fn get_cache_available(&self) -> bool{
+    /// Returns whether the cache is available or not.
+    pub fn get_cache_available(&self) -> bool {
         self.cache_available 
     }
 
-    pub fn get_recursive_available(&self) -> bool{
+    /// Returns whether the cache is enabled or not.
+    pub fn get_recursive_available(&self) -> bool {
         self.recursive_available
     }
 
+    /// Returns the transport protocol for queries.
     pub fn get_protocol(&self) -> ConnectionProtocol {
         self.protocol  
     }
 
+    /// Returns the timeout for connections.
     pub fn get_timeout(&self) -> Duration {
         self.timeout
     }
@@ -162,31 +170,39 @@ impl ResolverConfig {
 ///Setters
 impl ResolverConfig{
 
-    pub fn set_name_servers(&mut self,list_name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>) {
+    /// Sets the list of Name Servers.
+    pub fn set_name_servers(&mut self, list_name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>) {
         self.name_servers = list_name_servers;
     }
 
-    pub fn set_ddr(&mut self,addr:SocketAddr){
+    /// Sets the socket address of the resolver.
+    pub fn set_ddr(&mut self,addr:SocketAddr) {
         self.bind_addr = addr;
     }
 
-    pub fn set_retry(&mut self, retry:u16){
+    /// Sets the quantity of retries before the resolver panic in a
+    /// Temporary Error.
+    pub fn set_retry(&mut self, retry:u16) {
         self.retry = retry;
     }
 
-    pub fn set_cache_available(&mut self, cache_available:bool){
+    /// Sets whether the cache is available or not.
+    pub fn set_cache_available(&mut self, cache_available:bool) {
         self.cache_available = cache_available;
     }
 
-    pub fn set_recursive_available(&mut self,recursive_available:bool){
+    /// Sets whether the cache is enabled or not.
+    pub fn set_recursive_available(&mut self,recursive_available:bool) {
         self.recursive_available = recursive_available;
     }
 
-    pub fn set_protocol(&mut self,protocol:ConnectionProtocol){
+    /// Sets the transport protocol for queries.
+    pub fn set_protocol(&mut self,protocol:ConnectionProtocol) {
         self.protocol = protocol;
     }
 
-    pub fn set_timeout(&mut self,timeout: Duration){
+    /// Sets the timeout for connections.
+    pub fn set_timeout(&mut self,timeout: Duration) {
         self.timeout = timeout;
     }
 }

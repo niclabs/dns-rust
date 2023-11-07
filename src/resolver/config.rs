@@ -335,5 +335,14 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_timeout(), Duration::from_secs(10));
     }
 
- 
+    #[test]
+    fn get_and_set_cache_enabled() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_cache_enabled(), true);
+
+        resolver_config.set_cache_enabled(false);
+
+        assert_eq!(resolver_config.get_cache_enabled(), false);
+    }
 }

@@ -152,6 +152,11 @@ impl ResolverConfig {
     }
 
     /// Returns whether the cache is enabled or not.
+    pub fn get_cache_enabled(&self) -> bool {
+        self.cache_enabled
+    }
+
+    /// Returns whether the cache is enabled or not.
     pub fn get_recursive_available(&self) -> bool {
         self.recursive_available
     }

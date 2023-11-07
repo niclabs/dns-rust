@@ -314,5 +314,16 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_protocol(), ConnectionProtocol::TCP);
     }
 
+    #[test]
+    fn get_and_set_timeout() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_timeout(), Duration::from_secs(TIMEOUT));
+
+        resolver_config.set_timeout(Duration::from_secs(10));
+
+        assert_eq!(resolver_config.get_timeout(), Duration::from_secs(10));
+    }
+
  
 }

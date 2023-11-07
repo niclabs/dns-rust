@@ -258,5 +258,17 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_name_servers(), name_servers);
     }
 
+    #[test]
+    fn get_and_set_addr() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_addr(), SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333));
+
+        let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        resolver_config.set_ddr(SocketAddr::new(addr, 10));
+
+        assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 10));
+    }
+
  
 }

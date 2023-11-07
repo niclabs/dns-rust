@@ -281,5 +281,16 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_retry(), 10);
     }
 
+    #[test]
+    fn get_and_set_cache_available() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_cache_available(), true);
+
+        resolver_config.set_cache_available(false);
+
+        assert_eq!(resolver_config.get_cache_available(), false);
+    }
+
  
 }

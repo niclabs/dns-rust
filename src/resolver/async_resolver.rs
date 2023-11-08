@@ -90,17 +90,33 @@ impl AsyncResolver {
     /// of type `DnsMessage` to the corresponding IP address when the response was
     /// successful. If the response was not successful, it will return the corresponding
     /// error message to the Client.
+    /// 
+    /// This method only return queries of type A.
     fn parse_response(&self, response: Result<DnsMessage, ResolverError>) -> Result<IpAddr, ClientError> {
-        match response {
-            Ok(val) => {
-                let rdata = val.get_answer()[0].get_rdata();
-                
-                match rdata {
-                    Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
-                    _ => Err(ClientError::Message("Error Response"))?,
-                }
+        let dns_mgs = match response {
+            Ok(val) => val,
+            Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
+        };
+
+        let header = dns_mgs.get_header();
+        let rcode = header.get_rcode();
+        if rcode == 0 {
+            let answer = dns_mgs.get_answer();
+            let first_answer_ref = &answer[0];
+            let rdata = first_answer_ref.get_rdata();
+            match rdata {
+                Rdata::SomeARdata(ip) => return Ok(ip.get_address()), 
+                _ => Err(ClientError::TemporaryError("Response does not match type A."))?, // FIXME: change maybe to data not found error 
+                // which according to RFC is a resolver error?? but this is client error??
             }
-            Err(_) => Err(ClientError::Message("Error Response"))?,
+        } 
+        match rcode {
+            1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
+            2 => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
+            3 => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
+            4 => Err(ClientError::NotImplemented("The name server does not support the requested kind of query."))?,
+            5 => Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons."))?,
+            _ => Err(ClientError::ResponseError(rcode))?,
         }
     }
 

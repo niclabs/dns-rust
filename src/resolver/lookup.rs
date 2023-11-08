@@ -23,9 +23,11 @@ use crate::client::tcp_connection::ClientTCPConnection;
 /// 
 /// This implementation of `Future` is used to send a single query to a DNS server.
 /// When this future is polled by `AsyncResolver`, 
-pub struct LookupIpFutureStub {
+pub struct LookupFutureStub {
     /// Domain Name associated with the query.
     name: DomainName,
+    /// Qtype of search query
+    record_type: Qtype,
     /// Resolver configuration.
     config: ResolverConfig,
     /// Future that contains the response of the query.
@@ -39,7 +41,7 @@ pub struct LookupIpFutureStub {
     waker: Option<Waker>,
 }
 
-impl Future for LookupIpFutureStub { 
+impl Future for LookupFutureStub { 
     type Output = Result<DnsMessage, ResolverError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -57,6 +59,7 @@ impl Future for LookupIpFutureStub {
                 tokio::spawn(
                     lookup_stub(
                         self.name.clone(),
+                        self.record_type,
                         self.cache.clone(),
                         self.config.get_name_servers(),
                         self.waker.clone(),
@@ -72,7 +75,7 @@ impl Future for LookupIpFutureStub {
     }
 }
     
-impl LookupIpFutureStub {
+impl LookupFutureStub {
 
     /// Creates a new `LookupIpFutureStub` with the given configuration.
     /// 
@@ -81,12 +84,14 @@ impl LookupIpFutureStub {
     /// `LookupIpFutureStub` is polled.
     pub fn lookup(
         name: DomainName,
+        qtype: Qtype,
         config: ResolverConfig,
         cache: DnsCache
     ) -> Self {
         
         Self { 
             name: name,
+            record_type: qtype,
             config: config,
             query_answer:  
             Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
@@ -98,6 +103,7 @@ impl LookupIpFutureStub {
 }
 pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
+    record_type: Qtype,
     mut cache: DnsCache,
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
@@ -114,7 +120,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     // Create query
     let mut new_query = DnsMessage::new_query_message(
         name.clone(),
-        Qtype::A,
+        record_type,
         Qclass::IN,
         0,
         false,
@@ -191,9 +197,8 @@ mod async_resolver_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
-    use super::lookup_stub;
-    use tokio::time::Duration;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+    use std::time::Duration;
     use super::*;
 
     #[test]
@@ -210,8 +215,11 @@ mod async_resolver_test {
         let resource_record = ResourceRecord::new(a_rdata);
         cache.add(domain_name_cache, resource_record);
 
-        let lookup_future = LookupIpFutureStub::lookup(
+        let record_type = Qtype::A;
+
+        let lookup_future = LookupFutureStub::lookup(
             domain_name,
+            record_type,
             config,
             cache
         );
@@ -231,6 +239,7 @@ mod async_resolver_test {
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
+        let record_type = Qtype::A;
 
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -241,7 +250,7 @@ mod async_resolver_test {
         config.set_retry(1);
         let cache = DnsCache::new();
 
-        let response_future = LookupIpFutureStub::lookup(domain_name, config, cache).await;
+        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config, cache).await;
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
@@ -266,9 +275,36 @@ mod async_resolver_test {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
 
         let config = ResolverConfig::default();
+        let record_type = Qtype::A;
         
         let name_servers = vec![(conn_udp,conn_tcp)];
-        lookup_stub(domain_name, cache, name_servers, waker,query,config).await;
+        lookup_stub(domain_name,record_type, cache, name_servers, waker,query,config).await;
 
     }   
+
+    #[tokio::test]
+    async fn lookup_stub_ns_response() {
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let cache = DnsCache::new();
+        let waker = None;
+    
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed()));
+
+        // Create vect of name servers
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(20);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+
+        let config = ResolverConfig::default();
+        let record_type = Qtype::A;
+        
+        let name_servers = vec![(conn_udp,conn_tcp)];
+        lookup_stub(domain_name, record_type, cache, name_servers, waker,query,config).await;
+
+    } 
+
+    //TODO: lookup_stub para diferentes qtype
+    
 }

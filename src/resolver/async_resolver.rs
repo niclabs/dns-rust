@@ -4,11 +4,11 @@ use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
-use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
+use crate::resolver::{config::ResolverConfig,lookup::LookupFutureStub};
 use crate::message::rdata::Rdata;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::resolver::resolver_error::ResolverError;
-
+use crate:: message::type_qtype::Qtype;
 /// Asynchronous resolver for DNS queries.
 /// 
 /// This struct contains a cache and a configuration for the resolver. 
@@ -67,7 +67,7 @@ impl AsyncResolver {
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct).await;
+        let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
 
         return self.parse_response(response);
         // match response {
@@ -121,11 +121,12 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
-    async fn inner_lookup(&self, domain_name: DomainName) -> Result<DnsMessage, ResolverError> {
+    async fn inner_lookup(&self, domain_name: DomainName,qtype:Qtype) -> Result<DnsMessage, ResolverError> {
 
         // Async query
-        let response = LookupIpFutureStub::lookup(
+        let response = LookupFutureStub::lookup(
             domain_name,
+            qtype,
             self.config.clone(),
             self.cache.clone())
             .await;
@@ -147,8 +148,28 @@ impl AsyncResolver {
     /// 
     /// General lookup function
     /// 
-    pub async fn lookup() {
-        unimplemented!()
+    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<IpAddr,ResolverError>{
+        println!("[LOOKUP ASYNCRESOLVER]");
+
+        let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
+        let qtype_struct = Qtype::from_str_to_qtype(qtype);
+        let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
+        self.config.set_protocol(transport_protocol_struct);
+
+        let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
+        
+        //TODO: parse header and personalised error type 
+        match response {
+            Ok(val) => {
+                let rdata = val.get_answer()[0].get_rdata();
+                
+                match rdata {
+                    Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
+                    _ => Err(ResolverError::Message("Error Response"))?,
+                }
+            }
+            Err(_) => Err(ResolverError::Message("Error Response"))?,
+        }
     }
 
 }
@@ -158,10 +179,11 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use crate::client::config::TIMEOUT;
-    use crate::domain_name::DomainName;
+    use crate:: message::type_qtype::Qtype;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
     use std::time::Duration;
+    use crate::domain_name::DomainName;
     
     #[test]
     fn create_async_resolver() {
@@ -171,45 +193,29 @@ mod async_resolver_test {
         assert_eq!(resolver.config.get_timeout(), Duration::from_secs(TIMEOUT));
     }
 
-    //TODO: test inner_lookup
     #[tokio::test]
     async fn inner_lookup() {
         // Create a new resolver with default values
         let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let response = resolver.inner_lookup(domain_name).await;
+        let qtype = Qtype::A;
+        let response = resolver.inner_lookup(domain_name,qtype).await;
+
+        //FIXME: add assert
         assert!(response.is_ok());
-    }
+    } 
 
-    #[ignore]
-    #[tokio::test] //TODO
-    async fn lookup_ip() {
+    #[tokio::test]
+    async fn inner_lookup_ns() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::NS;
+        let response = resolver.inner_lookup(domain_name,qtype).await;
+        assert!(response.is_ok());
 
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-    
-        //let runtime = Runtime::new().unwrap();
-        let response = resolver.lookup_ip("example.com", "UDP");
-
-        println!("[TEST FINISH=> {}]",response.await.unwrap());
-        // TODO: add assert test Ip example.com
-
-        //let response = runtime.block_on(resolver.lookup_ip("niclabs.cl","TCP"));
-
-        // TODO: add assert test ip niclabs.cl
-
-    }
-
-    #[ignore]
-    #[tokio::test]  //TODO
-    async fn lookupip_example() {
-        println!("[TEST INIT]");
-
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-      
-        let response = resolver.lookup_ip("example.com", "UDP").await.unwrap();
-
-        println!("[TEST FINISH=> {}]",response);
-   
+        //FIXME: add assert
+        println!("Response: {:?}",response);
     }
 
     #[ignore]
@@ -224,6 +230,20 @@ mod async_resolver_test {
     
         assert!(!ip_address.is_unspecified());
     }
+
+    #[ignore]
+    #[tokio::test]
+    async fn lookup_ns() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qtype = "NS";
+        let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+        
+        println!("RESPONSE : {}",response);
+    }
+
+
 
     // async fn reverse_query() {
     //     let resolver = AsyncResolver::new(ResolverConfig::default());
@@ -284,4 +304,8 @@ mod async_resolver_test {
     //TODO: diferent types of errors
 
     //TODO: bad domain name written
+
+    //TODO: prbar diferentes qtype
+
+
 }

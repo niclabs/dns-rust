@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug,Copy)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Qtype {
     A,

@@ -16,6 +16,10 @@ pub enum ResolverError {
     /// An error when the answer is empty.
     #[error("empty query")]
     EmptyQuery,
+
+    /// An error when the resolver surpassed the number of retries allowed.
+    #[error("retries limit exceeded")]
+    RetriesLimitExceeded,
 }
 
 // Debug trait implementation for `?` formatting
@@ -26,6 +30,7 @@ impl Debug for ResolverError {
             Io(err) => write!(f, "io error: {}", err),
             Message(err) => write!(f, "Error Response: {}", err),
             EmptyQuery => write!(f, "Empty query"),
+            RetriesLimitExceeded => write!(f, "Retries limit exceeded"),
         }
     }
 }

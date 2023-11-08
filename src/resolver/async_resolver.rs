@@ -153,9 +153,11 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use crate::client::config::TIMEOUT;
+    use crate:: message::type_qtype::Qtype;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
     use std::time::Duration;
+    use crate::domain_name::DomainName;
     
     #[test]
     fn create_async_resolver() {
@@ -165,45 +167,29 @@ mod async_resolver_test {
         assert_eq!(resolver.config.get_timeout(), Duration::from_secs(TIMEOUT));
     }
 
-    //TODO: test inner_lookup
-    // #[tokio::test]
-    // async fn inner_lookup() {
-    //     // Create a new resolver with default values
-    //     let resolver = AsyncResolver::new(ResolverConfig::default());
-    //     let domain_name = DomainName::new_from_string("example.com".to_string());
-    //     let response = resolver.inner_lookup(domain_name).await;
-    //     assert!(response.is_ok());
-    // }
+    #[tokio::test]
+    async fn inner_lookup() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::A;
+        let response = resolver.inner_lookup(domain_name,qtype).await;
 
-    #[ignore]
-    #[tokio::test] //TODO
-    async fn lookup_ip() {
+        //FIXME: add assert
+        assert!(response.is_ok());
+    } 
 
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-    
-        //let runtime = Runtime::new().unwrap();
-        let response = resolver.lookup_ip("example.com", "UDP");
+    #[tokio::test]
+    async fn inner_lookup_ns() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::NS;
+        let response = resolver.inner_lookup(domain_name,qtype).await;
+        assert!(response.is_ok());
 
-        println!("[TEST FINISH=> {}]",response.await.unwrap());
-        // TODO: add assert test Ip example.com
-
-        //let response = runtime.block_on(resolver.lookup_ip("niclabs.cl","TCP"));
-
-        // TODO: add assert test ip niclabs.cl
-
-    }
-
-    #[ignore]
-    #[tokio::test]  //TODO
-    async fn lookupip_example() {
-        println!("[TEST INIT]");
-
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-      
-        let response = resolver.lookup_ip("example.com", "UDP").await.unwrap();
-
-        println!("[TEST FINISH=> {}]",response);
-   
+        //FIXME: add assert
+        println!("Response: {:?}",response);
     }
 
     #[ignore]
@@ -218,6 +204,20 @@ mod async_resolver_test {
     
         assert!(!ip_address.is_unspecified());
     }
+
+    #[ignore]
+    #[tokio::test]
+    async fn lookup_ns() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qtype = "NS";
+        let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+        
+        println!("RESPONSE : {}",response);
+    }
+
+
 
     // async fn reverse_query() {
     //     let resolver = AsyncResolver::new(ResolverConfig::default());
@@ -281,18 +281,5 @@ mod async_resolver_test {
 
     //TODO: prbar diferentes qtype
 
-    #[ignore]
-    #[tokio::test]
-    async fn lookup_ns() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        let domain_name = "example.com";
-        let transport_protocol = "UDP";
-        let qtype = "NS";
-        let ip_address = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
-        
-        // assert!(ip_address.is_ipv4());
-    
-        // assert!(!ip_address.is_unspecified());
-    }
 
 }

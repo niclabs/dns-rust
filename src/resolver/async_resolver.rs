@@ -3,7 +3,7 @@ use std::net::IpAddr;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
-use crate::resolver::{config::ResolverConfig,lookup::LookupIpFutureStub};
+use crate::resolver::{config::ResolverConfig,lookup::LookupFutureStub};
 use crate::message::rdata::Rdata;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::resolver::resolver_error::ResolverError;
@@ -99,7 +99,7 @@ impl AsyncResolver {
     async fn inner_lookup(&self, domain_name: DomainName) -> Result<DnsMessage, ResolverError> {
 
         // Async query
-        let response = LookupIpFutureStub::lookup(
+        let response = LookupFutureStub::lookup(
             domain_name,
             self.config.clone(),
             self.cache.clone())

@@ -23,7 +23,7 @@ use crate::client::tcp_connection::ClientTCPConnection;
 /// 
 /// This implementation of `Future` is used to send a single query to a DNS server.
 /// When this future is polled by `AsyncResolver`, 
-pub struct LookupIpFutureStub {
+pub struct LookupFutureStub {
     /// Domain Name associated with the query.
     name: DomainName,
     /// Resolver configuration.
@@ -39,7 +39,7 @@ pub struct LookupIpFutureStub {
     waker: Option<Waker>,
 }
 
-impl Future for LookupIpFutureStub { 
+impl Future for LookupFutureStub { 
     type Output = Result<DnsMessage, ResolverError>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -72,7 +72,7 @@ impl Future for LookupIpFutureStub {
     }
 }
     
-impl LookupIpFutureStub {
+impl LookupFutureStub {
 
     /// Creates a new `LookupIpFutureStub` with the given configuration.
     /// 
@@ -210,7 +210,7 @@ mod async_resolver_test {
         let resource_record = ResourceRecord::new(a_rdata);
         cache.add(domain_name_cache, resource_record);
 
-        let lookup_future = LookupIpFutureStub::lookup(
+        let lookup_future = LookupFutureStub::lookup(
             domain_name,
             config,
             cache
@@ -241,7 +241,7 @@ mod async_resolver_test {
         config.set_retry(1);
         let cache = DnsCache::new();
 
-        let response_future = LookupIpFutureStub::lookup(domain_name, config, cache).await;
+        let response_future = LookupFutureStub::lookup(domain_name, config, cache).await;
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    

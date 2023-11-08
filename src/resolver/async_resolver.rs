@@ -1,5 +1,6 @@
 use std::net::IpAddr;
 
+use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
@@ -54,8 +55,11 @@ impl AsyncResolver {
     /// 5.2. Client-resolver interface
     /// 
     /// Host name to host address translation
-    /// 
-    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str) -> Result<IpAddr, ResolverError> {
+    /// FIXME: DEBE RETORNAR CLIENT ERROR
+    /// This method acts as an interface between the Client and the Resolver.
+    /// It calls `inner_lookup(&self, domain_name: DomainName)` which will
+    /// execute a look up of the given domain name asynchronously.
+    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str) -> Result<IpAddr, ClientError> {
         println!("[LOOKUP IP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -64,18 +68,39 @@ impl AsyncResolver {
         self.config.set_protocol(transport_protocol_struct);
 
         let response = self.inner_lookup(domain_name_struct).await;
-        
-        //TODO: parse header and personalised error type 
+
+        return self.parse_response(response);
+        // match response {
+        //     Ok(val) => {
+        //         let rdata = val.get_answer()[0].get_rdata();
+                
+        //         match rdata {
+        //             Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
+        //             _ => Err(ResolverError::Message("Error Response"))?,
+        //         }
+        //     }
+        //     Err(_) => Err(ResolverError::Message("Error Response"))?,
+        // }
+    }
+ 
+    //TODO: parse header and personalised error type ,
+    /// Parses the received `DnsMessage` and returns the corresponding IP address.
+    /// 
+    /// After receiving the response of the query, this method parses the DNS message
+    /// of type `DnsMessage` to the corresponding IP address when the response was
+    /// successful. If the response was not successful, it will return the corresponding
+    /// error message to the Client.
+    fn parse_response(&self, response: Result<DnsMessage, ResolverError>) -> Result<IpAddr, ClientError> {
         match response {
             Ok(val) => {
                 let rdata = val.get_answer()[0].get_rdata();
                 
                 match rdata {
                     Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
-                    _ => Err(ResolverError::Message("Error Response"))?,
+                    _ => Err(ClientError::Message("Error Response"))?,
                 }
             }
-            Err(_) => Err(ResolverError::Message("Error Response"))?,
+            Err(_) => Err(ClientError::Message("Error Response"))?,
         }
     }
 

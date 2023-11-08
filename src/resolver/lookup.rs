@@ -1,6 +1,7 @@
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
+use crate::message::header::Header;
 use crate::message::type_rtype::Rtype;
 use crate::message::resource_record::ResourceRecord;
 use crate::client::client_connection::ClientConnection;
@@ -140,7 +141,9 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
 
     // Create Server failure query 
     let mut response = new_query.clone().to_owned();
-    response.get_header().set_rcode(2); 
+    let mut new_header:Header = response.get_header();
+    new_header.set_rcode(2);
+    response.set_header(new_header);
 
     let mut retry_count = 0;
 
@@ -189,8 +192,6 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     *future_query = future::ready(Ok(response.clone())).boxed();
    
 }
-
-
 #[cfg(test)]
 mod async_resolver_test {
     // use tokio::runtime::Runtime;
@@ -254,10 +255,10 @@ mod async_resolver_test {
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
-        assert_eq!(response_future.unwrap().get_header().get_ancount(), 0);
+        // assert_eq!(response_future.unwrap().get_header().get_ancount(), 0);
+        assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);
         // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
     }
-
      
     #[tokio::test]
     async fn lookup_stub_response() {

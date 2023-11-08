@@ -31,6 +31,9 @@ pub enum ClientError {
 
     #[error("Response with error code {0}")]
     ResponseError(u8),
+
+    #[error("Temporary Error: {0}")]
+    TemporaryError(&'static str),
 }
 
 // Debug trait implementation for `?` formatting
@@ -46,6 +49,7 @@ impl Debug for ClientError {
             NotImplemented(err) => write!(f, "Not Implemented: {}", err),
             Refused(err) => write!(f, "Refused: {}", err),
             ResponseError(err) => write!(f, "Response with error code {}", err),
+            TemporaryError(err) => write!(f, "Temporary Error: {}", err),
         }
     }
 }

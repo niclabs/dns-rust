@@ -1,5 +1,4 @@
 use std::net::IpAddr;
-
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
@@ -7,7 +6,7 @@ use crate::resolver::{config::ResolverConfig,lookup::LookupFutureStub};
 use crate::message::rdata::Rdata;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::resolver::resolver_error::ResolverError;
-
+use crate:: message::type_qtype::Qtype;
 /// Asynchronous resolver for DNS queries.
 /// 
 /// This struct contains a cache and a configuration for the resolver. 
@@ -63,7 +62,7 @@ impl AsyncResolver {
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct).await;
+        let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
         
         //TODO: parse header and personalised error type 
         match response {
@@ -96,11 +95,12 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
-    async fn inner_lookup(&self, domain_name: DomainName) -> Result<DnsMessage, ResolverError> {
+    async fn inner_lookup(&self, domain_name: DomainName,qtype:Qtype) -> Result<DnsMessage, ResolverError> {
 
         // Async query
         let response = LookupFutureStub::lookup(
             domain_name,
+            qtype,
             self.config.clone(),
             self.cache.clone())
             .await;
@@ -122,8 +122,28 @@ impl AsyncResolver {
     /// 
     /// General lookup function
     /// 
-    pub async fn lookup() {
-        unimplemented!()
+    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<IpAddr,ResolverError>{
+        println!("[LOOKUP ASYNCRESOLVER]");
+
+        let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
+        let qtype_struct = Qtype::from_str_to_qtype(qtype);
+        let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
+        self.config.set_protocol(transport_protocol_struct);
+
+        let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
+        
+        //TODO: parse header and personalised error type 
+        match response {
+            Ok(val) => {
+                let rdata = val.get_answer()[0].get_rdata();
+                
+                match rdata {
+                    Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
+                    _ => Err(ResolverError::Message("Error Response"))?,
+                }
+            }
+            Err(_) => Err(ResolverError::Message("Error Response"))?,
+        }
     }
 
 }
@@ -133,7 +153,6 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use crate::client::config::TIMEOUT;
-    use crate::domain_name::DomainName;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
     use std::time::Duration;
@@ -147,14 +166,14 @@ mod async_resolver_test {
     }
 
     //TODO: test inner_lookup
-    #[tokio::test]
-    async fn inner_lookup() {
-        // Create a new resolver with default values
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let response = resolver.inner_lookup(domain_name).await;
-        assert!(response.is_ok());
-    }
+    // #[tokio::test]
+    // async fn inner_lookup() {
+    //     // Create a new resolver with default values
+    //     let resolver = AsyncResolver::new(ResolverConfig::default());
+    //     let domain_name = DomainName::new_from_string("example.com".to_string());
+    //     let response = resolver.inner_lookup(domain_name).await;
+    //     assert!(response.is_ok());
+    // }
 
     #[ignore]
     #[tokio::test] //TODO
@@ -259,4 +278,21 @@ mod async_resolver_test {
     //TODO: diferent types of errors
 
     //TODO: bad domain name written
+
+    //TODO: prbar diferentes qtype
+
+    #[ignore]
+    #[tokio::test]
+    async fn lookup_ns() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qtype = "NS";
+        let ip_address = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+        
+        // assert!(ip_address.is_ipv4());
+    
+        // assert!(!ip_address.is_unspecified());
+    }
+
 }

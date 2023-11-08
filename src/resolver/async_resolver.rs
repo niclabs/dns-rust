@@ -148,7 +148,7 @@ impl AsyncResolver {
     /// 
     /// General lookup function
     /// 
-    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<IpAddr,ResolverError>{
+    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Rdata,ResolverError>{
         println!("[LOOKUP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -162,11 +162,7 @@ impl AsyncResolver {
         match response {
             Ok(val) => {
                 let rdata = val.get_answer()[0].get_rdata();
-                
-                match rdata {
-                    Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
-                    _ => Err(ResolverError::Message("Error Response"))?,
-                }
+                Ok(rdata)      
             }
             Err(_) => Err(ResolverError::Message("Error Response"))?,
         }
@@ -240,7 +236,7 @@ mod async_resolver_test {
         let qtype = "NS";
         let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
         
-        println!("RESPONSE : {}",response);
+        println!("RESPONSE : {:?}",response);
     }
 
 

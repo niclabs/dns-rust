@@ -20,6 +20,9 @@ pub enum ResolverError {
     /// An error when the resolver surpassed the number of retries allowed.
     #[error("retries limit exceeded")]
     RetriesLimitExceeded,
+
+    #[error("parse response error: {0}")]
+    Parse(&'static str),
 }
 
 // Debug trait implementation for `?` formatting
@@ -31,6 +34,7 @@ impl Debug for ResolverError {
             Message(err) => write!(f, "Error Response: {}", err),
             EmptyQuery => write!(f, "Empty query"),
             RetriesLimitExceeded => write!(f, "Retries limit exceeded"),
+            Parse(err) => write!(f, "Parse error: {}", err),
         }
     }
 }

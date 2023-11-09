@@ -70,17 +70,6 @@ impl AsyncResolver {
         let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
 
         return self.parse_response(response);
-        // match response {
-        //     Ok(val) => {
-        //         let rdata = val.get_answer()[0].get_rdata();
-                
-        //         match rdata {
-        //             Rdata::SomeARdata(ip) => Ok(ip.get_address()), // Supongo que A es el tipo correcto
-        //             _ => Err(ResolverError::Message("Error Response"))?,
-        //         }
-        //     }
-        //     Err(_) => Err(ResolverError::Message("Error Response"))?,
-        // }
     }
  
     //TODO: parse header and personalised error type ,
@@ -91,7 +80,8 @@ impl AsyncResolver {
     /// successful. If the response was not successful, it will return the corresponding
     /// error message to the Client.
     /// 
-    /// This method only return queries of type A.
+    /// This method only return queries of type A. FIXME: shoyul work for all types
+    /// 
     fn parse_response(&self, response: Result<DnsMessage, ResolverError>) -> Result<IpAddr, ClientError> {
         let dns_mgs = match response {
             Ok(val) => val,
@@ -102,7 +92,7 @@ impl AsyncResolver {
         let rcode = header.get_rcode();
         if rcode == 0 {
             let answer = dns_mgs.get_answer();
-            let first_answer_ref = &answer[0];
+            let first_answer_ref = &answer[0]; // FIXME: give all answers
             let rdata = first_answer_ref.get_rdata();
             match rdata {
                 Rdata::SomeARdata(ip) => return Ok(ip.get_address()), 
@@ -174,7 +164,7 @@ impl AsyncResolver {
 
         let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
         
-        //TODO: parse header and personalised error type 
+        //TODO: parse header and personalised error type FIXME: SHOULD look all types
         match response {
             Ok(val) => {
                 let rdata = val.get_answer()[0].get_rdata();
@@ -237,6 +227,7 @@ mod async_resolver_test {
         let domain_name = "example.com";
         let transport_protocol = "UDP";
         let ip_address = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        println!("RESPONSE : {:?}", ip_address);
         
         assert!(ip_address.is_ipv4());
     

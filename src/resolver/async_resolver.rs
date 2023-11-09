@@ -181,9 +181,15 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use crate::client::config::TIMEOUT;
+    use crate::message::DnsMessage;
+    use crate::message::class_qclass::Qclass;
+    use crate::message::rdata::Rdata;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::resource_record::ResourceRecord;
     use crate:: message::type_qtype::Qtype;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
+    use std::net::IpAddr;
     use std::time::Duration;
     use crate::domain_name::DomainName;
     
@@ -292,6 +298,39 @@ mod async_resolver_test {
             Err(_) => {
                 panic!("El timeout no se manejó correctamente");
             }
+        }
+    }
+
+    #[test]
+    fn parse_response_ip() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let result_ip = resolver.parse_response(Ok(dns_response));
+
+        if let Ok(ip) = result_ip {
+            assert_eq!(ip, IpAddr::from([127, 0, 0, 1]));
+        } else {
+            panic!("Error parsing response");
         }
     }
 

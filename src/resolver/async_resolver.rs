@@ -81,6 +81,7 @@ impl AsyncResolver {
         }
     }
 
+    // TODO: move and change as from method  of rr
     fn from_rr_to_ip(rr: ResourceRecord) -> Result<IpAddr, ClientError> {
         let rdata = rr.get_rdata();
         if let Rdata::SomeARdata(ip) = rdata {
@@ -166,7 +167,7 @@ impl AsyncResolver {
     /// 
     /// General lookup function
     /// 
-    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Rdata,ResolverError>{
+    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError>{
         println!("[LOOKUP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -177,13 +178,14 @@ impl AsyncResolver {
         let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
         
         //TODO: parse header and personalised error type FIXME: SHOULD look all types
-        match response {
-            Ok(val) => {
-                let rdata = val.get_answer()[0].get_rdata();
-                Ok(rdata)      
-            }
-            Err(_) => Err(ResolverError::Message("Error Response"))?,
-        }
+        return self.parse_response(response).map_err(Into::into)
+        // match response {
+        //     Ok(val) => {
+        //         let rdata = val.get_answer()[0].get_rdata();
+        //         Ok(rdata)      
+        //     }
+        //     Err(_) => Err(ResolverError::Message("Error Response"))?,
+        // }
     }
 
 }

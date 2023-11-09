@@ -71,20 +71,23 @@ impl AsyncResolver {
         let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
 
         let result_rrs = self.parse_response(response);
-        let mut ip_addresses: Vec<IpAddr> = Vec::new();
         if let Ok(rrs) = result_rrs {
-            for rr in rrs {
-                let rdata = rr.get_rdata();
-                if let Rdata::SomeARdata(ip) = rdata {
-                    ip_addresses.push(ip.get_address());
-                } else {
-                    Err(ClientError::TemporaryError("Response does not match type A."))?
-                }
-            }
+            let rrs_iter = rrs.into_iter();
+            let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr| 
+                {AsyncResolver::from_rr_to_ip(rr)}).collect();
+            return ip_addresses;
         } else {
             Err(ClientError::TemporaryError("Error parsing response."))?
         }
-        return Ok(ip_addresses);
+    }
+
+    fn from_rr_to_ip(rr: ResourceRecord) -> Result<IpAddr, ClientError> {
+        let rdata = rr.get_rdata();
+        if let Rdata::SomeARdata(ip) = rdata {
+            return Ok(ip.get_address());
+        } else {
+            Err(ClientError::TemporaryError("Response does not match type A."))?
+        }
     }
  
     //TODO: parse header and personalised error type ,
@@ -108,13 +111,6 @@ impl AsyncResolver {
         if rcode == 0 {
             let answer = dns_mgs.get_answer();
             return Ok(answer);
-            // let first_answer_ref = &answer[0]; // FIXME: give all answers
-            // let rdata = first_answer_ref.get_rdata();
-            // match rdata {
-            //     Rdata::SomeARdata(ip) => return Ok(ip.get_address()), 
-            //     _ => Err(ClientError::TemporaryError("Response does not match type A."))?, // FIXME: change maybe to data not found error 
-            //     // which according to RFC is a resolver error?? but this is client error??
-            // }
         } 
         match rcode {
             1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,

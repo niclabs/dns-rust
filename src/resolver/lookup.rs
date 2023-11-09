@@ -110,7 +110,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     waker: Option<Waker>,
     referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
     config: ResolverConfig,
-) {
+) -> Result<DnsMessage,ResolverError>{
 
     // Create random generator
     let mut rng = thread_rng();
@@ -143,6 +143,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     let mut response = new_query.clone().to_owned();
     let mut new_header:Header = response.get_header();
     new_header.set_rcode(2);
+    new_header.set_qr(true);
     response.set_header(new_header);
 
     let mut retry_count = 0;
@@ -190,12 +191,14 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     }
     let mut future_query = referenced_query.lock().unwrap();
     *future_query = future::ready(Ok(response.clone())).boxed();
+
+    Ok(response)
    
 }
 #[cfg(test)]
 mod async_resolver_test {
     // use tokio::runtime::Runtime;
-    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::{a_rdata::ARdata,ns_rdata::NsRdata};
     use crate::message::rdata::Rdata;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -229,14 +232,115 @@ mod async_resolver_test {
         assert_eq!(lookup_future.config.get_addr(),SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333));
         assert_eq!(lookup_future.cache.get_max_size(), 20);
         assert_eq!(lookup_future.cache.get_size(), 1);
-
+        
     }
+     
+    #[tokio::test]
+    async fn lookup_stub_a_response() {
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let cache = DnsCache::new();
+        let waker = None;
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
 
-    // TODO: test poll (not shure)
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(20);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+
+        let config = ResolverConfig::default();
+        let record_type = Qtype::A;
+        
+        let name_servers = vec![(conn_udp,conn_tcp)];
+        let response = lookup_stub(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
+
+        assert_eq!(response.get_header().get_qr(),true);
+        assert_ne!(response.get_answer().len(),0);
+    }   
+
+    #[tokio::test]
+    async fn lookup_stub_ns_response() {
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let cache = DnsCache::new();
+        let waker = None;
+    
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+
+        // Create vect of name servers
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(20);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+
+        let config = ResolverConfig::default();
+        let record_type = Qtype::NS;
+        
+        let name_servers = vec![(conn_udp,conn_tcp)];
+        let response = lookup_stub(domain_name, record_type, cache, name_servers, waker,query,config).await.unwrap();
+
+        assert_eq!(response.get_header().get_qr(),true);
+        assert_ne!(response.get_answer().len(),0);
+    } 
+
+    #[tokio::test]
+    async fn lookup_stub_max_tries(){
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let waker = None;
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+        let timeout = Duration::from_secs(2);
+        let record_type = Qtype::A;
+
+        let mut config: ResolverConfig = ResolverConfig::default();
+        let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
+        config.set_retry(1);
+        let cache = DnsCache::new();
+        
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
+        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
+        
+        let name_servers = vec![(conn_udp,conn_tcp)];
+        let response = lookup_stub(domain_name, record_type, cache, name_servers, waker,query,config).await.unwrap();
+        
+        println!("response_future {:?}",response);
+  
+        assert_eq!(response.get_header().get_ancount(), 0);
+        assert_eq!(response.get_header().get_rcode() , 2);
+        assert_eq!(response.get_header().get_qr(),true);
+    }
 
     #[ignore]
     #[tokio::test]
-    async fn lookup_stub_max_tries(){
+    async fn poll_lookup_a(){
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let timeout = Duration::from_secs(2);
+        let record_type = Qtype::A;
+
+        let mut config: ResolverConfig = ResolverConfig::default();
+        let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
+        
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
+        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
+        config.set_retry(3);
+        let cache = DnsCache::new();
+
+        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config, cache).await;
+        println!("response_future {:?}",response_future);
+
+        assert_eq!(response_future.is_ok(), true);    
+        let response = response_future.unwrap();
+        // assert_eq!(response_future.unwrap().get_header().get_ancount(), 0);
+        assert_eq!(response.get_header().get_rcode() , 2);
+        // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
+    }
+
+    #[ignore]
+    #[tokio::test]
+    async fn poll_lookup_max_tries(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
@@ -259,53 +363,7 @@ mod async_resolver_test {
         assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);
         // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
     }
-     
-    #[tokio::test]
-    async fn lookup_stub_response() {
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let cache = DnsCache::new();
-        let waker = None;
-    
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed()));
 
-        // Create vect of name servers
-        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-        let timeout: Duration = Duration::from_secs(20);
-
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-
-        let config = ResolverConfig::default();
-        let record_type = Qtype::A;
-        
-        let name_servers = vec![(conn_udp,conn_tcp)];
-        lookup_stub(domain_name,record_type, cache, name_servers, waker,query,config).await;
-
-    }   
-
-    #[tokio::test]
-    async fn lookup_stub_ns_response() {
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let cache = DnsCache::new();
-        let waker = None;
-    
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::Message("Empty")).boxed()));
-
-        // Create vect of name servers
-        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-        let timeout: Duration = Duration::from_secs(20);
-
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-
-        let config = ResolverConfig::default();
-        let record_type = Qtype::A;
-        
-        let name_servers = vec![(conn_udp,conn_tcp)];
-        lookup_stub(domain_name, record_type, cache, name_servers, waker,query,config).await;
-
-    } 
-
-    //TODO: lookup_stub para diferentes qtype
+    //TODO: add cache test 
     
 }

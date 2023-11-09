@@ -4,6 +4,7 @@ use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
+use crate::message::resource_record::ResourceRecord;
 use crate::resolver::{config::ResolverConfig,lookup::LookupFutureStub};
 use crate::message::rdata::Rdata;
 use crate::client::client_connection::ConnectionProtocol;
@@ -59,7 +60,7 @@ impl AsyncResolver {
     /// This method acts as an interface between the Client and the Resolver.
     /// It calls `inner_lookup(&self, domain_name: DomainName)` which will
     /// execute a look up of the given domain name asynchronously.
-    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str) -> Result<IpAddr, ClientError> {
+    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str) -> Result<Vec<IpAddr>, ClientError> {
         println!("[LOOKUP IP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -69,7 +70,21 @@ impl AsyncResolver {
 
         let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
 
-        return self.parse_response(response);
+        let result_rrs = self.parse_response(response);
+        let mut ip_addresses: Vec<IpAddr> = Vec::new();
+        if let Ok(rrs) = result_rrs {
+            for rr in rrs {
+                let rdata = rr.get_rdata();
+                if let Rdata::SomeARdata(ip) = rdata {
+                    ip_addresses.push(ip.get_address());
+                } else {
+                    Err(ClientError::TemporaryError("Response does not match type A."))?
+                }
+            }
+        } else {
+            Err(ClientError::TemporaryError("Error parsing response."))?
+        }
+        return Ok(ip_addresses);
     }
  
     //TODO: parse header and personalised error type ,
@@ -82,7 +97,7 @@ impl AsyncResolver {
     /// 
     /// This method only return queries of type A. FIXME: shoyul work for all types
     /// 
-    fn parse_response(&self, response: Result<DnsMessage, ResolverError>) -> Result<IpAddr, ClientError> {
+    fn parse_response(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
         let dns_mgs = match response {
             Ok(val) => val,
             Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
@@ -92,13 +107,14 @@ impl AsyncResolver {
         let rcode = header.get_rcode();
         if rcode == 0 {
             let answer = dns_mgs.get_answer();
-            let first_answer_ref = &answer[0]; // FIXME: give all answers
-            let rdata = first_answer_ref.get_rdata();
-            match rdata {
-                Rdata::SomeARdata(ip) => return Ok(ip.get_address()), 
-                _ => Err(ClientError::TemporaryError("Response does not match type A."))?, // FIXME: change maybe to data not found error 
-                // which according to RFC is a resolver error?? but this is client error??
-            }
+            return Ok(answer);
+            // let first_answer_ref = &answer[0]; // FIXME: give all answers
+            // let rdata = first_answer_ref.get_rdata();
+            // match rdata {
+            //     Rdata::SomeARdata(ip) => return Ok(ip.get_address()), 
+            //     _ => Err(ClientError::TemporaryError("Response does not match type A."))?, // FIXME: change maybe to data not found error 
+            //     // which according to RFC is a resolver error?? but this is client error??
+            // }
         } 
         match rcode {
             1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
@@ -232,12 +248,12 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "UDP";
-        let ip_address = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
-        println!("RESPONSE : {:?}", ip_address);
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
         
-        assert!(ip_address.is_ipv4());
+        assert!(ip_addresses[0].is_ipv4());
     
-        assert!(!ip_address.is_unspecified());
+        assert!(!ip_addresses[0].is_unspecified());
     }
 
     #[ignore]
@@ -325,10 +341,15 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_ip = resolver.parse_response(Ok(dns_response));
+        let result_vec_rr = resolver.parse_response(Ok(dns_response));
 
-        if let Ok(ip) = result_ip {
-            assert_eq!(ip, IpAddr::from([127, 0, 0, 1]));
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::SomeARdata(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
         } else {
             panic!("Error parsing response");
         }

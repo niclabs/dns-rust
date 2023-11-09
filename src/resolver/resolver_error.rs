@@ -1,6 +1,8 @@
 use std::fmt;
 use std::fmt::Debug;
 
+use crate::client::client_error::ClientError;
+
 #[derive(thiserror::Error)]
 #[non_exhaustive] 
 /// Common error type to hold errors from Resolver.
@@ -22,7 +24,7 @@ pub enum ResolverError {
     RetriesLimitExceeded,
 
     #[error("parse response error: {0}")]
-    Parse(&'static str),
+    Parse(String),
 }
 
 // Debug trait implementation for `?` formatting
@@ -37,4 +39,21 @@ impl Debug for ResolverError {
             Parse(err) => write!(f, "Parse error: {}", err),
         }
     }
+}
+
+impl From<ClientError> for ResolverError {
+    fn from(err: ClientError) -> Self {
+        match err {
+            ClientError::Io(err) => ResolverError::Io(err),
+            ClientError::Message(err) => ResolverError::Message(err),
+            ClientError::FormatError(err) => ResolverError::Parse(err.to_string()),
+            ClientError::ServerFailure(err) => ResolverError::Parse(err.to_string()),
+            ClientError::NameError(err) => ResolverError::Parse(err.to_string()),
+            ClientError::NotImplemented(err) => ResolverError::Parse(err.to_string()),
+            ClientError::Refused(err) => ResolverError::Parse(err.to_string()),
+            ClientError::ResponseError(err) => ResolverError::Parse(err.to_string()),
+            ClientError::TemporaryError(err) => ResolverError::Parse(err.to_string()),
+        }
+    }
+    
 }

@@ -27,7 +27,7 @@ impl ClientConnection for ClientUDPConnection {
         }
     }
 
-    fn send(self, dns_query:DnsMessage) -> Result<DnsMessage, ClientError> { 
+    fn send(self, dns_query:DnsMessage) -> Result<Vec<u8>, ClientError> { 
 
         let timeout:Duration = self.timeout;
         let server_addr = SocketAddr::new(self.get_server_addr(), 53);
@@ -56,14 +56,13 @@ impl ClientConnection for ClientUDPConnection {
             Ok(_) => (),
         };
 
-        let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
-            Ok(response) => response,
-            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not create dns message {}", e))).map_err(Into::into),
-        };
+        // let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
+        //     Ok(response) => response,
+        //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not create dns message {}", e))).map_err(Into::into),
+        // };
 
         drop(socket_udp);
-        
-        return Ok(response_dns);
+        return Ok(msg.to_vec());
     }
 
 }
@@ -200,10 +199,13 @@ mod udp_connection_test{
             false,
             1);
         
-        let result = conn.send(dns_query);
+        let response = conn.send(dns_query).unwrap();
 
-        assert!(result.is_ok());
-        assert!(result.unwrap().get_answer().len() > 0);
+        // assert!(result.is_ok());
+
+        assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
+
+        // assert!(result.unwrap().get_answer().len() > 0); FIXME:
     }
 
 }

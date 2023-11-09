@@ -158,25 +158,27 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
             ConnectionProtocol::UDP=> {
                 let result_response = conn_udp.send(new_query.clone());
                 
-                match result_response {
-                    Ok(response_ok) => {
-                        response = response_ok;
-                        break;
-                    }
-                    Err(_) => {
-                        // TODO: when UDP do not works use TCP
-                    }
+                response = match result_response {
+                    Ok(response_message) => {
+                        match DnsMessage::from_bytes(&response_message) {
+                            Ok(dns_message) => dns_message,
+                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query."))?,
+                        }
+                    },
+                    Err(_) => response,
                 }
             }
             ConnectionProtocol::TCP => {
                 let result_response = conn_tcp.send(new_query.clone());
                 
-                match result_response {
-                    Ok(response_ok) => {
-                        response = response_ok;
-                        break;
-                    }
-                    Err(_) => ()
+                response = match result_response {
+                    Ok(response_message) => {
+                        match DnsMessage::from_bytes(&response_message) {
+                            Ok(dns_message) => dns_message,
+                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query."))?,
+                        }
+                    },
+                    Err(_) => response,
                 }
             }
             _ => continue,
@@ -198,7 +200,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
 #[cfg(test)]
 mod async_resolver_test {
     // use tokio::runtime::Runtime;
-    use crate::message::rdata::{a_rdata::ARdata,ns_rdata::NsRdata};
+    use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -281,6 +283,7 @@ mod async_resolver_test {
 
         assert_eq!(response.get_header().get_qr(),true);
         assert_ne!(response.get_answer().len(),0);
+
     } 
 
     #[tokio::test]
@@ -303,6 +306,8 @@ mod async_resolver_test {
         
         let name_servers = vec![(conn_udp,conn_tcp)];
         let response = lookup_stub(domain_name, record_type, cache, name_servers, waker,query,config).await.unwrap();
+        
+
         
         println!("response_future {:?}",response);
   

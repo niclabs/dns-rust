@@ -245,7 +245,7 @@ mod async_resolver_test {
     async fn host_name_to_host_address_translation() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
-        let transport_protocol = "UDP";
+        let transport_protocol = "TCP";
         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         

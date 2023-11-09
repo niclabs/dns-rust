@@ -30,7 +30,7 @@ impl ClientConnection for ClientTCPConnection {
     }
 
     /// creates socket tcp, sends query and receive response
-    fn send(self, dns_query: DnsMessage) -> ClientResult<DnsMessage> {
+    fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>{
         println!("[SEND TCP]");
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
@@ -40,8 +40,9 @@ impl ClientConnection for ClientTCPConnection {
         //     Ok(stream) => stream,
         //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error connect {}", e))),
         // };
-
+        println!("[SEND TCP] conn {} - {:?}",server_addr, timeout);
         let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
+        println!("[SEND TCP] conn 2");
         
     
         //Add len of message len
@@ -54,7 +55,9 @@ impl ClientConnection for ClientTCPConnection {
         //     Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: setting read timeout for socket"))),
         //     Ok(_) => (),
         // }
+        
         stream.set_read_timeout(Some(timeout))?; 
+        println!("[SEND TCP] set timeout");
     
         // match stream.write(&full_msg) {
         //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not write to stream {}", e))),
@@ -83,14 +86,14 @@ impl ClientConnection for ClientTCPConnection {
             };
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
-
-        let response_dns: DnsMessage = match DnsMessage::from_bytes(&vec_msg) {
-            Ok(response) => response,
-            Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: creating dns message "))).map_err(Into::into),
-        };
+      
+        // let response_dns: DnsMessage = match DnsMessage::from_bytes(&vec_msg) {
+        //     Ok(response) => response,
+        //     Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: creating dns message "))).map_err(Into::into),
+        // };
         // println!("[SEND TCP] {:?}", vec_msg);
-    
-        return Ok(response_dns);
+            println!("AAAA Response: {:?}", vec_msg);
+        return Ok(vec_msg);
     }
 }
 
@@ -207,10 +210,11 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let response = conn_new.send(dns_query);
+        let response = conn_new.send(dns_query).unwrap();
+        // println!("{:?}", DnsMessage::from_bytes(&response));
         
-        assert!(response.is_ok());
-        assert!(response.unwrap().get_answer().len() > 0);
+        assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
+        // FIXME:
     }
 
     #[test]

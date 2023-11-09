@@ -162,7 +162,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                     Ok(response_message) => {
                         match DnsMessage::from_bytes(&response_message) {
                             Ok(dns_message) => dns_message,
-                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query."))?,
+                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
                         }
                     },
                     Err(_) => response,
@@ -175,7 +175,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
                     Ok(response_message) => {
                         match DnsMessage::from_bytes(&response_message) {
                             Ok(dns_message) => dns_message,
-                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query."))?,
+                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
                         }
                     },
                     Err(_) => response,

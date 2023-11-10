@@ -13,7 +13,7 @@ use crate::domain_name::DomainName;
 use std::cmp;
 
 #[derive(Clone)]
-// Struct that represents a cache for dns
+/// Struct that represents a cache for dns
 pub struct DnsCache {
     // first hash by type, then by hostname
     cache: CacheData,
@@ -127,6 +127,12 @@ impl DnsCache {
         self.set_cache(cache);
     }
 
+    /// Check if cache is empty
+    pub fn is_empty(&self) -> bool {
+        self.cache.get_cache_data().is_empty()
+    }
+
+    // TODO: Make print cache function
     // pub fn print(&self) {
     //     let cache = self.get_cache();
 

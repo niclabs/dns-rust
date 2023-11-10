@@ -281,8 +281,7 @@ mod async_resolver_test {
     //     // Por ejemplo, si esperas que la dirección IP "192.168.0.1" se traduzca a "ejemplo.com":
     //     assert_eq!(domain_name, "ejemplo.com", "El nombre de dominio debe ser 'ejemplo.com'");
     // }
-    
-    #[ignore]
+
     #[tokio::test]
     async fn timeout() {
         // Crea una instancia de tu resolutor con la configuración adecuada

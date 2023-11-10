@@ -1,3 +1,4 @@
+use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
@@ -209,6 +210,39 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     Ok(response)
    
 }
+
+/// Parse the received response datagram to a `DnsMessage`.
+/// 
+/// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.3
+/// 
+/// 7.3. Processing responses
+/// The first step in processing arriving response datagrams is to parse the
+/// response.  This procedure should include:
+/// 
+///    - Check the header for reasonableness.  Discard datagrams which
+///      are queries when responses are expected.
+/// 
+///    - Parse the sections of the message, and insure that all RRs are
+///      correctly formatted.
+/// 
+///    - As an optional step, check the TTLs of arriving data looking
+///      for RRs with excessively long TTLs.  If a RR has an
+///      excessively long TTL, say greater than 1 week, either discard
+///      the whole response, or limit all TTLs in the response to 1
+///      week.
+fn parse_response(response_result: Result<Vec<u8>, ClientError>) -> Result<DnsMessage, ResolverError> {
+    let dns_msg = response_result.map_err(Into::into)
+        .and_then(|response_message| {
+            DnsMessage::from_bytes(&response_message)
+                .map_err(|_| ResolverError::Parse("The name server was unable to interpret the query.".to_string()))
+        })?;
+    let header = dns_msg.get_header();
+    if header.get_qr() {
+        return Ok(dns_msg);
+    }
+    Err(ResolverError::Parse("Message is a query. A response was expected.".to_string()))
+}
+
 #[cfg(test)]
 mod async_resolver_test {
     // use tokio::runtime::Runtime;

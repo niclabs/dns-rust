@@ -102,6 +102,18 @@ impl LookupFutureStub {
     }
 
 }
+
+/// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
+/// 
+/// This function performs the lookup of the requested records asynchronously. 
+/// The given `waker` is used to wake up the task when the query is answered. 
+/// The `referenced_query` is used to update the future that contains the response of the query.
+/// 
+/// After creating the query with the given parameters, the function sends it to the name servers 
+/// specified in the configuration. 
+/// 
+/// When a response is received, the function performs the parsing of the response to a `DnsMessage`.
+/// After the response is checked, the function updates the future that contains the response of the query.
 pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
     record_type: Qtype,

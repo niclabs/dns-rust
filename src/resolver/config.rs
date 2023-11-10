@@ -21,13 +21,9 @@ pub struct ResolverConfig {
     /// If this number is surpassed, the resolver is expected to panic in 
     /// a Temporary Error.
     retry: u16,
-    /// Availability of cache in this resolver.
-    /// 
-    /// This is whether the resolver uses cache or not.
-    cache_available: bool,
     /// Activation of cache in this resolver.
     /// 
-    /// This is whether the resolver uses cache or not when it is available.
+    /// This is whether the resolver uses cache or not.
     cache_enabled: bool,
     /// Availability of recursive queries in this resolver.
     /// 
@@ -66,7 +62,6 @@ impl ResolverConfig {
             name_servers: Vec::new(),
             bind_addr: SocketAddr::new(resolver_addr, 53),
             retry: 30,
-            cache_available: true,
             cache_enabled: true,
             recursive_available: false,
             protocol: protocol,
@@ -87,7 +82,6 @@ impl ResolverConfig {
             name_servers: vec![(conn_udp,conn_tcp)],
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
             retry: 30,
-            cache_available: true,
             cache_enabled: true,
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,
@@ -162,13 +156,8 @@ impl ResolverConfig {
         self.retry
     }
 
-    /// Returns whether the cache is available or not.
-    pub fn get_cache_available(&self) -> bool {
-        self.cache_available 
-    }
-
     /// Returns whether the cache is enabled or not.
-    pub fn get_cache_enabled(&self) -> bool {
+    pub fn is_cache_enabled(&self) -> bool {
         self.cache_enabled
     }
 
@@ -205,11 +194,6 @@ impl ResolverConfig{
     /// Temporary Error.
     pub fn set_retry(&mut self, retry:u16) {
         self.retry = retry;
-    }
-
-    /// Sets whether the cache is available or not.
-    pub fn set_cache_available(&mut self, cache_available:bool) {
-        self.cache_available = cache_available;
     }
 
     /// Sets whether the cache is enabled or not.
@@ -308,17 +292,6 @@ mod tests_resolver_config {
     }
 
     #[test]
-    fn get_and_set_cache_available() {
-        let mut resolver_config = ResolverConfig::default();
-
-        assert_eq!(resolver_config.get_cache_available(), true);
-
-        resolver_config.set_cache_available(false);
-
-        assert_eq!(resolver_config.get_cache_available(), false);
-    }
-
-    #[test]
     fn get_and_set_recursive_available() {
         let mut resolver_config = ResolverConfig::default();
 
@@ -355,11 +328,11 @@ mod tests_resolver_config {
     fn get_and_set_cache_enabled() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_cache_enabled(), true);
+        assert_eq!(resolver_config.is_cache_enabled(), true);
 
         resolver_config.set_cache_enabled(false);
 
-        assert_eq!(resolver_config.get_cache_enabled(), false);
+        assert_eq!(resolver_config.is_cache_enabled(), false);
     }
 
     #[test]

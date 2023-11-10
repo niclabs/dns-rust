@@ -70,7 +70,7 @@ impl AsyncResolver {
 
         let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
 
-        let result_rrs = self.parse_response(response);
+        let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
             let rrs_iter = rrs.into_iter();
             let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr| 
@@ -91,17 +91,14 @@ impl AsyncResolver {
         }
     }
  
-    //TODO: parse header and personalised error type ,
-    /// Parses the received `DnsMessage` and returns the corresponding IP address.
+    /// Parses the received `DnsMessage` and returns the corresponding RRs.
     /// 
     /// After receiving the response of the query, this method parses the DNS message
-    /// of type `DnsMessage` to the corresponding IP address when the response was
+    /// of type `DnsMessage` to a `Vec<ResourceRecord>` with the corresponding resource
+    /// records contained in the message. It will return the RRs if the response was
     /// successful. If the response was not successful, it will return the corresponding
     /// error message to the Client.
-    /// 
-    /// This method only return queries of type A. FIXME: shoyul work for all types
-    /// 
-    fn parse_response(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
+    fn parse_dns_msg(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
         let dns_mgs = match response {
             Ok(val) => val,
             Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
@@ -178,7 +175,7 @@ impl AsyncResolver {
         let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
         
         //TODO: parse header and personalised error type FIXME: SHOULD look all types
-        return self.parse_response(response).map_err(Into::into)
+        return self.parse_dns_msg(response).map_err(Into::into)
         // match response {
         //     Ok(val) => {
         //         let rdata = val.get_answer()[0].get_rdata();
@@ -315,7 +312,7 @@ mod async_resolver_test {
     }
 
     #[test]
-    fn parse_response_ip() {
+    fn parse_dns_msg_ip() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
 
         // Create a new dns response
@@ -338,7 +335,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_response(Ok(dns_response));
+        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();

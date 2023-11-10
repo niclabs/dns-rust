@@ -171,28 +171,37 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
             ConnectionProtocol::UDP=> {
                 let result_response = conn_udp.send(new_query.clone());
                 
-                response = match result_response {
-                    Ok(response_message) => {
-                        match DnsMessage::from_bytes(&response_message) {
-                            Ok(dns_message) => dns_message,
-                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
-                        }
-                    },
+                // FIXME: arrelar para que se mantengan los errores
+                response = match parse_response(result_response) {
+                    Ok(response_message) => response_message,
                     Err(_) => response,
-                }
+                };
+                // response = match result_response {
+                //     Ok(response_message) => {
+                //         match DnsMessage::from_bytes(&response_message) {
+                //             Ok(dns_message) => dns_message,
+                //             Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
+                //         }
+                //     },
+                //     Err(_) => response,
+                // }
             }
             ConnectionProtocol::TCP => {
                 let result_response = conn_tcp.send(new_query.clone());
-                
-                response = match result_response {
-                    Ok(response_message) => {
-                        match DnsMessage::from_bytes(&response_message) {
-                            Ok(dns_message) => dns_message,
-                            Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
-                        }
-                    },
+
+                response = match parse_response(result_response) {
+                    Ok(response_message) => response_message,
                     Err(_) => response,
-                }
+                };
+                // response = match result_response {
+                //     Ok(response_message) => {
+                //         match DnsMessage::from_bytes(&response_message) {
+                //             Ok(dns_message) => dns_message,
+                //             Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
+                //         }
+                //     },
+                //     Err(_) => response,
+                // }
             }
             _ => continue,
         } 

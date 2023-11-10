@@ -365,15 +365,12 @@ impl DnsMessage {
             let question_result = Question::from_bytes(&bytes[12..], bytes);
 
             match question_result {
-                Ok(_) => {}
-                Err(e) => {
-                    return Err(e);
+                Ok(question_and_bytes) => {
+                    question = question_and_bytes.0;
+                    no_question_bytes = question_and_bytes.1;
                 }
-            }
-
-            let question_and_bytes = question_result.unwrap();
-            question = question_and_bytes.0;
-            no_question_bytes = question_and_bytes.1;
+                Err(e) => return Err(e)
+            };
         }
 
         // ResourceRecords

@@ -237,7 +237,6 @@ mod async_resolver_test {
         println!("Response: {:?}",response);
     }
 
-    #[ignore]
     #[tokio::test]
     async fn host_name_to_host_address_translation() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -377,21 +376,35 @@ mod async_resolver_test {
         } else {
             panic!("La resolución DNS tuvo éxito antes de lo esperado");
         }
-        // // Verifica que se hayan intentado los reintentos especificados
-        // match result {
-        //     Ok(_) => {
-        //         panic!("Se esperaba un error de timeout, pero se resolvió exitosamente");
-        //     }
-        //     Err(_) => {
-        //         panic!("El timeout no se manejó correctamente");
-        //     }
-        // }
         
     }
 
     //TODO: use UDP
-
+    #[tokio::test]
+    async fn use_udp() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+        
+        assert!(ip_addresses[0].is_ipv4());
+    
+        assert!(!ip_addresses[0].is_unspecified());
+    }
     //TODO: use TCP
+    #[tokio::test]
+    async fn use_tcp() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "TCP";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+        
+        assert!(ip_addresses[0].is_ipv4());
+    
+        assert!(!ip_addresses[0].is_unspecified());
+    }
 
     //TODO: use UDP but fails and use TCP
 

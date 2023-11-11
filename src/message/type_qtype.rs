@@ -1,3 +1,5 @@
+use super::type_rtype::Rtype;
+
 #[derive(Clone, PartialEq, Debug,Copy)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Qtype {
@@ -112,6 +114,23 @@ impl Qtype{
             _ => Qtype::UNKNOWN(99),
         }
     }
+
+    /// Parse Qtype to Rtype
+    pub fn to_rtype(qtype: Qtype) -> Rtype {
+        match qtype {
+            Qtype::A => Rtype::A,
+            Qtype::NS => Rtype::NS,
+            Qtype::CNAME => Rtype::CNAME,
+            Qtype::SOA => Rtype::SOA,
+            Qtype::WKS => Rtype::WKS,
+            Qtype::PTR => Rtype::PTR,
+            Qtype::HINFO => Rtype::HINFO,
+            Qtype::MINFO => Rtype::MINFO,
+            Qtype::MX => Rtype::MX,
+            Qtype::TXT => Rtype::TXT,
+            _ => Rtype::UNKNOWN(Self::from_qtype_to_int(qtype))
+        }
+    } 
 }
 
 impl Default for Qtype {

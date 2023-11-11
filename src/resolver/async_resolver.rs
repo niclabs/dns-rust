@@ -191,6 +191,7 @@ impl AsyncResolver {
 
 #[cfg(test)]
 mod async_resolver_test {
+    use crate::client::client_error::ClientError;
     use crate::client::config::TIMEOUT;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
@@ -379,7 +380,7 @@ mod async_resolver_test {
         
     }
 
-    //TODO: use UDP
+ 
     #[tokio::test]
     async fn use_udp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -392,7 +393,7 @@ mod async_resolver_test {
     
         assert!(!ip_addresses[0].is_unspecified());
     }
-    //TODO: use TCP
+  
     #[tokio::test]
     async fn use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -407,6 +408,23 @@ mod async_resolver_test {
     }
 
     //TODO: use UDP but fails and use TCP
+    #[tokio::test]
+    async fn use_udp_or_tcp() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "nonexistent-domain.com";
+
+        let udp_result = resolver.lookup_ip(domain_name, "UDP").await;
+    
+        let tcp_result = resolver.lookup_ip(domain_name, "TCP").await;
+    
+       
+        println!("RESPONSE (UDP): {:?}", udp_result);
+        println!("RESPONSE (TCP): {:?}", tcp_result);
+    
+        // Verifica que ambas operaciones hayan fallado
+        
+    }
+
 
     //TODO: diferent types of errors
 

@@ -5,11 +5,8 @@ use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::rr_cache::RRCache;
 use crate::message::type_rtype::Rtype;
-//use chrono::prelude::*;
 use std::net::IpAddr;
-//use std::collections::HashMap;
 use crate::domain_name::DomainName;
-//use crate::dns_cache::cache_data::host_data::HostData;
 use std::cmp;
 
 #[derive(Clone)]
@@ -22,15 +19,15 @@ pub struct DnsCache {
 }
 
 impl DnsCache {
-    // Creates a new DnsCache with default values
-    //
-    // # Examples
-    // '''
-    // let cache = DnsCache::new();
-    //
-    // assert_eq!(cache.cache.len(), 0);
-    // '''
-    //
+    /// Creates a new DnsCache with default values
+    ///
+    /// # Examples
+    /// ```
+    /// let cache = DnsCache::new();
+    ///
+    /// assert_eq!(cache.cache.len(), 0);
+    /// ```
+    ///
     pub fn new() -> Self {
         let cache = DnsCache {
             cache: CacheData::new(),
@@ -41,7 +38,7 @@ impl DnsCache {
         cache
     }
 
-    // Adds an element to cache
+    /// Adds an element to cache
     pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord) {
         //See if max size is 0
         if self.max_size < 1 {
@@ -62,7 +59,7 @@ impl DnsCache {
         self.set_size(self.get_size() + 1);
     }
 
-    // Removes an element from cache
+    /// Removes an element from cache
     pub fn remove(&mut self, domain_name: DomainName, rtype: Rtype) {
         let mut cache_data = self.get_cache();
         let length = cache_data.remove_from_cache_data(domain_name, rtype);
@@ -71,7 +68,7 @@ impl DnsCache {
         self.set_size(cmp::max(self.get_size() - length as u32, 0));  
     }
 
-    // Given a domain_name, gets an element from cache
+    /// Given a domain_name, gets an element from cache
     pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>> {
         let mut cache = self.get_cache();
         let rr_cache_vec = cache.get_from_cache_data(domain_name, rtype);
@@ -79,7 +76,7 @@ impl DnsCache {
         return rr_cache_vec;
     }
 
-    // Removes the resource records from a domain name and type which were the oldest used
+    /// Removes the resource records from a domain name and type which were the oldest used
     pub fn remove_oldest_used(&mut self) {
         let mut cache = self.get_cache();
 
@@ -88,7 +85,7 @@ impl DnsCache {
         self.set_size(cmp::max(self.get_size() - length as u32, 0)); 
     }
 
-    // Gets the response time from a domain name and type resource record
+    /// Gets the response time from a domain name and type resource record
     pub fn get_response_time(
         &mut self,
         domain_name: DomainName,
@@ -127,7 +124,7 @@ impl DnsCache {
         self.set_cache(cache);
     }
 
-    /// Check if cache is empty
+    /// Checks if cache is empty
     pub fn is_empty(&self) -> bool {
         self.cache.get_cache_data().is_empty()
     }

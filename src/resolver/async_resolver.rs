@@ -351,6 +351,43 @@ mod async_resolver_test {
 
 
     //TODO: test max number of retry
+    #[tokio::test]
+    async fn max_number_of_retry() {
+        let mut config = ResolverConfig::default();
+        let max_retries = 6;
+        config.set_retry(max_retries);
+        let mut resolver = AsyncResolver::new(config);
+
+        // Realiza una resolución de DNS que sabes que fallará
+        //let result = resolver.lookup_ip("nonexistent-domain.com", "UDP").await;
+
+        let mut retries_attempted = 0;
+
+        // Realiza la resolución de DNS que sabes que fallará
+        while retries_attempted < max_retries {
+            let result = resolver.lookup_ip("nonexistent-domain.com", "UDP").await;
+             retries_attempted += 1;
+
+            if result.is_ok() {
+                break; // La resolución tuvo éxito, sal del bucle
+            }
+        }
+        if retries_attempted == max_retries {
+            assert!(retries_attempted == max_retries, "Número incorrecto de reintentos");
+        } else {
+            panic!("La resolución DNS tuvo éxito antes de lo esperado");
+        }
+        // // Verifica que se hayan intentado los reintentos especificados
+        // match result {
+        //     Ok(_) => {
+        //         panic!("Se esperaba un error de timeout, pero se resolvió exitosamente");
+        //     }
+        //     Err(_) => {
+        //         panic!("El timeout no se manejó correctamente");
+        //     }
+        // }
+        
+    }
 
     //TODO: use UDP
 

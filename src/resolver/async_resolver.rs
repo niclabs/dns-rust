@@ -190,6 +190,15 @@ impl AsyncResolver {
 
 }
 
+
+// Getters
+impl AsyncResolver {
+    // Gets the cache from the struct
+    pub fn get_cache(&self) -> DnsCache {
+        self.cache.clone()
+    }
+}
+
 //TODO: FK test config and documentation
 
 #[cfg(test)]
@@ -201,9 +210,12 @@ mod async_resolver_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::resource_record::ResourceRecord;
     use crate:: message::type_qtype::Qtype;
+    use crate::message::type_rtype::Rtype;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
+    use std::f32::consts::E;
     use std::net::IpAddr;
+    use std::thread;
     use std::time::Duration;
     use crate::domain_name::DomainName;
     
@@ -350,6 +362,26 @@ mod async_resolver_test {
             }
         } else {
             panic!("Error parsing response");
+        }
+    }
+
+    /// Test cache data
+    #[tokio::test]
+    async fn lookup_cache_data() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        assert_eq!(resolver.cache.is_empty(), true);
+        let response = resolver.lookup_ip("example.com", "UDP").await;
+
+        if let Ok(_rrs) = response {
+            let cache_data = resolver.cache.get(
+                DomainName::new_from_string("example.com".to_string()), Rtype::A);
+            if let Some(vec_rrs) = cache_data {
+                    assert_eq!(vec_rrs.len(), 1);   
+            } else {
+                panic!("No Cache data")
+            }     
+        } else {
+            panic!("Lookup response error");
         }
     }
 

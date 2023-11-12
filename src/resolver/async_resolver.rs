@@ -191,6 +191,9 @@ impl AsyncResolver {
 
 #[cfg(test)]
 mod async_resolver_test {
+    use tokio::io;
+
+    use crate::client::client_error::ClientError;
     use crate::client::config::TIMEOUT;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
@@ -447,10 +450,70 @@ mod async_resolver_test {
 
 
     //TODO: diferent types of errors
+    #[tokio::test]
+    async fn resolver_with_client_error_io() {
+        let io_error = io::Error::new(io::ErrorKind::Other, "Simulated I/O Error");
+        let result = ClientError::Io(io_error);
 
+        match result {
+           ClientError::Io(_) => {
+            // La operación generó un error de I/O simulado, la prueba es exitosa
+           }
+           _ => {
+               panic!("Se esperaba un error de I/O simulado");
+           }
+        }
+    }
+    
+    #[tokio::test]
+    async fn parse_dns_msg_1() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        header.set_rcode(1);
+        dns_response.set_header(header);
+        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::SomeARdata(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            if let Err(ClientError::FormatError("The name server was unable to interpret the query.")) = result_vec_rr {
+                assert!(true);
+            }
+            else {
+                panic!("Error parsing response");
+            }
+        }
+
+    }
+
+    
     //TODO: bad domain name written
 
-    //TODO: prbar diferentes qtype
+    //TODO: probar diferentes qtype
 
 
 }

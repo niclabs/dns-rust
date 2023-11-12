@@ -191,7 +191,6 @@ impl AsyncResolver {
 
 #[cfg(test)]
 mod async_resolver_test {
-    use crate::client::client_error::ClientError;
     use crate::client::config::TIMEOUT;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
@@ -407,22 +406,43 @@ mod async_resolver_test {
         assert!(!ip_addresses[0].is_unspecified());
     }
 
-    //TODO: use UDP but fails and use TCP
+   
     #[tokio::test]
-    async fn use_udp_or_tcp() {
+    async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        let domain_name = "nonexistent-domain.com";
+        let domain_name = "Ecample.com";
 
         let udp_result = resolver.lookup_ip(domain_name, "UDP").await;
     
-        let tcp_result = resolver.lookup_ip(domain_name, "TCP").await;
-    
        
-        println!("RESPONSE (UDP): {:?}", udp_result);
-        println!("RESPONSE (TCP): {:?}", tcp_result);
-    
-        // Verifica que ambas operaciones hayan fallado
+       match udp_result {
+        Ok(_) => {
+            panic!("UDP client error expected");
+        }
+           
+       
+       Err(_err) => {
+        assert!(true);
+       }
+      
+      } 
+
+      let tcp_result = resolver.lookup_ip(domain_name, "TCP").await;
+
+      match tcp_result {
+        Ok(_) => {
+            assert!(true);
+            
+        }
+           
+       
+       Err(_err) => {
+        panic!("unexpected TCP client error");
         
+       }
+      
+      } 
+    
     }
 
 

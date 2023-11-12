@@ -510,7 +510,50 @@ mod async_resolver_test {
 
     }
 
-    
+    #[tokio::test]
+    async fn parse_dns_msg_2() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        header.set_rcode(2);
+        dns_response.set_header(header);
+        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::SomeARdata(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            if let Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server.")) = result_vec_rr {
+                assert!(true);
+            }
+            else {
+                panic!("Error parsing response");
+            }
+        }
+
+    }
     //TODO: bad domain name written
 
     //TODO: probar diferentes qtype

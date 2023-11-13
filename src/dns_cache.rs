@@ -9,7 +9,7 @@ use std::net::IpAddr;
 use crate::domain_name::DomainName;
 use std::cmp;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// Struct that represents a cache for dns
 pub struct DnsCache {
     // first hash by type, then by hostname
@@ -188,7 +188,6 @@ mod dns_cache_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
-    //use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::type_rtype::Rtype;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;

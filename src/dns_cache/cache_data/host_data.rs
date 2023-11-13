@@ -6,7 +6,7 @@ use std::{collections::HashMap, net::IpAddr};
 ///type to define the name of the host
 
 ///struct to define the host data
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct HostData {
     pub host_hash: HashMap<DomainName, Vec<RRCache>>,
 }

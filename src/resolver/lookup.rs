@@ -2,7 +2,6 @@ use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::header::Header;
-use crate::message::type_rtype::Rtype;
 use crate::message::resource_record::ResourceRecord;
 use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
@@ -11,7 +10,6 @@ use futures_util::{FutureExt,task::Waker};
 use std::pin::Pin;
 use std::task::{Poll,Context};
 use rand::{thread_rng, Rng};
-//TODO: Eliminar librerias
 use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
 use std::sync:: {Mutex,Arc};
@@ -128,15 +126,29 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
         query_id
     );
 
-    if let Some(cache_lookup) = cache.get(name.clone(), Rtype::A) {
+    // Search in cache only if its available
+    if config.is_cache_enabled() {
+        if let Some(cache_lookup) = cache.get(name.clone(), Qtype::to_rtype(record_type)) {
+            println!("[Cached Data]");
+    
+            // Add Answer
+            let answer: Vec<ResourceRecord> = cache_lookup
+                                                .iter()
+                                                .map(|rr_cache_value| rr_cache_value.get_resource_record())
+                                                .collect::<Vec<ResourceRecord>>();
+            new_query.set_answer(answer);
 
-        // Add Answer
-        let answer: Vec<ResourceRecord> = cache_lookup
-                                            .iter()
-                                            .map(|rr_cache_value| rr_cache_value.get_resource_record())
-                                            .collect::<Vec<ResourceRecord>>();
-        new_query.set_answer(answer);
 
+            // Wake up task
+            if let Some(waker) = waker {
+                waker.wake();
+            }
+
+            let mut future_query = referenced_query.lock().unwrap();
+            *future_query = future::ready(Ok(new_query.clone())).boxed();
+
+            return Ok(new_query)    
+        }
     }
 
     // Create Server failure query 
@@ -204,6 +216,7 @@ mod async_resolver_test {
     use crate::message::rdata::Rdata;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+    use std::str::FromStr;
     use std::time::Duration;
     use super::*;
 
@@ -369,6 +382,25 @@ mod async_resolver_test {
         // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
     }
 
-    //TODO: add cache test 
-    
+    #[tokio::test]
+    async fn lookup_ip_cache_test() {
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let record_type = Qtype::A;
+        
+        let config: ResolverConfig = ResolverConfig::default();
+        
+        let addr = IpAddr::from_str("93.184.216.34").unwrap();
+        let a_rdata = ARdata::new_from_addr(addr);
+        let rdata = Rdata::SomeARdata(a_rdata);
+        let rr = ResourceRecord::new(rdata);
+
+        let mut cache = DnsCache::new();
+        cache.set_max_size(1);
+        cache.add(domain_name.clone(), rr);
+
+        let _response_future = LookupFutureStub::lookup(domain_name, record_type, config, cache).await;
+        
+        // TODO: test
+    }    
 }

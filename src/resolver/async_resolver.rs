@@ -213,9 +213,7 @@ mod async_resolver_test {
     use crate::message::type_rtype::Rtype;
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
-    use std::f32::consts::E;
     use std::net::IpAddr;
-    use std::thread;
     use std::time::Duration;
     use crate::domain_name::DomainName;
     

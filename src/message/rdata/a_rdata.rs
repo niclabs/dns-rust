@@ -71,6 +71,21 @@ impl ARdata {
 
         a_rdata
     }
+
+    /// Creates a new `ARdata` with a specified address
+    /// 
+    /// # Examples
+    /// ```
+    /// let a_rdata = ARdata::new_from_addr(IpAddr::from([127, 0, 0, 1]));
+    /// ```
+    pub fn new_from_addr(addr: IpAddr) -> Self {
+        let a_rdata = ARdata {
+            address: addr
+        };
+
+        a_rdata
+    }
+
     /// Returns a `ResourceRecord` from the given values.
     /// 
     /// # Examples
@@ -177,6 +192,7 @@ mod a_rdata_test {
     use crate::message::Rclass;
     use crate::message::Rtype;
     use std::net::IpAddr;
+    use std::str::FromStr;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
     #[test]
@@ -251,4 +267,12 @@ mod a_rdata_test {
             _ => {}
         }
     }
+
+    #[test]
+    fn new_from_addr_test() {
+        let addr = IpAddr::from_str("127.0.0.1").unwrap();
+        let a_rdata = ARdata::new_from_addr(addr);
+        assert_eq!(a_rdata.get_address(), addr)
+    }
+
 }

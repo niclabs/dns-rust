@@ -346,7 +346,7 @@ impl DnsMessage {
         let bytes_len = bytes.len();
 
         if bytes_len < 12 {
-            return Err("Format Error");
+            return Err("Parse Error: Message is too short.");
         }
 
         // Header
@@ -356,7 +356,7 @@ impl DnsMessage {
         let q_count = header.get_qdcount();
 
         if bytes_len < 13 {
-            return Err("Format Error");
+            return Err("Parse Error: Message is too short.");
         }
 
         let (mut question, mut no_question_bytes) = (Question::new(), &bytes[12..]);
@@ -365,15 +365,12 @@ impl DnsMessage {
             let question_result = Question::from_bytes(&bytes[12..], bytes);
 
             match question_result {
-                Ok(_) => {}
-                Err(e) => {
-                    return Err(e);
+                Ok(question_and_bytes) => {
+                    question = question_and_bytes.0;
+                    no_question_bytes = question_and_bytes.1;
                 }
-            }
-
-            let question_and_bytes = question_result.unwrap();
-            question = question_and_bytes.0;
-            no_question_bytes = question_and_bytes.1;
+                Err(e) => return Err(e)
+            };
         }
 
         // ResourceRecords

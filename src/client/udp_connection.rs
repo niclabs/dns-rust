@@ -56,11 +56,6 @@ impl ClientConnection for ClientUDPConnection {
             Ok(_) => (),
         };
 
-        // let response_dns: DnsMessage = match DnsMessage::from_bytes(&msg) {
-        //     Ok(response) => response,
-        //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not create dns message {}", e))).map_err(Into::into),
-        // };
-
         drop(socket_udp);
         return Ok(msg.to_vec());
     }

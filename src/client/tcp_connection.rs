@@ -31,47 +31,25 @@ impl ClientConnection for ClientTCPConnection {
 
     /// creates socket tcp, sends query and receive response
     fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>{
-        println!("[SEND TCP]");
+        
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
         let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
 
-        // let mut stream: TcpStream = match TcpStream::connect_timeout(&server_addr,timeout){
-        //     Ok(stream) => stream,
-        //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error connect {}", e))),
-        // };
-        println!("[SEND TCP] conn {} - {:?}",server_addr, timeout);
         let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
-        println!("[SEND TCP] conn 2");
-        
     
         //Add len of message len
         let msg_length: u16 = bytes.len() as u16;
         let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
-    
-        //Set read timeout
-        // match stream.set_read_timeout(Some(timeout)) {
-        //     Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: setting read timeout for socket"))),
-        //     Ok(_) => (),
-        // }
         
         stream.set_read_timeout(Some(timeout))?; 
-        println!("[SEND TCP] set timeout");
-    
-        // match stream.write(&full_msg) {
-        //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not write to stream {}", e))),
-        //     Ok(_) => (),
-        // }
+
         stream.write(&full_msg)?;
-        println!("[SEND TCP] query sent");
     
         //Read response
         let mut msg_size_response: [u8; 2] = [0; 2];
-        // match stream.read_exact(&mut msg_size_response) {
-        //     Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error: could not read stream {}", e))),
-        //     Ok(_) => (),
-        // }
+
         stream.read_exact(&mut msg_size_response)?;
     
         let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
@@ -86,13 +64,7 @@ impl ClientConnection for ClientTCPConnection {
             };
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
-      
-        // let response_dns: DnsMessage = match DnsMessage::from_bytes(&vec_msg) {
-        //     Ok(response) => response,
-        //     Err(_) => return Err(IoError::new(ErrorKind::Other, format!("Error: creating dns message "))).map_err(Into::into),
-        // };
-        // println!("[SEND TCP] {:?}", vec_msg);
-            println!("AAAA Response: {:?}", vec_msg);
+
         return Ok(vec_msg);
     }
 }
@@ -211,7 +183,6 @@ mod tcp_connection_test{
             false,
             1);
         let response = conn_new.send(dns_query).unwrap();
-        // println!("{:?}", DnsMessage::from_bytes(&response));
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
         // FIXME:

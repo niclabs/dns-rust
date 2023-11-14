@@ -113,7 +113,7 @@ impl LookupFutureStub {
 /// 
 /// When a response is received, the function performs the parsing of the response to a `DnsMessage`.
 /// After the response is checked, the function updates the future that contains the response of the query.
-pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
+pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
     record_type: Qtype,
     mut cache: DnsCache,
@@ -170,6 +170,7 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
     new_header.set_rcode(2);
     new_header.set_qr(true);
     response.set_header(new_header);
+    let mut result_dns_msg = Ok(response);
 
     let mut retry_count = 0;
 
@@ -180,45 +181,29 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
         }
         
         match config.get_protocol() { 
-            ConnectionProtocol::UDP=> {
+            ConnectionProtocol::UDP => {
                 let result_response = conn_udp.send(new_query.clone());
-                
-                // FIXME: arrelar para que se mantengan los errores
-                response = match parse_response(result_response) {
-                    Ok(response_message) => response_message,
-                    Err(_) => response,
-                };
-                // response = match result_response {
-                //     Ok(response_message) => {
-                //         match DnsMessage::from_bytes(&response_message) {
-                //             Ok(dns_message) => dns_message,
-                //             Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
-                //         }
-                //     },
+                result_dns_msg = parse_response(result_response);
+
+                // response = match parse_response(result_response) {
+                //     Ok(response_message) => response_message,
                 //     Err(_) => response,
-                // }
+                // };
             }
             ConnectionProtocol::TCP => {
                 let result_response = conn_tcp.send(new_query.clone());
+                result_dns_msg = parse_response(result_response);
 
-                response = match parse_response(result_response) {
-                    Ok(response_message) => response_message,
-                    Err(_) => response,
-                };
-                // response = match result_response {
-                //     Ok(response_message) => {
-                //         match DnsMessage::from_bytes(&response_message) {
-                //             Ok(dns_message) => dns_message,
-                //             Err(_) => Err(ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?,
-                //         }
-                //     },
+                // response = match parse_response(result_response) {
+                //     Ok(response_message) => response_message,
                 //     Err(_) => response,
-                // }
+                // };
             }
             _ => continue,
         } 
 
         retry_count = retry_count + 1;
+        println!("retry count isss: {}", retry_count);
     }
 
     // Wake up task
@@ -226,10 +211,13 @@ pub async fn  lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y 
         waker.wake();
     }
     let mut future_query = referenced_query.lock().unwrap();
-    *future_query = future::ready(Ok(response.clone())).boxed();
+    *future_query = future::ready(result_dns_msg.clone()).boxed();
 
-    Ok(response)
-   
+    result_dns_msg
+
+    // *future_query = future::ready(Ok(response.clone())).boxed();
+
+    // Ok(response)
 }
 
 /// Parse the received response datagram to a `DnsMessage`.
@@ -354,8 +342,8 @@ mod async_resolver_test {
 
     } 
 
-    #[tokio::test]
-    async fn lookup_stub_max_tries(){
+    #[tokio::test] // FIXME: SECAE
+    async fn lookup_stub_max_tries() {
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let waker = None;
@@ -412,7 +400,7 @@ mod async_resolver_test {
     }
 
     #[ignore]
-    #[tokio::test]
+    #[tokio::test]  //FIXME: se cae
     async fn poll_lookup_max_tries(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());

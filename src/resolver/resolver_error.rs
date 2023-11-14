@@ -57,3 +57,15 @@ impl From<ClientError> for ResolverError {
     }
     
 }
+
+impl Clone for ResolverError {
+    fn clone(&self) -> Self {
+        match self {
+            ResolverError::Io(io) => Self::from(std::io::Error::from(io.kind())),
+            ResolverError::Message(err) => ResolverError::Message(err),
+            ResolverError::EmptyQuery => ResolverError::EmptyQuery,
+            ResolverError::RetriesLimitExceeded => ResolverError::RetriesLimitExceeded,
+            ResolverError::Parse(err) => ResolverError::Parse(err.to_string()),
+        }
+    }
+}

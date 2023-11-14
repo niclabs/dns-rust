@@ -166,11 +166,11 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
 
     // Create Server failure query 
     let mut response = new_query.clone().to_owned();
-    let mut new_header:Header = response.get_header();
+    let mut new_header: Header = response.get_header();
     new_header.set_rcode(2);
     new_header.set_qr(true);
     response.set_header(new_header);
-    let mut result_dns_msg = Ok(response);
+    let mut result_dns_msg = Ok(response.clone());
 
     let mut retry_count = 0;
 
@@ -210,8 +210,13 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
     if let Some(waker) = waker {
         waker.wake();
     }
+
+    let response_dns_msg = match result_dns_msg.clone() {
+        Ok(response_message) => response_message,
+        Err(_) => response,
+    };
     let mut future_query = referenced_query.lock().unwrap();
-    *future_query = future::ready(result_dns_msg.clone()).boxed();
+    *future_query = future::ready(Ok(response_dns_msg)).boxed();
 
     result_dns_msg
 
@@ -373,7 +378,7 @@ mod async_resolver_test {
     }
 
     #[ignore]
-    #[tokio::test]
+    #[tokio::test] // FIXME: loop
     async fn poll_lookup_a(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());

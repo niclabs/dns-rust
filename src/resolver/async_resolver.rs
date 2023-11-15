@@ -236,6 +236,16 @@ impl AsyncResolver {
     /// 
     /// This method will perform a inner lookup of the given domain name
     /// and qtype, returning the corresponding resource records.
+    /// 
+    /// # Examples
+    /// ```
+    /// let mut resolver = AsyncResolver::new(ResolverConfig::default());
+    /// let domain_name = "example.com";
+    /// let transport_protocol = "UDP";
+    /// let qtype = "NS";
+    /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+    /// ```
+    /// 
     pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError>{
         println!("[LOOKUP ASYNCRESOLVER]");
 

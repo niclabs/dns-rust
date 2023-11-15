@@ -391,7 +391,7 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(config);
 
         // Realiza una resolución de DNS que sabes que fallará
-        //let result = resolver.lookup_ip("nonexistent-domain.com", "UDP").await;
+        //let result = resolver.lookup_ip("nonexisten.comt-domain", "UDP").await;
 
         let mut retries_attempted = 0;
 

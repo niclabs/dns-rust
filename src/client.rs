@@ -355,53 +355,51 @@ mod client_test {
         
     }
 
-//     //Wrong domain that doesn't exist: should panic?
-//     #[test]
-//     fn domain_that_does_not_exist(){
-//         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-//         let timeout: Duration = Duration::from_secs(2);
+ 
+    #[test]
+    fn domain_that_does_not_exist(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
 
-//         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
-//         let mut new_client = Client::new(conn_tcp);
-//         let mut domain_name = DomainName::new();
-//         domain_name.set_name(String::from("www.wrong-domain.cl"));
-//         let mut response = new_client.query(domain_name, "A", "IN");
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("nonexisten.comt-domain"));
+        let response = new_client.query(domain_name, "A", "IN").unwrap_err();
+        println!("Response: {:?}", response);
 
-//         response.print_dns_message();
         
-//     }
+    }
 
-//     //Wrong domain that haves a number at the start tcp
-//     #[test]
-//     #[should_panic]
-//     fn wrong_written_domain_2_tcp(){
-//         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-//         let timeout: Duration = Duration::from_secs(2);
+    //Wrong domain that haves a number at the start tcp
+    #[test]
+    fn wrong_written_domain_2_tcp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
 
-//         let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
-//         let mut new_client = Client::new(conn_tcp);
-//         let mut domain_name = DomainName::new();
-//         domain_name.set_name(String::from("2www.u-cursos.cl"));
-//         let mut response = new_client.query(domain_name, "A", "IN");
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("2www.u-cursos.cl"));
+        let _response = new_client.query(domain_name, "A", "IN").unwrap_err();
 
-//         response.print_dns_message();
-//     }
+        
+    }
 
-//     //Wrong domain that haves a number at the start udp
-//     #[test]
-//     #[should_panic]
-//     fn wrong_written_domain_2_udp(){
-//         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-//         let timeout: Duration = Duration::from_secs(2);
+    //Wrong domain that haves a number at the start udp
+    #[test]
+    fn wrong_written_domain_2_udp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
 
-//         let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
-//         let mut new_client = Client::new(conn_udp);
-//         let mut domain_name = DomainName::new();
-//         domain_name.set_name(String::from("2www.u-cursos.cl"));
-//         let mut response = new_client.query(domain_name, "A", "IN");
+        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_udp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("2www.u-cursos.cl"));
+        let _response = new_client.query(domain_name, "A", "IN").unwrap_err();
 
-//         response.print_dns_message();
-//     }
+      
+    }
  
 
 }

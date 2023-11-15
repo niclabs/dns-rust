@@ -206,6 +206,17 @@ impl AsyncResolver {
     /// 
     /// Host address to host name translation
     /// 
+    /// This function will often follow the form of previous
+    /// functions.  Given a 32 bit IP address, the caller wants a
+    /// character string.  The octets of the IP address are reversed,
+    /// used as name components, and suffixed with "IN-ADDR.ARPA".  A
+    /// type PTR query is used to get the RR with the primary name of
+    /// the host.  For example, a request for the host name
+    /// corresponding to IP address 1.2.3.4 looks for PTR RRs for
+    /// domain name "4.3.2.1.IN-ADDR.ARPA".
+    /// 
+    /// Reverse query function
+
     pub async fn reverse_query() {
         unimplemented!()
     }

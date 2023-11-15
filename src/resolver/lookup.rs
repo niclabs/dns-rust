@@ -3,7 +3,6 @@ use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::header::Header;
-use crate::message::resource_record::ResourceRecord;
 use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
@@ -237,6 +236,7 @@ mod async_resolver_test {
     // use tokio::runtime::Runtime;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;

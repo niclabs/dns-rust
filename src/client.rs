@@ -291,72 +291,69 @@ mod client_test {
         assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
     }
 
-    // #[test]
-    // #[should_panic]
-    // fn query_timeout_tcp(){
-    //     let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
-    //     let timeout: Duration = Duration::from_secs(2);
+    #[test]
+    fn query_timeout_tcp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
+        let timeout: Duration = Duration::from_secs(2);
 
-    //     let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
-    //     let mut new_client = Client::new(conn_tcp);
-    //     let mut domain_name = DomainName::new();
-    //     domain_name.set_name(String::from("www.u-cursos.cl"));
-    //     new_client.create_dns_query(domain_name, "A", "IN");
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("www.u-cursos.cl"));
+        new_client.create_dns_query(domain_name, "A", "IN");
 
-    //     new_client.send_query();
-    // }
+        let _result = new_client.send_query().unwrap_err();
+        
+    }
 
-    // #[test]
-    // // #[should_panic]
-    // fn query_timeout_udp(){
-    //     let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
-    //     let timeout: Duration = Duration::from_secs(2);
+    #[test]
+    fn query_timeout_udp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
+        let timeout: Duration = Duration::from_secs(2);
 
-    //     let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
-    //     let mut new_client = Client::new(conn_udp);
-    //     let mut domain_name = DomainName::new();
-    //     domain_name.set_name(String::from("www.u-cursos.cl"));
-    //     new_client.create_dns_query(domain_name, "A", "IN");
-    //     new_client.send_query();
-    // }
-    // Querys with error
+        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_udp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("www.u-cursos.cl"));
+        new_client.create_dns_query(domain_name, "A", "IN");
+        let _result = new_client.send_query().unwrap_err();
+    }
+    //Querys with error
 
     //Wrong domain starting with "?" tcp
-    // #[test]
-    // #[should_panic]
-    // fn wrong_written_domain_tcp(){
-    //     let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-    //     let timeout: Duration = Duration::from_secs(2);
+    #[test]
+    fn wrong_written_domain_tcp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
 
-    //     let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
-    //     let mut new_client = Client::new(conn_tcp);
-    //     let mut domain_name = DomainName::new();
-    //     domain_name.set_name(String::from("?www.u-cursos.cl"));
-    //     let domain_name_copy =domain_name.clone();
-    //     new_client.create_dns_query(domain_name, "A", "IN");
-    //     let mut response = new_client.query(domain_name_copy, "A", "IN").unwrap();
+        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_tcp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("?www.u-cursos.cl"));
+        let domain_name_copy =domain_name.clone();
+        new_client.create_dns_query(domain_name, "A", "IN");
+        let _response = new_client.query(domain_name_copy, "A", "IN").unwrap_err();
 
-    //     response.print_dns_message();
-    // }
+        
+    }
 
     // //Wrong domain starting with "?" udp
-    // #[test]
-    // #[should_panic]
-    // fn wrong_written_domain_udp(){
-    //     let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-    //     let timeout: Duration = Duration::from_secs(2);
+    #[test]
+    fn wrong_written_domain_udp(){
+        let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
 
-    //     let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
-    //     let mut new_client = Client::new(conn_udp);
-    //     let mut domain_name = DomainName::new();
-    //     domain_name.set_name(String::from("?www.u-cursos.cl"));
-    //     let domain_name_copy =domain_name.clone();
-    //     new_client.create_dns_query(domain_name, "A", "IN");
-    //     let mut response = new_client.query(domain_name_copy, "A", "IN");
-    //     assert!(response.is_err());
+        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let mut new_client = Client::new(conn_udp);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("?www.u-cursos.cl"));
+        let domain_name_copy =domain_name.clone();
+        new_client.create_dns_query(domain_name, "A", "IN");
+        let _response = new_client.query(domain_name_copy, "A", "IN").unwrap_err();
+        
 
-    //     // response.print_dns_message();
-    // }
+        
+    }
 
 //     //Wrong domain that doesn't exist: should panic?
 //     #[test]

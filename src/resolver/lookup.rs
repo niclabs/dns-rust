@@ -385,14 +385,10 @@ mod async_resolver_test {
             } else {
                 panic!("La resolución DNS tuvo éxito antes de lo esperado");
             }
-            
-       
-        
-  
-        
+
     }
 
-    #[tokio::test] // FIXME: loop
+    #[tokio::test] 
     async fn poll_lookup_a(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -412,10 +408,9 @@ mod async_resolver_test {
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
-        // let response = response_future.unwrap();
-        // assert_eq!(response_future.unwrap().get_header().get_ancount(), 0);
-        // assert_eq!(response.get_header().get_rcode() , 2);
-        // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
+        let response = response_future.unwrap();
+        assert_eq!(response.get_header().get_ancount(), 1);
+        assert_eq!(response.get_header().get_rcode() , 0);
     }
 
     #[tokio::test] 

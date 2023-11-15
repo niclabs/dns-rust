@@ -129,6 +129,17 @@ impl DnsCache {
         self.cache.get_cache_data().is_empty()
     }
 
+    /// Checks if a domain name is cached
+    pub fn is_cached(&self, domain_name: DomainName, rtype: Rtype) -> bool {
+        if let Some(mut host_data) = self.cache.get_cache_data().get(&rtype).cloned() {
+            if let Some(_rrs) = host_data.get_from_host_data(domain_name) {
+                return true;
+            }
+        }
+
+        false
+    }
+
     // TODO: Make print cache function
     // pub fn print(&self) {
     //     let cache = self.get_cache();
@@ -191,7 +202,7 @@ mod dns_cache_test {
     use crate::message::type_rtype::Rtype;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
-    use std::{collections::HashMap, net::IpAddr};
+    use std::{collections::HashMap, net::IpAddr, str::FromStr};
 
     //Constructor test 
     #[test]
@@ -442,5 +453,20 @@ mod dns_cache_test {
 
         //Default response time in RFC 1034/1035 is 5000 so new response time should be 4500 because 5000/2 + 2000/2 = 4500
         assert_eq!(response_time_2, 4500);
+    }
+
+    #[test]
+    fn is_cached() {
+        let mut cache = DnsCache::new();
+        cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
+        let a_rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(a_rdata);
+        cache.add(domain_name.clone(), resource_record);
+        assert_eq!(cache.get_size(), 1);
+
+        assert_eq!(cache.is_cached(domain_name, Rtype::A), true);
     }
 }

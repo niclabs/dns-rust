@@ -228,21 +228,21 @@ mod client_test {
         domain_name.set_name(String::from("test.test2.com."));
         let qtype = "A"; 
         let qclass= "IN";
-        let response = tcp_client.query(domain_name, qtype, qclass);
+        let response = tcp_client.query(domain_name, qtype, qclass).unwrap();
 
         println!("Response: {:?}", response);
 
-        // let expected_ip: [u8; 4] = [93, 184, 216, 34];
-        // let answers = response.get_answer();
-        // for answer in answers {
-        //     let a_rdata = answer.get_rdata();
-        //     match a_rdata {
-        //         Rdata::SomeARdata(val) => {
-        //             assert_eq!(val.get_address(), IpAddr::from(expected_ip))
-        //         },
-        //         _ => {}
-        //     }
-        // }        
+        let expected_ip: [u8; 4] = [93, 184, 216, 34];
+        let answers = response.get_answer();
+        for answer in answers {
+            let a_rdata = answer.get_rdata();
+            match a_rdata {
+                Rdata::SomeARdata(val) => {
+                    assert_eq!(val.get_address(), IpAddr::from(expected_ip))
+                },
+                _ => {}
+            }
+        }        
     }
 
     // Constructor test

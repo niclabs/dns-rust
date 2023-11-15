@@ -222,9 +222,17 @@ impl AsyncResolver {
     }
 
     /// RFC 1034
-    /// Client-resolver interface
+    /// 5.2 Client-resolver interface
     /// 
-    /// General lookup function
+    /// 3. General lookup function
+    /// 
+    /// This function retrieves arbitrary information from the DNS,
+    /// and has no counterpart in previous systems.  The caller
+    /// supplies a QNAME, QTYPE, and QCLASS, and wants all of the
+    /// matching RRs.  This function will often use the DNS format
+    /// for all RR data instead of the local host's, and returns all
+    /// RR content (e.g., TTL) instead of a processed form with local
+    /// quoting conventions.
     /// 
     pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError>{
         println!("[LOOKUP ASYNCRESOLVER]");

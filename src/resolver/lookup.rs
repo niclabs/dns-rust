@@ -116,7 +116,7 @@ impl LookupFutureStub {
 pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
     record_type: Qtype,
-    mut cache: DnsCache,
+    cache: DnsCache,
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
     referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
@@ -130,7 +130,7 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
     let query_id: u16 = rng.gen();
 
     // Create query
-    let mut new_query = DnsMessage::new_query_message(
+    let new_query = DnsMessage::new_query_message(
         name.clone(),
         record_type,
         Qclass::IN,
@@ -138,31 +138,6 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
         false,
         query_id
     );
-
-    // Search in cache only if its available
-    if config.is_cache_enabled() {
-        if let Some(cache_lookup) = cache.get(name.clone(), Qtype::to_rtype(record_type)) {
-            println!("[Cached Data]");
-    
-            // Add Answer
-            let answer: Vec<ResourceRecord> = cache_lookup
-                                                .iter()
-                                                .map(|rr_cache_value| rr_cache_value.get_resource_record())
-                                                .collect::<Vec<ResourceRecord>>();
-            new_query.set_answer(answer);
-
-
-            // Wake up task
-            if let Some(waker) = waker {
-                waker.wake();
-            }
-
-            let mut future_query = referenced_query.lock().unwrap();
-            *future_query = future::ready(Ok(new_query.clone())).boxed();
-
-            return Ok(new_query)    
-        }
-    }
 
     // Create Server failure query 
     let mut response = new_query.clone().to_owned();

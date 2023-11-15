@@ -234,6 +234,8 @@ impl AsyncResolver {
     /// RR content (e.g., TTL) instead of a processed form with local
     /// quoting conventions.
     /// 
+    /// This method will perform a inner lookup of the given domain name
+    /// and qtype, returning the corresponding resource records.
     pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError>{
         println!("[LOOKUP ASYNCRESOLVER]");
 

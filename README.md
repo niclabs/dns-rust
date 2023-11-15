@@ -10,7 +10,11 @@ Implementation in progress.
 * 1034 - Domain names, concepts and facilities. 
 * 1035 - Domain names, implementation and specification. 
 
-DNSSEC is not supported at the moment, but it will be eventually.
+### In progress:
+
+* 1123 - Requirements for Internet Hosts -- Application and Support
+
+* DNSSEC is not supported at the moment, but it will be eventually.
 
 ## Getting started
 

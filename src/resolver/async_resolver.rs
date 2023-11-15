@@ -58,7 +58,18 @@ impl AsyncResolver {
     /// RFC 1034
     /// 5.2. Client-resolver interface
     /// 
-    /// Host name to host address translation
+    /// 1. Host name to host address translation
+    /// This function is often defined to mimic a previous HOSTS.TXT
+    /// based function.  Given a character string, the caller wants
+    /// one or more 32 bit IP addresses.  Under the DNS, it
+    /// translates into a request for type A RRs.  Since the DNS does
+    /// not preserve the order of RRs, this function may choose to
+    /// sort the returned addresses or select the "best" address if
+    /// the service returns only one choice to the client.  Note that
+    /// a multiple address return is recommended, but a single
+    /// address may be the only way to emulate prior HOSTS.TXT
+    /// services.
+    /// 
     /// FIXME: DEBE RETORNAR CLIENT ERROR
     /// This method acts as an interface between the Client and the Resolver.
     /// It calls `inner_lookup(&self, domain_name: DomainName)` which will

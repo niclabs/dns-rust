@@ -1,9 +1,12 @@
 use std::net::IpAddr;
 
+use rand::{thread_rng, Rng};
+
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
+use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::ResourceRecord;
 use crate::resolver::{config::ResolverConfig,lookup::LookupFutureStub};
 use crate::message::rdata::Rdata;
@@ -137,7 +140,39 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
-    async fn inner_lookup(&self, domain_name: DomainName,qtype:Qtype) -> Result<DnsMessage, ResolverError> {
+    async fn inner_lookup(&mut self, domain_name: DomainName,qtype:Qtype) -> Result<DnsMessage, ResolverError> {
+
+        // Cache lookup
+        // Search in cache only if its available
+        if self.config.is_cache_enabled() {
+            if let Some(cache_lookup) = self.cache.clone().get(domain_name.clone(), Qtype::to_rtype(qtype)) {
+                println!("[Cached Data]");
+
+                // Create random generator
+                let mut rng = thread_rng();
+
+                // Create query id
+                let query_id: u16 = rng.gen();
+
+                // Create query
+                let mut new_query = DnsMessage::new_query_message(
+                    domain_name.clone(),
+                    qtype,
+                    Qclass::IN,
+                    0,
+                    false,
+                    query_id
+                );
+        
+                // Add Answer
+                let answer: Vec<ResourceRecord> = cache_lookup
+                                                    .iter()
+                                                    .map(|rr_cache_value| rr_cache_value.get_resource_record())
+                                                    .collect::<Vec<ResourceRecord>>();
+                new_query.set_answer(answer);
+                return Ok(new_query)
+            }
+        }
 
         // Async query
         let response = LookupFutureStub::lookup(
@@ -146,6 +181,11 @@ impl AsyncResolver {
             self.config.clone(),
             self.cache.clone())
             .await;
+
+        // Cache data
+        if let Ok(ref r) = response {
+            self.store_data_cache(r.clone());
+        }
 
         response
     }
@@ -185,6 +225,15 @@ impl AsyncResolver {
         // }
     }
 
+    /// RFC 1035: 7.4. Using the cache
+    /// 
+    fn store_data_cache(&mut self, response: DnsMessage) {
+        // TODO: RFC 1035: 7.4. Using the cache
+        response.get_answer()
+                .iter()
+                .for_each(|rr| self.cache.add(rr.get_name(), rr.clone()));
+    }
+
 }
 
 
@@ -214,6 +263,7 @@ mod async_resolver_test {
     use crate::resolver::config::ResolverConfig;
     use super::AsyncResolver;
     use std::net::IpAddr;
+    use std::str::FromStr;
     use std::time::Duration;
     use crate::domain_name::DomainName;
     
@@ -228,7 +278,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup() {
         // Create a new resolver with default values
-        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::A;
         let response = resolver.inner_lookup(domain_name,qtype).await;
@@ -240,7 +290,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_ns() {
         // Create a new resolver with default values
-        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::NS;
         let response = resolver.inner_lookup(domain_name,qtype).await;
@@ -361,24 +411,32 @@ mod async_resolver_test {
         }
     }
 
+    /// Test lookup cache
+    #[tokio::test]
+    async fn lookup_cache() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
+        let a_rdata = Rdata::SomeARdata(a_rdata);
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        resolver.cache.add(domain_name, resource_record);
+
+        let _response = resolver.lookup("example.com", "UDP", "A").await;
+    }
+
     /// Test cache data
     #[tokio::test]
-    async fn lookup_cache_data() {
+    async fn cache_data() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.set_max_size(1);
         assert_eq!(resolver.cache.is_empty(), true);
-        let response = resolver.lookup_ip("example.com", "UDP").await;
+        let _response = resolver.lookup("example.com", "UDP", "A").await;
+        assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
 
-        if let Ok(_rrs) = response {
-            let cache_data = resolver.cache.get(
-                DomainName::new_from_string("example.com".to_string()), Rtype::A);
-            if let Some(vec_rrs) = cache_data {
-                    assert_eq!(vec_rrs.len(), 1);   
-            } else {
-                panic!("No Cache data")
-            }     
-        } else {
-            panic!("Lookup response error");
-        }
+        // TODO: Test special cases from RFC
     }
 
 
@@ -1116,7 +1174,7 @@ mod async_resolver_test {
     async fn qtypes_any() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
 
-        // Create a new dns response
+        // Create a new dns response 
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));

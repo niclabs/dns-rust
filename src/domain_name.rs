@@ -39,6 +39,10 @@ impl DomainName {
         domain_name
     }
 
+    pub fn new_from_str(domain_name: &str) -> Self {
+        Self::new_from_string(domain_name.to_string())
+    }
+
     // Given an array of bytes, creates a new DomainName and returns the unused bytes
     // what happens if label is longer than 9 ? check this out
     pub fn from_bytes_no_offset(bytes: &[u8]) -> String {
@@ -219,6 +223,12 @@ mod domain_name_test {
         let domain_name = DomainName::new();
 
         assert_eq!(domain_name.name, String::from(""));
+    }
+
+    #[test]
+    fn new_from_str_test() {
+        let domain_name = DomainName::new_from_str("example.com");
+        assert_eq!(domain_name.name, String::from("example.com"));
     }
 
     #[test]

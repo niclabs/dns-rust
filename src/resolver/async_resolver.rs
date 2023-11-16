@@ -189,8 +189,7 @@ impl AsyncResolver {
         let response = LookupFutureStub::lookup(
             domain_name,
             qtype,
-            self.config.clone(),
-            self.cache.clone())
+            self.config.clone())
             .await;
 
         // Cache data

@@ -7,6 +7,7 @@ use std::str::SplitWhitespace;
 use std::string::String;
 
 #[derive(Clone, PartialEq, Debug)]
+/// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.14
 /// An struct that represents the `Rdata` for txt type.
 /// 
 /// ```text

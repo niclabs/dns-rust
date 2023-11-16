@@ -373,7 +373,7 @@ mod async_resolver_test {
     }
 
     #[tokio::test] 
-    async fn poll_lookup_a_error(){
+    async fn poll_lookup_a_empty(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
@@ -391,14 +391,15 @@ mod async_resolver_test {
         let response_future = LookupFutureStub::lookup(domain_name, record_type ,config, cache).await;
         println!("response_future {:?}",response_future);
 
-        // assert_eq!(response_future.is_ok(), true);    
-        // let response = response_future.unwrap();
-        // assert_eq!(response_future.unwrap().get_header().get_ancount(), 0);
-        // assert_eq!(response.get_header().get_rcode() , 2);
-        // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
+        assert_eq!(response_future.is_ok(), true);    
+        let response = response_future.unwrap();
+        assert_eq!(response.get_header().get_ancount(), 0);
+        assert_eq!(response.get_header().get_rcode() , 2);
+
+        let answer = response.get_answer();
+        assert!(answer.is_empty());
     }
 
-    #[ignore]
     #[tokio::test]  //FIXME: se cae
     async fn poll_lookup_max_tries(){
 

@@ -95,7 +95,7 @@ impl LookupFutureStub {
 
 }
 
-/// RFC 1034
+/// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
 /// 5.3.1. Stub resolvers
 /// 
 /// One option for implementing a resolver is to move the resolution

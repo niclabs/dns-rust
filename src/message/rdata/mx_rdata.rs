@@ -6,6 +6,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
+/// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.9
 /// An struct that represents the `Rdata` for MX TYPE.
 /// 
 /// ```text	

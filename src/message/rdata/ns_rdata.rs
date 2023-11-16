@@ -5,6 +5,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 
 #[derive(Clone, PartialEq, Debug)]
+/// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.11
 /// An struct that represents the `rdata` for NS TYPE.
 /// 
 /// ```text

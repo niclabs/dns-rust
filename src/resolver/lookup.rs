@@ -95,7 +95,7 @@ impl LookupFutureStub {
 
 }
 
-/// RFC 1034
+/// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
 /// 5.3.1. Stub resolvers
 /// 
 /// One option for implementing a resolver is to move the resolution
@@ -343,44 +343,34 @@ mod async_resolver_test {
     } 
 
     #[tokio::test] 
-    async fn lookup_stub_max_tries() {
+    async fn lookup_stub_max_tries_0() {
        
-        
-        let mut retries_attempted = 0;
-        let max_retries =2;
+        let max_retries =0;
 
-             // Realiza la resolución de DNS que sabes que fallará
-             while retries_attempted < max_retries {
-                let domain_name = DomainName::new_from_string("example.com".to_string());
-                let waker = None;
-                let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
-                let timeout = Duration::from_secs(2);
-                let record_type = Qtype::A;
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let waker = None;
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+        let timeout = Duration::from_secs(2);
+        let record_type = Qtype::A;
     
-                let mut config: ResolverConfig = ResolverConfig::default();
-                let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
+        let mut config: ResolverConfig = ResolverConfig::default();
+        let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
             
-                config.set_retry(max_retries);
-            
-                let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
-                let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
-                config.set_name_servers(vec![(conn_udp,conn_tcp)]);
-            
-                let name_servers = vec![(conn_udp,conn_tcp)];
-                let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await;
-                retries_attempted += 1;
+        config.set_retry(max_retries);
     
-                if response.is_ok() {
-                    break; // La resolución tuvo éxito, sal del bucle
-                }
-            }
-            if retries_attempted == max_retries {
-                assert!(retries_attempted == max_retries, "Número incorrecto de reintentos");
-            } else {
-                panic!("La resolución DNS tuvo éxito antes de lo esperado");
-            }
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
+        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
+            
+        let name_servers = vec![(conn_udp,conn_tcp)];
+        let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await;
+        println!("response {:?}",response);
 
+        response.unwrap_err();
+                
     }
+           
+
 
     #[tokio::test] 
     async fn poll_lookup_a(){

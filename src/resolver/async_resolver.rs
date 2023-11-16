@@ -55,7 +55,7 @@ impl AsyncResolver {
         async_resolver
     } 
 
-    /// RFC 1034
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     /// 5.2. Client-resolver interface
     /// 
     /// 1. Host name to host address translation
@@ -200,7 +200,7 @@ impl AsyncResolver {
         response
     }
 
-    /// RFC 1034
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     /// 5.2. Client-resolver interface
     /// 
     /// Host address to host name translation
@@ -220,7 +220,7 @@ impl AsyncResolver {
         unimplemented!()
     }
 
-    /// RFC 1034
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     /// 5.2 Client-resolver interface
     /// 
     /// 3. General lookup function
@@ -266,7 +266,8 @@ impl AsyncResolver {
         // }
     }
 
-    /// RFC 1035: 7.4. Using the cache
+    /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.4 
+    /// 7.4. Using the cache
     /// 
     /// In general, we expect a resolver to cache all data which it receives in
     /// responses since it may be useful in answering future client requests.

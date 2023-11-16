@@ -267,7 +267,7 @@ mod async_resolver_test {
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;
     use std::time::Duration;
-    use super::*;
+    use super::{*, parse_response};
 
     #[test]
     fn lookup(){
@@ -477,5 +477,24 @@ mod async_resolver_test {
         let _response_future = LookupFutureStub::lookup(domain_name, record_type, config).await;
         
         // TODO: test
-    }    
+    }  
+
+    #[test]
+    fn parse_response_ok() {
+        let bytes: [u8; 50] = [
+            //test passes with this one
+            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+            101, 115, 116, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
+            1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
+        let response_dns_msg = parse_response(response_result);
+        assert!(response_dns_msg.is_ok());
+        if let Ok(dns_msg) = response_dns_msg {
+            assert_eq!(dns_msg.get_header().get_qr(), true);
+            assert_eq!(dns_msg.get_header().get_ancount(), 1);
+            assert_eq!(dns_msg.get_header().get_rcode(), 0);
+            println!("The message is: {:?}", dns_msg);
+        }
+    }
 }

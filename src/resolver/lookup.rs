@@ -249,7 +249,6 @@ mod async_resolver_test {
     #[tokio::test]
     async fn lookup_stub_a_response() {
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let cache = DnsCache::new();
         let waker = None;
         let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
 
@@ -272,7 +271,6 @@ mod async_resolver_test {
     #[tokio::test]
     async fn lookup_stub_ns_response() {
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let cache = DnsCache::new();
         let waker = None;
     
         let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
@@ -314,7 +312,6 @@ mod async_resolver_test {
                 let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
             
                 config.set_retry(max_retries);
-                let cache = DnsCache::new();
             
                 let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
                 let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
@@ -350,7 +347,6 @@ mod async_resolver_test {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(3);
-        let cache = DnsCache::new();
 
         let response_future = LookupFutureStub::lookup(domain_name, record_type, config).await;
         println!("response_future {:?}",response_future);
@@ -375,7 +371,6 @@ mod async_resolver_test {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(3);
-        let cache = DnsCache::new();
 
         let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await;
         println!("response_future {:?}",response_future);
@@ -403,7 +398,6 @@ mod async_resolver_test {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(1);
-        let cache = DnsCache::new();
 
         let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await;
         println!("response_future {:?}",response_future);

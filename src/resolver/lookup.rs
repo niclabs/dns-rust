@@ -1,5 +1,4 @@
 use crate::client::client_error::ClientError;
-use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::header::Header;
@@ -34,8 +33,6 @@ pub struct LookupFutureStub {
     /// The `Output` of this future is a `Result<DnsMessage, ResolverError>`.
     /// The returned `DnsMessage` contains the corresponding response of the query.
     query_answer: Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
-    /// Cache for the resolver.
-    cache: DnsCache,
     /// Waker for the future.
     waker: Option<Waker>,
 }
@@ -59,7 +56,6 @@ impl Future for LookupFutureStub {
                     lookup_stub(
                         self.name.clone(),
                         self.record_type,
-                        self.cache.clone(),
                         self.config.get_name_servers(),
                         self.waker.clone(),
                         referenced_query,
@@ -85,7 +81,6 @@ impl LookupFutureStub {
         name: DomainName,
         qtype: Qtype,
         config: ResolverConfig,
-        cache: DnsCache
     ) -> Self {
         
         Self { 
@@ -94,7 +89,6 @@ impl LookupFutureStub {
             config: config,
             query_answer:  
             Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
-            cache: cache,
             waker: None,
         }
     }
@@ -115,7 +109,6 @@ impl LookupFutureStub {
 pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
     record_type: Qtype,
-    cache: DnsCache,
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
     referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
@@ -247,14 +240,10 @@ mod async_resolver_test {
             domain_name,
             record_type,
             config,
-            cache
         );
 
         assert_eq!(lookup_future.name, DomainName::new_from_string("example.com".to_string()));
         assert_eq!(lookup_future.config.get_addr(),SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333));
-        assert_eq!(lookup_future.cache.get_max_size(), 20);
-        assert_eq!(lookup_future.cache.get_size(), 1);
-        
     }
      
     #[tokio::test]
@@ -274,7 +263,7 @@ mod async_resolver_test {
         let record_type = Qtype::A;
         
         let name_servers = vec![(conn_udp,conn_tcp)];
-        let response = lookup_stub(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
+        let response = lookup_stub(domain_name,record_type, name_servers, waker,query,config).await.unwrap();
 
         assert_eq!(response.get_header().get_qr(),true);
         assert_ne!(response.get_answer().len(),0);
@@ -299,7 +288,7 @@ mod async_resolver_test {
         let record_type = Qtype::NS;
         
         let name_servers = vec![(conn_udp,conn_tcp)];
-        let response = lookup_stub(domain_name, record_type, cache, name_servers, waker,query,config).await.unwrap();
+        let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await.unwrap();
 
         assert_eq!(response.get_header().get_qr(),true);
         assert_ne!(response.get_answer().len(),0);
@@ -332,7 +321,7 @@ mod async_resolver_test {
                 config.set_name_servers(vec![(conn_udp,conn_tcp)]);
             
                 let name_servers = vec![(conn_udp,conn_tcp)];
-                let response = lookup_stub(domain_name, record_type, cache, name_servers, waker,query,config).await;
+                let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await;
                 retries_attempted += 1;
     
                 if response.is_ok() {
@@ -363,7 +352,7 @@ mod async_resolver_test {
         config.set_retry(3);
         let cache = DnsCache::new();
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config, cache).await;
+        let response_future = LookupFutureStub::lookup(domain_name, record_type, config).await;
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
@@ -388,7 +377,7 @@ mod async_resolver_test {
         config.set_retry(3);
         let cache = DnsCache::new();
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config, cache).await;
+        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await;
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
@@ -416,7 +405,7 @@ mod async_resolver_test {
         config.set_retry(1);
         let cache = DnsCache::new();
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config, cache).await;
+        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await;
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
@@ -442,7 +431,7 @@ mod async_resolver_test {
         cache.set_max_size(1);
         cache.add(domain_name.clone(), rr);
 
-        let _response_future = LookupFutureStub::lookup(domain_name, record_type, config, cache).await;
+        let _response_future = LookupFutureStub::lookup(domain_name, record_type, config).await;
         
         // TODO: test
     }    

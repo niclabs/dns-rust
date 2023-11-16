@@ -379,6 +379,27 @@ impl Header {
 
         header_bytes
     }
+
+    /// Checks if the header is well formed.
+    pub fn format_check(&self)-> Result<bool, &'static str>{
+
+        // OP CODE: A four bit field between 0-15 
+        if self.op_code > 15 {
+            return Err("Format Error: OP CODE");
+        }
+
+        // Z: A 3 bit field that MUST be zero 
+        if self.z != 0 {
+            return Err("Format Error: Z");
+        }
+
+        // RCODE: A 4 bit field between 0-15
+        if self.rcode > 15 {
+            return Err("Format Error: RCODE");
+        }
+        
+        Ok(true)
+    }
 }
 
 /// Setters
@@ -730,5 +751,46 @@ mod header_test {
         assert_eq!(header_from_bytes.get_ancount(), header.get_ancount());
         assert_eq!(header_from_bytes.get_nscount(), header.get_nscount());
         assert_eq!(header_from_bytes.get_arcount(), header.get_arcount());
+    }
+
+    #[test]
+    fn format_check_correct(){
+
+        let bytes_header:[u8; 12] = [
+            //test passes with this one
+            0b10100101, 0b10010101,     // ID
+            0b00010010, 0b00000000,     // flags
+            0, 1,                       // QDCOUNT
+            0, 1,                       // ANCOUNT 
+            0, 0,                       // NSCOUNT 
+            0, 0,                       // ARCOUNT
+        ];
+
+        let header = Header::from_bytes(&bytes_header);
+        let result_check = header.format_check().unwrap();
+
+        assert_eq!(result_check, true);
+    }
+
+    #[test]
+    fn format_check_incorrect(){
+
+        let bytes_header:[u8; 12] = [
+            //test passes with this one
+            0b10100101, 0b10010101,     // ID
+            0b00010010, 0b00011000,     // flags
+            0, 1,                       // QDCOUNT
+            0, 1,                       // ANCOUNT 
+            0, 0,                       // NSCOUNT 
+            0, 0,                       // ARCOUNT
+        ];
+
+        let mut header = Header::from_bytes(&bytes_header);
+        header.z = 3;
+        header.set_rcode(16);
+        header.set_op_code(22);
+
+        let result_check = header.format_check();
+        assert!(result_check.is_err());
     }
 }

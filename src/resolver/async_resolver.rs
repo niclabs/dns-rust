@@ -269,6 +269,41 @@ impl AsyncResolver {
 
     /// RFC 1035: 7.4. Using the cache
     /// 
+    /// In general, we expect a resolver to cache all data which it receives in
+    /// responses since it may be useful in answering future client requests.
+    /// However, there are several types of data which should not be cached:
+    ///
+    ///     - When several RRs of the same type are available for a
+    ///     particular owner name, the resolver should either cache them
+    ///     all or none at all.  When a response is truncated, and a
+    ///     resolver doesn't know whether it has a complete set, it should
+    ///     not cache a possibly partial set of RRs.
+    ///
+    ///   - Cached data should never be used in preference to
+    ///     authoritative data, so if caching would cause this to happen
+    ///     the data should not be cached.
+    ///
+    ///   - The results of an inverse query should not be cached.
+    ///
+    ///   - The results of standard queries where the QNAME contains "*"
+    ///     labels if the data might be used to construct wildcards.  The
+    ///     reason is that the cache does not necessarily contain existing
+    ///     RRs or zone boundary information which is necessary to
+    ///     restrict the application of the wildcard RRs.
+    ///
+    ///   - RR data in responses of dubious reliability.  When a resolver
+    ///     receives unsolicited responses or RR data other than that
+    ///     requested, it should discard it without caching it.  The basic
+    ///     implication is that all sanity checks on a packet should be
+    ///     performed before any of it is cached.
+    ///
+    /// In a similar vein, when a resolver has a set of RRs for some name in a
+    /// response, and wants to cache the RRs, it should check its cache for
+    /// already existing RRs.  Depending on the circumstances, either the data
+    /// in the response or the cache is preferred, but the two should never be
+    /// combined.  If the data in the response is from authoritative data in the
+    /// answer section, it is always preferred.
+    /// 
     fn store_data_cache(&mut self, response: DnsMessage) {
         // TODO: RFC 1035: 7.4. Using the cache
         response.get_answer()

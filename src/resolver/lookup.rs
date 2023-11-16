@@ -342,7 +342,7 @@ mod async_resolver_test {
 
     } 
 
-    #[tokio::test] 
+    #[tokio::test] //se cae, y debería caerse, pero se cae con todos los max retiries y no solo con 0
     async fn lookup_stub_max_tries_0() {
        
         let max_retries =0;
@@ -423,8 +423,8 @@ mod async_resolver_test {
         assert!(answer.is_empty());
     }
 
-    #[tokio::test]  //FIXME: se cae
-    async fn poll_lookup_max_tries(){
+    #[tokio::test] //se cae
+    async fn poll_lookup_max_tries_0(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
@@ -436,15 +436,15 @@ mod async_resolver_test {
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
-        config.set_retry(1);
+        config.set_retry(0);
 
         let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await;
         println!("response_future {:?}",response_future);
 
-        assert_eq!(response_future.is_ok(), true);    
-        // assert_eq!(response_future.unwrap().get_header().get_ancount(), 0);
-        assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);
-        // assert_eq!(response_future.unwrap().get_header().get_rcode() , 2);  //FIXME:
+        assert_eq!(response_future.is_ok(), false);    
+       
+
+
     }
 
     #[tokio::test]

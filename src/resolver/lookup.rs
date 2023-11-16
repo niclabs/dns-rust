@@ -217,6 +217,13 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
 
     let response_dns_msg = match result_dns_msg.clone() {
         Ok(response_message) => response_message,
+        Err(ResolverError::Parse(_)) => {
+            let mut format_error_response = response.clone();
+            let mut header = format_error_response.get_header();
+            header.set_rcode(1);
+            format_error_response.set_header(header);
+            format_error_response
+        }
         Err(_) => response,
     };
     let mut future_query = referenced_query.lock().unwrap();
@@ -506,20 +513,21 @@ mod async_resolver_test {
         }
     }
 
-    // #[test]
-    // fn parse_error() {
-    //     let bytes: [u8; 50] = [
-    //         //test passes with this one
-    //         0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
-    //         101, 115, 116, 3, 99, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0,
-    //         0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
-    //     ];
-    //     let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
-    //     let response_dns_msg = parse_response(response_result);
-    //     if let Err(ResolverError::Parse(_)) = response_dns_msg {
-    //         assert!(true);
-    //     } else {
-    //         assert!(false);
-    //     }
-    // }
+    #[test]
+    fn parse_error() {
+        let bytes: [u8; 50] = [
+            //test passes with this one
+            0b10100101, 0b10010101, 0b00101010, 0b00001010, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+            101, 115, 116, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 45, 0, 0, 16, 0,
+            1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
+        let response_dns_msg = parse_response(response_result);
+        let err_msg = "The name server was unable to interpret the query.".to_string();
+        if let Err(ResolverError::Parse(err)) = response_dns_msg {
+            assert_eq!(err, err_msg)
+        } else {
+            assert!(false);
+        }
+    }
 }

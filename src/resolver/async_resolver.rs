@@ -304,6 +304,8 @@ impl AsyncResolver {
     /// combined.  If the data in the response is from authoritative data in the
     /// answer section, it is always preferred.
     /// 
+    /// This method stores the data of the response in the cache, depending on the
+    /// type of response.
     fn store_data_cache(&mut self, response: DnsMessage) {
         // TODO: RFC 1035: 7.4. Using the cache
         response.get_answer()

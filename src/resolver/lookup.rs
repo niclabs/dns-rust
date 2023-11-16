@@ -342,7 +342,7 @@ mod async_resolver_test {
 
     } 
 
-    #[tokio::test] 
+    #[tokio::test] //se cae, y debería caerse, pero se cae con todos los max retiries y no solo con 0
     async fn lookup_stub_max_tries_0() {
        
         let max_retries =0;
@@ -423,7 +423,7 @@ mod async_resolver_test {
         assert!(answer.is_empty());
     }
 
-    #[tokio::test] 
+    #[tokio::test] //se cae
     async fn poll_lookup_max_tries_0(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());

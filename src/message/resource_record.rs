@@ -156,19 +156,6 @@ impl ResourceRecord {
         }
     }
 
-    /* pub fn new(rdata: Rdata) -> ResourceRecord {
-        let mut resource_record = ResourceRecord {
-            name: DomainName::new(),
-            rtype: 0 as u16,
-            class: 0 as u16,
-            ttl: 0 as u32,
-            rdlength: 0 as u16,
-            rdata: rdata,
-        };
-
-        resource_record
-    }*/
-
     /// Given an array of bytes, creates a new `ResourceRecord`.
     /// 
     /// # Examples

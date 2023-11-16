@@ -481,10 +481,27 @@ mod async_resolver_test {
         let response_dns_msg = parse_response(response_result);
         assert!(response_dns_msg.is_ok());
         if let Ok(dns_msg) = response_dns_msg {
-            assert_eq!(dns_msg.get_header().get_qr(), true);
+            assert_eq!(dns_msg.get_header().get_qr(), true); // response (1)
             assert_eq!(dns_msg.get_header().get_ancount(), 1);
             assert_eq!(dns_msg.get_header().get_rcode(), 0);
             println!("The message is: {:?}", dns_msg);
+        }
+    }
+
+    #[test]
+    fn parse_response_query() {
+        let bytes: [u8; 50] = [
+            //test passes with this one
+            0b10100101, 0b10010101, 0b00010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+            101, 115, 116, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
+            1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
+        let response_dns_msg = parse_response(response_result);
+        if let Err(ResolverError::Parse(_)) = response_dns_msg {
+            assert!(true);
+        } else {
+            assert!(false);
         }
     }
 }

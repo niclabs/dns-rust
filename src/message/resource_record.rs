@@ -7,6 +7,7 @@ use std::fmt;
 use std::vec::Vec;
 
 #[derive(Clone, PartialEq, Debug)]
+/// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.2.1
 /// An struct that represents the Resource Record secction from a dns message.
 /// 
 /// ```text

@@ -10,7 +10,6 @@ use std::io::Error as IoError;
 use std::io::ErrorKind;
 
 
-type ClientResult<T> = Result<T, ClientError>;
 #[derive(Clone,Copy, Debug, PartialEq, Eq)]
 pub struct ClientTCPConnection {
     /// Client address

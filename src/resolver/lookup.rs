@@ -158,26 +158,14 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
             ConnectionProtocol::UDP => {
                 let result_response = conn_udp.send(new_query.clone());
                 result_dns_msg = parse_response(result_response);
-
-                // response = match parse_response(result_response) {
-                //     Ok(response_message) => response_message,
-                //     Err(_) => response,
-                // };
             }
             ConnectionProtocol::TCP => {
                 let result_response = conn_tcp.send(new_query.clone());
                 result_dns_msg = parse_response(result_response);
-
-                // response = match parse_response(result_response) {
-                //     Ok(response_message) => response_message,
-                //     Err(_) => response,
-                // };
             }
             _ => continue,
         } 
-
         retry_count = retry_count + 1;
-        println!("retry count isss: {}", retry_count);
     }
 
     // Wake up task
@@ -193,10 +181,6 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
     *future_query = future::ready(Ok(response_dns_msg)).boxed();
 
     result_dns_msg
-
-    // *future_query = future::ready(Ok(response.clone())).boxed();
-
-    // Ok(response)
 }
 
 /// Parse the received response datagram to a `DnsMessage`.

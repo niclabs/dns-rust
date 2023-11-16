@@ -95,8 +95,36 @@ impl LookupFutureStub {
 
 }
 
-/// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
+/// RFC 1034
+/// 5.3.1. Stub resolvers
 /// 
+/// One option for implementing a resolver is to move the resolution
+/// function out of the local machine and into a name server which supports
+/// recursive queries.  This can provide an easy method of providing domain
+/// service in a PC which lacks the resources to perform the resolver
+/// function, or can centralize the cache for a whole local network or
+/// organization.
+/// 
+/// All that the remaining stub needs is a list of name server addresses
+/// that will perform the recursive requests.  This type of resolver
+/// presumably needs the information in a configuration file, since it
+/// probably lacks the sophistication to locate it in the domain database.
+/// The user also needs to verify that the listed servers will perform the
+/// recursive service; a name server is free to refuse to perform recursive
+/// services for any or all clients.  The user should consult the local
+/// system administrator to find name servers willing to perform the
+/// service.
+///
+/// This type of service suffers from some drawbacks.  Since the recursive
+/// requests may take an arbitrary amount of time to perform, the stub may
+/// have difficulty optimizing retransmission intervals to deal with both
+/// lost UDP packets and dead servers; the name server can be easily
+/// overloaded by too zealous a stub if it interprets retransmissions as new
+/// requests.  Use of TCP may be an answer, but TCP may well place burdens
+/// on the host's capabilities which are similar to those of a real
+/// resolver.
+/// 
+/// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
 /// This function performs the lookup of the requested records asynchronously. 
 /// The given `waker` is used to wake up the task when the query is answered. 
 /// The `referenced_query` is used to update the future that contains the response of the query.
@@ -106,6 +134,27 @@ impl LookupFutureStub {
 /// 
 /// When a response is received, the function performs the parsing of the response to a `DnsMessage`.
 /// After the response is checked, the function updates the future that contains the response of the query.
+/// 
+/// # Example
+/// ```
+/// let domain_name = DomainName::new_from_string("example.com".to_string());
+/// let cache = DnsCache::new();
+/// let waker = None;
+/// let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+///
+/// let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+/// let timeout: Duration = Duration::from_secs(20);
+///
+/// let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+/// let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+/// 
+/// let config = ResolverConfig::default();
+/// let record_type = Qtype::A;
+/// 
+/// let name_servers = vec![(conn_udp,conn_tcp)];
+/// let response = lookup_stub(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
+/// ```
+///
 pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
     record_type: Qtype,

@@ -498,10 +498,28 @@ mod async_resolver_test {
         ];
         let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
         let response_dns_msg = parse_response(response_result);
-        if let Err(ResolverError::Parse(_)) = response_dns_msg {
-            assert!(true);
+        let err_msg = "Message is a query. A response was expected.".to_string();
+        if let Err(ResolverError::Parse(err)) = response_dns_msg {
+            assert_eq!(err, err_msg)
         } else {
             assert!(false);
         }
     }
+
+    // #[test]
+    // fn parse_error() {
+    //     let bytes: [u8; 50] = [
+    //         //test passes with this one
+    //         0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+    //         101, 115, 116, 3, 99, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0, 1, 0,
+    //         0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+    //     ];
+    //     let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
+    //     let response_dns_msg = parse_response(response_result);
+    //     if let Err(ResolverError::Parse(_)) = response_dns_msg {
+    //         assert!(true);
+    //     } else {
+    //         assert!(false);
+    //     }
+    // }
 }

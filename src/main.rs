@@ -1,6 +1,17 @@
 use std::{time::Duration, net::IpAddr};
 
-use dns_rust::{client::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection}, domain_name::DomainName, resolver::{config::ResolverConfig, async_resolver::AsyncResolver, resolver_error::ResolverError}, message::resource_record::ResourceRecord};
+use dns_rust::{
+    client::{
+        Client, 
+        tcp_connection::ClientTCPConnection, 
+        client_connection::ClientConnection, 
+        udp_connection::ClientUDPConnection}, 
+        domain_name::DomainName, 
+        async_resolver::{
+            config::ResolverConfig, 
+            AsyncResolver, 
+            resolver_error::ResolverError
+        }, message::resource_record::ResourceRecord};
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]

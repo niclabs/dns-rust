@@ -182,7 +182,7 @@ impl ResourceRecord {
         bytes: &'a [u8],
         full_msg: &'a [u8],
     ) -> Result<(ResourceRecord, &'a [u8]), &'static str> {
-        let domain_name_result = DomainName::from_bytes(bytes, full_msg.clone());
+        let domain_name_result = DomainName::from_bytes(bytes, full_msg);
 
         match domain_name_result.clone() {
             Ok((domain_name,_)) => {

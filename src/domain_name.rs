@@ -69,7 +69,7 @@ impl DomainName {
     ) -> Result<(Self, &'a [u8]), &'static str> {
         let mut first_byte = bytes[0].clone();
         let mut domain_name_str = "".to_string();
-        let mut no_domain_bytes = bytes.clone();
+        let mut no_domain_bytes = bytes;
        
         while first_byte != 0 {
             let bytes_len = no_domain_bytes.len();
@@ -85,7 +85,7 @@ impl DomainName {
                     & 0b0011111111111111) as usize;
 
                 let domain_name_result =
-                    DomainName::from_bytes(&full_msg[offset..], full_msg.clone());
+                    DomainName::from_bytes(&full_msg[offset..], full_msg);
 
                 match domain_name_result {
                     Ok(_) => {}

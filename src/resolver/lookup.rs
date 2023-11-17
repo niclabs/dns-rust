@@ -454,9 +454,6 @@ mod async_resolver_test {
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), false);    
-       
-
-
     }
 
     #[tokio::test]
@@ -529,6 +526,25 @@ mod async_resolver_test {
         let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
         let response_dns_msg = parse_response(response_result);
         let err_msg = "The name server was unable to interpret the query.".to_string();
+        if let Err(ResolverError::Parse(err)) = response_dns_msg {
+            assert_eq!(err, err_msg)
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn parse_error_domain_name() {
+        let bytes: [u8; 50] = [
+            //test passes with this one
+            0b10100101, 0b10010101, 0b11111111, 0b11111111, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+            101, 115, 64, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
+            1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
+        let response_dns_msg = parse_response(response_result);
+        let err_msg = "The name server was unable to interpret the query.".to_string();
+
         if let Err(ResolverError::Parse(err)) = response_dns_msg {
             assert_eq!(err, err_msg)
         } else {

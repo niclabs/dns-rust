@@ -1,5 +1,4 @@
 use crate::client::client_error::ClientError;
-use crate::client::config;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::header::Header;

@@ -31,52 +31,59 @@ As this library is build it in rustlang, is mandatory to have [**Rust**](https:/
 git clone https://github.com/niclabs/dns-rust.git
 ```
 
-1. Set resolver configuration in `.../src/config.rs`. 
+## Options of Usage
 
-   The resolver configuration is as follows:
+We have two options:
 
-   - Set the IP and PORT that will host and use the resolver.
+1. Installing the library with `cargo install`.
 
-   ```Rust
-   pub static RESOLVER_IP_PORT: &'static str = "RESOLVER_IP:RESOLVER_PORT";
-   ```
+2. Using the library through `cargo`.
 
-   - (Optional) Update ```SBELT_ROOT_IPS``` variable with the addresses of the root server and the host server in the SBelt.
-   - (Optional) Update ```QUERIES_FOR_CLIENT_REQUEST``` variable with the number of queries before the resolver panic in a Temporary Error.
+### Cargo install option:
 
-2. Set client configuration in `.../src/client/config.rs`.
+This option let us run the library with the command `dns_rust ...`
 
-   - Set the IP and PORT that host the resolver.
-   - Set the IP and PORT where the client will run.
+#### Installing using cargo install:
 
-   ```Rust
-   pub static RESOLVER_IP_PORT: &'static str = "RESOLVER_IP:RESOLVER_PORT";
-   pub static CLIENT_IP_PORT: &'static str = "CLIENT_IP:CLIENT_PORT";
-   ```
-
-## Usage
-
-The library is built and run through `cargo` with the run the command `cargo run` followed by any necessary option. 
-
-```sh 
-cargo run -- [options]
+1. Install the library with the following command:
+```
+cargo install --path <PATH OF THE REPOSITORY>
 ```
 
-Here you can specify whether to run: *client* or a *server*. Note that if you want to run a resolver and a client in the same machine it is necessary to run two instances of the library.
+### Usage
 
-### Options:
+With the library installed we can run it with `dns_rust` followed by any necessary option.
+```sh
+dns_rust [options]
+```
+
+Or else, you can run the library through `cargo` with `cargo run`.
+
+```sh
+cargo run [options]
+```
+
+#### Options:
+Here ot can be specified whether to run: *client* or *resolver* :
 
 | Argument | Description |
 |----------|-------------|
-|   `-c`   | Execute a client that connects to the server and sends requests. |
-|   `-r`   | Runs a DNS resolver |
+|   `client`   | Execute a client that connects to the server and sends requests. |
+|   `resolver`   | Runs a DNS resolver |
 
-### Example:
-For example, to execute a new client:
+#### Examples:
 
 ```sh
-cargo run -- -c
+dns_rust resolver "example.com" "1.1.1.1" "8.8.8.8" 
 ```
+or
+
+```sh
+cargo run  resolver "example.com" "1.1.1.1" "8.8.8.8"
+```
+
+These commands runs a query for `example.com` running a resolver.
+
 ## Development features
 
 ### GitHub Actions

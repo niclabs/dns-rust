@@ -75,7 +75,11 @@ impl HostData{
         return 0;
     }
 
-    ///function to get an element from the host data
+    /// Returns an element from the host data. 
+    /// 
+    /// This element corresponds to a vector of `RRCache` that contains 
+    /// the `RRCache` of the host.
+    /// 
     /// # Example
     /// ```
     /// let mut host_data = HostData::new();
@@ -357,12 +361,13 @@ mod host_data_test{
 
         let host_hash = host_data.get_host_hash();
 
+        // One domain name
         assert_eq!(host_hash.len(), 1);
 
+        // Assuming this test is for the case where the domain name is not in the host data
         let domain_name_2 = DomainName::new();
-        let host_hash_vec = host_data.get_from_host_data(domain_name_2.clone()).unwrap();
-
-        assert_eq!(host_hash_vec.len(),0);
+        let element = host_data.get_from_host_data(domain_name_2.clone());
+        assert_eq!(element, None);
     }
 
     //get test

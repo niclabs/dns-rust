@@ -3,7 +3,7 @@ pub mod slist_element;
 use std::net::IpAddr;
 use std::vec::Vec;
 use crate::domain_name::DomainName;
-use crate::resolver::slist::slist_element::SlistElement;
+use crate::async_resolver::slist::slist_element::SlistElement;
 
 #[derive(Clone)]
 // Struct that represents the Slist estructure from RFC 1034 page 33.
@@ -228,8 +228,8 @@ impl Slist {
 #[cfg(test)]
 mod slist_test {
     use crate::domain_name::DomainName;
-    use crate::resolver::slist::Slist;
-    use crate::resolver::slist::slist_element::SlistElement;
+    use crate::async_resolver::slist::Slist;
+    use crate::async_resolver::slist::slist_element::SlistElement;
     use std::net::{IpAddr,Ipv4Addr};
     use std::vec::Vec;
 

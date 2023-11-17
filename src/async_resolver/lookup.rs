@@ -13,7 +13,7 @@ use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
 use std::sync:: {Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
-use crate::resolver::config::ResolverConfig;
+use crate::async_resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
 

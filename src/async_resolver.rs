@@ -1,5 +1,10 @@
 use std::net::IpAddr;
 
+pub mod config;
+pub mod lookup;
+pub mod slist;
+pub mod resolver_error;
+
 use rand::{thread_rng, Rng};
 
 use crate::client::client_error::ClientError;
@@ -8,10 +13,10 @@ use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::ResourceRecord;
-use crate::resolver::{config::ResolverConfig,lookup::LookupFutureStub};
+use crate::async_resolver::{config::ResolverConfig,lookup::LookupFutureStub};
 use crate::message::rdata::Rdata;
 use crate::client::client_connection::ConnectionProtocol;
-use crate::resolver::resolver_error::ResolverError;
+use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
 /// Asynchronous resolver for DNS queries.
 /// 
@@ -331,7 +336,6 @@ mod async_resolver_test {
     use tokio::io;
 
     use crate::client::client_error::ClientError;
-    use crate::client::config::TIMEOUT;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
     use crate::message::rdata::Rdata;
@@ -339,12 +343,13 @@ mod async_resolver_test {
     use crate::message::resource_record::ResourceRecord;
     use crate:: message::type_qtype::Qtype;
     use crate::message::type_rtype::Rtype;
-    use crate::resolver::config::ResolverConfig;
+    use crate::async_resolver::config::ResolverConfig;
     use super::AsyncResolver;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::time::Duration;
     use crate::domain_name::DomainName;
+    static TIMEOUT: u64 = 10;
     
     #[test]
     fn create_async_resolver() {

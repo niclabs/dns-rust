@@ -258,6 +258,11 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>) -> Result<DnsMe
                 .map_err(|_| ResolverError::Parse("The name server was unable to interpret the query.".to_string()))
         })?;
     let header = dns_msg.get_header();
+    
+    // check Header
+    header.format_check()
+    .map_err(|e| ResolverError::Parse(format!("Error formated Header: {}", e)))?;
+
     if header.get_qr() {
         return Ok(dns_msg);
     }

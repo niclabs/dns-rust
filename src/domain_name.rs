@@ -189,6 +189,7 @@ impl DomainName {
             };
         }
     }
+
 }
 
 // Setters Domain Name

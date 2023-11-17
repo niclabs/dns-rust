@@ -258,6 +258,11 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>) -> Result<DnsMe
                 .map_err(|_| ResolverError::Parse("The name server was unable to interpret the query.".to_string()))
         })?;
     let header = dns_msg.get_header();
+    
+    // check Header
+    header.format_check()
+    .map_err(|e| ResolverError::Parse(format!("Error formated Header: {}", e)))?;
+
     if header.get_qr() {
         return Ok(dns_msg);
     }
@@ -349,7 +354,7 @@ mod async_resolver_test {
 
     } 
 
-    #[tokio::test] //se cae, y debería caerse, pero se cae con todos los max retiries y no solo con 0
+    #[tokio::test] //se cae, y debería caerse, pero se cae con todos los max retiries y no solo con 0 //FIXME:
     async fn lookup_stub_max_tries_0() {
        
         let max_retries =0;
@@ -362,18 +367,58 @@ mod async_resolver_test {
     
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
+
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)); 
             
         config.set_retry(max_retries);
     
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
-        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
+        let conn_udp_non:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
+        let conn_tcp_non:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
+
+        let conn_udp_google:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+        let conn_tcp_google:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+        config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
             
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
         let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await;
         println!("response {:?}",response);
+            
+        assert!(response.is_err())
+    }
+           
 
-        response.unwrap_err();
+    #[tokio::test] 
+    async fn lookup_stub_max_tries_1() {
+       
+        let max_retries = 1;
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let waker = None;
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+        let timeout = Duration::from_secs(2);
+        let record_type = Qtype::A;
+    
+        let mut config: ResolverConfig = ResolverConfig::default();
+        let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
+
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)); 
+            
+        config.set_retry(max_retries);
+    
+        let conn_udp_non:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
+        let conn_tcp_non:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
+
+        let conn_udp_google:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+        let conn_tcp_google:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+        config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
+            
+        let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
+        let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await.unwrap();
+        println!("response {:?}",response);
+
+       assert!(response.get_answer().len() > 0);
+       assert_eq!(response.get_header().get_rcode(), 0);
+       assert!(response.get_header().get_ancount() >0)
                 
     }
            
@@ -430,7 +475,7 @@ mod async_resolver_test {
         assert!(answer.is_empty());
     }
 
-    #[tokio::test] //se cae
+    #[tokio::test] 
     async fn poll_lookup_max_tries_0(){
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -445,12 +490,11 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(0);
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await;
-        println!("response_future {:?}",response_future);
-
-        assert_eq!(response_future.is_ok(), false);    
-       
-
+        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await.unwrap();
+        
+        assert_eq!(response_future.get_answer().len() , 0); 
+        assert_eq!(response_future.get_header().get_qr() , true); 
+        assert_eq!(response_future.get_header().get_rcode(), 2);
 
     }
 
@@ -524,6 +568,25 @@ mod async_resolver_test {
         let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
         let response_dns_msg = parse_response(response_result);
         let err_msg = "The name server was unable to interpret the query.".to_string();
+        if let Err(ResolverError::Parse(err)) = response_dns_msg {
+            assert_eq!(err, err_msg)
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn parse_error_domain_name() {
+        let bytes: [u8; 50] = [
+            //test passes with this one
+            0b10100101, 0b10010101, 0b11111111, 0b11111111, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+            101, 115, 64, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
+            1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
+        let response_dns_msg = parse_response(response_result);
+        let err_msg = "The name server was unable to interpret the query.".to_string();
+
         if let Err(ResolverError::Parse(err)) = response_dns_msg {
             assert_eq!(err, err_msg)
         } else {

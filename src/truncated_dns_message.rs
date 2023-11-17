@@ -15,6 +15,7 @@ pub struct TruncatedDnsMessage {
     truncated_messages: HashMap<ID, Vec<DnsMessage>>,
 }
 
+#[allow(dead_code)]
 impl TruncatedDnsMessage {
     /// Function to create a new TruncatedDnsMessage.
     fn new() -> Self {
@@ -55,7 +56,7 @@ impl TruncatedDnsMessage {
     /// ```
     fn remove_message(&mut self, msg_id: &ID){
         let mut truncated_messages = self.get_truncated_messages_hash();
-        if let Some(y) = truncated_messages.remove(&msg_id) {
+        if let Some(_) = truncated_messages.remove(&msg_id) {
             self.set_truncated_messages_hash(truncated_messages)
         }
     }
@@ -79,12 +80,13 @@ impl TruncatedDnsMessage {
     }
 }
 
+#[allow(dead_code)]
 impl TruncatedDnsMessage {
     /// Function to create a new TruncatedDnsMessage.
     fn set_truncated_messages_hash(&mut self, truncated_messages_hash: HashMap<ID, Vec<DnsMessage>>) {
         self.truncated_messages = truncated_messages_hash;
     }
-
+    
     /// Function to get all the messages from the TruncatedDnsMessage.
     fn get_truncated_messages_hash(&self) -> HashMap<ID, Vec<DnsMessage>> {
         return self.truncated_messages.clone();

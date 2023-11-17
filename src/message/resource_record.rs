@@ -1,6 +1,7 @@
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
 use crate::message::Rtype;
+use crate::utils;
 
 use crate::domain_name::DomainName;
 use std::fmt;
@@ -183,8 +184,10 @@ impl ResourceRecord {
     ) -> Result<(ResourceRecord, &'a [u8]), &'static str> {
         let domain_name_result = DomainName::from_bytes(bytes, full_msg.clone());
 
-        match domain_name_result {
-            Ok(_) => {}
+        match domain_name_result.clone() {
+            Ok((domain_name,_)) => {
+                utils::domain_validity_syntax(domain_name)?;
+            }
             Err(e) => return Err(e),
         }
 
@@ -392,6 +395,7 @@ impl ResourceRecord {
         let qtype = Rtype::from_rtype_to_str(self.get_rtype());
         qtype
     }
+
 }
 
 /// Setters

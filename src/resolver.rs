@@ -14,6 +14,7 @@ use crate::{resolver::config::ResolverConfig, message::DnsMessage};
 // use crate::client::client_connection::ConnectionProtocol;
 
 // use std::error::Error;
+#[allow(dead_code)]
 pub struct Resolver {
     config: ResolverConfig,
 }

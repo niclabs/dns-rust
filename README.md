@@ -22,44 +22,42 @@ Implementation in progress.
 
 As this library is build it in rustlang, is mandatory to have [**Rust**](https://www.rust-lang.org/learn/get-started) installed.
 
-After clone the repository, there are two options:
+### Library installation
 
-1. Installing the library with `cargo install`.
-
-2. Using the library through `cargo`.
-
-#### Cargo install option:
- 
-This option let us run the library with the command `dns_rust ...`
-
-Install the library with the following command:
+First to clone the repository:
 ```sh
-cargo install --path <PATH>
+git clone https://github.com/niclabs/dns-rust.git
 ```
 
-### Options of Usage:
+Then to use the library there are two options:
 
-With the library installed we can run it with `dns_rust` followed by any necessary option.
-```sh
-dns_rust [options]
-```
-Or else, it can be run the library through `cargo` with `cargo run`.
+1. Installing the library with `cargo install`. This option let us run the library with the command `dns_rust ...`, Install the library with the following command:
+   ```sh
+   cargo install --path <PATH>
+   ```
 
-```sh
-cargo run [options]
-```
+   With the library installed it can be run it with `dns_rust` followed by any necessary option.
 
-#### Supported options configurations:
-Here it can be specified whether to run: *client* or *resolver* :
+   ```sh
+   dns_rust [options]
+   ```
+
+2. Using the library through `cargo` with cargo `cargo run`, accompanied by any neccessary option.
+   ```sh
+   cargo run [options]
+   ```
+
+### Supported options configurations
+Here it can be specified whether to run a *client* or a *resolver* :
 
 | Argument | Description |
 |----------|-------------|
 |   `client`   | Execute a client that connects to the server and sends requests. |
 |   `resolver`   | Runs a DNS resolver |
 
-##### Client:
+#### Client
 
-- For the client we have one argument:
+- For the client there is one argument:
    | Argument | Description |
    |----------|-------------|
    |   `<HOST_NAME>`   | Host name to query for IP |
@@ -71,10 +69,10 @@ Here it can be specified whether to run: *client* or *resolver* :
    |   `--qtype <QTYPE>`    | Query type [default: A] |
    |   `--qclass <QCLASS>`   | Query class [default: IN] |
 
-##### Resolver
+#### Resolver
 
-- For the resolver we have two arguments:
-   | Option | Description|
+- For the resolver there are two arguments:
+   | Argument | Description|
    |--------|------------| 
    |   `<HOST NAME>`   | Host name to query |
    |   `[NAMESERVER]...`    | Recursive servers |
@@ -88,7 +86,7 @@ Here it can be specified whether to run: *client* or *resolver* :
 
 Additionally the *client* and *resolver* have the command `-h` or `--help` to print the description of the structure and its usage.
 
-#### Examples:
+### Examples
 
 ```sh
 dns_rust resolver "example.com" "1.1.1.1" "8.8.8.8" 

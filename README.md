@@ -1,7 +1,7 @@
 # Rust implementation of DNS library
 
 This project aims to implement a DNS library in rustlang based on, and only on, DNS-related RFCs. 
-With this library it can be build a DNS Client, and a DNS resolver.
+A DNS Client and a DNS resolver can be built using this library.
 
 Implementation in progress.
 
@@ -22,54 +22,71 @@ Implementation in progress.
 
 As this library is build it in rustlang, is mandatory to have [**Rust**](https://www.rust-lang.org/learn/get-started) installed.
 
-### Installation
-
-
-1. Clone the repository.
-
-```
-git clone https://github.com/niclabs/dns-rust.git
-```
-
-## Options of Usage
-
-We have two options:
+After clone the repository, there are two options:
 
 1. Installing the library with `cargo install`.
 
 2. Using the library through `cargo`.
 
-### Cargo install option:
-
+#### Cargo install option:
+ 
 This option let us run the library with the command `dns_rust ...`
 
-#### Installing using cargo install:
-
-1. Install the library with the following command:
-```
-cargo install --path <PATH OF THE REPOSITORY>
+Install the library with the following command:
+```sh
+cargo install --path <PATH>
 ```
 
-### Usage
+### Options of Usage:
 
 With the library installed we can run it with `dns_rust` followed by any necessary option.
 ```sh
 dns_rust [options]
 ```
-
-Or else, you can run the library through `cargo` with `cargo run`.
+Or else, it can be run the library through `cargo` with `cargo run`.
 
 ```sh
 cargo run [options]
 ```
 
-#### Options:
-Here ot can be specified whether to run: *client* or *resolver* :
+#### Supported options configurations:
+Here it can be specified whether to run: *client* or *resolver* :
 
 | Argument | Description |
 |----------|-------------|
 |   `client`   | Execute a client that connects to the server and sends requests. |
 |   `resolver`   | Runs a DNS resolver |
+
+##### Client:
+
+- For the client we have one argument:
+   | Argument | Description |
+   |----------|-------------|
+   |   `<HOST_NAME>`   | Host name to query for IP |
+
+- And three options:
+   | Option | Description|
+   |--------|------------| 
+   |   `--server <SERVER>`   | DNS server ip |
+   |   `--qtype <QTYPE>`    | Query type [default: A] |
+   |   `--qclass <QCLASS>`   | Query class [default: IN] |
+
+##### Resolver
+
+- For the resolver we have two arguments:
+   | Option | Description|
+   |--------|------------| 
+   |   `<HOST NAME>`   | Host name to query |
+   |   `[NAMESERVER]...`    | Recursive servers |
+
+- And three options:
+   | Option | Description|
+   |--------|------------| 
+   |   `--bind-addr <BIND_ADDR>`   | Resolver bind address |
+   |   `--qtype <QTYPE>`    | Query type [default: A] |
+   |   `--protocol <PROTOCOL>`   | Protocol [default: UDP] |
+
+Additionally the *client* and *resolver* have the command `-h` or `--help` to print the description of the structure and its usage.
 
 #### Examples:
 

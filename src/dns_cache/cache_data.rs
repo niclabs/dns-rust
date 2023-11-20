@@ -144,10 +144,10 @@ impl CacheData{
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get(&rtype) {
             let mut type_hash: HostData = x.clone();
-            let rr_cache_vec = type_hash.get_from_host_data(domain_name).unwrap(); 
+            let rr_cache_vec = type_hash.get_from_host_data(domain_name); 
             cache_data.insert(rtype, type_hash);
             self.set_cache_data(cache_data);
-            return Some(rr_cache_vec);
+            return rr_cache_vec;
         }
         else {
             return None;
@@ -343,9 +343,9 @@ mod cache_data_test{
 
         assert_eq!(rr_cache_vec_2.len(), 1);
 
-        let rr_cache_vec_3 = cache_data.get_from_cache_data(DomainName::new(), Rtype::A).unwrap();
+        let rr_cache_vec_3 = cache_data.get_from_cache_data(DomainName::new(), Rtype::A);
 
-        assert!(rr_cache_vec_3.is_empty());
+        assert!(rr_cache_vec_3.is_none());
     }
 
     //remove oldest used test
@@ -380,12 +380,12 @@ mod cache_data_test{
         
         let a = cache_data.remove_oldest_used();
         
-        let vec_rr_cache_txt_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::TXT).unwrap();
+        let vec_rr_cache_txt_expected = cache_data.get_from_cache_data(domain_name_2, Rtype::TXT);
         let vec_rr_cache_a_expected = cache_data.get_from_cache_data(domain_name_1.clone(), Rtype::A).unwrap();
 
         assert_eq!(a,1);
         assert_eq!(vec_rr_cache_a_expected.len(), 1);
-        assert_eq!(vec_rr_cache_txt_expected.len(), 0);
+        assert!(vec_rr_cache_txt_expected.is_none());
     }
 
     //update response time test

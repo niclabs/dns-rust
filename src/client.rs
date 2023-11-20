@@ -364,10 +364,9 @@ mod client_test {
         let mut new_client = Client::new(conn_tcp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("nonexisten.comt-domain"));
-        let response = new_client.query(domain_name, "A", "IN").unwrap_err();
-        println!("Response: {:?}", response);
+        let response = new_client.query(domain_name, "A", "IN").unwrap();
 
-        
+        assert!(response.get_answer().is_empty() == true);
     }
 
     //Wrong domain that haves a number at the start tcp

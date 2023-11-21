@@ -29,7 +29,7 @@ First to clone the repository:
 git clone https://github.com/niclabs/dns-rust.git
 ```
 
-Then to use the library there are two options:
+Then to use the library there are three options:
 
 1. Installing the library with `cargo install`. This option let us run the library with the command `dns_rust ...`, Install the library with the following command:
    ```sh
@@ -45,6 +45,32 @@ Then to use the library there are two options:
 2. Using the library through `cargo` with cargo `cargo run`, accompanied by any neccessary option.
    ```sh
    cargo run [options]
+   ```
+3. Using the library's code in your new project. \
+   Fisrt you need to add the dependency to your Cargo.toml file:
+
+   ```toml
+   [dependencies]
+   dns_rust = { path = <PATH> }
+   ```
+   Then to use the Library in your Rust code Import the library at the beginning of your Rust file.
+   
+   
+   ```rust
+   use std::net::IpAddr;
+   use dns_rust::async_resolver::AsyncResolver;
+   use dns_rust::async_resolver::config::ResolverConfig;
+
+
+   async fn resolver()-> Vec<IpAddr> {
+      let config = ResolverConfig::default();
+      let domain_name = "example.com";
+      let transport_protocol = "TCP";
+      let mut resolver = AsyncResolver::new(config);
+      let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+
+      ip_addresses
+   }
    ```
 
 ### Supported options configurations

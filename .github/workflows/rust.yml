@@ -21,3 +21,4 @@ jobs:
     #Test the proyect
     - name: Run tests
       run: cargo test --verbose
+    

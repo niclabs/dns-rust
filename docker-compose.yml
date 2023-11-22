@@ -1,0 +1,25 @@
+version: "4"
+services:
+  resolver:
+    build: .
+    image: dns-rust:latest
+    ports:
+      - "58396:58396"
+    network_mode: "dns"
+  client:
+    container_name: client
+    build: .
+    image: dns-rust:latest
+  test:
+    build: 
+      context: .
+    command: cargo test
+    image: dns-rust:latest
+
+volumes:
+  coverage:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/coverage/
+      o: bind

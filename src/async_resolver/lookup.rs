@@ -291,7 +291,7 @@ mod async_resolver_test {
         let mut cache: DnsCache = DnsCache::new();
         cache.set_max_size(20);
 
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         cache.add(domain_name_cache, resource_record);
 
@@ -508,7 +508,7 @@ mod async_resolver_test {
         
         let addr = IpAddr::from_str("93.184.216.34").unwrap();
         let a_rdata = ARdata::new_from_addr(addr);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let rr = ResourceRecord::new(rdata);
 
         let mut cache = DnsCache::new();

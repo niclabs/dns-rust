@@ -67,7 +67,7 @@ impl ResourceRecord {
     /// 
     ///  # Examples
     ///  ```
-    ///  let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+    ///  let txt_rdata = Rdata::TXT(TxtRdata::new(String::from("dcc")));
     ///  let mut resource_record = ResourceRecord::new(txt_rdata);
     ///  assert_eq!(resource_record.name.get_name(), String::from(""));
     ///  assert_eq!(resource_record.rtype, 0);
@@ -81,70 +81,70 @@ impl ResourceRecord {
     ///  ```
     pub fn new(rdata: Rdata) -> ResourceRecord {
         match rdata {
-            Rdata::SomeARdata(val) => ResourceRecord {
+            Rdata::A(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::A,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomeARdata(val),
+                rdata: Rdata::A(val),
             },
 
-            Rdata::SomeNsRdata(val) => ResourceRecord {
+            Rdata::NS(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::NS,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomeNsRdata(val),
+                rdata: Rdata::NS(val),
             },
-            Rdata::SomeCnameRdata(val) => ResourceRecord {
+            Rdata::CNAME(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::CNAME,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomeCnameRdata(val),
+                rdata: Rdata::CNAME(val),
             },
-            Rdata::SomeSoaRdata(val) => ResourceRecord {
+            Rdata::SOA(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::SOA,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomeSoaRdata(val),
+                rdata: Rdata::SOA(val),
             },
-            Rdata::SomePtrRdata(val) => ResourceRecord {
+            Rdata::PTR(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::PTR,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomePtrRdata(val),
+                rdata: Rdata::PTR(val),
             },
-            Rdata::SomeHinfoRdata(val) => ResourceRecord {
+            Rdata::HINFO(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::HINFO,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomeHinfoRdata(val),
+                rdata: Rdata::HINFO(val),
             },
-            Rdata::SomeMxRdata(val) => ResourceRecord {
+            Rdata::MX(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::MX,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomeMxRdata(val),
+                rdata: Rdata::MX(val),
             },
-            Rdata::SomeTxtRdata(val) => ResourceRecord {
+            Rdata::TXT(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::TXT,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
-                rdata: Rdata::SomeTxtRdata(val),
+                rdata: Rdata::TXT(val),
             },
             _ => ResourceRecord {
                 name: DomainName::new(),
@@ -335,7 +335,7 @@ impl ResourceRecord {
     /// 
     /// # Example
     ///  ```
-    ///  let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(String::from("dcc")));
+    ///  let txt_rdata = Rdata::TXT(TxtRdata::new(String::from("dcc")));
     ///  let mut resource_record = ResourceRecord::new(txt_rdata);
     ///  let mut domain_name = DomainName::new();
     ///  domain_name.set_name(String::from("dcc.cl"));
@@ -525,9 +525,9 @@ mod resource_record_test {
 
     #[test]
     fn constructor_a_test() {
-        let mut a_rdata = Rdata::SomeARdata(ARdata::new());
+        let mut a_rdata = Rdata::A(ARdata::new());
         match a_rdata {
-            Rdata::SomeARdata(ref mut val) => val.set_address(IpAddr::from([127, 0, 0, 1])),
+            Rdata::A(ref mut val) => val.set_address(IpAddr::from([127, 0, 0, 1])),
             _ => unreachable!(),
         }
 
@@ -540,7 +540,7 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeARdata(val) => val.get_address(),
+                Rdata::A(val) => val.get_address(),
                 _ => unreachable!(),
             },
             IpAddr::from([127, 0, 0, 1])
@@ -549,13 +549,13 @@ mod resource_record_test {
 
     #[test]
     fn constructor_ns_test() {
-        let mut ns_rdata = Rdata::SomeNsRdata(NsRdata::new());
+        let mut ns_rdata = Rdata::NS(NsRdata::new());
 
         let mut new_domain_name = DomainName::new();
         new_domain_name.set_name(String::from("test.com"));
 
         match ns_rdata {
-            Rdata::SomeNsRdata(ref mut val) => val.set_nsdname(new_domain_name),
+            Rdata::NS(ref mut val) => val.set_nsdname(new_domain_name),
             _ => unreachable!(),
         }
 
@@ -568,7 +568,7 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeNsRdata(val) => val.get_nsdname().get_name(),
+                Rdata::NS(val) => val.get_nsdname().get_name(),
                 _ => unreachable!(),
             },
             String::from("test.com")
@@ -577,13 +577,13 @@ mod resource_record_test {
 
     #[test]
     fn constructor_cname_test() {
-        let mut cname_rdata = Rdata::SomeCnameRdata(CnameRdata::new());
+        let mut cname_rdata = Rdata::CNAME(CnameRdata::new());
 
         let mut new_domain_name = DomainName::new();
         new_domain_name.set_name(String::from("test.com"));
 
         match cname_rdata {
-            Rdata::SomeCnameRdata(ref mut val) => val.set_cname(new_domain_name),
+            Rdata::CNAME(ref mut val) => val.set_cname(new_domain_name),
             _ => unreachable!(),
         }
 
@@ -596,7 +596,7 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeCnameRdata(val) => val.get_cname().get_name(),
+                Rdata::CNAME(val) => val.get_cname().get_name(),
                 _ => unreachable!(),
             },
             String::from("test.com")
@@ -605,7 +605,7 @@ mod resource_record_test {
 
     #[test]
     fn constructor_soa_test() {
-        let mut soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let mut soa_rdata = Rdata::SOA(SoaRdata::new());
 
         let mut mname_domain_name = DomainName::new();
         mname_domain_name.set_name(String::from("test.com"));
@@ -614,7 +614,7 @@ mod resource_record_test {
         rname_domain_name.set_name(String::from("admin.example.com"));
 
         match soa_rdata {
-            Rdata::SomeSoaRdata(ref mut val) => {
+            Rdata::SOA(ref mut val) => {
                 val.set_mname(mname_domain_name);
                 val.set_rname(rname_domain_name);
                 val.set_serial(1111111111 as u32)
@@ -631,21 +631,21 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeSoaRdata(val) => val.get_mname().get_name(),
+                Rdata::SOA(val) => val.get_mname().get_name(),
                 _ => unreachable!(),
             },
             String::from("test.com")
         );
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeSoaRdata(val) => val.get_rname().get_name(),
+                Rdata::SOA(val) => val.get_rname().get_name(),
                 _ => unreachable!(),
             },
             String::from("admin.example.com")
         );
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeSoaRdata(val) => val.get_serial(),
+                Rdata::SOA(val) => val.get_serial(),
                 _ => unreachable!(),
             },
             1111111111 as u32
@@ -654,13 +654,13 @@ mod resource_record_test {
 
     #[test]
     fn constructor_ptr_test() {
-        let mut ptr_rdata = Rdata::SomePtrRdata(PtrRdata::new());
+        let mut ptr_rdata = Rdata::PTR(PtrRdata::new());
 
         let mut new_domain_name = DomainName::new();
         new_domain_name.set_name(String::from("test.com"));
 
         match ptr_rdata {
-            Rdata::SomePtrRdata(ref mut val) => val.set_ptrdname(new_domain_name),
+            Rdata::PTR(ref mut val) => val.set_ptrdname(new_domain_name),
             _ => unreachable!(),
         }
 
@@ -673,7 +673,7 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomePtrRdata(val) => val.get_ptrdname().get_name(),
+                Rdata::PTR(val) => val.get_ptrdname().get_name(),
                 _ => unreachable!(),
             },
             String::from("test.com")
@@ -682,13 +682,13 @@ mod resource_record_test {
 
     #[test]
     fn constructor_hinfo_test() {
-        let mut hinfo_rdata = Rdata::SomeHinfoRdata(HinfoRdata::new());
+        let mut hinfo_rdata = Rdata::HINFO(HinfoRdata::new());
 
         let cpu = String::from("INTEL-386");
         let os = String::from("Windows");
 
         match hinfo_rdata {
-            Rdata::SomeHinfoRdata(ref mut val) => {
+            Rdata::HINFO(ref mut val) => {
                 val.set_cpu(cpu);
                 val.set_os(os)
             }
@@ -704,14 +704,14 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeHinfoRdata(val) => val.get_cpu(),
+                Rdata::HINFO(val) => val.get_cpu(),
                 _ => unreachable!(),
             },
             String::from("INTEL-386")
         );
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeHinfoRdata(val) => val.get_os(),
+                Rdata::HINFO(val) => val.get_os(),
                 _ => unreachable!(),
             },
             String::from("Windows")
@@ -720,14 +720,14 @@ mod resource_record_test {
 
     #[test]
     fn constructor_mx_test() {
-        let mut mx_rdata = Rdata::SomeMxRdata(MxRdata::new());
+        let mut mx_rdata = Rdata::MX(MxRdata::new());
 
         let preference = 10 as u16;
         let mut exchange = DomainName::new();
         exchange.set_name(String::from("admin.example.com"));
 
         match mx_rdata {
-            Rdata::SomeMxRdata(ref mut val) => {
+            Rdata::MX(ref mut val) => {
                 val.set_preference(preference);
                 val.set_exchange(exchange)
             }
@@ -743,14 +743,14 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeMxRdata(val) => val.get_preference(),
+                Rdata::MX(val) => val.get_preference(),
                 _ => unreachable!(),
             },
             10 as u16
         );
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeMxRdata(val) => val.get_exchange().get_name(),
+                Rdata::MX(val) => val.get_exchange().get_name(),
                 _ => unreachable!(),
             },
             String::from("admin.example.com")
@@ -761,7 +761,7 @@ mod resource_record_test {
     fn constructor_txt_test() {
         let text = vec!["dcc".to_string(), "test".to_string()];
 
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(text));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(text));
         let resource_record = ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
@@ -771,7 +771,7 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeTxtRdata(val) => val.get_text(),
+                Rdata::TXT(val) => val.get_text(),
                 _ => unreachable!(),
             },
             vec!["dcc".to_string(), "test".to_string()]
@@ -780,14 +780,14 @@ mod resource_record_test {
 
     #[test]
     fn constructor_other_rdata_test() {
-        let mut ach_rdata = Rdata::SomeAChRdata(AChRdata::new());
+        let mut ach_rdata = Rdata::ACH(AChRdata::new());
 
         let ch_address = 1 as u16;
         let mut new_domain_name = DomainName::new();
         new_domain_name.set_name(String::from("test.com"));
 
         match ach_rdata {
-            Rdata::SomeAChRdata(ref mut val) => {
+            Rdata::ACH(ref mut val) => {
                 val.set_domain_name(new_domain_name);
                 val.set_ch_address(ch_address)
             }
@@ -803,14 +803,14 @@ mod resource_record_test {
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeAChRdata(val) => val.get_ch_address(),
+                Rdata::ACH(val) => val.get_ch_address(),
                 _ => unreachable!(),
             },
             1 as u16
         );
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeAChRdata(val) => val.get_domain_name().get_name(),
+                Rdata::ACH(val) => val.get_domain_name().get_name(),
                 _ => unreachable!(),
             },
             String::from("test.com")
@@ -819,7 +819,7 @@ mod resource_record_test {
 
     #[test]
     fn set_and_get_name_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_name().get_name(), String::from(""));
 
@@ -833,7 +833,7 @@ mod resource_record_test {
 
     #[test]
     fn set_and_get_type_code_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(Rtype::from_rtype_to_int(resource_record.get_rtype()), 16);
 
@@ -845,7 +845,7 @@ mod resource_record_test {
 
     #[test]
     fn set_and_get_class_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(Rclass::from_rclass_to_int(resource_record.get_rclass()), 1);
 
@@ -857,7 +857,7 @@ mod resource_record_test {
 
     #[test]
     fn set_and_get_ttl_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_ttl(), 0);
 
@@ -869,7 +869,7 @@ mod resource_record_test {
 
     #[test]
     fn set_and_get_rdlength_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(resource_record.get_rdlength(), 0);
 
@@ -881,20 +881,20 @@ mod resource_record_test {
 
     #[test]
     fn set_and_get_rdata_test() {
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string()]));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
 
         match resource_record.get_rdata() {
-            Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text()[0], "dcc".to_string()),
+            Rdata::TXT(val) => assert_eq!(val.get_text()[0], "dcc".to_string()),
             _ => unreachable!(),
         }
 
-        let mx_rdata = Rdata::SomeMxRdata(MxRdata::new());
+        let mx_rdata = Rdata::MX(MxRdata::new());
         resource_record.set_rdata(mx_rdata);
 
         assert_eq!(
             match resource_record.get_rdata() {
-                Rdata::SomeMxRdata(val) => val.get_preference(),
+                Rdata::MX(val) => val.get_preference(),
                 _ => unreachable!(),
             },
             0 as u16
@@ -904,7 +904,7 @@ mod resource_record_test {
     #[test]
     fn to_bytes_test() {
         let txt_rdata =
-            Rdata::SomeTxtRdata(TxtRdata::new(vec!["dcc".to_string(), "uchile".to_string()]));
+            Rdata::TXT(TxtRdata::new(vec!["dcc".to_string(), "uchile".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
 
         let mut domain_name = DomainName::new();
@@ -953,7 +953,7 @@ mod resource_record_test {
 
         assert_eq!(
             match resource_record_test.get_rdata() {
-                Rdata::SomeTxtRdata(val) => val.get_text(),
+                Rdata::TXT(val) => val.get_text(),
                 _ => unreachable!(),
             },
             vec!["dcc".to_string()]
@@ -978,7 +978,7 @@ mod resource_record_test {
 
         assert_eq!(
             match resource_record_test.get_rdata() {
-                Rdata::SomeARdata(val) => val.get_string_address(),
+                Rdata::A(val) => val.get_string_address(),
                 _ => unreachable!(),
             },
             String::from("127.0.0.1")
@@ -987,7 +987,7 @@ mod resource_record_test {
 
     #[test]
     fn get_string_type_test() {
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
 
         assert_eq!(resource_record.get_string_type(), String::from("A"));
@@ -995,9 +995,9 @@ mod resource_record_test {
 
     #[test]
     fn rr_equal_test() {
-        let soa_rdata = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata = Rdata::SOA(SoaRdata::new());
         let mut resource_record = ResourceRecord::new(soa_rdata);
-        let soa_rdata1 = Rdata::SomeSoaRdata(SoaRdata::new());
+        let soa_rdata1 = Rdata::SOA(SoaRdata::new());
         let mut resource_record1 = ResourceRecord::new(soa_rdata1);
         assert!(resource_record.rr_equal(resource_record1.clone()));
         resource_record1.set_rclass(Rclass::HS);

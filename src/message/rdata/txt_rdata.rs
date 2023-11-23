@@ -98,7 +98,7 @@ impl TxtRdata {
     /// expected_text.push(String::from("uchile"));
     /// expected_text.push(String::from("cl"));
     /// match txt_rr_rdata {
-    ///     Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text(), expected_text),
+    ///     Rdata::TXT(val) => assert_eq!(val.get_text(), expected_text),
     ///     _ => {}
     /// }
     /// ```
@@ -116,7 +116,7 @@ impl TxtRdata {
         let rd_lenght = text.len();
         let txt_rdata = TxtRdata::new(text);
 
-        let rdata = Rdata::SomeTxtRdata(txt_rdata);
+        let rdata = Rdata::TXT(txt_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         let mut domain_name = DomainName::new();
@@ -214,7 +214,7 @@ mod txt_rdata_test {
         expected_text.push(String::from("uchile"));
         expected_text.push(String::from("cl"));
         match txt_rr_rdata {
-            Rdata::SomeTxtRdata(val) => assert_eq!(val.get_text(), expected_text),
+            Rdata::TXT(val) => assert_eq!(val.get_text(), expected_text),
             _ => {}
         }
     }

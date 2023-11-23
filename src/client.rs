@@ -198,7 +198,7 @@ mod client_test {
         for answer in answers {
             let a_rdata = answer.get_rdata();
             match a_rdata {
-                Rdata::SomeARdata(val) => {
+                Rdata::A(val) => {
                     assert_eq!(val.get_address(), IpAddr::from(expected_ip))
                 },
                 _ => {}
@@ -236,7 +236,7 @@ mod client_test {
         for answer in answers {
             let a_rdata = answer.get_rdata();
             match a_rdata {
-                Rdata::SomeARdata(val) => {
+                Rdata::A(val) => {
                     assert_eq!(val.get_address(), IpAddr::from(expected_ip))
                 },
                 _ => {}

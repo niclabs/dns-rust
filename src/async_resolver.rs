@@ -103,7 +103,7 @@ impl AsyncResolver {
     // TODO: move and change as from method  of rr
     fn from_rr_to_ip(rr: ResourceRecord) -> Result<IpAddr, ClientError> {
         let rdata = rr.get_rdata();
-        if let Rdata::SomeARdata(ip) = rdata {
+        if let Rdata::A(ip) = rdata {
             return Ok(ip.get_address());
         } else {
             Err(ClientError::TemporaryError("Response does not match type A."))?
@@ -465,7 +465,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -485,7 +485,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -503,7 +503,7 @@ mod async_resolver_test {
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-        let a_rdata = Rdata::SomeARdata(a_rdata);
+        let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
 
         resolver.cache.add(domain_name, resource_record);
@@ -646,7 +646,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -667,7 +667,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -691,7 +691,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -712,7 +712,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -736,7 +736,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -757,7 +757,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -781,7 +781,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -802,7 +802,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -826,7 +826,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -847,7 +847,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -872,7 +872,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -892,7 +892,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -911,7 +911,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -931,7 +931,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -950,7 +950,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -970,7 +970,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -989,7 +989,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1009,7 +1009,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1029,7 +1029,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1049,7 +1049,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1068,7 +1068,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1088,7 +1088,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1107,7 +1107,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1127,7 +1127,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1146,7 +1146,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1166,7 +1166,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1185,7 +1185,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1205,7 +1205,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1224,7 +1224,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1244,7 +1244,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1263,7 +1263,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1283,7 +1283,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1302,7 +1302,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1322,7 +1322,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1341,7 +1341,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1361,7 +1361,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1380,7 +1380,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1400,7 +1400,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1419,7 +1419,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1439,7 +1439,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");

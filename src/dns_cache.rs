@@ -96,7 +96,7 @@ impl DnsCache {
 
         for rr_cache in rr_cache_vec {
             let rr_ip_address = match rr_cache.get_resource_record().get_rdata() {
-                Rdata::SomeARdata(val) => val.get_address(),
+                Rdata::A(val) => val.get_address(),
                 _ => unreachable!(),
             };
             
@@ -237,7 +237,7 @@ mod dns_cache_test {
         let mut host_data = HostData::new();
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRCache::new(resource_record);
         host_data.add_to_host_data(domain_name, rr_cache);
@@ -259,7 +259,7 @@ mod dns_cache_test {
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
 
         assert!(cache.get_cache().get_cache_data().is_empty());
@@ -270,7 +270,7 @@ mod dns_cache_test {
 
         let mut new_vec = Vec::new();
         new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
 
         cache.add(domain_name.clone(), resource_record_2);
@@ -288,7 +288,7 @@ mod dns_cache_test {
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
 
         cache.add(domain_name.clone(), resource_record);
@@ -297,7 +297,7 @@ mod dns_cache_test {
 
         let mut new_vec = Vec::new();
         new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
 
         cache.add(domain_name.clone(), resource_record_2);
@@ -318,7 +318,7 @@ mod dns_cache_test {
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
 
         cache.add(domain_name.clone(), resource_record);
@@ -327,7 +327,7 @@ mod dns_cache_test {
 
         let mut new_vec = Vec::new();
         new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
 
         cache.add(domain_name.clone(), resource_record_2);
@@ -350,7 +350,7 @@ mod dns_cache_test {
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
 
         cache.add(domain_name.clone(), resource_record);
@@ -359,7 +359,7 @@ mod dns_cache_test {
 
         let mut new_vec = Vec::new();
         new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
 
         cache.add(domain_name.clone(), resource_record_2);
@@ -381,7 +381,7 @@ mod dns_cache_test {
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
 
         assert!(cache.get_cache().get_cache_data().is_empty());
@@ -403,7 +403,7 @@ mod dns_cache_test {
         let ip_address = IpAddr::from([127, 0, 0, 1]);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
 
         assert!(cache.get_cache().get_cache_data().is_empty());
@@ -433,7 +433,7 @@ mod dns_cache_test {
         let ip_address = IpAddr::from([127, 0, 0, 1]);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
 
         assert!(cache.get_cache().get_cache_data().is_empty());
@@ -462,7 +462,7 @@ mod dns_cache_test {
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-        let a_rdata = Rdata::SomeARdata(a_rdata);
+        let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
         cache.add(domain_name.clone(), resource_record);
         assert_eq!(cache.get_size(), 1);

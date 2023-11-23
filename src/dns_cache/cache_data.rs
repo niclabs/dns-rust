@@ -33,7 +33,7 @@ impl CacheData{
     /// # Example
     /// ```
     /// let mut cache_data = CacheData::new();
-    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRCache::new(resource_record);
     /// let mut domain_name = DomainName::new();
@@ -64,7 +64,7 @@ impl CacheData{
     /// # Example
     /// ```
     /// let mut cache_data = CacheData::new();
-    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRCache::new(resource_record);
     /// let mut domain_name = DomainName::new();
@@ -91,7 +91,7 @@ impl CacheData{
     /// # Example
     /// ```
     /// let mut cache_data = CacheData::new();
-    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRCache::new(resource_record);
     /// let mut domain_name = DomainName::new();
@@ -127,7 +127,7 @@ impl CacheData{
     /// # Example
     /// ```
     /// let mut cache_data = CacheData::new();
-    /// let a_rdata = Rdata::SomeARdata(ARdata::new());
+    /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRCache::new(resource_record);
     /// let mut domain_name = DomainName::new();
@@ -243,7 +243,7 @@ mod cache_data_test{
         let mut host_data = HostData::new();
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRCache::new(resource_record);
         host_data.add_to_host_data(domain_name, rr_cache);
@@ -261,7 +261,7 @@ mod cache_data_test{
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRCache::new(resource_record);
 
@@ -271,7 +271,7 @@ mod cache_data_test{
 
         let mut new_vec = Vec::new();
         new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
         let rr_cache_2 = RRCache::new(resource_record_2);
 
@@ -279,7 +279,7 @@ mod cache_data_test{
 
         assert_eq!(cache_data.get_cache_data().len(), 2);
 
-        let a_rdata_2 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata_2 = Rdata::A(ARdata::new());
         let resource_record_3 = ResourceRecord::new(a_rdata_2);
         let rr_cache_3 = RRCache::new(resource_record_3);
 
@@ -295,7 +295,7 @@ mod cache_data_test{
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRCache::new(resource_record);
 
@@ -319,7 +319,7 @@ mod cache_data_test{
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRCache::new(resource_record);
 
@@ -333,7 +333,7 @@ mod cache_data_test{
 
         let mut new_vec = Vec::new();
         new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
         let rr_cache_2 = RRCache::new(resource_record_2);
 
@@ -353,7 +353,7 @@ mod cache_data_test{
     fn remove_oldest_used(){
         let mut cache_data = CacheData::new();
 
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let mut rr_cache = RRCache::new(resource_record);
         let now = Utc::now();
@@ -367,7 +367,7 @@ mod cache_data_test{
     
         let mut new_vec = Vec::new();
         new_vec.push(String::from("uchile.cl"));
-        let text_rdata = Rdata::SomeTxtRdata(TxtRdata::new(new_vec));
+        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
         let mut rr_cache_2 = RRCache::new(resource_record_2);
         rr_cache_2.set_last_use(Utc::now());
@@ -398,7 +398,7 @@ mod cache_data_test{
         let ip_address = IpAddr::from([127, 0, 0, 1]);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         let mut rr_cache = RRCache::new(resource_record);
         rr_cache.set_response_time(1000);

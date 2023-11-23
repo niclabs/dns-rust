@@ -109,7 +109,7 @@ impl NsRdata {
 
         ns_rdata.set_nsdname(domain_name);
 
-        let rdata = Rdata::SomeNsRdata(ns_rdata);
+        let rdata = Rdata::NS(ns_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         let mut domain_name = DomainName::new();
@@ -220,7 +220,7 @@ mod ns_rdata_test {
          
          let ns_rr_rdata = nsrdata_rr.get_rdata();
          match ns_rr_rdata {
-            Rdata::SomeNsRdata(val) => assert_eq!(val.get_nsdname().get_name(), 
+            Rdata::NS(val) => assert_eq!(val.get_nsdname().get_name(), 
             String::from("dcc.uchile.cl")),
             _ => {}
         }

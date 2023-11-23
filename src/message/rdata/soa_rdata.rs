@@ -272,7 +272,7 @@ impl SoaRdata {
         soa_rdata.set_expire(expire);
         soa_rdata.set_minimum(minimum);
 
-        let rdata = Rdata::SomeSoaRdata(soa_rdata);
+        let rdata = Rdata::SOA(soa_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         let mut domain_name = DomainName::new();
@@ -727,7 +727,7 @@ mod soa_rdata_test {
          String::from("14000")]; //List with all the values we expect
 
          match soa_rr_rdata {
-            Rdata::SomeSoaRdata(val) => assert_eq!([val.get_mname().get_name(), 
+            Rdata::SOA(val) => assert_eq!([val.get_mname().get_name(), 
             val.get_rname().get_name(), 
             val.get_serial().to_string(),
             val.get_refresh().to_string(),

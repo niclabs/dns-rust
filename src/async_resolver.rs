@@ -250,7 +250,7 @@ impl AsyncResolver {
     /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
     /// ```
     /// 
-    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError>{
+    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError> {
         println!("[LOOKUP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -260,18 +260,13 @@ impl AsyncResolver {
 
         let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
         
-        //TODO: parse header and personalised error type FIXME: SHOULD look all types
         return self.parse_dns_msg(response).map_err(Into::into)
-        // match response {
-        //     Ok(val) => {
-        //         let rdata = val.get_answer()[0].get_rdata();
-        //         Ok(rdata)      
-        //     }
-        //     Err(_) => Err(ResolverError::Message("Error Response"))?,
-        // }
     }
 
+    /// Stores the data of the response in the cache.
+    /// 
     /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.4 
+    /// 
     /// 7.4. Using the cache
     /// 
     /// In general, we expect a resolver to cache all data which it receives in

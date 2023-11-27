@@ -1461,6 +1461,29 @@ mod async_resolver_test {
             }
     }
 
-    //TODO: Caching mensajes truncados
+    #[test]
+    fn not_store_data_in_cache_if_truncated() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+    
+        // Create truncated dns response
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                domain_name,
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        let mut truncated_header = dns_response.get_header();
+        truncated_header.set_tc(true);
+        dns_response.set_header(truncated_header);
+
+        resolver.store_data_cache(dns_response);
+
+        assert_eq!(resolver.get_cache().get_size(), 0);
+    }    
 
 }

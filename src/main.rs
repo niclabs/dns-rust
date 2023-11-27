@@ -56,6 +56,9 @@ struct ResolverArgs {
     /// Query type
     #[arg(long, default_value_t = String::from("A"))]
     qtype: String,
+    /// Query class
+    #[arg(long, default_value_t = String::from("IN"))]
+    qclass: String,
     /// Protocol
     #[arg(long, default_value_t = String::from("UDP"))]
     protocol: String,
@@ -68,9 +71,10 @@ async fn query(
     mut resolver: AsyncResolver,
     domain_name: String,
     qtype: String,
+    qclass: String,
     protocol: String,
 ) -> Result<Vec<ResourceRecord>, ResolverError> {
-    let response = resolver.lookup(domain_name.as_str(),protocol.as_str(), qtype.as_str()).await;
+    let response = resolver.lookup(domain_name.as_str(),protocol.as_str(), qtype.as_str(),qclass.as_str()).await;
 
     response
 }
@@ -118,6 +122,7 @@ pub async fn main() {
                 resolver,
                  resolver_args.host_name.clone(),
                   resolver_args.qtype.clone(),
+                  resolver_args.qclass.clone(),
                    resolver_args.protocol.clone()).await;
             
             print_response(response);

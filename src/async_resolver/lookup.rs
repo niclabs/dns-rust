@@ -26,6 +26,8 @@ pub struct LookupFutureStub {
     name: DomainName,
     /// Qtype of search query
     record_type: Qtype,
+    /// Qclass of the search query
+    record_class: Qclass,
     /// Resolver configuration.
     config: ResolverConfig,
     /// Future that contains the response of the query.
@@ -56,6 +58,7 @@ impl Future for LookupFutureStub {
                     lookup_stub(
                         self.name.clone(),
                         self.record_type,
+                        self.record_class,
                         self.config.get_name_servers(),
                         self.waker.clone(),
                         referenced_query,
@@ -80,12 +83,14 @@ impl LookupFutureStub {
     pub fn lookup(
         name: DomainName,
         qtype: Qtype,
+        qclass: Qclass,
         config: ResolverConfig,
     ) -> Self {
         
         Self { 
             name: name,
             record_type: qtype,
+            record_class: qclass,
             config: config,
             query_answer:  
             Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
@@ -158,6 +163,7 @@ impl LookupFutureStub {
 pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
     name: DomainName,
     record_type: Qtype,
+    record_class: Qclass,
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     waker: Option<Waker>,
     referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
@@ -174,7 +180,7 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
     let new_query = DnsMessage::new_query_message(
         name.clone(),
         record_type,
-        Qclass::IN,
+        record_class,
         0,
         false,
         query_id
@@ -296,10 +302,12 @@ mod async_resolver_test {
         cache.add(domain_name_cache, resource_record);
 
         let record_type = Qtype::A;
+        let record_class = Qclass::IN;
 
         let lookup_future = LookupFutureStub::lookup(
             domain_name,
             record_type,
+            record_class,
             config,
         );
 
@@ -321,9 +329,9 @@ mod async_resolver_test {
 
         let config = ResolverConfig::default();
         let record_type = Qtype::A;
-        
+        let record_class = Qclass::IN;
         let name_servers = vec![(conn_udp,conn_tcp)];
-        let response = lookup_stub(domain_name,record_type, name_servers, waker,query,config).await.unwrap();
+        let response = lookup_stub(domain_name,record_type,record_class, name_servers, waker,query,config).await.unwrap();
 
         assert_eq!(response.get_header().get_qr(),true);
         assert_ne!(response.get_answer().len(),0);
@@ -345,9 +353,10 @@ mod async_resolver_test {
 
         let config = ResolverConfig::default();
         let record_type = Qtype::NS;
+        let record_class = Qclass::IN;
         
         let name_servers = vec![(conn_udp,conn_tcp)];
-        let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await.unwrap();
+        let response = lookup_stub(domain_name, record_type, record_class,name_servers, waker,query,config).await.unwrap();
 
         assert_eq!(response.get_header().get_qr(),true);
         assert_ne!(response.get_answer().len(),0);
@@ -364,6 +373,7 @@ mod async_resolver_test {
         let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
+        let record_class = Qclass::IN;
     
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -380,7 +390,7 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
             
         let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
-        let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await;
+        let response = lookup_stub(domain_name, record_type, record_class,name_servers, waker,query,config).await;
         println!("response {:?}",response);
             
         assert!(response.is_err())
@@ -397,6 +407,7 @@ mod async_resolver_test {
         let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
+        let record_class = Qclass::IN;
     
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -413,7 +424,7 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
             
         let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
-        let response = lookup_stub(domain_name, record_type, name_servers, waker,query,config).await.unwrap();
+        let response = lookup_stub(domain_name, record_type, record_class,name_servers, waker,query,config).await.unwrap();
         println!("response {:?}",response);
 
        assert!(response.get_answer().len() > 0);
@@ -430,6 +441,7 @@ mod async_resolver_test {
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
+        let record_class = Qclass::IN;
 
         let mut config: ResolverConfig = ResolverConfig::default();
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
@@ -439,7 +451,7 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(3);
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type, config).await;
+        let response_future = LookupFutureStub::lookup(domain_name, record_type,record_class, config).await;
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
@@ -454,6 +466,7 @@ mod async_resolver_test {
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
+        let record_class = Qclass::IN;
 
         let mut config: ResolverConfig = ResolverConfig::default();
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(38, 44, 1, 22)); 
@@ -463,7 +476,7 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(3);
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await;
+        let response_future = LookupFutureStub::lookup(domain_name, record_type ,record_class,config).await;
         println!("response_future {:?}",response_future);
 
         assert_eq!(response_future.is_ok(), true);    
@@ -481,6 +494,7 @@ mod async_resolver_test {
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
+        let record_class = Qclass::IN;
 
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -490,7 +504,7 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp,conn_tcp)]);
         config.set_retry(0);
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type ,config).await.unwrap();
+        let response_future = LookupFutureStub::lookup(domain_name, record_type,record_class ,config).await.unwrap();
         
         assert_eq!(response_future.get_answer().len() , 0); 
         assert_eq!(response_future.get_header().get_qr() , true); 
@@ -503,6 +517,7 @@ mod async_resolver_test {
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let record_type = Qtype::A;
+        let record_class = Qclass::IN;
         
         let config: ResolverConfig = ResolverConfig::default();
         
@@ -515,7 +530,7 @@ mod async_resolver_test {
         cache.set_max_size(1);
         cache.add(domain_name.clone(), rr);
 
-        let _response_future = LookupFutureStub::lookup(domain_name, record_type, config).await;
+        let _response_future = LookupFutureStub::lookup(domain_name, record_type, record_class,config).await;
         
         // TODO: test
     }  

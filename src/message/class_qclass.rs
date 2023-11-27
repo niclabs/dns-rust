@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug,Copy)]
 /// Enum for the Class of a RR in a DnsMessage
 pub enum Qclass {
     IN,

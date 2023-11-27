@@ -84,7 +84,7 @@ impl AsyncResolver {
     /// This method acts as an interface between the Client and the Resolver.
     /// It calls `inner_lookup(&self, domain_name: DomainName)` which will
     /// execute a look up of the given domain name asynchronously.
-    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str) -> Result<Vec<IpAddr>, ClientError> {
+    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str, qclass:&str) -> Result<Vec<IpAddr>, ClientError> {
         println!("[LOOKUP IP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -92,7 +92,7 @@ impl AsyncResolver {
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
+        let response = self.inner_lookup(domain_name_struct,Qtype::A,Qclass::from_str_to_qclass(qclass)).await;
 
         let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
@@ -161,7 +161,7 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
-    async fn inner_lookup(&mut self, domain_name: DomainName,qtype:Qtype) -> Result<DnsMessage, ResolverError> {
+    async fn inner_lookup(&mut self, domain_name: DomainName,qtype:Qtype, qclass:Qclass) -> Result<DnsMessage, ResolverError> {
 
         // Cache lookup
         // Search in cache only if its available
@@ -179,7 +179,7 @@ impl AsyncResolver {
                 let mut new_query = DnsMessage::new_query_message(
                     domain_name.clone(),
                     qtype,
-                    Qclass::IN,
+                    qclass,
                     0,
                     false,
                     query_id
@@ -199,6 +199,7 @@ impl AsyncResolver {
         let response = LookupFutureStub::lookup(
             domain_name,
             qtype,
+            qclass,
             self.config.clone())
             .await;
 
@@ -255,15 +256,16 @@ impl AsyncResolver {
     /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
     /// ```
     /// 
-    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError> {
+    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ,qclass:&str) -> Result<Vec<ResourceRecord>, ResolverError> {
         println!("[LOOKUP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let qtype_struct = Qtype::from_str_to_qtype(qtype);
+        let qclass_struct = Qclass::from_str_to_qclass(qclass);
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
+        let response = self.inner_lookup(domain_name_struct,qtype_struct,qclass_struct).await;
         
         return self.parse_dns_msg(response).map_err(Into::into)
     }
@@ -372,7 +374,8 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::A;
-        let response = resolver.inner_lookup(domain_name,qtype).await;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
 
         //FIXME: add assert
         assert!(response.is_ok());
@@ -384,7 +387,9 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::NS;
-        let response = resolver.inner_lookup(domain_name,qtype).await;
+        let record_class = Qclass::IN;
+
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
         assert!(response.is_ok());
 
         //FIXME: add assert
@@ -396,7 +401,22 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "TCP";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+        
+        assert!(ip_addresses[0].is_ipv4());
+    
+        assert!(!ip_addresses[0].is_unspecified());
+    }
+
+    #[tokio::test]
+    async fn host_name_to_host_address_translation_ch() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "TCP";
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
@@ -411,7 +431,8 @@ mod async_resolver_test {
         let domain_name = "example.com";
         let transport_protocol = "UDP";
         let qtype = "NS";
-        let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+        let qclass = "IN";
+        let response = resolver.lookup(domain_name, transport_protocol,qtype,qclass).await.unwrap();
         
         println!("RESPONSE : {:?}",response);
     }
@@ -440,12 +461,13 @@ mod async_resolver_test {
         // Intenta resolver un nombre de dominio que no existe o no está accesible
         let domain_name = "nonexistent-example.com";
         let transport_protocol = "UDP";
+        let qclass = "IN";
     
         // Configura un timeout corto para la resolución (ajusta según tus necesidades)
         let timeout_duration = std::time::Duration::from_secs(2);
         
         let result = tokio::time::timeout(timeout_duration, async {
-            resolver.lookup_ip(domain_name, transport_protocol).await
+            resolver.lookup_ip(domain_name, transport_protocol,qclass).await
         }).await;
         
 
@@ -515,7 +537,7 @@ mod async_resolver_test {
 
         resolver.cache.add(domain_name, resource_record);
 
-        let _response = resolver.lookup("example.com", "UDP", "A").await;
+        let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
     }
 
     /// Test cache data
@@ -524,7 +546,7 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.set_max_size(1);
         assert_eq!(resolver.cache.is_empty(), true);
-        let _response = resolver.lookup("example.com", "UDP", "A").await;
+        let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
         assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
 
         // TODO: Test special cases from RFC
@@ -546,7 +568,7 @@ mod async_resolver_test {
 
         // Realiza la resolución de DNS que sabes que fallará
         while retries_attempted < max_retries {
-            let result = resolver.lookup_ip("nonexistent-domain.com", "UDP").await;
+            let result = resolver.lookup_ip("nonexistent-domain.com", "UDP", "IN").await;
              retries_attempted += 1;
 
             if result.is_ok() {
@@ -567,7 +589,8 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "UDP";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
@@ -580,7 +603,8 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "TCP";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
@@ -594,8 +618,11 @@ mod async_resolver_test {
     async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "Ecample.com";
+        let transport_protocol_udp = "UDP";
+        let transport_protocol_tcp = "TCP";
+        let qclass = "IN";
 
-        let udp_result = resolver.lookup_ip(domain_name, "UDP").await;
+        let udp_result = resolver.lookup_ip(domain_name, transport_protocol_udp,qclass).await;
     
        
        match udp_result {
@@ -610,7 +637,7 @@ mod async_resolver_test {
       
       } 
 
-      let tcp_result = resolver.lookup_ip(domain_name, "TCP").await;
+      let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
 
       match tcp_result {
         Ok(_) => {

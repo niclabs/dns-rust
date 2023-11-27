@@ -60,6 +60,11 @@ impl AsyncResolver {
         async_resolver
     } 
 
+
+    pub fn run(){
+        unimplemented!()
+    }
+
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     /// 5.2. Client-resolver interface
     /// 
@@ -312,10 +317,16 @@ impl AsyncResolver {
     /// This method stores the data of the response in the cache, depending on the
     /// type of response.
     fn store_data_cache(&mut self, response: DnsMessage) {
-        // TODO: RFC 1035: 7.4. Using the cache
-        response.get_answer()
-                .iter()
-                .for_each(|rr| self.cache.add(rr.get_name(), rr.clone()));
+
+        let truncated = response.get_header().get_tc();
+
+        if !truncated {
+            // TODO: RFC 1035: 7.4. Using the cache
+            response.get_answer()
+            .iter()
+            .for_each(|rr| self.cache.add(rr.get_name(), rr.clone()));
+        } 
+
     }
 
 }
@@ -1449,5 +1460,7 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
     }
+
+    //TODO: Caching mensajes truncados
 
 }

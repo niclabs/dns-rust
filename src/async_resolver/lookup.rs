@@ -363,6 +363,28 @@ mod async_resolver_test {
 
     } 
 
+    #[tokio::test]
+    async fn lookup_stub_ch_response() {
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let waker = None;
+        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+
+        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(20);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+
+        let config = ResolverConfig::default();
+        let record_type = Qtype::A;
+        let record_class = Qclass::CH;
+        let name_servers = vec![(conn_udp,conn_tcp)];
+        let response = lookup_stub(domain_name,record_type,record_class, name_servers, waker,query,config).await.unwrap();
+
+
+        assert_eq!(response.get_header().get_qr(),true);
+        assert_ne!(response.get_answer().len(),0);
+    } 
     #[tokio::test] //se cae, y debería caerse, pero se cae con todos los max retiries y no solo con 0 //FIXME:
     async fn lookup_stub_max_tries_0() {
        

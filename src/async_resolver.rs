@@ -411,6 +411,31 @@ mod async_resolver_test {
     }
 
     #[tokio::test]
+    async fn lookup_ip_ch() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qclass = "CH";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
+        println!("RESPONSE : {:?}", ip_addresses);
+    
+        assert!(ip_addresses.is_err());
+    }
+
+    #[tokio::test]
+    async fn lookup_ch() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qtype = "NS";
+        let qclass = "CH";
+        let ip_addresses = resolver.lookup(domain_name, transport_protocol,qtype,qclass).await;
+        println!("RESPONSE : {:?}", ip_addresses);
+    
+        assert!(ip_addresses.is_err());
+    }
+
+    #[tokio::test]
     async fn host_name_to_host_address_translation_ch() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";

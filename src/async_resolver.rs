@@ -312,20 +312,21 @@ impl AsyncResolver {
     /// This method stores the data of the response in the cache, depending on the
     /// type of response.
     fn store_data_cache(&mut self, response: DnsMessage) {
-
         let truncated = response.get_header().get_tc();
 
         if !truncated {
             // TODO: RFC 1035: 7.4. Using the cache
             response.get_answer()
             .iter()
-            .for_each(|rr| self.cache.add(rr.get_name(), rr.clone()));
+            .for_each(|rr| {
+                if rr.get_ttl() > 0 {
+                    self.cache.add(rr.get_name(), rr.clone());
+                }
+            });
         } 
-
     }
 
 }
-
 
 // Getters
 impl AsyncResolver {

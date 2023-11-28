@@ -339,8 +339,15 @@ impl AsyncResolver {
     /// described in [DNS:2].
     ///
     /// Stores the data of negative answers in the cache. 
-    fn save_negative_answers(&mut self){
-        unimplemented!();
+    fn save_negative_answers(&mut self, response: DnsMessage){
+        println!("[Save negative answers]");
+        let qname = response.get_question().get_qname();
+        let qtype = response.get_question().get_qtype();
+        let qclass = response.get_question().get_qclass();
+        println!("Qname: {:?} {:?} {:?}", qname,qtype,qclass);
+
+        // self.cache.add(...);
+
     }
 }
 
@@ -1606,6 +1613,30 @@ mod async_resolver_test {
         
         resolver.store_data_cache(dns_response);
         assert_eq!(resolver.get_cache().get_size(), 2); 
+    }
+
+    #[test]
+    fn save_cache_negative_answer(){
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+    
+        // Create dns response
+        let dns_response =
+            DnsMessage::new_query_message(
+                domain_name,
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        
+        resolver.save_negative_answers(dns_response.clone());
+
+        assert_eq!(dns_response.get_answer().len(), 0);
+        // assert_eq!(resolver.get_cache().get_size(), 1);
+        
     }
 
 }

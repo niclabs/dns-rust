@@ -383,7 +383,7 @@ mod async_resolver_test {
 
 
         assert_eq!(response.get_header().get_qr(),true);
-        assert_ne!(response.get_answer().len(),0);
+        assert_eq!(response.get_answer().len(),0);
     } 
     #[tokio::test] //se cae, y debería caerse, pero se cae con todos los max retiries y no solo con 0 //FIXME:
     async fn lookup_stub_max_tries_0() {

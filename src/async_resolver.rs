@@ -325,10 +325,26 @@ impl AsyncResolver {
                     self.cache.add(rr.get_name(), rr.clone());
                 }
             });
+
         } 
     }
 
+    /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.2.2
+    /// 
+    /// 6.1.3.3  Efficient Resource Usage
+    /// 
+    /// (4)  All DNS name servers and resolvers SHOULD cache
+    /// negative responses that indicate the specified name, or
+    /// data of the specified type, does not exist, as
+    /// described in [DNS:2].
+    ///
+    /// Stores the data of negative answers in the cache. 
+    fn save_negative_answers(&mut self){
+        unimplemented!();
+    }
 }
+
+
 
 // Getters
 impl AsyncResolver {

@@ -15,6 +15,7 @@ use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::ResourceRecord;
 use crate::async_resolver::{config::ResolverConfig,lookup::LookupFutureStub};
 use crate::message::rdata::Rdata;
+use crate::message::type_rtype::Rtype;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
@@ -329,7 +330,7 @@ impl AsyncResolver {
         } 
     }
 
-    /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.2.2
+    /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.3.3
     /// 
     /// 6.1.3.3  Efficient Resource Usage
     /// 
@@ -338,13 +339,50 @@ impl AsyncResolver {
     /// data of the specified type, does not exist, as
     /// described in [DNS:2].
     ///
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-4.3.4
+    /// 
+    /// 4.3.4. Negative response caching (Optional)
+    /// 
+    /// The DNS provides an optional service which allows name servers to
+    /// distribute, and resolvers to cache, negative results with TTLs.  For
+    /// example, a name server can distribute a TTL along with a name error
+    /// indication, and a resolver receiving such information is allowed to
+    /// assume that the name does not exist during the TTL period without
+    /// consulting authoritative data.  Similarly, a resolver can make a query
+    /// with a QTYPE which matches multiple types, and cache the fact that some
+    /// of the types are not present.
+    ///
+    /// The method is that a name server may add an SOA RR to the additional
+    /// section of a response when that response is authoritative.  The SOA must
+    /// be that of the zone which was the source of the authoritative data in
+    /// the answer section, or name error if applicable.  The MINIMUM field of
+    /// the SOA controls the length of time that the negative result may be
+    /// cached.
+    ///
     /// Stores the data of negative answers in the cache. 
     fn save_negative_answers(&mut self, response: DnsMessage){
-        println!("[Save negative answers]");
+        //FIXME: 
+        println!("[Save negative answers]"); 
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_qtype();
         let qclass = response.get_question().get_qclass();
         println!("Qname: {:?} {:?} {:?}", qname,qtype,qclass);
+        
+        let additionals = response.get_additional();
+        let answer = response.get_answer();
+        let aa = response.get_header().get_aa();
+        println!("Additionals len: {:?}", additionals.len());
+
+        // If not existence RR for query, add SOA to cache 
+        if additionals.len() > 0 && answer.len() == 0 && aa == true{
+            additionals.iter()
+            .for_each(|rr| {
+                if rr.get_rtype() == Rtype::SOA {
+                    self.cache.add(qname.clone(), rr.clone());
+                }
+            });
+            println!("[Additional:] {:?}", additionals);
+        }
 
         // self.cache.add(...);
 
@@ -1620,7 +1658,7 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.set_max_size(1);
 
-        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let domain_name = DomainName::new_from_string("nonexistent.uchile.cl".to_string());
     
         // Create dns response
         let dns_response =

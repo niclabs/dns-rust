@@ -93,7 +93,7 @@ impl AsyncResolver {
         self.config.set_protocol(transport_protocol_struct);
 
         let response = self.inner_lookup(domain_name_struct,Qtype::A,Qclass::from_str_to_qclass(qclass)).await;
-
+          
         let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
             let rrs_iter = rrs.into_iter();
@@ -420,6 +420,19 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
     
         assert!(ip_addresses.is_err());
+    }
+
+    #[ignore] //FIXME:
+    #[tokio::test]
+    async fn lookup_ip_qclass_any() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qclass = "ANY";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
+        println!("RESPONSE : {:?}", ip_addresses);
+    
+        // assert!(ip_addresses.is_err());
     }
 
     #[tokio::test]

@@ -1700,5 +1700,53 @@ mod async_resolver_test {
         assert_eq!(resolver.get_cache().get_size(), 1);
         
     }
+    
+    #[tokio::test]
+    async fn inner_lookup_negative_answer_in_cache(){
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let mut cache = resolver.get_cache();
+        cache.set_max_size(9);
+
+        let domain_name = DomainName::new_from_string("banana.exaple".to_string());
+
+        //Create RR type SOA
+        let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
+        let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
+        let serial = 2023112900;
+        let refresh = 1800;
+        let retry = 900;
+        let expire = 604800;
+        let minimum = 86400;
+
+        let mut soa_rdata = SoaRdata::new();
+        soa_rdata.set_mname(mname);
+        soa_rdata.set_rname(rname);
+        soa_rdata.set_serial(serial);
+        soa_rdata.set_refresh(refresh);
+        soa_rdata.set_retry(retry);
+        soa_rdata.set_expire(expire);
+        soa_rdata.set_minimum(minimum);
+
+        let rdata = Rdata::SOA(soa_rdata);
+        let mut rr = ResourceRecord::new(rdata);
+        rr.set_name(domain_name.clone());
+        cache.add(domain_name.clone(), rr);
+        
+        // Add negative answer to cache
+        resolver.cache = cache;
+
+        let qtype = Qtype::A;
+        let qclass = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,qclass).await;
+
+        println!("RESULT {:?}", response);
+        // assert_eq!(resolver.get_cache().get_size(), 1);
+        // assert!(response.is_ok());
+        // response.unwrap();
+        // assert_eq!(response.get_answer().len(),0);
+        // assert_eq!(response.get_header().get_rcode(), Rcode::NXDomain);
+
+
+    }
 
 }

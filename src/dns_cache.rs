@@ -59,6 +59,22 @@ impl DnsCache {
         self.set_size(self.get_size() + 1);
     }
 
+    /// Add negative resource record type SOA to cache for negative answers
+    pub fn add_negative_answer(&mut self, domain_name: DomainName, rtype: Rtype, resource_record:ResourceRecord) {
+        
+        // see cache space
+        if self.get_size() >= self.max_size {
+            self.remove_oldest_used();
+        }
+
+        let rr_cache = RRCache::new(resource_record);
+        let mut cache_data = self.get_cache();
+        cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
+        self.set_cache(cache_data);
+        self.set_size(self.get_size() + 1);
+
+    }
+
     /// Removes an element from cache
     pub fn remove(&mut self, domain_name: DomainName, rtype: Rtype) {
         let mut cache_data = self.get_cache();

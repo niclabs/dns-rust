@@ -328,6 +328,8 @@ impl AsyncResolver {
             });
 
         } 
+
+        self.save_negative_answers( response);
     }
 
     /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.3.3
@@ -361,17 +363,11 @@ impl AsyncResolver {
     ///
     /// Stores the data of negative answers in the cache. 
     fn save_negative_answers(&mut self, response: DnsMessage){
-        //FIXME: 
-        println!("[Save negative answers]"); 
+
         let qname = response.get_question().get_qname();
-        let qtype = response.get_question().get_qtype();
-        let qclass = response.get_question().get_qclass();
-        println!("Qname: {:?} {:?} {:?}", qname,qtype,qclass);
-        
         let additionals = response.get_additional();
         let answer = response.get_answer();
         let aa = response.get_header().get_aa();
-        println!("Additionals len: {:?}", additionals.len());
 
         // If not existence RR for query, add SOA to cache 
         if additionals.len() > 0 && answer.len() == 0 && aa == true{
@@ -381,10 +377,7 @@ impl AsyncResolver {
                     self.cache.add(qname.clone(), rr.clone());
                 }
             });
-            println!("[Additional:] {:?}", additionals);
         }
-
-        // self.cache.add(...);
 
     }
 }
@@ -410,6 +403,7 @@ mod async_resolver_test {
     use crate::message::class_qclass::Qclass;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::ResourceRecord;
     use crate:: message::type_qtype::Qtype;
     use crate::message::type_rtype::Rtype;
@@ -1658,10 +1652,32 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.set_max_size(1);
 
-        let domain_name = DomainName::new_from_string("nonexistent.uchile.cl".to_string());
+        let domain_name = DomainName::new_from_string("banana.exaple".to_string());
+        let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
+        let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
+        let serial = 2023112900;
+        let refresh = 1800;
+        let retry = 900;
+        let expire = 604800;
+        let minimum = 86400;
+
+        //Create RR type SOA
+        let mut soa_rdata = SoaRdata::new();
+        soa_rdata.set_mname(mname);
+        soa_rdata.set_rname(rname);
+        soa_rdata.set_serial(serial);
+        soa_rdata.set_refresh(refresh);
+        soa_rdata.set_retry(retry);
+        soa_rdata.set_expire(expire);
+        soa_rdata.set_minimum(minimum);
+
+   
+        let rdata = Rdata::SOA(soa_rdata);
+        let mut rr = ResourceRecord::new(rdata);
+        rr.set_name(domain_name.clone());
     
         // Create dns response
-        let dns_response =
+        let mut dns_response =
             DnsMessage::new_query_message(
                 domain_name,
                 Qtype::A,
@@ -1669,11 +1685,19 @@ mod async_resolver_test {
                 0,
                 false,
                 1);
-        
+        let mut new_header = dns_response.get_header();
+        new_header.set_aa(true);
+        dns_response.set_header(new_header);
+
+        // Save RR type SOA in Additional section of response
+        dns_response.add_additionals(vec![rr]);
+
         resolver.save_negative_answers(dns_response.clone());
 
+        // println!("[RRR] {:?}", dns_response);
         assert_eq!(dns_response.get_answer().len(), 0);
-        // assert_eq!(resolver.get_cache().get_size(), 1);
+        assert_eq!(dns_response.get_additional().len(), 1);
+        assert_eq!(resolver.get_cache().get_size(), 1);
         
     }
 

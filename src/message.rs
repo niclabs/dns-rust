@@ -612,7 +612,7 @@ impl DnsMessage {
         let mut msg_additionals = self.get_additional();
 
         msg_additionals.append(&mut additionals);
-        self.set_answer(msg_additionals);
+        self.set_additional(msg_additionals);
     }
 
 
@@ -1330,7 +1330,7 @@ mod message_test {
 
         dns_query_message.add_additionals(new_additional);
         //since the new additional is added to the answer lets check if something was added
-        assert_eq!(dns_query_message.get_answer().len(), 1);
+        assert_eq!(dns_query_message.get_additional().len(), 1);
     }
 
     //ToDo: Revisar
@@ -1493,4 +1493,5 @@ mod message_test {
         let result = dns_query_message.check_op_code().unwrap_err();
         assert_eq!(result, "IQuery not Implemented");
     }
+
 }

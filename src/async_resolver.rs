@@ -365,6 +365,7 @@ impl AsyncResolver {
     fn save_negative_answers(&mut self, response: DnsMessage){
 
         let qname = response.get_question().get_qname();
+        let qtype = response.get_question().get_qtype();
         let additionals = response.get_additional();
         let answer = response.get_answer();
         let aa = response.get_header().get_aa();
@@ -374,7 +375,8 @@ impl AsyncResolver {
             additionals.iter()
             .for_each(|rr| {
                 if rr.get_rtype() == Rtype::SOA {
-                    self.cache.add(qname.clone(), rr.clone());
+                    let  rtype =  Qtype::to_rtype(qtype);
+                    self.cache.add_negative_answer(qname.clone(),rtype ,rr.clone());
                 }
             });
         }
@@ -1694,10 +1696,11 @@ mod async_resolver_test {
 
         resolver.save_negative_answers(dns_response.clone());
 
-        // println!("[RRR] {:?}", dns_response);
+        let qtype_search = Rtype::A;
         assert_eq!(dns_response.get_answer().len(), 0);
         assert_eq!(dns_response.get_additional().len(), 1);
         assert_eq!(resolver.get_cache().get_size(), 1);
+        assert!(resolver.get_cache().get_cache().get_cache_data().get(&qtype_search).is_some())
         
     }
     
@@ -1745,8 +1748,7 @@ mod async_resolver_test {
         // response.unwrap();
         // assert_eq!(response.get_answer().len(),0);
         // assert_eq!(response.get_header().get_rcode(), Rcode::NXDomain);
-
-
+        
     }
 
 }

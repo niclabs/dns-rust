@@ -10,7 +10,11 @@ async fn query_response(domain_name: &str, qtype: &str) -> Result<Vec<ResourceRe
     let config = ResolverConfig::default();
     let mut resolver = AsyncResolver::new(config);
 
-    let response = resolver.lookup(domain_name, "UDP", qtype).await;
+    let response = resolver.lookup(
+        domain_name,
+        "UDP",
+        qtype,
+        "IN").await;
 
     response
 }

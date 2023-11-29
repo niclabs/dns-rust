@@ -1,4 +1,5 @@
 use std::net::IpAddr;
+use std::vec;
 
 pub mod config;
 pub mod lookup;
@@ -167,9 +168,9 @@ impl AsyncResolver {
         // Cache lookup
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
-            if let Some(cache_lookup) = self.cache.clone().get(domain_name.clone(), Qtype::to_rtype(qtype)) {
-                println!("[Cached Data]");
-
+            let rtype_saved = Qtype::to_rtype(qtype);
+            if let Some(cache_lookup) = self.cache.clone().get(domain_name.clone(), rtype_saved) {
+                
                 // Create random generator
                 let mut rng = thread_rng();
 
@@ -185,13 +186,27 @@ impl AsyncResolver {
                     false,
                     query_id
                 );
-        
-                // Add Answer
-                let answer: Vec<ResourceRecord> = cache_lookup
-                                                    .iter()
-                                                    .map(|rr_cache_value| rr_cache_value.get_resource_record())
-                                                    .collect::<Vec<ResourceRecord>>();
-                new_query.set_answer(answer);
+
+                // Get RR from cache
+                for rr_cache_value in cache_lookup.iter() {
+                    let rr = rr_cache_value.get_resource_record();
+
+                    // Get negative answer
+                    if rtype_saved != rr.get_rtype() {
+                        println!("ADD ADITIONAL NEGATIVE ANSWER SOA");
+                        let additionals: Vec<ResourceRecord> = vec![rr];
+                        new_query.add_additionals(additionals);
+                        let mut new_header = new_query.get_header();
+                        new_header.set_rcode(3);
+                        new_query.set_header(new_header);
+                    }
+                    else { //FIXME: change to alg RFC 1034-1035
+                        println!("ADD ANSWER CACHE");
+                        let answer: Vec<ResourceRecord> = vec![rr];
+                        new_query.set_answer(answer);
+                    }     
+                }
+    
                 return Ok(new_query)
             }
         }
@@ -1708,6 +1723,7 @@ mod async_resolver_test {
     async fn inner_lookup_negative_answer_in_cache(){
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let mut cache = resolver.get_cache();
+        let qtype = Qtype::A;
         cache.set_max_size(9);
 
         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
@@ -1733,21 +1749,24 @@ mod async_resolver_test {
         let rdata = Rdata::SOA(soa_rdata);
         let mut rr = ResourceRecord::new(rdata);
         rr.set_name(domain_name.clone());
-        cache.add(domain_name.clone(), rr);
         
         // Add negative answer to cache
+        let mut cache  = resolver.get_cache();
+        cache.set_max_size(9);
+        let  rtype =  Qtype::to_rtype(qtype);
+        cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
         resolver.cache = cache;
 
-        let qtype = Qtype::A;
-        let qclass = Qclass::IN;
-        let response = resolver.inner_lookup(domain_name,qtype,qclass).await;
+        assert_eq!(resolver.get_cache().get_size(), 1);
 
-        println!("RESULT {:?}", response);
-        // assert_eq!(resolver.get_cache().get_size(), 1);
-        // assert!(response.is_ok());
-        // response.unwrap();
-        // assert_eq!(response.get_answer().len(),0);
-        // assert_eq!(response.get_header().get_rcode(), Rcode::NXDomain);
+        let qclass = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
+
+        
+        assert_eq!(resolver.get_cache().get_size(), 1);
+        assert_eq!(response.get_answer().len(), 0);
+        assert_eq!(response.get_additional().len(), 1);
+        assert_eq!(response.get_header().get_rcode(), 3);
         
     }
 

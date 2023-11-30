@@ -2,7 +2,6 @@ use chrono::{Utc, DateTime};
 use crate::{rr_cache::RRCache, domain_name::DomainName, message::rdata::Rdata};
 use std::{collections::HashMap, net::IpAddr};
 
-///struct to define the host data
 /// This struct saves the data associated with a host in the cache.
 /// 
 /// Given a single `DomainName`, it groups all data associated with it 

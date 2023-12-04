@@ -48,10 +48,13 @@ async fn query_all_type() {
     }
 }
 
-// TODO: 6.2.3 Query normal Qtype = MX
+// TODO: 6.2.3 Query Qtype = MX
+async fn query_mx_type() {
+    unimplemented!();
+}
 
 
-// TODO: 6.2.4 Query normal Qtype = NS
+// 6.2.4 Query Qtype = NS
 #[tokio::test]
 async fn query_ns_type() {
     let response = query_response("example.com", "NS").await;
@@ -79,6 +82,19 @@ async fn query_ns_type() {
     }
 }
 
-// TODO: 6.2.5 Dominio mal escrito Qtype = A
+/// 6.2.5 Mistyped host name Qtype = A
+#[tokio::test]
+async fn mistyped_host_name() {
+    let response = query_response("exampllee.com", "A").await;
+    assert!(response.is_err());
+}
+
+/// No record test
+#[tokio::test]
+async fn no_resource_available() {
+    let response =  query_response("example.com", "CNAME").await;
+    assert!(response.is_err());
+}
+
 
 

@@ -48,9 +48,30 @@ async fn query_all_type() {
     }
 }
 
-// TODO: 6.2.3 Query Qtype = MX
+/// 6.2.3 Query Qtype = MX
+#[tokio::test]
 async fn query_mx_type() {
-    unimplemented!();
+    let response = query_response("example.com", "MX").await;
+    
+    if let Ok(rrs) = response {
+        assert_eq!(rrs.len(), 1);
+
+        if let Rdata::MX(mxdata) = rrs[0].get_rdata() {
+            assert_eq!(
+                mxdata.get_exchange(),
+                DomainName::new_from_str(""));
+
+            assert_eq!(
+                mxdata.get_preference(),
+                0
+            )
+        } else { 
+            panic!("Record is not MX type");
+        }
+
+    } else {
+        panic!("No response received")
+    }
 }
 
 
@@ -66,7 +87,7 @@ async fn query_ns_type() {
                 ns1.get_nsdname(),
                 DomainName::new_from_str("a.iana-servers.net"))
         } else { 
-            panic!("First record is not type NS");
+            panic!("First record is not NS");
         }
         
         if let Rdata::NS(ns) = rrs[1].get_rdata() {
@@ -74,7 +95,7 @@ async fn query_ns_type() {
                 ns.get_nsdname(),
                 DomainName::new_from_str("b.iana-servers.net"))
         } else {
-            panic!("Second record is not type NS");
+            panic!("Second record is not NS");
         }
 
     } else {

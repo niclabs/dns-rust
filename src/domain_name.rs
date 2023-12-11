@@ -104,7 +104,8 @@ impl DomainName {
                 no_domain_bytes = &no_domain_bytes[2..];
 
                 break;
-            } else {
+            } 
+            else {
                 if bytes_len < (first_byte + 1) as usize {
                     return Err("Format Error");
                 }

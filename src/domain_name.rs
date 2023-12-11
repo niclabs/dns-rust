@@ -260,12 +260,10 @@ mod domain_name_test {
 
     #[test]
     fn from_bytes_test() {
-        let bytes_test: Vec<u8> = vec![
-            4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
-        ];
+        let bytes_test: Vec<u8> = vec![1, 70, 3, 73, 83, 73, 4, 65, 82, 80, 65, 0, 3, 70, 79, 79, 192, 0, 4, 65, 82, 80, 65, 0, 0];
         let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test).unwrap();
 
-        assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
+        assert_eq!(domain_name.get_name(), String::from("F.ISI.ARPA"));
     }
 
     #[test]

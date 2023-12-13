@@ -100,3 +100,22 @@ impl OptRdata {
         self.option_data = option_data;
     }
 }
+
+
+#[cfg(test)]
+mod opt_rdata_test{
+    use super::*;
+
+    #[test]
+    fn test_opt_rdata_to_bytes() {
+        let mut opt_rdata = OptRdata::new();
+        opt_rdata.set_option_code(1 as u16);
+        opt_rdata.set_option_length(2 as u16);
+        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        let expected_result: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
+        let result = opt_rdata.to_bytes();
+
+        assert_eq!(expected_result, result);
+    }
+}

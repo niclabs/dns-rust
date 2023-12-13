@@ -37,6 +37,35 @@ impl ToBytes for OptRdata {
     }
 }
 
+impl FromBytes<Result<Self, &'static str>> for OptRdata {
+    /// Creates a new `OptRdata` from an array of bytes.
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 4 {
+            return Err("Format Error");
+        }
+
+        let mut opt_rdata = OptRdata::new();
+
+        let array_bytes = [bytes[0], bytes[1]];
+        let option_code = u16::from_be_bytes(array_bytes);
+        opt_rdata.set_option_code(option_code);
+
+        let array_bytes = [bytes[2], bytes[3]];
+        let option_length = u16::from_be_bytes(array_bytes);
+        opt_rdata.set_option_length(option_length);
+
+        let mut option_data: Vec<u8> = Vec::new();
+        for i in 4..bytes_len {
+            option_data.push(bytes[i]);
+        }
+        opt_rdata.set_option_data(option_data);
+
+        Ok(opt_rdata)
+    }
+}
+
 /// Constructor and getters for OptRdata
 impl OptRdata {
     pub fn new() -> Self {

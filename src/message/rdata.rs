@@ -212,7 +212,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
             //////////////// Replace the next line when type  OPT is implemented ////////////
             41 => {
                 println!("OPT");
-                let rdata = OptRdata::from_bytes(bytes, full_msg);
+                let rdata = OptRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
                     Ok(_) => {}
                     Err(e) => {
@@ -649,6 +649,22 @@ mod resolver_query_tests {
                 assert_eq!(val.get_error(), 0);
                 assert_eq!(val.get_other_len(), 0);
                 assert_eq!(val.get_other_data(), Vec::new());
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn from_bytes_opt_rdata(){
+        let data_bytes = vec![
+            0, 1, 0, 2, 6, 4, 0, 41, 0, 1
+        ];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::OPT(val) => {
+                assert_eq!(val.get_option_code(), 1);
+                assert_eq!(val.get_option_length(), 2);
+                assert_eq!(val.get_option_data(), vec![0x06, 0x04]);
             }
             _ => {}
         }

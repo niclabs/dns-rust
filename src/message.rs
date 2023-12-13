@@ -705,6 +705,10 @@ impl DnsMessage {
 
                     Rdata::TSIG(_val) => {
                     }
+
+                    Rdata::OPT(_val) => {
+                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
+                    }
                 }
             }
 
@@ -747,6 +751,9 @@ impl DnsMessage {
                     }
                     Rdata::TSIG(_val) => {
                     }
+                    Rdata::OPT(_val) => {
+                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
+                    }
                 }
             }
 
@@ -788,6 +795,9 @@ impl DnsMessage {
                         println!("Txt: {:#?}", val.get_text())
                     }
                     Rdata::TSIG(_val) => {
+                    }
+                    Rdata::OPT(_val) => {
+                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                 }
             }

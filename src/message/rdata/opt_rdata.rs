@@ -144,4 +144,17 @@ mod opt_rdata_test{
 
         assert_eq!(Err("Format Error"), result);
     }
+
+    /// Setters and getters tests
+    #[test]
+    fn test_opt_rdata_setters_and_getters() {
+        let mut opt_rdata = OptRdata::new();
+        opt_rdata.set_option_code(1 as u16);
+        opt_rdata.set_option_length(2 as u16);
+        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        assert_eq!(1 as u16, opt_rdata.get_option_code());
+        assert_eq!(2 as u16, opt_rdata.get_option_length());
+        assert_eq!(vec![0x06, 0x04], opt_rdata.get_option_data());
+    }
 }

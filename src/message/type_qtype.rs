@@ -14,6 +14,7 @@ pub enum Qtype {
     MX,
     TXT,
     DNAME,
+    OPT,
     ANY,
     TSIG,
     AXFR,
@@ -38,6 +39,7 @@ impl Qtype{
             Qtype::MX => 15,
             Qtype::TXT => 16,
             Qtype::DNAME => 39,
+            Qtype::OPT => 41,
             Qtype::AXFR => 252,
             Qtype::TSIG => 250,
             Qtype::MAILB => 253,
@@ -60,6 +62,7 @@ impl Qtype{
             Qtype::MX => String::from("MX"),
             Qtype::TXT => String::from("TXT"),
             Qtype::DNAME => String::from("DNAME"),
+            Qtype::OPT => String::from("OPT"),
             Qtype::TSIG => String::from("TSIG"),
             Qtype::AXFR => String::from("AXFR"),
             Qtype::MAILB => String::from("MAILB"),
@@ -83,6 +86,7 @@ impl Qtype{
             15 => Qtype::MX,
             16 => Qtype::TXT,
             39 => Qtype::DNAME,
+            41 => Qtype::OPT,
             250 => Qtype::TSIG,
             252 => Qtype::AXFR,
             253 => Qtype::MAILB,
@@ -106,6 +110,7 @@ impl Qtype{
             "MX" => Qtype::MX,
             "TXT" => Qtype::TXT,
             "DNAME" => Qtype::DNAME,
+            "OPT" => Qtype::OPT,
             "TSIG" => Qtype::TSIG,
             "AXFR" => Qtype::AXFR,
             "MAILB" => Qtype::MAILB,
@@ -128,6 +133,8 @@ impl Qtype{
             Qtype::MINFO => Rtype::MINFO,
             Qtype::MX => Rtype::MX,
             Qtype::TXT => Rtype::TXT,
+            Qtype::DNAME => Rtype::DNAME,
+            Qtype::OPT => Rtype::OPT,
             _ => Rtype::UNKNOWN(Self::from_qtype_to_int(qtype))
         }
     } 

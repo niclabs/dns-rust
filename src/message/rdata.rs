@@ -256,6 +256,7 @@ mod resolver_query_tests {
     use super::ptr_rdata::PtrRdata;
     use super::soa_rdata::SoaRdata;
     use super::txt_rdata::TxtRdata;
+    use super::opt_rdata::OptRdata;
     use super::tsig_rdata::TSigRdata;
     use std::net::IpAddr;
 
@@ -463,6 +464,21 @@ mod resolver_query_tests {
         tsig_rdata.set_other_data(Vec::new());
 
         let rdata = Rdata::TSIG(tsig_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_opt_rdata(){
+        let expected_bytes = vec![
+            0, 1, 0, 2, 6, 4];
+        let mut opt_rdata = OptRdata::new();
+        opt_rdata.set_option_code(1 as u16);
+        opt_rdata.set_option_length(2 as u16);
+        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        let rdata = Rdata::OPT(opt_rdata);
         let bytes = rdata.to_bytes();
 
         assert_eq!(bytes, expected_bytes);

@@ -7,6 +7,7 @@ pub mod ns_rdata;
 pub mod ptr_rdata;
 pub mod soa_rdata;
 pub mod txt_rdata;
+pub mod opt_rdata;
 pub mod tsig_rdata;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
@@ -19,6 +20,7 @@ use ns_rdata::NsRdata;
 use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
+use opt_rdata::OptRdata;
 use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -35,6 +37,7 @@ pub enum Rdata {
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
     ////// Define here more rdata types //////
+    OPT(OptRdata),
     TSIG(TSigRdata),
 }
 
@@ -64,6 +67,7 @@ impl ToBytes for Rdata {
             Rdata::TXT(val) => val.to_bytes(),
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
+            Rdata::OPT(val) => val.to_bytes(),
             Rdata::TSIG(val) => val.to_bytes(),
         }
     }
@@ -208,9 +212,15 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
             //////////////// Replace the next line when type  OPT is implemented ////////////
             41 => {
                 println!("OPT");
-                let rdata = TxtRdata::new(vec!["OPT".to_string()]);
-
-                Ok(Rdata::TXT(rdata))
+                let rdata = OptRdata::from_bytes(bytes, full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::OPT(rdata.unwrap()))
             }
             //////////////////////////////////////////////////////////////
             

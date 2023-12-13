@@ -57,6 +57,9 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
         for i in 4..bytes_len {
             option_data.push(bytes[i]);
         }
+        if option_data.len() != option_length as usize {
+            return Err("Format Error");
+        }
         opt_rdata.set_option_data(option_data);
 
         Ok(opt_rdata)
@@ -131,5 +134,14 @@ mod opt_rdata_test{
         let result = OptRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(opt_rdata, result);
+    }
+
+    #[test]
+    fn test_opt_rdata_from_bytes_error() {
+        let bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06];
+
+        let result = OptRdata::from_bytes(&bytes, &bytes);
+
+        assert_eq!(Err("Format Error"), result);
     }
 }

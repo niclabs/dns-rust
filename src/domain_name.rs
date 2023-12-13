@@ -63,7 +63,6 @@ impl DomainName {
         name
     }
 
-    // TODO: Add new label with msg_compresion = 1 (Extended label)
     pub fn from_bytes<'a>(
         bytes: &'a [u8],
         full_msg: &'a [u8],

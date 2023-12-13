@@ -118,4 +118,18 @@ mod opt_rdata_test{
 
         assert_eq!(expected_result, result);
     }
+
+    #[test]
+    fn test_opt_rdata_from_bytes() {
+        let mut opt_rdata = OptRdata::new();
+        opt_rdata.set_option_code(1 as u16);
+        opt_rdata.set_option_length(2 as u16);
+        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        let bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
+
+        let result = OptRdata::from_bytes(&bytes, &bytes).unwrap();
+
+        assert_eq!(opt_rdata, result);
+    }
 }

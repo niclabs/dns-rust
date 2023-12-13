@@ -1,7 +1,4 @@
-use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
-use crate::message::rdata::Rdata;
-use crate::message::Rclass;
-use crate::message::Rtype;
+use crate::message::resource_record::{FromBytes, ToBytes};
 
 
 #[derive(Clone, Debug, PartialEq)]

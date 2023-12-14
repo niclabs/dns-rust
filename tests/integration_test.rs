@@ -41,6 +41,7 @@ async fn query_a_type() {
 #[tokio::test]
 async fn query_all_type() {
     let response = query_response("example.com", "ANY").await;
+
     if let Ok(rrs) = response {
         assert_eq!(rrs.len(), 2);
     } else {

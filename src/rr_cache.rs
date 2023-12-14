@@ -53,6 +53,11 @@ impl RRCache {
     pub fn get_last_use(&self) -> DateTime<Utc> {
         self.last_use
     }
+
+    // Gets the creation time of the domain in cache
+    pub fn get_creation_time(&self) -> DateTime<Utc> {
+        self.creation_time
+    }
 }
 
 // Setters

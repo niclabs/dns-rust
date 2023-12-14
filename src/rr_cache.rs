@@ -2,14 +2,16 @@ use crate::message::resource_record::ResourceRecord;
 use chrono::prelude::*;
 
 #[derive(Clone,PartialEq,Debug)]
-// An structs that represents one element in the dns cache.
+/// An structs that represents one element in the dns cache.
 pub struct RRCache {
-    // Resource Records of the domain name
+    /// Resource Records of the domain name
     resource_record: ResourceRecord,
-    // Mean of response time of the ip address
+    /// Mean of response time of the ip address
     response_time: u32,
-    // Last use of the rr
+    /// Last use of the rr
     last_use: DateTime<Utc>,
+    /// Time of creation of the `RRCache` in the Resolver's cache.
+    creation_time: DateTime<Utc>,
 }
 
 impl RRCache {
@@ -28,6 +30,7 @@ impl RRCache {
             resource_record: resource_record,
             response_time: 5000,
             last_use: Utc::now(),
+            creation_time: Utc::now(),
         };
 
         rr_cache

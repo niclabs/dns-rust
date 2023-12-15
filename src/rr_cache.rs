@@ -35,6 +35,13 @@ impl RRCache {
 
         rr_cache
     }
+
+    pub fn get_absolute_ttl(&self) -> DateTime<Utc> {
+        let ttl = self.resource_record.get_ttl();
+        let creation_time = self.creation_time;
+
+        creation_time + chrono::Duration::seconds(ttl as i64)
+    }
 }
 
 // Getters

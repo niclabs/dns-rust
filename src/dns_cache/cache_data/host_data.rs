@@ -210,6 +210,22 @@ impl HostData{
         }
     }
 
+    /// For each domain name, it removes the RRCache past its TTL.
+    fn timeout_rr_cache(&mut self) {
+        let mut new_hash = HashMap::<DomainName, Vec<RRCache>>::new();
+        let data = self.get_host_hash();
+        let current_time = Utc::now();
+        for (domain_name, rr_cache_vec) in data.into_iter() {
+            let filtered_rr_cache_vec: Vec<RRCache> = rr_cache_vec
+            .into_iter()
+            .filter(|rr_cache| rr_cache.get_absolute_ttl() > current_time)
+            .collect();
+
+            new_hash.insert(domain_name, filtered_rr_cache_vec);
+        }
+        self.set_host_hash(new_hash);
+    }
+
 }
 
 ///setter and getter for the host data
@@ -465,5 +481,41 @@ mod host_data_test{
         let rr_cache = rr_cache_vec.get(0).unwrap();
 
         assert_eq!(2500, rr_cache.get_response_time())
+    }
+
+    #[test]
+    fn timeout_rr_cache() {
+        use std::{thread, time};
+        let mut host_data = HostData::new();
+        let a_rdata = Rdata::A(ARdata::new());
+
+        let mut resource_record_valid = ResourceRecord::new(a_rdata.clone());
+        resource_record_valid.set_ttl(1000);
+        let rr_cache_valid = RRCache::new(resource_record_valid);
+
+        let mut resource_record_invalid = ResourceRecord::new(a_rdata);
+        resource_record_invalid.set_ttl(4);
+        let rr_cache_invalid = RRCache::new(resource_record_invalid);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+
+        host_data.add_to_host_data(domain_name.clone(), rr_cache_valid);
+        host_data.add_to_host_data(domain_name.clone(), rr_cache_invalid);
+
+        assert_eq!(host_data.get_host_hash().len(), 1);
+        if let Some(rr_cache_vec) = host_data.get_host_hash().get(&domain_name) {
+            assert_eq!(rr_cache_vec.len(), 2);
+        }
+
+        println!("Before timeout: {:?}", Utc::now());
+        thread::sleep(time::Duration::from_secs(5));
+        println!("After timeout: {:?}", Utc::now());
+        host_data.timeout_rr_cache();
+
+        assert_eq!(host_data.get_host_hash().len(), 1);
+        if let Some(rr_cache_vec) = host_data.get_host_hash().get(&domain_name) {
+            assert_eq!(rr_cache_vec.len(), 1);
+        }
     }
 }

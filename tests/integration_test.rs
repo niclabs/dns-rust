@@ -39,9 +39,11 @@ async fn query_a_type() {
 
 /// 6.2.2 Query normal Qtype = *
 #[tokio::test]
-#[should_panic]
 async fn query_all_type() {
-    let __response = query_response("example.com", "TCP", "ANY").await;
+    let udp_response = query_response("example.com", "UDP", "ANY").await;
+    let tcp_response = query_response("example.com", "TCP", "ANY").await;
+    assert!(udp_response.is_err());
+    assert!(tcp_response.is_err());
 }
 
 /// 6.2.3 Query Qtype = MX

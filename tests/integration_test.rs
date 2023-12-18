@@ -41,7 +41,7 @@ async fn query_a_type() {
 #[tokio::test]
 #[should_panic]
 async fn query_all_type() {
-    let response = query_response("example.com", "TCP", "ANY").await;
+    let __response = query_response("example.com", "TCP", "ANY").await;
 }
 
 /// 6.2.3 Query Qtype = MX

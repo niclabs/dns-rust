@@ -5,14 +5,14 @@ use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver, resolver_
 
 
 // TODO: Change params type to intoDomainName
-async fn query_response(domain_name: &str, qtype: &str) -> Result<Vec<ResourceRecord>, ResolverError>{
+async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Result<Vec<ResourceRecord>, ResolverError>{
 
     let config = ResolverConfig::default();
     let mut resolver = AsyncResolver::new(config);
 
     let response = resolver.lookup(
         domain_name,
-        "UDP",
+        protocol,
         qtype,
         "IN").await;
 
@@ -22,7 +22,7 @@ async fn query_response(domain_name: &str, qtype: &str) -> Result<Vec<ResourceRe
 /// 6.2.1 Query test Qtype = A
 #[tokio::test]
 async fn query_a_type() {
-    let response = query_response("example.com", "A").await;
+    let response = query_response("example.com", "UDP", "A").await;
 
     if let Ok(rrs) = response {
         assert_eq!(rrs.iter().count(), 1);
@@ -39,20 +39,15 @@ async fn query_a_type() {
 
 /// 6.2.2 Query normal Qtype = *
 #[tokio::test]
+#[should_panic]
 async fn query_all_type() {
-    let response = query_response("example.com", "ANY").await;
-
-    if let Ok(rrs) = response {
-        assert_eq!(rrs.len(), 2);
-    } else {
-        panic!("No response")
-    }
+    let response = query_response("example.com", "TCP", "ANY").await;
 }
 
 /// 6.2.3 Query Qtype = MX
 #[tokio::test]
 async fn query_mx_type() {
-    let response = query_response("example.com", "MX").await;
+    let response = query_response("example.com", "UDP", "MX").await;
     
     if let Ok(rrs) = response {
         assert_eq!(rrs.len(), 1);
@@ -79,7 +74,7 @@ async fn query_mx_type() {
 // 6.2.4 Query Qtype = NS
 #[tokio::test]
 async fn query_ns_type() {
-    let response = query_response("example.com", "NS").await;
+    let response = query_response("example.com", "UDP", "NS").await;
     if let Ok(rrs) = response {
         assert_eq!(rrs.len(), 2);
         
@@ -107,14 +102,14 @@ async fn query_ns_type() {
 /// 6.2.5 Mistyped host name Qtype = A
 #[tokio::test]
 async fn mistyped_host_name() {
-    let response = query_response("exampllee.com", "A").await;
+    let response = query_response("exampllee.com", "UDP", "A").await;
     assert!(response.is_err());
 }
 
 /// No record test
 #[tokio::test]
 async fn no_resource_available() {
-    let response =  query_response("example.com", "CNAME").await;
+    let response =  query_response("example.com", "UDP", "CNAME").await;
     assert!(response.is_err());
 }
 

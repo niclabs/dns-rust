@@ -143,7 +143,7 @@ impl AChRdata {
 
         a_ch_rdata.set_ch_address(ch_address.parse::<u16>().unwrap());
 
-        let rdata = Rdata::SomeAChRdata(a_ch_rdata);
+        let rdata = Rdata::ACH(a_ch_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
 
@@ -320,7 +320,7 @@ mod a_ch_rdata_test {
 
         let ach_rdata = ach_rr.get_rdata();
         match ach_rdata {
-            Rdata::SomeARdata(val) => assert_eq!(val.get_address(), IpAddr::from([204, 13, 100, 3])),
+            Rdata::A(val) => assert_eq!(val.get_address(), IpAddr::from([204, 13, 100, 3])),
             _ => {}
         }
     }

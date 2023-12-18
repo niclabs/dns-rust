@@ -129,7 +129,7 @@ impl HinfoRdata {
     /// 
     /// let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));
     /// match hinfo_rdata {
-    ///     Rdata::SomeHinfoRdata(val) => assert_eq!((val.get_cpu(), val.get_os()), (expected_cpu_os)),
+    ///     Rdata::HINFO(val) => assert_eq!((val.get_cpu(), val.get_os()), (expected_cpu_os)),
     ///     _ => {}
     /// }
     /// ```
@@ -146,7 +146,7 @@ impl HinfoRdata {
         hinfo_rdata.set_cpu(cpu.to_string());
         hinfo_rdata.set_os(os.to_string());
 
-        let rdata = Rdata::SomeHinfoRdata(hinfo_rdata);
+        let rdata = Rdata::HINFO(hinfo_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         let mut domain_name = DomainName::new();
@@ -267,7 +267,7 @@ mod hinfo_rdata_test {
         
         let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));
         match hinfo_rdata {
-            Rdata::SomeHinfoRdata(val) => assert_eq!((val.get_cpu(), val.get_os()), (expected_cpu_os)),
+            Rdata::HINFO(val) => assert_eq!((val.get_cpu(), val.get_os()), (expected_cpu_os)),
             _ => {}
         }
     }

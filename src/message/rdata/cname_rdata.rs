@@ -90,7 +90,7 @@ impl CnameRdata {
 
         cname_rdata.set_cname(domain_name);
 
-        let rdata = Rdata::SomeCnameRdata(cname_rdata);
+        let rdata = Rdata::CNAME(cname_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
 
@@ -201,7 +201,7 @@ mod cname_rdata_test {
 
         let a_rdata = cname_rr.get_rdata();
         match a_rdata {
-            Rdata::SomeCnameRdata(val) => assert_eq!(val.get_cname(), expected_cname),
+            Rdata::CNAME(val) => assert_eq!(val.get_cname(), expected_cname),
             _ => {}
         }
         

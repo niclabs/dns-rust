@@ -1,13 +1,18 @@
 use std::fmt;
 use std::fmt::Debug;
-
 use crate::client::client_error::ClientError;
 
 #[derive(thiserror::Error)]
 #[non_exhaustive] 
-/// Common error type to hold errors from Resolver.
+/// Common error types to handle errors from Resolver.
+/// 
+/// These types of errors are used to handle errors originating from 
+/// this implementation of Resolver which works asynchronously.
 pub enum ResolverError {
     /// An error io connection.
+    /// 
+    /// This error occurs when the connection to the server fails or
+    /// the server does not respond.
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 
@@ -16,6 +21,10 @@ pub enum ResolverError {
     Message(&'static str), 
 
     /// An error when the answer is empty.
+    /// 
+    /// This error occurs when the resolver receives an empty answer.
+    /// This happens when the future `LookupFutureStub` is polled for
+    /// the first time so the corresponding query has not been set yet.
     #[error("empty query")]
     EmptyQuery,
 
@@ -23,11 +32,14 @@ pub enum ResolverError {
     #[error("retries limit exceeded")]
     RetriesLimitExceeded,
 
+    /// An error with the format of the received response.
+    /// 
+    /// This error occurs after parsing arriving response datagram and
+    /// the response is not a valid DNS message or is not a valid response.
     #[error("parse response error: {0}")]
     Parse(String),
 }
 
-// Debug trait implementation for `?` formatting
 impl Debug for ResolverError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use self::ResolverError::*;
@@ -55,7 +67,6 @@ impl From<ClientError> for ResolverError {
             ClientError::TemporaryError(err) => ResolverError::Parse(err.to_string()),
         }
     }
-    
 }
 
 impl Clone for ResolverError {

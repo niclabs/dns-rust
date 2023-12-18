@@ -60,6 +60,11 @@ impl AsyncResolver {
         async_resolver
     } 
 
+
+    pub fn run(){
+        unimplemented!()
+    }
+
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     /// 5.2. Client-resolver interface
     /// 
@@ -79,7 +84,7 @@ impl AsyncResolver {
     /// This method acts as an interface between the Client and the Resolver.
     /// It calls `inner_lookup(&self, domain_name: DomainName)` which will
     /// execute a look up of the given domain name asynchronously.
-    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str) -> Result<Vec<IpAddr>, ClientError> {
+    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str, qclass:&str) -> Result<Vec<IpAddr>, ClientError> {
         println!("[LOOKUP IP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -87,7 +92,7 @@ impl AsyncResolver {
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct,Qtype::A).await;
+        let response = self.inner_lookup(domain_name_struct,Qtype::A,Qclass::from_str_to_qclass(qclass)).await;
 
         let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
@@ -103,7 +108,7 @@ impl AsyncResolver {
     // TODO: move and change as from method  of rr
     fn from_rr_to_ip(rr: ResourceRecord) -> Result<IpAddr, ClientError> {
         let rdata = rr.get_rdata();
-        if let Rdata::SomeARdata(ip) = rdata {
+        if let Rdata::A(ip) = rdata {
             return Ok(ip.get_address());
         } else {
             Err(ClientError::TemporaryError("Response does not match type A."))?
@@ -156,7 +161,7 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
-    async fn inner_lookup(&mut self, domain_name: DomainName,qtype:Qtype) -> Result<DnsMessage, ResolverError> {
+    async fn inner_lookup(&mut self, domain_name: DomainName,qtype:Qtype, qclass:Qclass) -> Result<DnsMessage, ResolverError> {
 
         // Cache lookup
         // Search in cache only if its available
@@ -174,7 +179,7 @@ impl AsyncResolver {
                 let mut new_query = DnsMessage::new_query_message(
                     domain_name.clone(),
                     qtype,
-                    Qclass::IN,
+                    qclass,
                     0,
                     false,
                     query_id
@@ -194,6 +199,7 @@ impl AsyncResolver {
         let response = LookupFutureStub::lookup(
             domain_name,
             qtype,
+            qclass,
             self.config.clone())
             .await;
 
@@ -250,28 +256,24 @@ impl AsyncResolver {
     /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
     /// ```
     /// 
-    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ) -> Result<Vec<ResourceRecord>, ResolverError>{
+    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ,qclass:&str) -> Result<Vec<ResourceRecord>, ResolverError> {
         println!("[LOOKUP ASYNCRESOLVER]");
 
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let qtype_struct = Qtype::from_str_to_qtype(qtype);
+        let qclass_struct = Qclass::from_str_to_qclass(qclass);
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct,qtype_struct).await;
+        let response = self.inner_lookup(domain_name_struct,qtype_struct,qclass_struct).await;
         
-        //TODO: parse header and personalised error type FIXME: SHOULD look all types
         return self.parse_dns_msg(response).map_err(Into::into)
-        // match response {
-        //     Ok(val) => {
-        //         let rdata = val.get_answer()[0].get_rdata();
-        //         Ok(rdata)      
-        //     }
-        //     Err(_) => Err(ResolverError::Message("Error Response"))?,
-        // }
     }
 
+    /// Stores the data of the response in the cache.
+    /// 
     /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.4 
+    /// 
     /// 7.4. Using the cache
     /// 
     /// In general, we expect a resolver to cache all data which it receives in
@@ -312,14 +314,21 @@ impl AsyncResolver {
     /// This method stores the data of the response in the cache, depending on the
     /// type of response.
     fn store_data_cache(&mut self, response: DnsMessage) {
-        // TODO: RFC 1035: 7.4. Using the cache
-        response.get_answer()
-                .iter()
-                .for_each(|rr| self.cache.add(rr.get_name(), rr.clone()));
+        let truncated = response.get_header().get_tc();
+
+        if !truncated {
+            // TODO: RFC 1035: 7.4. Using the cache
+            response.get_answer()
+            .iter()
+            .for_each(|rr| {
+                if rr.get_ttl() > 0 {
+                    self.cache.add(rr.get_name(), rr.clone());
+                }
+            });
+        } 
     }
 
 }
-
 
 // Getters
 impl AsyncResolver {
@@ -365,7 +374,8 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::A;
-        let response = resolver.inner_lookup(domain_name,qtype).await;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
 
         //FIXME: add assert
         assert!(response.is_ok());
@@ -377,7 +387,9 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::NS;
-        let response = resolver.inner_lookup(domain_name,qtype).await;
+        let record_class = Qclass::IN;
+
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
         assert!(response.is_ok());
 
         //FIXME: add assert
@@ -389,7 +401,22 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "TCP";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+        
+        assert!(ip_addresses[0].is_ipv4());
+    
+        assert!(!ip_addresses[0].is_unspecified());
+    }
+
+    #[tokio::test]
+    async fn host_name_to_host_address_translation_ch() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "TCP";
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
@@ -404,7 +431,8 @@ mod async_resolver_test {
         let domain_name = "example.com";
         let transport_protocol = "UDP";
         let qtype = "NS";
-        let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+        let qclass = "IN";
+        let response = resolver.lookup(domain_name, transport_protocol,qtype,qclass).await.unwrap();
         
         println!("RESPONSE : {:?}",response);
     }
@@ -433,12 +461,13 @@ mod async_resolver_test {
         // Intenta resolver un nombre de dominio que no existe o no está accesible
         let domain_name = "nonexistent-example.com";
         let transport_protocol = "UDP";
+        let qclass = "IN";
     
         // Configura un timeout corto para la resolución (ajusta según tus necesidades)
         let timeout_duration = std::time::Duration::from_secs(2);
         
         let result = tokio::time::timeout(timeout_duration, async {
-            resolver.lookup_ip(domain_name, transport_protocol).await
+            resolver.lookup_ip(domain_name, transport_protocol,qclass).await
         }).await;
         
 
@@ -465,7 +494,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -485,7 +514,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -495,20 +524,53 @@ mod async_resolver_test {
         }
     }
 
-    /// Test lookup cache
+    /// Test inner lookup cache
     #[tokio::test]
-    async fn lookup_cache() {
+    async fn inner_lookup_cache_available() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.set_max_size(1);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-        let a_rdata = Rdata::SomeARdata(a_rdata);
+        let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
 
         resolver.cache.add(domain_name, resource_record);
 
-        let _response = resolver.lookup("example.com", "UDP", "A").await;
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.get_header().get_aa(), false);
+        } else {
+            panic!("No response from cache");
+        }
+    }
+
+    /// Test inner lookup without cache
+    #[tokio::test]
+    async fn inner_lookup_with_no_cache() {
+        let mut config = ResolverConfig::default();
+        config.set_cache_enabled(false);
+
+        let mut resolver = AsyncResolver::new(config);
+        resolver.cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
+        let a_rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        resolver.cache.add(domain_name, resource_record);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.get_header().get_aa(), false);
+        } else {
+            panic!("No response from nameserver");
+        }
     }
 
     /// Test cache data
@@ -517,7 +579,7 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.set_max_size(1);
         assert_eq!(resolver.cache.is_empty(), true);
-        let _response = resolver.lookup("example.com", "UDP", "A").await;
+        let _response = resolver.lookup("example.com", "UDP", "A", "IN").await;
         assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
 
         // TODO: Test special cases from RFC
@@ -539,7 +601,7 @@ mod async_resolver_test {
 
         // Realiza la resolución de DNS que sabes que fallará
         while retries_attempted < max_retries {
-            let result = resolver.lookup_ip("nonexistent-domain.com", "UDP").await;
+            let result = resolver.lookup_ip("nonexistent-domain.com", "UDP", "IN").await;
              retries_attempted += 1;
 
             if result.is_ok() {
@@ -560,7 +622,8 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "UDP";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
@@ -573,7 +636,8 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "TCP";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol).await.unwrap();
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
@@ -587,8 +651,11 @@ mod async_resolver_test {
     async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "Ecample.com";
+        let transport_protocol_udp = "UDP";
+        let transport_protocol_tcp = "TCP";
+        let qclass = "IN";
 
-        let udp_result = resolver.lookup_ip(domain_name, "UDP").await;
+        let udp_result = resolver.lookup_ip(domain_name, transport_protocol_udp,qclass).await;
     
        
        match udp_result {
@@ -603,7 +670,7 @@ mod async_resolver_test {
       
       } 
 
-      let tcp_result = resolver.lookup_ip(domain_name, "TCP").await;
+      let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
 
       match tcp_result {
         Ok(_) => {
@@ -646,7 +713,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -667,7 +734,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -691,7 +758,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -712,7 +779,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -736,7 +803,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -757,7 +824,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -781,7 +848,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -802,7 +869,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -826,7 +893,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -847,7 +914,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -872,7 +939,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -892,7 +959,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -911,7 +978,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -931,7 +998,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -950,7 +1017,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -970,7 +1037,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -989,7 +1056,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1009,7 +1076,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1029,7 +1096,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1049,7 +1116,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1068,7 +1135,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1088,7 +1155,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1107,7 +1174,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1127,7 +1194,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1146,7 +1213,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1166,7 +1233,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1185,7 +1252,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1205,7 +1272,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1224,7 +1291,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1244,7 +1311,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1263,7 +1330,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1283,7 +1350,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1302,7 +1369,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1322,7 +1389,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1341,7 +1408,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1361,7 +1428,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1380,7 +1447,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1400,7 +1467,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1419,7 +1486,7 @@ mod async_resolver_test {
         let mut answer: Vec<ResourceRecord> = Vec::new();
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
         answer.push(resource_record);
 
@@ -1439,7 +1506,7 @@ mod async_resolver_test {
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
-            if let Rdata::SomeARdata(ip) = rdata {
+            if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
@@ -1448,6 +1515,76 @@ mod async_resolver_test {
             
                 panic!("Error parsing response");
             }
+    }
+
+    #[test]
+    fn not_store_data_in_cache_if_truncated() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+    
+        // Create truncated dns response
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                domain_name,
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        let mut truncated_header = dns_response.get_header();
+        truncated_header.set_tc(true);
+        dns_response.set_header(truncated_header);
+
+        resolver.store_data_cache(dns_response);
+
+        assert_eq!(resolver.get_cache().get_size(), 0);
+    }    
+
+    #[test]
+    fn not_store_cero_ttl_data_in_cache() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.set_max_size(10);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+    
+        // Create dns response with ttl = 0
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                domain_name,
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        // let mut truncated_header = dns_response.get_header();
+        // truncated_header.set_tc(false);
+        // dns_response.set_header(truncated_header);
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = ARdata::new_from_addr(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+
+        // Cero ttl
+        let mut rr_cero_ttl = ResourceRecord::new(rdata.clone());
+        rr_cero_ttl.set_ttl(0);
+        answer.push(rr_cero_ttl);
+
+        // Positive ttl
+        let mut rr_ttl_1 = ResourceRecord::new(rdata.clone());
+        rr_ttl_1.set_ttl(1);
+        answer.push(rr_ttl_1);
+
+        let mut rr_ttl_2 = ResourceRecord::new(rdata);
+        rr_ttl_2.set_ttl(2);
+        answer.push(rr_ttl_2);
+
+        dns_response.set_answer(answer);
+        assert_eq!(dns_response.get_answer().len(), 3);
+        assert_eq!(resolver.get_cache().get_size(), 0);
+        
+        resolver.store_data_cache(dns_response);
+        assert_eq!(resolver.get_cache().get_size(), 2); 
     }
 
 }

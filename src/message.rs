@@ -667,127 +667,127 @@ impl DnsMessage {
 
             for answer in answers {
                 match answer.get_rdata() {
-                    Rdata::SomeARdata(val) => {
+                    Rdata::A(val) => {
                         println!("Ip Address: {}", val.get_string_address())
                     }
-                    Rdata::SomeAChRdata(val) => {
+                    Rdata::ACH(val) => {
                         println!(
                             "Domain name: {} - Ch Ip address: {}",
                             val.get_domain_name().get_name(),
                             val.get_ch_address()
                         )
                     }
-                    Rdata::SomeNsRdata(val) => {
+                    Rdata::NS(val) => {
                         println!("Name Server: {}", val.get_nsdname().get_name())
                     }
-                    Rdata::SomeCnameRdata(val) => {
+                    Rdata::CNAME(val) => {
                         println!("Cname: {}", val.get_cname().get_name())
                     }
-                    Rdata::SomeHinfoRdata(val) => {
+                    Rdata::HINFO(val) => {
                         println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
                     }
-                    Rdata::SomeMxRdata(val) => {
+                    Rdata::MX(val) => {
                         println!(
                             "Preference: {} - Exchange: {}",
                             val.get_preference(),
                             val.get_exchange().get_name()
                         )
                     }
-                    Rdata::SomePtrRdata(val) => {
+                    Rdata::PTR(val) => {
                         println!("Ptr name: {}", val.get_ptrdname().get_name())
                     }
-                    Rdata::SomeSoaRdata(val) => {
+                    Rdata::SOA(val) => {
                         println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
                     }
-                    Rdata::SomeTxtRdata(val) => {
+                    Rdata::TXT(val) => {
                         println!("Txt: {:#?}", val.get_text())
                     }
 
-                    Rdata::SomeTSigRdata(_val) => {
+                    Rdata::TSIG(_val) => {
                     }
                 }
             }
 
             for answer in authority {
                 match answer.get_rdata() {
-                    Rdata::SomeARdata(val) => {
+                    Rdata::A(val) => {
                         println!("Ip Address: {}", val.get_string_address())
                     }
-                    Rdata::SomeAChRdata(val) => {
+                    Rdata::ACH(val) => {
                         println!(
                             "Domain name: {} - Ch Ip address: {}",
                             val.get_domain_name().get_name(),
                             val.get_ch_address()
                         )
                     }
-                    Rdata::SomeNsRdata(val) => {
+                    Rdata::NS(val) => {
                         println!("Name Server: {}", val.get_nsdname().get_name())
                     }
-                    Rdata::SomeCnameRdata(val) => {
+                    Rdata::CNAME(val) => {
                         println!("Cname: {}", val.get_cname().get_name())
                     }
-                    Rdata::SomeHinfoRdata(val) => {
+                    Rdata::HINFO(val) => {
                         println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
                     }
-                    Rdata::SomeMxRdata(val) => {
+                    Rdata::MX(val) => {
                         println!(
                             "Preference: {} - Exchange: {}",
                             val.get_preference(),
                             val.get_exchange().get_name()
                         )
                     }
-                    Rdata::SomePtrRdata(val) => {
+                    Rdata::PTR(val) => {
                         println!("Ptr name: {}", val.get_ptrdname().get_name())
                     }
-                    Rdata::SomeSoaRdata(val) => {
+                    Rdata::SOA(val) => {
                         println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
                     }
-                    Rdata::SomeTxtRdata(val) => {
+                    Rdata::TXT(val) => {
                         println!("Txt: {:#?}", val.get_text())
                     }
-                    Rdata::SomeTSigRdata(_val) => {
+                    Rdata::TSIG(_val) => {
                     }
                 }
             }
 
             for answer in additional {
                 match answer.get_rdata() {
-                    Rdata::SomeARdata(val) => {
+                    Rdata::A(val) => {
                         println!("Ip Address: {}", val.get_string_address())
                     }
-                    Rdata::SomeAChRdata(val) => {
+                    Rdata::ACH(val) => {
                         println!(
                             "Domain name: {} - Ch Ip address: {}",
                             val.get_domain_name().get_name(),
                             val.get_ch_address()
                         )
                     }
-                    Rdata::SomeNsRdata(val) => {
+                    Rdata::NS(val) => {
                         println!("Name Server: {}", val.get_nsdname().get_name())
                     }
-                    Rdata::SomeCnameRdata(val) => {
+                    Rdata::CNAME(val) => {
                         println!("Cname: {}", val.get_cname().get_name())
                     }
-                    Rdata::SomeHinfoRdata(val) => {
+                    Rdata::HINFO(val) => {
                         println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
                     }
-                    Rdata::SomeMxRdata(val) => {
+                    Rdata::MX(val) => {
                         println!(
                             "Preference: {} - Exchange: {}",
                             val.get_preference(),
                             val.get_exchange().get_name()
                         )
                     }
-                    Rdata::SomePtrRdata(val) => {
+                    Rdata::PTR(val) => {
                         println!("Ptr name: {}", val.get_ptrdname().get_name())
                     }
-                    Rdata::SomeSoaRdata(val) => {
+                    Rdata::SOA(val) => {
                         println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
                     }
-                    Rdata::SomeTxtRdata(val) => {
+                    Rdata::TXT(val) => {
                         println!("Txt: {:#?}", val.get_text())
                     }
-                    Rdata::SomeTSigRdata(_val) => {
+                    Rdata::TSIG(_val) => {
                     }
                 }
             }
@@ -963,7 +963,7 @@ mod message_test {
     #[test]
     fn set_and_get_answer() {
         let mut answer: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         answer.push(resource_record);
 
@@ -986,7 +986,7 @@ mod message_test {
     #[test]
     fn set_and_get_authority() {
         let mut authority: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         authority.push(resource_record);
 
@@ -1009,7 +1009,7 @@ mod message_test {
     #[test]
     fn set_and_get_additional() {
         let mut additional: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         additional.push(resource_record);
 
@@ -1076,7 +1076,7 @@ mod message_test {
         assert_eq!(answer[0].get_rdlength(), 6);
         assert_eq!(
             match answer[0].get_rdata() {
-                Rdata::SomeTxtRdata(val) => val.get_text(),
+                Rdata::TXT(val) => val.get_text(),
                 _ => unreachable!(),
             },
             vec!["hello".to_string()]
@@ -1110,7 +1110,7 @@ mod message_test {
         question.set_qtype(Qtype::CNAME);
         question.set_qclass(Qclass::CS);
 
-        let txt_rdata = Rdata::SomeTxtRdata(TxtRdata::new(vec!["hello".to_string()]));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
 
         let mut domain_name = DomainName::new();
@@ -1170,7 +1170,7 @@ mod message_test {
                 1);
 
         let mut new_answer = Vec::<ResourceRecord>::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
         new_answer.push(rr);
 
@@ -1249,31 +1249,31 @@ mod message_test {
         assert_eq!(dns_query_message.get_header().get_arcount(), 0);
 
         let mut new_answer = Vec::<ResourceRecord>::new();
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let rr = ResourceRecord::new(a_rdata);
         new_answer.push(rr);
 
-        let a_rdata1 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata1 = Rdata::A(ARdata::new());
         let rr1 = ResourceRecord::new(a_rdata1);
         new_answer.push(rr1);
 
-        let a_rdata2 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata2 = Rdata::A(ARdata::new());
         let rr2 = ResourceRecord::new(a_rdata2);
         new_answer.push(rr2);
         dns_query_message.set_answer(new_answer);
 
         let mut new_authority = Vec::<ResourceRecord>::new();
-        let a_rdata3 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata3 = Rdata::A(ARdata::new());
         let rr3 = ResourceRecord::new(a_rdata3);
         new_authority.push(rr3);
 
-        let a_rdata4 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata4 = Rdata::A(ARdata::new());
         let rr4 = ResourceRecord::new(a_rdata4);
         new_authority.push(rr4);
         dns_query_message.set_authority(new_authority);
 
         let mut new_additional = Vec::<ResourceRecord>::new();
-        let a_rdata5 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata5 = Rdata::A(ARdata::new());
         let rr5 = ResourceRecord::new(a_rdata5);
         new_additional.push(rr5);
         dns_query_message.set_additional(new_additional);
@@ -1298,7 +1298,7 @@ mod message_test {
                 1);
 
         let mut new_authority = Vec::<ResourceRecord>::new();
-        let a_rdata3 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata3 = Rdata::A(ARdata::new());
         let rr3 = ResourceRecord::new(a_rdata3);
         new_authority.push(rr3);
 
@@ -1322,7 +1322,7 @@ mod message_test {
                 1);
                 
         let mut new_additional = Vec::<ResourceRecord>::new();
-        let a_rdata5 = Rdata::SomeARdata(ARdata::new());
+        let a_rdata5 = Rdata::A(ARdata::new());
         let rr5 = ResourceRecord::new(a_rdata5);
         new_additional.push(rr5);
 

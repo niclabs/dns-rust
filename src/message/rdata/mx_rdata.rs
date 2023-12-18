@@ -121,7 +121,7 @@ impl MxRdata {
     /// ```
     /// use dns_message_parser::message::rdata::mx_rdata::MxRdata;
     /// use dns_message_parser::message::rdata::Rdata;
-    /// use dns_message_parser::message::rdata::Rdata::SomeMxRdata;
+    /// use dns_message_parser::message::rdata::Rdata::MX;
     /// use dns_message_parser::message::rdata::Rtype;
     /// use dns_message_parser::message::rdata::Rclass;
     /// use dns_message_parser::message::resource_record::ResourceRecord;
@@ -139,7 +139,7 @@ impl MxRdata {
     
     /// let mx_rr_rdata = mxrdata_rr.get_rdata();
     /// match mx_rr_rdata {
-    ///     Rdata::SomeMxRdata(val) => assert_eq!((val.get_exchange().get_name(), val.get_preference()), 
+    ///     Rdata::MX(val) => assert_eq!((val.get_exchange().get_name(), val.get_preference()), 
     ///     (String::from("dcc.uchile.cl"), 3)),
     ///     _ => {}
     /// }
@@ -159,7 +159,7 @@ impl MxRdata {
         mx_rdata.set_exchange(domain_name);
         mx_rdata.set_preference(preference);
 
-        let rdata = Rdata::SomeMxRdata(mx_rdata);
+        let rdata = Rdata::MX(mx_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         let mut domain_name = DomainName::new();
@@ -298,7 +298,7 @@ mod mx_rdata_test {
         
         let mx_rr_rdata = mxrdata_rr.get_rdata();
         match mx_rr_rdata {
-            Rdata::SomeMxRdata(val) => assert_eq!((val.get_exchange().get_name(), val.get_preference()), 
+            Rdata::MX(val) => assert_eq!((val.get_exchange().get_name(), val.get_preference()), 
             (String::from("dcc.uchile.cl"), 3)),
             _ => {}
         }

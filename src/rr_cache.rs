@@ -86,7 +86,7 @@ mod rr_cache_test {
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(Rtype::A);
@@ -103,7 +103,7 @@ mod rr_cache_test {
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata.clone());
         resource_record.set_type_code(Rtype::A);
@@ -116,7 +116,7 @@ mod rr_cache_test {
         let mut second_a_rdata = ARdata::new();
 
         second_a_rdata.set_address(second_ip_address);
-        let second_rdata = Rdata::SomeARdata(second_a_rdata);
+        let second_rdata = Rdata::A(second_a_rdata);
 
         let mut second_resource_record = ResourceRecord::new(second_rdata);
         second_resource_record.set_type_code(Rtype::NS);
@@ -132,7 +132,7 @@ mod rr_cache_test {
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(Rtype::A);
@@ -152,7 +152,7 @@ mod rr_cache_test {
         let mut a_rdata = ARdata::new();
 
         a_rdata.set_address(ip_address);
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(Rtype::A);

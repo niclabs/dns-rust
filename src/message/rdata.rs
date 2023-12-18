@@ -25,17 +25,17 @@ use tsig_rdata::TSigRdata;
 
 /// Enumerates the differents types of `Rdata` struct.
 pub enum Rdata {
-    SomeARdata(ARdata),
-    SomeAChRdata(AChRdata),
-    SomeMxRdata(MxRdata),
-    SomeNsRdata(NsRdata),
-    SomePtrRdata(PtrRdata),
-    SomeSoaRdata(SoaRdata),
-    SomeTxtRdata(TxtRdata),
-    SomeCnameRdata(CnameRdata),
-    SomeHinfoRdata(HinfoRdata),
+    A(ARdata),
+    ACH(AChRdata),
+    MX(MxRdata),
+    NS(NsRdata),
+    PTR(PtrRdata),
+    SOA(SoaRdata),
+    TXT(TxtRdata),
+    CNAME(CnameRdata),
+    HINFO(HinfoRdata),
     ////// Define here more rdata types //////
-    SomeTSigRdata(TSigRdata),
+    TSIG(TSigRdata),
 }
 
 impl ToBytes for Rdata {
@@ -49,22 +49,22 @@ impl ToBytes for Rdata {
     ///     
     /// let mut a_rdata = ARdata::new();
     /// a_rdata.set_address([127, 0, 0, 1]);
-    /// let rdata = Rdata::SomeARdata(a_rdata);
+    /// let rdata = Rdata::A(a_rdata);
     /// let bytes = rdata.to_bytes();
     /// assert_eq!(bytes, vec![127, 0, 0, 1]);
     /// ```
     fn to_bytes(&self) -> Vec<u8> {
         match self {
-            Rdata::SomeARdata(val) => val.to_bytes(),
-            Rdata::SomeAChRdata(val) => val.to_bytes(),
-            Rdata::SomeMxRdata(val) => val.to_bytes(),
-            Rdata::SomeNsRdata(val) => val.to_bytes(),
-            Rdata::SomePtrRdata(val) => val.to_bytes(),
-            Rdata::SomeSoaRdata(val) => val.to_bytes(),
-            Rdata::SomeTxtRdata(val) => val.to_bytes(),
-            Rdata::SomeCnameRdata(val) => val.to_bytes(),
-            Rdata::SomeHinfoRdata(val) => val.to_bytes(),
-            Rdata::SomeTSigRdata(val) => val.to_bytes(),
+            Rdata::A(val) => val.to_bytes(),
+            Rdata::ACH(val) => val.to_bytes(),
+            Rdata::MX(val) => val.to_bytes(),
+            Rdata::NS(val) => val.to_bytes(),
+            Rdata::PTR(val) => val.to_bytes(),
+            Rdata::SOA(val) => val.to_bytes(),
+            Rdata::TXT(val) => val.to_bytes(),
+            Rdata::CNAME(val) => val.to_bytes(),
+            Rdata::HINFO(val) => val.to_bytes(),
+            Rdata::TSIG(val) => val.to_bytes(),
         }
     }
 }
@@ -87,7 +87,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                         }
                     }
 
-                    Ok(Rdata::SomeAChRdata(rdata.unwrap()))
+                    Ok(Rdata::ACH(rdata.unwrap()))
                 } else {
                     let rdata = ARdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -98,7 +98,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                         }
                     }
 
-                    Ok(Rdata::SomeARdata(rdata.unwrap()))
+                    Ok(Rdata::A(rdata.unwrap()))
                 }
             }
             2 => {
@@ -111,7 +111,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeNsRdata(rdata.unwrap()))
+                Ok(Rdata::NS(rdata.unwrap()))
             }
             5 => {
                 let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -123,7 +123,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeCnameRdata(rdata.unwrap()))
+                Ok(Rdata::CNAME(rdata.unwrap()))
             }
             6 => {
                 let rdata = SoaRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -135,7 +135,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeSoaRdata(rdata.unwrap()))
+                Ok(Rdata::SOA(rdata.unwrap()))
             }
             12 => {
                 let rdata = PtrRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -147,7 +147,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomePtrRdata(rdata.unwrap()))
+                Ok(Rdata::PTR(rdata.unwrap()))
             }
             13 => {
                 let rdata = HinfoRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -159,7 +159,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeHinfoRdata(rdata.unwrap()))
+                Ok(Rdata::HINFO(rdata.unwrap()))
             }
             15 => {
                 let rdata = MxRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -171,7 +171,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeMxRdata(rdata.unwrap()))
+                Ok(Rdata::MX(rdata.unwrap()))
             }
             16 => {
                 let rdata = TxtRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -183,13 +183,13 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeTxtRdata(rdata.unwrap()))
+                Ok(Rdata::TXT(rdata.unwrap()))
             }
             //////////////// Replace the next line when AAAA is implemented ////////////
             28 => {
                 let rdata = TxtRdata::new(vec!["AAAA".to_string()]);
 
-                Ok(Rdata::SomeTxtRdata(rdata))
+                Ok(Rdata::TXT(rdata))
             }
             ///////////////////////////////////////////////////////////////////////////
             39 => {
@@ -202,7 +202,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeCnameRdata(rdata.unwrap()))
+                Ok(Rdata::CNAME(rdata.unwrap()))
             }
 
             //////////////// Replace the next line when type  OPT is implemented ////////////
@@ -210,7 +210,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 println!("OPT");
                 let rdata = TxtRdata::new(vec!["OPT".to_string()]);
 
-                Ok(Rdata::SomeTxtRdata(rdata))
+                Ok(Rdata::TXT(rdata))
             }
             //////////////////////////////////////////////////////////////
             
@@ -224,7 +224,7 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     }
                 }
 
-                Ok(Rdata::SomeTSigRdata(rdata.unwrap()))
+                Ok(Rdata::TSIG(rdata.unwrap()))
             }
             _ => Err("Format Error"),
         };
@@ -251,7 +251,7 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_rdata(){
-        let a_rdata = Rdata::SomeARdata(ARdata::new());
+        let a_rdata = Rdata::A(ARdata::new());
         let bytes= a_rdata.to_bytes();
         let mut expected_bytes: Vec<u8> = Vec::new();
         expected_bytes.push(0);
@@ -270,7 +270,7 @@ mod resolver_query_tests {
         cname_rdata.set_cname(domain_name);
 
         let bytes_to_test: [u8; 7] = [5, 99, 110, 97, 109, 101, 0];
-        let a_rdata = Rdata::SomeCnameRdata(cname_rdata);
+        let a_rdata = Rdata::CNAME(cname_rdata);
         let bytes = a_rdata.to_bytes();
         let mut expected_bytes: Vec<u8> = Vec::new();
         for byte in bytes_to_test{
@@ -288,7 +288,7 @@ mod resolver_query_tests {
 
         let bytes_to_test: [u8; 7] = [99, 112, 117, 0, 111, 115, 0];
 
-        let a_rdata = Rdata::SomeHinfoRdata(hinfo_rdata);
+        let a_rdata = Rdata::HINFO(hinfo_rdata);
         let bytes = a_rdata.to_bytes();
         let mut expected_bytes: Vec<u8> = Vec::new();
         for byte in bytes_to_test{
@@ -309,7 +309,7 @@ mod resolver_query_tests {
 
         let bytes_to_test = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 10];
 
-        let a_rdata = Rdata::SomeAChRdata(ach_rdata);
+        let a_rdata = Rdata::ACH(ach_rdata);
         let bytes = a_rdata.to_bytes();
         let mut expected_bytes: Vec<u8> = Vec::new();
         for byte in bytes_to_test{
@@ -329,7 +329,7 @@ mod resolver_query_tests {
         mx_rdata.set_preference(128);
 
         let bytes_to_test: [u8; 12] = [0, 128, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0];
-        let a_rdata = Rdata::SomeMxRdata(mx_rdata);
+        let a_rdata = Rdata::MX(mx_rdata);
         let bytes = a_rdata.to_bytes();
 
         let mut expected_bytes: Vec<u8> = Vec::new();
@@ -351,7 +351,7 @@ mod resolver_query_tests {
         let mut ns_rdatas = NsRdata::new();
         ns_rdatas.set_nsdname(domain_name);
 
-        let ns_rdata = Rdata::SomeNsRdata(ns_rdatas);
+        let ns_rdata = Rdata::NS(ns_rdatas);
         let bytes = ns_rdata.to_bytes();
 
         let mut expected_bytes: Vec<u8> = Vec::new();
@@ -371,7 +371,7 @@ mod resolver_query_tests {
 
         let mut ptr_rdatas = PtrRdata::new();
         ptr_rdatas.set_ptrdname(domain_name);
-        let ptr_rdata = Rdata::SomePtrRdata(ptr_rdatas);
+        let ptr_rdata = Rdata::PTR(ptr_rdatas);
         let bytes = ptr_rdata.to_bytes();
 
         let mut expected_bytes: Vec<u8> = Vec::new();
@@ -401,7 +401,7 @@ mod resolver_query_tests {
             0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1,
         ];
 
-        let soa_rdatas = Rdata::SomeSoaRdata(soa_rdata);
+        let soa_rdatas = Rdata::SOA(soa_rdata);
         let bytes = soa_rdatas.to_bytes();
 
         let mut expected_bytes: Vec<u8> = Vec::new();
@@ -418,7 +418,7 @@ mod resolver_query_tests {
 
         let bytes_to_test = [8, 100, 99, 99, 32, 116, 101, 115, 116];
 
-        let txt_rdatas = Rdata::SomeTxtRdata(txt_rdata);
+        let txt_rdatas = Rdata::TXT(txt_rdata);
         let bytes = txt_rdatas.to_bytes();
 
         let mut expected_bytes: Vec<u8> = Vec::new();
@@ -452,7 +452,7 @@ mod resolver_query_tests {
         tsig_rdata.set_other_len(0);
         tsig_rdata.set_other_data(Vec::new());
 
-        let rdata = Rdata::SomeTSigRdata(tsig_rdata);
+        let rdata = Rdata::TSIG(tsig_rdata);
         let bytes = rdata.to_bytes();
 
         assert_eq!(bytes, expected_bytes);
@@ -466,7 +466,7 @@ mod resolver_query_tests {
         let name = String::from("test.com");
 
         match rdata {
-            Rdata::SomeAChRdata(val) => {
+            Rdata::ACH(val) => {
                 assert_eq!(val.get_ch_address(), 10);
                 assert_eq!(val.get_domain_name().get_name(), name);
             }
@@ -479,7 +479,7 @@ mod resolver_query_tests {
         let data_bytes = [128, 0, 0, 1, 0, 1, 0, 1];
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
         match rdata {
-            Rdata::SomeARdata(val) => {
+            Rdata::A(val) => {
                 assert_eq!(val.get_address(), IpAddr::from([128, 0, 0, 1]));
             }
             _ => {}
@@ -493,7 +493,7 @@ mod resolver_query_tests {
         let name = String::from("cname");
 
         match rdata {
-            Rdata::SomeCnameRdata(val) => {
+            Rdata::CNAME(val) => {
                 assert_eq!(val.get_cname().get_name(), name);
             }
             _ => {}
@@ -507,7 +507,7 @@ mod resolver_query_tests {
         let name = String::from("dname");
 
         match rdata {
-            Rdata::SomeCnameRdata(val) => {
+            Rdata::CNAME(val) => {
                 assert_eq!(val.get_cname().get_name(), name);
             }
             _ => {}
@@ -522,7 +522,7 @@ mod resolver_query_tests {
         let os = String::from("os");
 
         match rdata {
-            Rdata::SomeHinfoRdata(val) => {
+            Rdata::HINFO(val) => {
                 assert_eq!(val.get_cpu(), cpu);
                 assert_eq!(val.get_os(), os);
             }
@@ -538,7 +538,7 @@ mod resolver_query_tests {
         domain_name.set_name(String::from("test.com"));
 
         match rdata {
-            Rdata::SomeMxRdata(val) => {
+            Rdata::MX(val) => {
                 assert_eq!(val.get_exchange().get_name(), domain_name.get_name());
                 assert_eq!(val.get_preference(), 128);
             }
@@ -554,7 +554,7 @@ mod resolver_query_tests {
         domain_name.set_name(String::from("test.test2.com"));
 
         match rdata {
-            Rdata::SomeNsRdata(val) => {
+            Rdata::NS(val) => {
                 assert_eq!(val.get_nsdname().get_name(), domain_name.get_name());
             }
             _ => {}
@@ -569,7 +569,7 @@ mod resolver_query_tests {
         domain_name.set_name(String::from("test.test2.com"));
 
         match rdata {
-            Rdata::SomePtrRdata(val) => {
+            Rdata::PTR(val) => {
                 assert_eq!(val.get_ptrdname().get_name(), domain_name.get_name());
             }
             _ => {}
@@ -588,7 +588,7 @@ mod resolver_query_tests {
         domain_name.set_name(String::from("test.com"));
 
         match rdata {
-            Rdata::SomeSoaRdata(val) => {
+            Rdata::SOA(val) => {
                 assert_eq!(val.get_mname().get_name(), domain_name.get_name());
                 assert_eq!(val.get_rname().get_name(), domain_name.get_name());
                 assert_eq!(val.get_serial(), 512);
@@ -608,7 +608,7 @@ mod resolver_query_tests {
         let text = vec!["dcc test".to_string()];
 
         match rdata {
-            Rdata::SomeTxtRdata(val) => {
+            Rdata::TXT(val) => {
                 assert_eq!(val.get_text(), text);
             }
             _ => {}
@@ -629,7 +629,7 @@ mod resolver_query_tests {
         domain_name.set_name(String::from("hmac-md5.sig-alg.reg.int"));
 
         match rdata {
-            Rdata::SomeTSigRdata(val) => {
+            Rdata::TSIG(val) => {
                 assert_eq!(val.get_algorithm_name().get_name(), domain_name.get_name());
                 assert_eq!(val.get_time_signed(), 123456789);
                 assert_eq!(val.get_fudge(), 1234);

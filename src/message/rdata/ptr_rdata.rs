@@ -110,7 +110,7 @@ impl PtrRdata {
 
         ptr_rdata.set_ptrdname(domain_name);
 
-        let rdata = Rdata::SomePtrRdata(ptr_rdata);
+        let rdata = Rdata::PTR(ptr_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
 
@@ -225,7 +225,7 @@ mod ptr_rdata_test {
          
          let ptr_rr_rdata = ptr_rdata_rr.get_rdata();
          match ptr_rr_rdata {
-            Rdata::SomePtrRdata(val) => assert_eq!(val.get_ptrdname().get_name(), 
+            Rdata::PTR(val) => assert_eq!(val.get_ptrdname().get_name(), 
             String::from("dcc.uchile.cl")),
             _ => {}
         }

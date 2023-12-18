@@ -107,7 +107,7 @@ impl ARdata {
     /// assert_eq!(a_rr.get_rdlength(), 4);
     /// let a_rdata = a_rr.get_rdata();
     /// match a_rdata {
-    ///     Rdata::SomeARdata(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
+    ///     Rdata::A(val) => assert_eq!(val.get_address(), [204, 13, 100, 3]),
     ///     _ => {}
     /// }
     /// ```
@@ -131,7 +131,7 @@ impl ARdata {
         let ip_address = IpAddr::from(address);
         a_rdata.set_address(ip_address);
 
-        let rdata = Rdata::SomeARdata(a_rdata);
+        let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
 
@@ -263,7 +263,7 @@ mod a_rdata_test {
 
         let a_rdata = a_rr.get_rdata();
         match a_rdata {
-            Rdata::SomeARdata(val) => assert_eq!(val.get_address(), IpAddr::from([204, 13, 100, 3])),
+            Rdata::A(val) => assert_eq!(val.get_address(), IpAddr::from([204, 13, 100, 3])),
             _ => {}
         }
     }

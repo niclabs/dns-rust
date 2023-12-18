@@ -238,7 +238,7 @@ impl TSigRdata {
         tsig_rdata.set_other_len(other_len);
         tsig_rdata.set_other_data(other_data);
 
-        let rdata = Rdata::SomeTSigRdata(tsig_rdata);
+        let rdata = Rdata::TSIG(tsig_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
         let mut domain_name = DomainName::new();
@@ -616,7 +616,7 @@ mod tsig_rdata_test {
         let rdata = resource_record.get_rdata();
 
         match rdata {
-            Rdata::SomeTSigRdata(val) => assert_eq!([val.get_algorithm_name().get_name(),
+            Rdata::TSIG(val) => assert_eq!([val.get_algorithm_name().get_name(),
             val.get_time_signed().to_string(),
             val.get_fudge().to_string(),
             val.get_mac_size().to_string(),

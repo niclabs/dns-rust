@@ -721,6 +721,24 @@ mod resolver_query_tests {
     }
 
     #[test]
+    fn from_bytes_dnskey_rdata(){
+        let data_bytes = vec![
+            0, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7, 8, 0, 48, 0, 1
+        ];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::DNSKEY(val) => {
+                assert_eq!(val.get_flags(), 2);
+                assert_eq!(val.get_protocol(), 3);
+                assert_eq!(val.get_algorithm(), 4);
+                assert_eq!(val.get_public_key(), vec![1, 2, 3, 4, 5, 6, 7, 8]);
+            }
+            _ => {}
+        }
+    
+    }
+
+    #[test]
     #[should_panic]
     fn from_bytes_format_error(){
         let data_bytes = [];

@@ -13,6 +13,7 @@ pub enum Rtype {
     TXT,
     DNAME,
     OPT,
+    DNSKEY,
     TSIG,
     UNKNOWN(u16),
 }
@@ -34,6 +35,7 @@ impl Rtype{
             Rtype::TXT => 16,
             Rtype::DNAME => 39,
             Rtype::OPT => 41,
+            Rtype::DNSKEY => 48,
             Rtype::TSIG => 250,
             Rtype::UNKNOWN(val) => val
         }
@@ -53,6 +55,7 @@ impl Rtype{
             Rtype::TXT => String::from("TXT"),
             Rtype::DNAME => String::from("DNAME"),
             Rtype::OPT => String::from("OPT"),
+            Rtype::DNSKEY => String::from("DNSKEY"),
             Rtype::TSIG => String::from("TSIG"),
             Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
@@ -73,6 +76,7 @@ impl Rtype{
             16 => Rtype::TXT,
             39 => Rtype::DNAME,
             41 => Rtype::OPT,
+            48 => Rtype::DNSKEY,
             250 => Rtype::TSIG,
             _ => Rtype::UNKNOWN(val),
         }
@@ -93,6 +97,7 @@ impl Rtype{
             "TXT" => Rtype::TXT,
             "DNAME" => Rtype::DNAME,
             "OPT" => Rtype::OPT,
+            "DNSKEY" => Rtype::DNSKEY,
             "TSIG" => Rtype::TSIG,
             _ => Rtype::UNKNOWN(99),
         }

@@ -8,6 +8,7 @@ pub mod ptr_rdata;
 pub mod soa_rdata;
 pub mod txt_rdata;
 pub mod opt_rdata;
+pub mod dnskey_rdata;
 pub mod tsig_rdata;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
@@ -21,6 +22,7 @@ use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
 use opt_rdata::OptRdata;
+use dnskey_rdata::DnskeyRdata;
 use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]

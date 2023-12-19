@@ -709,6 +709,9 @@ impl DnsMessage {
                     Rdata::OPT(_val) => {
                         println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
+                    Rdata::DNSKEY(val) => {
+                        println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
+                    }
                 }
             }
 
@@ -754,6 +757,9 @@ impl DnsMessage {
                     Rdata::OPT(_val) => {
                         println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
+                    Rdata::DNSKEY(val) => {
+                        println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
+                    }
                 }
             }
 
@@ -798,6 +804,9 @@ impl DnsMessage {
                     }
                     Rdata::OPT(_val) => {
                         println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
+                    }
+                    Rdata::DNSKEY(val) => {
+                        println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
                     }
                 }
             }

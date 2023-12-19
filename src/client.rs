@@ -249,7 +249,7 @@ mod client_test {
         let answers = response.get_answer();
         for answer in answers {
             let ns_rdata = answer.get_rdata();
-                // Check if the answer is A type
+                // Check if the answer is NS type
                 assert!(matches!(ns_rdata, Rdata::NS(_ns_rdata)))
         }
     }
@@ -273,7 +273,7 @@ mod client_test {
         let answers = response.get_answer();
         for answer in answers {
             let cname_rdata = answer.get_rdata();
-                // Check if the answer is A type
+                // Check if the answer is CNAME type
                 assert!(matches!(cname_rdata, Rdata::CNAME(_cname_rdata)))
         }
     }
@@ -297,7 +297,7 @@ mod client_test {
         let answers = response.get_answer();
         for answer in answers {
             let soa_rdata = answer.get_rdata();
-                // Check if the answer is A type
+                // Check if the answer is SOA type
                 assert!(matches!(soa_rdata, Rdata::SOA(_soa_rdata)))
         }
     }
@@ -321,7 +321,7 @@ mod client_test {
         let answers = response.get_answer();
         for answer in answers {
             let mx_rdata = answer.get_rdata();
-                // Check if the answer is A type
+                // Check if the answer is MX type
                 assert!(matches!(mx_rdata, Rdata::MX(_mx_rdata)))
         }
     }
@@ -345,10 +345,11 @@ mod client_test {
         let answers = response.get_answer();
         for answer in answers {
             let ptr_rdata = answer.get_rdata();
-                // Check if the answer is A type
+                // Check if the answer is PTR type
                 assert!(matches!(ptr_rdata, Rdata::PTR(_ptr_rdata)))
         }
     }
+
     #[test]
     fn tcp_client_query() {
         //FIXME: 

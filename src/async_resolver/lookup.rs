@@ -6,6 +6,8 @@ use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use futures_util::{FutureExt,task::Waker};
+use std::thread;
+use std::time::Duration;
 use std::pin::Pin;
 use std::task::{Poll,Context};
 use rand::{thread_rng, Rng};
@@ -62,7 +64,8 @@ impl Future for LookupFutureStub {
                         self.config.get_name_servers(),
                         self.waker.clone(),
                         referenced_query,
-                        self.config.clone()));
+                        self.config.clone())
+                    );
                 
                 return Poll::Pending;
             },
@@ -202,10 +205,15 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
         if retry_count > config.get_retry() {
             break;
         }
-    
-        result_dns_msg = send_query_resolver_by_protocol(config.get_protocol(),new_query.clone(), result_dns_msg.clone(), connections);
 
-        retry_count = retry_count + 1;
+        //FIXME: try make async
+        let delay_duration = Duration::from_secs(6);
+        thread::sleep(delay_duration);
+
+        result_dns_msg = send_query_resolver_by_protocol(config.get_protocol(),new_query.clone(), result_dns_msg.clone(), connections);
+        if result_dns_msg.is_err(){
+            retry_count = retry_count + 1;
+        }
     }
 
     // Wake up task

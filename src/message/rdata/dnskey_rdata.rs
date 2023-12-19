@@ -89,6 +89,18 @@ impl DnskeyRdata {
     pub fn get_algorithm(&self) -> u8 {
         self.algorithm.clone()
     }
+
+    /// Get the public key of the DNSKEY RDATA.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let dnskey_rdata = DnskeyRdata::new();
+    /// assert_eq!(dnskey_rdata.get_public_key(), Vec::new());
+    /// ```
+    pub fn get_public_key(&self) -> Vec<u8> {
+        self.public_key.clone()
+    }
 }
 
 /// Setters for DnskeyRdata

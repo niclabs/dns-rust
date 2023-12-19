@@ -253,7 +253,30 @@ mod client_test {
                 assert!(matches!(ns_rdata, Rdata::NS(_ns_rdata)))
         }
     }
+    
+    #[test]
+    fn udp_client_qtype_cname() {
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
 
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.test2.com."));
+
+        // sends query, qtype CNAME
+        let qtype = "CNAME"; 
+        let qclass= "IN";
+        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let answers = response.get_answer();
+        for answer in answers {
+            let cname_rdata = answer.get_rdata();
+                // Check if the answer is A type
+                assert!(matches!(cname_rdata, Rdata::CNAME(_cname_rdata)))
+        }
+    }
     #[test]
     fn tcp_client_query() {
         //FIXME: 

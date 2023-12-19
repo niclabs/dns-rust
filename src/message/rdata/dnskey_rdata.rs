@@ -35,6 +35,7 @@ impl ToBytes for DnskeyRdata {
     }
 }
 
+/// Constructor for DnskeyRdata and getter's for the fields
 impl DnskeyRdata {
     /// Constructs a new `DnskeyRdata` with default values.
     ///

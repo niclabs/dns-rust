@@ -351,6 +351,30 @@ mod client_test {
     }
 
     #[test]
+    fn udp_client_qtype_tsig(){
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+
+        // sends query, qtype TSIG
+        domain_name.set_name(String::from("test.test2.com."));
+        let qtype = "TSIG"; 
+        let qclass= "IN";
+        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let answers = response.get_answer();
+        for answer in answers {
+            let tsig_rdata = answer.get_rdata();
+                // Check if the answer is TSIG type
+                assert!(matches!(tsig_rdata, Rdata::HINFO(_tsig_rdata)))
+        }
+    }
+
+    #[test]
     fn udp_client_qtype_txt(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));

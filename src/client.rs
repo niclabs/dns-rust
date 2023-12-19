@@ -176,7 +176,6 @@ mod client_test {
     use crate::domain_name::DomainName;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
-    //cambio prueba
     #[test]
     fn udp_client_query() {
         //create connection
@@ -204,6 +203,30 @@ mod client_test {
                 },
                 _ => {}
             }
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_a() {
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.test2.com."));
+
+        // sends query, qtype A 
+        let qtype = "A"; 
+        let qclass= "IN";
+        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let answers = response.get_answer();
+        for answer in answers {
+            let a_rdata = answer.get_rdata();
+                // Check if the answer is A type
+                assert!(matches!(a_rdata, Rdata::A(_a_rdata)))
         }
     }
 

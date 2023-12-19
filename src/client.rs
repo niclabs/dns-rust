@@ -191,7 +191,10 @@ mod client_test {
         domain_name.set_name(String::from("example.com"));
         let qtype = "A"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
 
         let expected_ip: [u8; 4] = [93, 184, 216, 34];
         let answers = response.get_answer();
@@ -221,7 +224,10 @@ mod client_test {
         // sends query, qtype A 
         let qtype = "A"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let a_rdata = answer.get_rdata();
@@ -245,7 +251,10 @@ mod client_test {
         // sends query, qtype NS
         let qtype = "NS"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let ns_rdata = answer.get_rdata();
@@ -269,7 +278,10 @@ mod client_test {
         // sends query, qtype CNAME
         let qtype = "CNAME"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let cname_rdata = answer.get_rdata();
@@ -293,7 +305,10 @@ mod client_test {
         // sends query, qtype SOA
         let qtype = "SOA"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let soa_rdata = answer.get_rdata();
@@ -317,7 +332,10 @@ mod client_test {
         // sends query, qtype MX
         let qtype = "MX"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let mx_rdata = answer.get_rdata();
@@ -341,7 +359,10 @@ mod client_test {
         // sends query, qtype PTR
         let qtype = "PTR"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let ptr_rdata = answer.get_rdata();
@@ -365,7 +386,10 @@ mod client_test {
         domain_name.set_name(String::from("example.com"));
         let qtype = "TSIG"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let tsig_rdata = answer.get_rdata();
@@ -389,7 +413,10 @@ mod client_test {
         domain_name.set_name(String::from("example.com"));
         let qtype = "HINFO"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let hinfo_rdata = answer.get_rdata();
@@ -413,7 +440,10 @@ mod client_test {
         domain_name.set_name(String::from("example.com"));
         let qtype = "TXT"; 
         let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error al consultar: {:?}", error),
+        };
         let answers = response.get_answer();
         for answer in answers {
             let txt_rdata = answer.get_rdata();

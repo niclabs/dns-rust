@@ -271,6 +271,7 @@ mod resolver_query_tests {
     use super::soa_rdata::SoaRdata;
     use super::txt_rdata::TxtRdata;
     use super::opt_rdata::OptRdata;
+    use super::dnskey_rdata::DnskeyRdata;
     use super::tsig_rdata::TSigRdata;
     use std::net::IpAddr;
 
@@ -493,6 +494,25 @@ mod resolver_query_tests {
         opt_rdata.set_option_data(vec![0x06, 0x04]);
 
         let rdata = Rdata::OPT(opt_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_dnskey_rdata(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        dnskey_rdata.set_flags(2 as u16);
+        dnskey_rdata.set_protocol(3 as u8);
+        dnskey_rdata.set_algorithm(4 as u8);
+        let public_key_simple: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        dnskey_rdata.set_public_key(public_key_simple);
+
+        let expected_bytes = vec![
+            0, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7, 8
+        ];
+
+        let rdata = Rdata::DNSKEY(dnskey_rdata);
         let bytes = rdata.to_bytes();
 
         assert_eq!(bytes, expected_bytes);

@@ -90,3 +90,45 @@ impl DnskeyRdata {
         self.algorithm.clone()
     }
 }
+
+/// Setters for DnskeyRdata
+impl DnskeyRdata {
+    /// Set the flags of the DNSKEY RDATA.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// dnskey_rdata.set_flags(1);
+    /// assert_eq!(dnskey_rdata.get_flags(), 1);
+    /// ```
+    pub fn set_flags(&mut self, flags: u16) {
+        self.flags = flags;
+    }
+
+    /// Set the protocol of the DNSKEY RDATA.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// dnskey_rdata.set_protocol(1);
+    /// assert_eq!(dnskey_rdata.get_protocol(), 1);
+    /// ```
+    pub fn set_protocol(&mut self, protocol: u8) {
+        self.protocol = protocol;
+    }
+
+    /// Set the algorithm of the DNSKEY RDATA.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// dnskey_rdata.set_algorithm(1);
+    /// assert_eq!(dnskey_rdata.get_algorithm(), 1);
+    /// ```
+    pub fn set_algorithm(&mut self, algorithm: u8) {
+        self.algorithm = algorithm;
+    }
+}

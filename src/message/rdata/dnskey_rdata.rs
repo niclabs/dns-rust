@@ -40,7 +40,7 @@ impl FromBytes<Result<Self, &'static str>> for DnskeyRdata {
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
-        if bytes_len < 4 {
+        if bytes_len <= 4 {
             return Err("Format Error");
         }
 
@@ -205,5 +205,42 @@ mod dnskey_rdata_test{
         assert_eq!(dnskey_rdata.get_protocol(), 2);
         assert_eq!(dnskey_rdata.get_algorithm(), 3);
         assert_eq!(dnskey_rdata.get_public_key(), vec![0x01, 0x02]);
+    }
+
+    #[test]
+    fn to_bytes_test(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        dnskey_rdata.set_flags(1);
+        dnskey_rdata.set_protocol(2);
+        dnskey_rdata.set_algorithm(3);
+        dnskey_rdata.set_public_key(vec![0x01, 0x02]);
+
+        let bytes_test: Vec<u8> = vec![0x00, 0x01, 0x02, 0x03, 0x01, 0x02];
+
+        assert_eq!(dnskey_rdata.to_bytes(), bytes_test);
+    }
+
+    #[test]
+    fn from_bytes_test(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        dnskey_rdata.set_flags(1);
+        dnskey_rdata.set_protocol(2);
+        dnskey_rdata.set_algorithm(3);
+        dnskey_rdata.set_public_key(vec![0x01, 0x02]);
+
+        let bytes_test: Vec<u8> = vec![0x00, 0x01, 0x02, 0x03, 0x01, 0x02];
+
+        let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
+
+        assert_eq!(dnskey_rdata, result);
+    }
+
+    #[test]
+    fn from_bytes_error_test(){
+        let bytes_test: Vec<u8> = vec![0x00, 0x01, 0x02, 0x03];
+
+        let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test);
+
+        assert_eq!(Err("Format Error"), result);
     }
 }

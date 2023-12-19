@@ -353,7 +353,7 @@ mod client_test {
     #[test]
     fn udp_client_qtype_tsig(){
         //create connection
-        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
@@ -373,11 +373,11 @@ mod client_test {
                 assert!(matches!(tsig_rdata, Rdata::HINFO(_tsig_rdata)))
         }
     }
-    
+
     #[test]
     fn udp_client_qtype_hinfo(){
         //create connection
-        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
@@ -401,7 +401,7 @@ mod client_test {
     #[test]
     fn udp_client_qtype_txt(){
         //create connection
-        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);

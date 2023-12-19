@@ -15,6 +15,7 @@ pub enum Qtype {
     TXT,
     DNAME,
     OPT,
+    DNSKEY,
     ANY,
     TSIG,
     AXFR,
@@ -40,6 +41,7 @@ impl Qtype{
             Qtype::TXT => 16,
             Qtype::DNAME => 39,
             Qtype::OPT => 41,
+            Qtype::DNSKEY => 48,
             Qtype::AXFR => 252,
             Qtype::TSIG => 250,
             Qtype::MAILB => 253,
@@ -63,6 +65,7 @@ impl Qtype{
             Qtype::TXT => String::from("TXT"),
             Qtype::DNAME => String::from("DNAME"),
             Qtype::OPT => String::from("OPT"),
+            Qtype::DNSKEY => String::from("DNSKEY"),
             Qtype::TSIG => String::from("TSIG"),
             Qtype::AXFR => String::from("AXFR"),
             Qtype::MAILB => String::from("MAILB"),
@@ -87,6 +90,7 @@ impl Qtype{
             16 => Qtype::TXT,
             39 => Qtype::DNAME,
             41 => Qtype::OPT,
+            48 => Qtype::DNSKEY,
             250 => Qtype::TSIG,
             252 => Qtype::AXFR,
             253 => Qtype::MAILB,
@@ -111,6 +115,7 @@ impl Qtype{
             "TXT" => Qtype::TXT,
             "DNAME" => Qtype::DNAME,
             "OPT" => Qtype::OPT,
+            "DNSKEY" => Qtype::DNSKEY,
             "TSIG" => Qtype::TSIG,
             "AXFR" => Qtype::AXFR,
             "MAILB" => Qtype::MAILB,
@@ -135,6 +140,7 @@ impl Qtype{
             Qtype::TXT => Rtype::TXT,
             Qtype::DNAME => Rtype::DNAME,
             Qtype::OPT => Rtype::OPT,
+            Qtype::DNSKEY => Rtype::DNSKEY,
             _ => Rtype::UNKNOWN(Self::from_qtype_to_int(qtype))
         }
     } 

@@ -373,6 +373,30 @@ mod client_test {
                 assert!(matches!(tsig_rdata, Rdata::HINFO(_tsig_rdata)))
         }
     }
+    
+    #[test]
+    fn udp_client_qtype_hinfo(){
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(172, 18, 0, 1));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+
+        // sends query, qtype HINFO
+        domain_name.set_name(String::from("test.test2.com."));
+        let qtype = "HINFO"; 
+        let qclass= "IN";
+        let response = udp_client.query(domain_name, qtype, qclass).unwrap();
+        let answers = response.get_answer();
+        for answer in answers {
+            let hinfo_rdata = answer.get_rdata();
+                // Check if the answer is HINFO type
+                assert!(matches!(hinfo_rdata, Rdata::HINFO(_hinfo_rdata)))
+        }
+    }
 
     #[test]
     fn udp_client_qtype_txt(){

@@ -192,27 +192,19 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
     new_header.set_rcode(2);
     new_header.set_qr(true);
     response.set_header(new_header);
+    //FIXME:
     let mut result_dns_msg = Ok(response.clone());
 
     let mut retry_count = 0;
 
-    for (conn_udp,conn_tcp) in name_servers.iter() { 
+    for connections in name_servers.iter() { 
         
         if retry_count > config.get_retry() {
             break;
         }
-        
-        match config.get_protocol() { 
-            ConnectionProtocol::UDP => {
-                let result_response = conn_udp.send(new_query.clone());
-                result_dns_msg = parse_response(result_response);
-            }
-            ConnectionProtocol::TCP => {
-                let result_response = conn_tcp.send(new_query.clone());
-                result_dns_msg = parse_response(result_response);
-            }
-            _ => continue,
-        } 
+    
+        result_dns_msg = send_query_resolver_by_protocol(config.get_protocol(),new_query.clone(), result_dns_msg.clone(), connections);
+
         retry_count = retry_count + 1;
     }
 
@@ -237,6 +229,32 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
 
     result_dns_msg
 }
+
+///  Sends a DNS query to a resolver using the specified connection protocol.
+/// 
+///  This function takes a DNS query, a result containing a DNS message,
+///  and connection information. Depending on the specified protocol (UDP or TCP),
+///  it sends the query using the corresponding connection and updates the result
+///  with the parsed response.
+fn send_query_resolver_by_protocol(protocol: ConnectionProtocol,query:DnsMessage,mut result_dns_msg: Result<DnsMessage, ResolverError>, connections:  &(ClientUDPConnection , ClientTCPConnection))
+->  Result<DnsMessage, ResolverError>{
+    match protocol{ 
+        ConnectionProtocol::UDP => {
+            let result_response = connections.0.send(query.clone());
+            result_dns_msg = parse_response(result_response);
+        }
+        ConnectionProtocol::TCP => {
+            let result_response = connections.1.send(query.clone());
+            result_dns_msg = parse_response(result_response);
+        }
+        _ => {},
+    } 
+    
+    result_dns_msg
+}
+
+
+
 
 /// Parse the received response datagram to a `DnsMessage`.
 /// 

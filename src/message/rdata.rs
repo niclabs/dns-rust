@@ -40,6 +40,7 @@ pub enum Rdata {
     HINFO(HinfoRdata),
     ////// Define here more rdata types //////
     OPT(OptRdata),
+    DNSKEY(DnskeyRdata),
     TSIG(TSigRdata),
 }
 
@@ -70,6 +71,7 @@ impl ToBytes for Rdata {
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
             Rdata::OPT(val) => val.to_bytes(),
+            Rdata::DNSKEY(val) => val.to_bytes(),
             Rdata::TSIG(val) => val.to_bytes(),
         }
     }
@@ -211,7 +213,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::CNAME(rdata.unwrap()))
             }
 
-            //////////////// Replace the next line when type  OPT is implemented ////////////
             41 => {
                 println!("OPT");
                 let rdata = OptRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -224,7 +225,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::OPT(rdata.unwrap()))
             }
-            //////////////////////////////////////////////////////////////
+
+            48 => {
+                let rdata = DnskeyRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::DNSKEY(rdata.unwrap()))
+            }
             
             250 => {
                 let rdata = TSigRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);

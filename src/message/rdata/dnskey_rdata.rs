@@ -143,4 +143,17 @@ impl DnskeyRdata {
     pub fn set_algorithm(&mut self, algorithm: u8) {
         self.algorithm = algorithm;
     }
+
+    /// Set the public key of the DNSKEY RDATA.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// dnskey_rdata.set_public_key(vec![0x01, 0x02]);
+    /// assert_eq!(dnskey_rdata.get_public_key(), vec![0x01, 0x02]);
+    /// ```
+    pub fn set_public_key(&mut self, public_key: Vec<u8>) {
+        self.public_key = public_key;
+    }
 }

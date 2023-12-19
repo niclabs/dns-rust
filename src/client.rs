@@ -188,7 +188,7 @@ mod client_test {
         let mut domain_name = DomainName::new();
 
         // sends query
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
         let qtype = "A"; 
         let qclass= "IN";
         let response = udp_client.query(domain_name, qtype, qclass).unwrap();
@@ -216,7 +216,7 @@ mod client_test {
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
 
         // sends query, qtype A 
         let qtype = "A"; 
@@ -240,7 +240,7 @@ mod client_test {
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
 
         // sends query, qtype NS
         let qtype = "NS"; 
@@ -264,7 +264,7 @@ mod client_test {
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
 
         // sends query, qtype CNAME
         let qtype = "CNAME"; 
@@ -288,7 +288,7 @@ mod client_test {
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
 
         // sends query, qtype SOA
         let qtype = "SOA"; 
@@ -312,7 +312,7 @@ mod client_test {
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
 
         // sends query, qtype MX
         let qtype = "MX"; 
@@ -336,7 +336,7 @@ mod client_test {
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
 
         // sends query, qtype PTR
         let qtype = "PTR"; 
@@ -362,7 +362,7 @@ mod client_test {
         let mut domain_name = DomainName::new();
 
         // sends query, qtype TSIG
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
         let qtype = "TSIG"; 
         let qclass= "IN";
         let response = udp_client.query(domain_name, qtype, qclass).unwrap();
@@ -386,7 +386,7 @@ mod client_test {
         let mut domain_name = DomainName::new();
 
         // sends query, qtype HINFO
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
         let qtype = "HINFO"; 
         let qclass= "IN";
         let response = udp_client.query(domain_name, qtype, qclass).unwrap();
@@ -410,7 +410,7 @@ mod client_test {
         let mut domain_name = DomainName::new();
 
         // sends query, qtype TXT
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
         let qtype = "TXT"; 
         let qclass= "IN";
         let response = udp_client.query(domain_name, qtype, qclass).unwrap();

@@ -188,3 +188,22 @@ impl DnskeyRdata {
         self.public_key = public_key;
     }
 }
+
+#[cfg(test)]
+mod dnskey_rdata_test{
+    use super::*;
+
+    #[test]
+    fn setters_and_getters_test(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        dnskey_rdata.set_flags(1);
+        dnskey_rdata.set_protocol(2);
+        dnskey_rdata.set_algorithm(3);
+        dnskey_rdata.set_public_key(vec![0x01, 0x02]);
+
+        assert_eq!(dnskey_rdata.get_flags(), 1);
+        assert_eq!(dnskey_rdata.get_protocol(), 2);
+        assert_eq!(dnskey_rdata.get_algorithm(), 3);
+        assert_eq!(dnskey_rdata.get_public_key(), vec![0x01, 0x02]);
+    }
+}

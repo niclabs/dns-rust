@@ -35,6 +35,37 @@ impl ToBytes for DnskeyRdata {
     }
 }
 
+impl FromBytes<Result<Self, &'static str>> for DnskeyRdata {
+    /// Creates a new `DnskeyRdata` from an array of bytes.
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 4 {
+            return Err("Format Error");
+        }
+
+        let mut dnskey_rdata = DnskeyRdata::new();
+
+        let array_bytes = [bytes[0], bytes[1]];
+        let flags = u16::from_be_bytes(array_bytes);
+        dnskey_rdata.set_flags(flags);
+
+        let protocol = bytes[2];
+        dnskey_rdata.set_protocol(protocol);
+
+        let algorithm = bytes[3];
+        dnskey_rdata.set_algorithm(algorithm);
+
+        let mut public_key: Vec<u8> = Vec::new();
+        for i in 4..bytes_len {
+            public_key.push(bytes[i]);
+        }
+        dnskey_rdata.set_public_key(public_key);
+
+        Ok(dnskey_rdata)
+    }
+}
+
 /// Constructor for DnskeyRdata and getter's for the fields
 impl DnskeyRdata {
     /// Constructs a new `DnskeyRdata` with default values.

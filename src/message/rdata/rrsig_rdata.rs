@@ -1,5 +1,6 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
+use crate::message::type_rtype::Rtype;
 
 #[derive(Clone, Debug, PartialEq)]
 /// Struct for RRSIG Rdata
@@ -34,6 +35,94 @@ pub struct RRSIGRdata {
     key_tag: u16, // Unsigned decimal integer
     signer_name: DomainName, // Domain name
     signature: String, // Base64 encoding of the signature
+}
+
+impl ToBytes for RRSIGRdata {
+    /// Returns a `Vec<u8>` of bytes that represents the RRSIG RDATA.
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+
+        let type_covered_str = self.type_covered.as_str();
+        let type_covered_rtype = Rtype::from_str_to_rtype(type_covered_str);
+        let type_covered = Rtype::from_rtype_to_int(type_covered_rtype);
+        bytes.extend_from_slice(&type_covered.to_be_bytes());
+
+        bytes.push(self.algorithm);
+        bytes.push(self.labels);
+        bytes.extend_from_slice(&self.original_ttl.to_be_bytes());
+        bytes.extend_from_slice(&self.signature_expiration.to_be_bytes());
+        bytes.extend_from_slice(&self.signature_inception.to_be_bytes());
+        bytes.extend_from_slice(&self.key_tag.to_be_bytes());
+
+        let signer_name = self.signer_name.to_bytes();
+        bytes.extend_from_slice(&signer_name);
+
+        let signature = self.signature.clone();
+        bytes.extend_from_slice(&signature.into_bytes());
+
+        bytes
+    }
+}
+
+impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
+    /// Creates a new `RRSIGRdata` from an array of bytes.
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len <= 18 {
+            return Err("Format Error");
+        }
+
+        let mut rrsig_rdata = RRSIGRdata::new();
+
+        let array_bytes = [bytes[0], bytes[1]];
+        let type_covered = u16::from_be_bytes(array_bytes);
+        let type_covered_str = Rtype::from_int_to_rtype(type_covered);
+        let type_covered = Rtype::from_rtype_to_str(type_covered_str);
+        rrsig_rdata.set_type_covered(type_covered);
+
+        let algorithm = bytes[2];
+        rrsig_rdata.set_algorithm(algorithm);
+
+        let labels = bytes[3];
+        rrsig_rdata.set_labels(labels);
+
+        let array_bytes = [bytes[4], bytes[5], bytes[6], bytes[7]];
+        let original_ttl = u32::from_be_bytes(array_bytes);
+        rrsig_rdata.set_original_ttl(original_ttl);
+
+        let array_bytes = [bytes[8], bytes[9], bytes[10], bytes[11]];
+        let signature_expiration = u32::from_be_bytes(array_bytes);
+        rrsig_rdata.set_signature_expiration(signature_expiration);
+
+        let array_bytes = [bytes[12], bytes[13], bytes[14], bytes[15]];
+        let signature_inception = u32::from_be_bytes(array_bytes);
+        rrsig_rdata.set_signature_inception(signature_inception);
+
+        let array_bytes = [bytes[16], bytes[17]];
+        let key_tag = u16::from_be_bytes(array_bytes);
+        rrsig_rdata.set_key_tag(key_tag);
+
+        let mut signer_name: Vec<u8> = Vec::new();
+        let mut i = 18;
+        while bytes[i] != 0 {
+            signer_name.push(bytes[i]);
+            i += 1;
+        }
+        let signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
+        rrsig_rdata.set_signer_name(signer_name.0);
+
+        let mut signature: Vec<u8> = Vec::new();
+        i += 1;
+        while i < bytes_len{
+            signature.push(bytes[i]);
+            i += 1;
+        }
+        let signature = String::from_utf8(signature).unwrap();
+        rrsig_rdata.set_signature(signature);
+
+        Ok(rrsig_rdata)
+    }
 }
 
 impl RRSIGRdata{

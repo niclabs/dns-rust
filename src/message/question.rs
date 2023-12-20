@@ -76,7 +76,6 @@ impl Question {
 
         let (qname, bytes_without_name) = domain_name_result.unwrap();
 
-        println!("{}", bytes_without_name.len());
         if bytes_without_name.len() < 4 {
             return Err("Format Error");
         }

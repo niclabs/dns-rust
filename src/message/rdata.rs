@@ -779,6 +779,30 @@ mod resolver_query_tests {
     }
 
     #[test]
+    fn from_bytes_rrsig_rdata(){
+        let data_bytes:Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
+        46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
+        98, 99, 100, 101, 102, 103, 0, 46, 0, 1];
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::RRSIG(val) => {
+                assert_eq!(val.get_type_covered(), "A");
+                assert_eq!(val.get_algorithm(), 5);
+                assert_eq!(val.get_labels(), 2);
+                assert_eq!(val.get_original_ttl(), 3600);
+                assert_eq!(val.get_signature_expiration(), 1630435200);
+                assert_eq!(val.get_signature_inception(), 1630435200);
+                assert_eq!(val.get_key_tag(), 1234);
+                assert_eq!(val.get_signer_name().get_name(), "example.com");
+                assert_eq!(val.get_signature(), "abcdefg");
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
     #[should_panic]
     fn from_bytes_format_error(){
         let data_bytes = [];

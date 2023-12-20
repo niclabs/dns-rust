@@ -276,6 +276,3 @@ impl RRSIGRdata{
         self.signature = signature;
     }
 }
-
-impl RRSIGRdata{
-}

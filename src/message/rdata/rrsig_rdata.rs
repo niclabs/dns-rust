@@ -365,3 +365,23 @@ impl RRSIGRdata{
         self.signature = signature;
     }
 }
+
+#[cfg(test)]
+mod rrsig_rdata_test{
+    use super::*;
+
+    #[test]
+    fn constructor_test(){
+        let rrsig_rdata = RRSIGRdata::new();
+
+        assert_eq!(rrsig_rdata.type_covered, String::new());
+        assert_eq!(rrsig_rdata.algorithm, 0);
+        assert_eq!(rrsig_rdata.labels, 0);
+        assert_eq!(rrsig_rdata.original_ttl, 0);
+        assert_eq!(rrsig_rdata.signature_expiration, 0);
+        assert_eq!(rrsig_rdata.signature_inception, 0);
+        assert_eq!(rrsig_rdata.key_tag, 0);
+        assert_eq!(rrsig_rdata.signer_name, DomainName::new());
+        assert_eq!(rrsig_rdata.signature, String::new());
+    }
+} 

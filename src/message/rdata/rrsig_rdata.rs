@@ -57,4 +57,111 @@ impl RRSIGRdata{
             signature: String::new(),
         }
     }
+    /// Getter for type_covered
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let type_covered = rrsig_rdata.get_type_covered();
+    /// ```
+    pub fn get_type_covered(&self) -> String{
+        self.type_covered.clone()
+    }
+
+    /// Getter for algorithm
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let algorithm = rrsig_rdata.get_algorithm();
+    /// ```
+    pub fn get_algorithm(&self) -> u8{
+        self.algorithm.clone()
+    }
+
+    /// Getter for labels
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let labels = rrsig_rdata.get_labels();
+    /// ```
+    pub fn get_labels(&self) -> u8{
+        self.labels.clone()
+    }
+
+    /// Getter for original_ttl
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let original_ttl = rrsig_rdata.get_original_ttl();
+    /// ```
+    pub fn get_original_ttl(&self) -> u32{
+        self.original_ttl.clone()
+    }
+
+    /// Getter for signature_expiration
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let signature_expiration = rrsig_rdata.get_signature_expiration();
+    /// ```
+    pub fn get_signature_expiration(&self) -> u32{
+        self.signature_expiration.clone()
+    }
+
+    /// Getter for signature_inception
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let signature_inception = rrsig_rdata.get_signature_inception();
+    /// ```
+    pub fn get_signature_inception(&self) -> u32{
+        self.signature_inception.clone()
+    }
+
+    /// Getter for key_tag
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let key_tag = rrsig_rdata.get_key_tag();
+    /// ```
+    pub fn get_key_tag(&self) -> u16{
+        self.key_tag.clone()
+    }
+
+    /// Getter for signer_name
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let signer_name = rrsig_rdata.get_signer_name();
+    /// ```
+    pub fn get_signer_name(&self) -> DomainName{
+        self.signer_name.clone()
+    }
+
+    /// Getter for signature
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let rrsig_rdata = RRSIGRdata::new();
+    /// let signature = rrsig_rdata.get_signature();
+    /// ```
+    pub fn get_signature(&self) -> String{
+        self.signature.clone()
+    }
 }

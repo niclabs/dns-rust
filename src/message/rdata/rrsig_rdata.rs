@@ -464,4 +464,14 @@ mod rrsig_rdata_test{
 
         assert_eq!(result, rrsig_rdata);
     }
+
+    #[test]
+    fn from_bytes_error(){
+        let bytes_test: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+            , 11, 12, 13, 14, 15, 16, 17, 18];
+
+        let result = RRSIGRdata::from_bytes(&bytes_test, &bytes_test);
+
+        assert_eq!(result, Err("Format Error"));
+    }
 } 

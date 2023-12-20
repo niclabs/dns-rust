@@ -384,4 +384,39 @@ mod rrsig_rdata_test{
         assert_eq!(rrsig_rdata.signer_name, DomainName::new());
         assert_eq!(rrsig_rdata.signature, String::new());
     }
+
+    #[test]
+    fn setters_and_getters_test(){
+        let mut rrsig_rdata = RRSIGRdata::new();
+
+        assert_eq!(rrsig_rdata.get_type_covered(), String::new());
+        assert_eq!(rrsig_rdata.get_algorithm(), 0);
+        assert_eq!(rrsig_rdata.get_labels(), 0);
+        assert_eq!(rrsig_rdata.get_original_ttl(), 0);
+        assert_eq!(rrsig_rdata.get_signature_expiration(), 0);
+        assert_eq!(rrsig_rdata.get_signature_inception(), 0);
+        assert_eq!(rrsig_rdata.get_key_tag(), 0);
+        assert_eq!(rrsig_rdata.get_signer_name(), DomainName::new());
+        assert_eq!(rrsig_rdata.get_signature(), String::new());
+
+        rrsig_rdata.set_type_covered(String::from("A"));
+        rrsig_rdata.set_algorithm(5);
+        rrsig_rdata.set_labels(2);
+        rrsig_rdata.set_original_ttl(3600);
+        rrsig_rdata.set_signature_expiration(1630435200);
+        rrsig_rdata.set_signature_inception(1630435200);
+        rrsig_rdata.set_key_tag(1234);
+        rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
+        rrsig_rdata.set_signature(String::from("abcdefg"));
+
+        assert_eq!(rrsig_rdata.get_type_covered(), String::from("A"));
+        assert_eq!(rrsig_rdata.get_algorithm(), 5);
+        assert_eq!(rrsig_rdata.get_labels(), 2);
+        assert_eq!(rrsig_rdata.get_original_ttl(), 3600);
+        assert_eq!(rrsig_rdata.get_signature_expiration(), 1630435200);
+        assert_eq!(rrsig_rdata.get_signature_inception(), 1630435200);
+        assert_eq!(rrsig_rdata.get_key_tag(), 1234);
+        assert_eq!(rrsig_rdata.get_signer_name(), DomainName::new_from_str("example.com"));
+        assert_eq!(rrsig_rdata.get_signature(), String::from("abcdefg"));
+    }
 } 

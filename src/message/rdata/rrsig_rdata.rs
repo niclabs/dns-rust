@@ -165,3 +165,117 @@ impl RRSIGRdata{
         self.signature.clone()
     }
 }
+
+// Settters for RRSIGRdata
+impl RRSIGRdata{
+    /// Setter for type_covered
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_type_covered("A".to_string());
+    /// ```
+    pub fn set_type_covered(&mut self, type_covered: String) {
+        self.type_covered = type_covered;
+    }
+
+    /// Setter for algorithm
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_algorithm(5);
+    /// ```
+    pub fn set_algorithm(&mut self, algorithm: u8) {
+        self.algorithm = algorithm;
+    }
+
+    /// Setter for labels
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_labels(2);
+    /// ```
+    pub fn set_labels(&mut self, labels: u8) {
+        self.labels = labels;
+    }
+
+    /// Setter for original_ttl
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_original_ttl(3600);
+    /// ```
+    pub fn set_original_ttl(&mut self, original_ttl: u32) {
+        self.original_ttl = original_ttl;
+    }
+
+    /// Setter for signature_expiration
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_signature_expiration(1630435200);
+    /// ```
+    pub fn set_signature_expiration(&mut self, signature_expiration: u32) {
+        self.signature_expiration = signature_expiration;
+    }
+
+    /// Setter for signature_inception
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_signature_inception(1630435200);
+    /// ```
+    pub fn set_signature_inception(&mut self, signature_inception: u32) {
+        self.signature_inception = signature_inception;
+    }
+
+    /// Setter for key_tag
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_key_tag(1234);
+    /// ```
+    pub fn set_key_tag(&mut self, key_tag: u16) {
+        self.key_tag = key_tag;
+    }
+
+    /// Setter for signer_name
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_signer_name(DomainName::new("example.com").unwrap());
+    /// ```
+    pub fn set_signer_name(&mut self, signer_name: DomainName) {
+        self.signer_name = signer_name;
+    }
+
+    /// Setter for signature
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let mut rrsig_rdata = RRSIGRdata::new();
+    /// rrsig_rdata.set_signature("abcdefg".to_string());
+    /// ```
+    pub fn set_signature(&mut self, signature: String) {
+        self.signature = signature;
+    }
+}
+
+impl RRSIGRdata{
+}

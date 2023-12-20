@@ -193,7 +193,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
 
         let expected_ip: [u8; 4] = [93, 184, 216, 34];
@@ -226,7 +226,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -253,7 +253,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -280,7 +280,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -307,7 +307,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -334,7 +334,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -361,7 +361,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -388,7 +388,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -415,7 +415,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {
@@ -442,7 +442,7 @@ mod client_test {
         let qclass= "IN";
         let response = match udp_client.query(domain_name, qtype, qclass) {
             Ok(value) => value,
-            Err(error) => panic!("Error al consultar: {:?}", error),
+            Err(error) => panic!("Error in the response: {:?}", error),
         };
         let answers = response.get_answer();
         for answer in answers {

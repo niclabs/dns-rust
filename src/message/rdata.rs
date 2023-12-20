@@ -287,6 +287,7 @@ mod resolver_query_tests {
     use super::soa_rdata::SoaRdata;
     use super::txt_rdata::TxtRdata;
     use super::opt_rdata::OptRdata;
+    use super::rrsig_rdata::RRSIGRdata;
     use super::dnskey_rdata::DnskeyRdata;
     use super::tsig_rdata::TSigRdata;
     use std::net::IpAddr;
@@ -529,6 +530,29 @@ mod resolver_query_tests {
         ];
 
         let rdata = Rdata::DNSKEY(dnskey_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_rrsig_rdata(){
+        let mut rrsig_rdata = RRSIGRdata::new();
+        rrsig_rdata.set_type_covered(String::from("A"));
+        rrsig_rdata.set_algorithm(5);
+        rrsig_rdata.set_labels(2);
+        rrsig_rdata.set_original_ttl(3600);
+        rrsig_rdata.set_signature_expiration(1630435200);
+        rrsig_rdata.set_signature_inception(1630435200);
+        rrsig_rdata.set_key_tag(1234);
+        rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
+        rrsig_rdata.set_signature(String::from("abcdefg"));
+
+        let expected_bytes:Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
+        46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
+        98, 99, 100, 101, 102, 103];
+
+        let rdata = Rdata::RRSIG(rrsig_rdata);
         let bytes = rdata.to_bytes();
 
         assert_eq!(bytes, expected_bytes);

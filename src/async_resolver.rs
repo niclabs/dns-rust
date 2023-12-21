@@ -461,6 +461,29 @@ mod async_resolver_test {
             assert!(matches!(a_rdata, Rdata::A(_a_rdata)))
         }
     }
+
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_ns() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::NS;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let ns_rdata = answer.get_rdata();
+            // Check if the answer is NS type
+            assert!(matches!(ns_rdata, Rdata::NS(_ns_rdata)))
+        }
+    }
  
     #[tokio::test]
     async fn inner_lookup_ns() {

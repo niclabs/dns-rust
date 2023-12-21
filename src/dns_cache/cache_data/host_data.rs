@@ -211,7 +211,7 @@ impl HostData{
     }
 
     /// For each domain name, it removes the RRCache past its TTL.
-    pub fn timeout_rr_cache(&mut self) {
+    pub fn filter_timeout_host_data(&mut self) {
         let mut new_hash = HashMap::<DomainName, Vec<RRCache>>::new();
         let data = self.get_host_hash();
         let current_time = Utc::now();
@@ -511,7 +511,7 @@ mod host_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        host_data.timeout_rr_cache();
+        host_data.filter_timeout_host_data();
 
         assert_eq!(host_data.get_host_hash().len(), 1);
         if let Some(rr_cache_vec) = host_data.get_host_hash().get(&domain_name) {

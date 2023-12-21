@@ -343,8 +343,8 @@ impl AsyncResolver {
             });
 
         } 
-
-        self.save_negative_answers( response);
+        self.cache.timeout_cache();
+        self.save_negative_answers(response);
     }
 
     /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.3.3

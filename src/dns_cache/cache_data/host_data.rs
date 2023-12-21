@@ -211,7 +211,7 @@ impl HostData{
     }
 
     /// For each domain name, it removes the RRCache past its TTL.
-    fn timeout_rr_cache(&mut self) {
+    pub fn timeout_rr_cache(&mut self) {
         let mut new_hash = HashMap::<DomainName, Vec<RRCache>>::new();
         let data = self.get_host_hash();
         let current_time = Utc::now();

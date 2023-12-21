@@ -168,6 +168,16 @@ impl DnsCache {
     //         }
     //     }
     // }
+
+    /// Performs the timeout of cache by removing the elements that have expired.
+    /// 
+    /// For each Resource Record in the cache, it checks if it has expired by its TTL.
+    /// If it has expired, it removes it from the cache.
+    pub fn timeout_cache(&mut self) {
+        let mut cache = self.get_cache();
+        cache.filter_timeout_cache_data();
+        self.set_cache(cache);
+    }
 }
 
 // Getters

@@ -159,12 +159,12 @@ impl CacheData{
     /// For each type of cache data, it removes the cache data that has expired, using
     /// the `timeout_rr_cache` method of the `HostData` struct. If the `HostData` struct
     /// is empty after the removal, it is removed from the cache data.
-    pub fn timeout_cache_data(&mut self) {
+    pub fn filter_timeout_cache_data(&mut self) {
         let cache_data = self.get_cache_data();
         let clean_cache_data: HashMap<Rtype, HostData> = cache_data
         .into_iter()
         .filter_map(|(rtype, mut host_data)| {
-            host_data.timeout_rr_cache();
+            host_data.filter_timeout_host_data();
             if host_data.get_host_hash().is_empty() {
                 None
             } else {

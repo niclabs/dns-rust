@@ -30,7 +30,7 @@ impl NsecRdata{
     /// Returns the next_domain_name of the `NsecRdata`.
     /// # Example
     /// ```
-    /// let nsec_rdata = NsecRdata::new(String::from("www.example.com"), vec![Rtype::A, Rtype::NS]);
+    /// let nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
     /// assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("www.example.com"));
     /// ```
     pub fn get_next_domain_name(&self) -> DomainName {
@@ -40,10 +40,36 @@ impl NsecRdata{
     /// Returns the type_bit_maps of the `NsecRdata`.
     /// # Example
     /// ```
-    /// let nsec_rdata = NsecRdata::new(String::from("www.example.com"), vec![Rtype::A, Rtype::NS]);
+    /// let nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
     /// assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::NS]);
     /// ```
     pub fn get_type_bit_maps(&self) -> Vec<Rtype> {
         self.type_bit_maps.clone()
+    }
+}
+
+impl NsecRdata{
+    /// Setters
+    
+    /// Set the next_domain_name of the `NsecRdata`.
+    /// # Example
+    /// ```
+    /// let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
+    /// nsec_rdata.set_next_domain_name(DomainName::new_from_str("www.example2.com"));
+    /// assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("www.example2.com"));
+    /// ```
+    pub fn set_next_domain_name(&mut self, next_domain_name: DomainName) {
+        self.next_domain_name = next_domain_name;
+    }
+
+    /// Set the type_bit_maps of the `NsecRdata`.
+    /// # Example   
+    /// ```
+    /// let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
+    /// nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::NS, Rtype::CNAME]);
+    /// assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::NS, Rtype::CNAME]);
+    /// ```
+    pub fn set_type_bit_maps(&mut self, type_bit_maps: Vec<Rtype>) {
+        self.type_bit_maps = type_bit_maps;
     }
 }

@@ -26,7 +26,7 @@ use crate::message::type_rtype::Rtype;
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 pub struct RRSIGRdata {
-    type_covered: String, // RR type mnemonic
+    type_covered: Rtype, // RR type mnemonic
     algorithm: u8, // Unsigned decimal integer
     labels: u8, // Unsigned decimal integer
     original_ttl: u32, // Unsigned decimal integer
@@ -42,9 +42,7 @@ impl ToBytes for RRSIGRdata {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
-        let type_covered_str = self.type_covered.as_str();
-        let type_covered_rtype = Rtype::from_str_to_rtype(type_covered_str);
-        let type_covered = Rtype::from_rtype_to_int(type_covered_rtype);
+        let type_covered = Rtype::from_rtype_to_int(self.type_covered.clone());
         bytes.extend_from_slice(&type_covered.to_be_bytes());
 
         bytes.push(self.algorithm);
@@ -76,9 +74,8 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
         let mut rrsig_rdata = RRSIGRdata::new();
 
         let array_bytes = [bytes[0], bytes[1]];
-        let type_covered = u16::from_be_bytes(array_bytes);
-        let type_covered_str = Rtype::from_int_to_rtype(type_covered);
-        let type_covered = Rtype::from_rtype_to_str(type_covered_str);
+        let type_covered_int = u16::from_be_bytes(array_bytes);
+        let type_covered = Rtype::from_int_to_rtype(type_covered_int);
         rrsig_rdata.set_type_covered(type_covered);
 
         let algorithm = bytes[2];
@@ -136,7 +133,7 @@ impl RRSIGRdata{
     /// ```
     pub fn new() -> RRSIGRdata{
         RRSIGRdata{
-            type_covered: String::new(),
+            type_covered: Rtype::A,
             algorithm: 0,
             labels: 0,
             original_ttl: 0,
@@ -155,7 +152,7 @@ impl RRSIGRdata{
     /// let rrsig_rdata = RRSIGRdata::new();
     /// let type_covered = rrsig_rdata.get_type_covered();
     /// ```
-    pub fn get_type_covered(&self) -> String{
+    pub fn get_type_covered(&self) -> Rtype{
         self.type_covered.clone()
     }
 
@@ -266,7 +263,7 @@ impl RRSIGRdata{
     /// let mut rrsig_rdata = RRSIGRdata::new();
     /// rrsig_rdata.set_type_covered("A".to_string());
     /// ```
-    pub fn set_type_covered(&mut self, type_covered: String) {
+    pub fn set_type_covered(&mut self, type_covered: Rtype) {
         self.type_covered = type_covered;
     }
 
@@ -375,7 +372,7 @@ mod rrsig_rdata_test{
     fn constructor_test(){
         let rrsig_rdata = RRSIGRdata::new();
 
-        assert_eq!(rrsig_rdata.type_covered, String::new());
+        assert_eq!(rrsig_rdata.type_covered, Rtype::A);
         assert_eq!(rrsig_rdata.algorithm, 0);
         assert_eq!(rrsig_rdata.labels, 0);
         assert_eq!(rrsig_rdata.original_ttl, 0);
@@ -390,7 +387,7 @@ mod rrsig_rdata_test{
     fn setters_and_getters_test(){
         let mut rrsig_rdata = RRSIGRdata::new();
 
-        assert_eq!(rrsig_rdata.get_type_covered(), String::new());
+        assert_eq!(rrsig_rdata.get_type_covered(), Rtype::A);
         assert_eq!(rrsig_rdata.get_algorithm(), 0);
         assert_eq!(rrsig_rdata.get_labels(), 0);
         assert_eq!(rrsig_rdata.get_original_ttl(), 0);
@@ -400,7 +397,7 @@ mod rrsig_rdata_test{
         assert_eq!(rrsig_rdata.get_signer_name(), DomainName::new());
         assert_eq!(rrsig_rdata.get_signature(), String::new());
 
-        rrsig_rdata.set_type_covered(String::from("A"));
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -410,7 +407,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
         rrsig_rdata.set_signature(String::from("abcdefg"));
 
-        assert_eq!(rrsig_rdata.get_type_covered(), String::from("A"));
+        assert_eq!(rrsig_rdata.get_type_covered(), Rtype::CNAME);
         assert_eq!(rrsig_rdata.get_algorithm(), 5);
         assert_eq!(rrsig_rdata.get_labels(), 2);
         assert_eq!(rrsig_rdata.get_original_ttl(), 3600);
@@ -424,7 +421,7 @@ mod rrsig_rdata_test{
     #[test]
     fn to_bytes(){
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(String::from("A"));
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -450,7 +447,7 @@ mod rrsig_rdata_test{
          98, 99, 100, 101, 102, 103];
 
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(String::from("A"));
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);

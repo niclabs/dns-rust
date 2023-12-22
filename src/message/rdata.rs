@@ -9,6 +9,7 @@ pub mod soa_rdata;
 pub mod txt_rdata;
 pub mod opt_rdata;
 pub mod rrsig_rdata;
+pub mod nsec_rdata;
 pub mod dnskey_rdata;
 pub mod tsig_rdata;
 
@@ -24,6 +25,7 @@ use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
 use opt_rdata::OptRdata;
 use rrsig_rdata::RRSIGRdata;
+use nsec_rdata::NsecRdata;
 use dnskey_rdata::DnskeyRdata;
 use tsig_rdata::TSigRdata;
 

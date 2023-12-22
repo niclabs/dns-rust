@@ -277,6 +277,7 @@ mod resolver_query_tests {
     use crate::domain_name::DomainName;
     use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
+    use crate::message::type_rtype::Rtype;
     use super:: a_ch_rdata::AChRdata;
     use super::a_rdata::ARdata;
     use super::cname_rdata::CnameRdata;
@@ -538,7 +539,7 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_rrsig_rdata(){
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(String::from("A"));
+        rrsig_rdata.set_type_covered(Rtype::A);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -788,7 +789,7 @@ mod resolver_query_tests {
 
         match rdata {
             Rdata::RRSIG(val) => {
-                assert_eq!(val.get_type_covered(), "A");
+                assert_eq!(val.get_type_covered(), Rtype::A);
                 assert_eq!(val.get_algorithm(), 5);
                 assert_eq!(val.get_labels(), 2);
                 assert_eq!(val.get_original_ttl(), 3600);

@@ -710,7 +710,7 @@ impl DnsMessage {
                         println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                     Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
+                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
@@ -761,7 +761,7 @@ impl DnsMessage {
                         println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                     Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
+                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
@@ -812,7 +812,7 @@ impl DnsMessage {
                         println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                     Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
+                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())

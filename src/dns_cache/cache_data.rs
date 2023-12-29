@@ -165,7 +165,7 @@ impl CacheData{
         .into_iter()
         .filter_map(|(rtype, mut host_data)| {
             host_data.filter_timeout_host_data();
-            if host_data.get_host_hash().is_empty() {
+            if host_data.get_domain_names_data().is_empty() {
                 None
             } else {
                 Some((rtype, host_data))
@@ -331,7 +331,7 @@ mod cache_data_test{
 
         let host_data = cache_hash.get(&Rtype::A).unwrap();
 
-        assert!(host_data.get_host_hash().is_empty());
+        assert!(host_data.get_domain_names_data().is_empty());
     }
 
     //Get from cache data test

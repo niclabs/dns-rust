@@ -10,7 +10,7 @@ use std::{collections::HashMap, net::IpAddr};
 /// of an specific `Rtype`.
 #[derive(Clone, Debug)]
 pub struct HostData {
-    host_hash: HashMap<DomainName, Vec<RRStoredData>>,
+    domain_names_data: HashMap<DomainName, Vec<RRStoredData>>,
 }
 
 ///functions for the host data
@@ -23,7 +23,7 @@ impl HostData{
     /// ```
     pub fn new() -> HostData {
         HostData {
-            host_hash: HashMap::new(),
+            domain_names_data: HashMap::new(),
         }
     }
 
@@ -42,18 +42,18 @@ impl HostData{
     /// * `host_name` - A Domain Name that represents the name of the host
     /// * `rr_cache` - A RRStoredData that represents the rr_cache of the host
     pub fn add_to_host_data(&mut self, host_name: DomainName, rr_cache: RRStoredData) {
-        let mut host_hash = self.get_host_hash();
-        if let Some(y) = host_hash.get_mut(&host_name){
+        let mut domain_names_data = self.get_domain_names_data();
+        if let Some(y) = domain_names_data.get_mut(&host_name){
             let mut rr_cache_vec = y.clone();
             rr_cache_vec.push(rr_cache);
-            host_hash.insert(host_name, rr_cache_vec);
+            domain_names_data.insert(host_name, rr_cache_vec);
         }
         else{
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);
-            host_hash.insert(host_name, rr_cache_vec);
+            domain_names_data.insert(host_name, rr_cache_vec);
         }
-        self.set_host_hash(host_hash);
+        self.set_domain_names_data(domain_names_data);
     }
 
     ///function to remove an element from the host data
@@ -69,9 +69,9 @@ impl HostData{
     /// host_data.remove_from_host_data(domain_name);
     /// ```
     pub fn remove_from_host_data(&mut self, host_name: DomainName) -> u32{
-        let mut host_hash = self.get_host_hash();
-        if let Some(_x) = host_hash.remove(&host_name){
-            self.set_host_hash(host_hash);
+        let mut domain_names_data = self.get_domain_names_data();
+        if let Some(_x) = domain_names_data.remove(&host_name){
+            self.set_domain_names_data(domain_names_data);
             return _x.len() as u32;    
         }
         return 0;
@@ -94,16 +94,16 @@ impl HostData{
     /// let host_data_2_vec = host_data.get_from_host_data(domain_name);
     /// ```
     pub fn get_from_host_data(&mut self, host_name: DomainName) -> Option<Vec<RRStoredData>>{
-        let mut host_hash = self.get_host_hash();
-        if let Some(x) = host_hash.get(&host_name){
+        let mut domain_names_data = self.get_domain_names_data();
+        if let Some(x) = domain_names_data.get(&host_name){
             let new_x = x.clone();
             let mut rr_cache_vec = Vec::<RRStoredData>::new();
             for mut rr_cache in new_x{
                 rr_cache.set_last_use(Utc::now());
                 rr_cache_vec.push(rr_cache.clone());
             }
-            host_hash.insert(host_name, rr_cache_vec.clone());
-            self.set_host_hash(host_hash);
+            domain_names_data.insert(host_name, rr_cache_vec.clone());
+            self.set_domain_names_data(domain_names_data);
 
             return Some(rr_cache_vec);
         }
@@ -126,7 +126,7 @@ impl HostData{
     /// let host_data_2 = get_oldest_used.get_from_host_data(domain_name);
     /// ```
     pub fn get_oldest_used(&mut self)-> (DomainName,DateTime<Utc>){
-        let host = self.get_host_hash();
+        let host = self.get_domain_names_data();
         let mut used_in = Utc::now();
 
         let mut oldest_used_domain_name = DomainName::new();
@@ -166,7 +166,7 @@ impl HostData{
     /// host_data.insert(domain_name_new, rr_cache_2);
     /// ```
     pub fn insert(&mut self,domain_name:DomainName, rr_cache_vec : Vec<RRStoredData>) -> Option<Vec<RRStoredData>>{
-        return self.host_hash.insert(domain_name, rr_cache_vec)
+        return self.domain_names_data.insert(domain_name, rr_cache_vec)
     }
 
     ///function to update the response time
@@ -186,8 +186,8 @@ impl HostData{
     /// host_data.update_response_time(ip_address, 2000, domain_name);
     /// ```
     pub fn update_response_time(&mut self, ip_address: IpAddr, response_time: u32, domain_name: DomainName){
-        let mut host_hash = self.get_host_hash();
-        if let Some(x) = host_hash.get(&domain_name){
+        let mut domain_names_data = self.get_domain_names_data();
+        if let Some(x) = domain_names_data.get(&domain_name){
             let  rr_cache_vec = x.clone();
 
             let mut new_rr_cache_vec = Vec::<RRStoredData>::new();
@@ -204,16 +204,16 @@ impl HostData{
 
                 new_rr_cache_vec.push(rr_cache.clone());
             }
-            host_hash.insert(domain_name, new_rr_cache_vec);
+            domain_names_data.insert(domain_name, new_rr_cache_vec);
 
-            self.set_host_hash(host_hash);
+            self.set_domain_names_data(domain_names_data);
         }
     }
 
     /// For each domain name, it removes the RRStoredData past its TTL.
     pub fn filter_timeout_host_data(&mut self) {
         let mut new_hash = HashMap::<DomainName, Vec<RRStoredData>>::new();
-        let data = self.get_host_hash();
+        let data = self.get_domain_names_data();
         let current_time = Utc::now();
         for (domain_name, rr_cache_vec) in data.into_iter() {
             let filtered_rr_cache_vec: Vec<RRStoredData> = rr_cache_vec
@@ -223,7 +223,7 @@ impl HostData{
 
             new_hash.insert(domain_name, filtered_rr_cache_vec);
         }
-        self.set_host_hash(new_hash);
+        self.set_domain_names_data(new_hash);
     }
 
 }
@@ -231,16 +231,16 @@ impl HostData{
 ///setter and getter for the host data
 impl HostData{
 
-    pub fn get_host_hash(&self) -> HashMap<DomainName, Vec<RRStoredData>> {
-        return self.host_hash.clone();
+    pub fn get_domain_names_data(&self) -> HashMap<DomainName, Vec<RRStoredData>> {
+        return self.domain_names_data.clone();
     }
 
-    pub fn set_host_hash(&mut self, host_hash: HashMap<DomainName, Vec<RRStoredData>>) {
-        self.host_hash = host_hash;
+    pub fn set_domain_names_data(&mut self, domain_names_data: HashMap<DomainName, Vec<RRStoredData>>) {
+        self.domain_names_data = domain_names_data;
     }
 
     pub fn get(&self,domain_name:&DomainName) -> Option<&Vec<RRStoredData>>{
-        return self.host_hash.get(domain_name)
+        return self.domain_names_data.get(domain_name)
 
     }
 }
@@ -262,35 +262,35 @@ mod host_data_test{
     #[test]
     fn constructor_test(){
         let host_data = HostData::new();
-        assert!(host_data.host_hash.is_empty());
+        assert!(host_data.domain_names_data.is_empty());
     }
 
     //Getters and setters test
     #[test]
-    fn get_host_hash(){
+    fn get_domain_names_data(){
         let host_data = HostData::new();
 
-        let host_hash = host_data.get_host_hash();
+        let domain_names_data = host_data.get_domain_names_data();
 
-        assert!(host_hash.is_empty());
+        assert!(domain_names_data.is_empty());
     }
 
     #[test]
-    fn set_host_hash(){
+    fn set_domain_names_data(){
         let mut host_data = HostData::new();
 
-        let mut host_hash = HashMap::new();
+        let mut domain_names_data = HashMap::new();
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
-        host_hash.insert(domain_name.clone(), Vec::new());
+        domain_names_data.insert(domain_name.clone(), Vec::new());
 
-        assert!(host_data.host_hash.is_empty());
+        assert!(host_data.domain_names_data.is_empty());
 
-        host_data.set_host_hash(host_hash.clone());
+        host_data.set_domain_names_data(domain_names_data.clone());
 
-        let host_hash_2 = host_data.get_host_hash();
+        let domain_names_data_2 = host_data.get_domain_names_data();
 
-        assert!(!host_hash_2.is_empty());
+        assert!(!domain_names_data_2.is_empty());
     }
 
     //add_to_host_data test
@@ -304,9 +304,9 @@ mod host_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         host_data.add_to_host_data(domain_name.clone(), rr_cache);
 
-        let host_hash = host_data.get_host_hash();
+        let domain_names_data = host_data.get_domain_names_data();
 
-        assert_eq!(host_hash.len(), 1);
+        assert_eq!(domain_names_data.len(), 1);
 
         let mut new_vec = Vec::new();
         new_vec.push(String::from("hola"));
@@ -315,13 +315,13 @@ mod host_data_test{
         let rr_cache_2 = RRStoredData::new(resource_record_2);
         host_data.add_to_host_data(domain_name.clone(), rr_cache_2);
 
-        let host_hash_2 = host_data.get_host_hash();
+        let domain_names_data_2 = host_data.get_domain_names_data();
 
-        assert_eq!(host_hash_2.len(), 1);
+        assert_eq!(domain_names_data_2.len(), 1);
 
-        let host_hash_vec = host_hash_2.get(&domain_name).unwrap();
+        let domain_names_data_vec = domain_names_data_2.get(&domain_name).unwrap();
 
-        assert_eq!(host_hash_vec.len(), 2);
+        assert_eq!(domain_names_data_vec.len(), 2);
     }
 
     //remove_from_host_data test
@@ -335,15 +335,15 @@ mod host_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         host_data.add_to_host_data(domain_name.clone(), rr_cache);
 
-        let host_hash = host_data.get_host_hash();
+        let domain_names_data = host_data.get_domain_names_data();
 
-        assert_eq!(host_hash.len(), 1);
+        assert_eq!(domain_names_data.len(), 1);
 
         host_data.remove_from_host_data(domain_name.clone());
 
-        let host_hash_2 = host_data.get_host_hash();
+        let domain_names_data_2 = host_data.get_domain_names_data();
 
-        assert_eq!(host_hash_2.len(), 0);
+        assert_eq!(domain_names_data_2.len(), 0);
     }
 
     //get_from_host_data test
@@ -357,13 +357,13 @@ mod host_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         host_data.add_to_host_data(domain_name.clone(), rr_cache);
 
-        let host_hash = host_data.get_host_hash();
+        let domain_names_data = host_data.get_domain_names_data();
 
-        assert_eq!(host_hash.len(), 1);
+        assert_eq!(domain_names_data.len(), 1);
 
-        let host_hash_vec = host_data.get_from_host_data(domain_name.clone()).unwrap();
+        let domain_names_data_vec = host_data.get_from_host_data(domain_name.clone()).unwrap();
 
-        assert_eq!(host_hash_vec.len(), 1);
+        assert_eq!(domain_names_data_vec.len(), 1);
     }
 
     //get_from_host_data test with no domain name
@@ -377,10 +377,10 @@ mod host_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         host_data.add_to_host_data(domain_name.clone(), rr_cache);
 
-        let host_hash = host_data.get_host_hash();
+        let domain_names_data = host_data.get_domain_names_data();
 
         // One domain name
-        assert_eq!(host_hash.len(), 1);
+        assert_eq!(domain_names_data.len(), 1);
 
         // Assuming this test is for the case where the domain name is not in the host data
         let domain_name_2 = DomainName::new();
@@ -474,9 +474,9 @@ mod host_data_test{
         host_data.add_to_host_data(domain_name.clone(), rr_cache);
         host_data.update_response_time(ip_address, 2000, domain_name.clone());
 
-        let host_hash = host_data.get_host_hash();
+        let domain_names_data = host_data.get_domain_names_data();
 
-        let rr_cache_vec = host_hash.get(&domain_name).unwrap();
+        let rr_cache_vec = domain_names_data.get(&domain_name).unwrap();
 
         let rr_cache = rr_cache_vec.get(0).unwrap();
 
@@ -503,8 +503,8 @@ mod host_data_test{
         host_data.add_to_host_data(domain_name.clone(), rr_cache_valid);
         host_data.add_to_host_data(domain_name.clone(), rr_cache_invalid);
 
-        assert_eq!(host_data.get_host_hash().len(), 1);
-        if let Some(rr_cache_vec) = host_data.get_host_hash().get(&domain_name) {
+        assert_eq!(host_data.get_domain_names_data().len(), 1);
+        if let Some(rr_cache_vec) = host_data.get_domain_names_data().get(&domain_name) {
             assert_eq!(rr_cache_vec.len(), 2);
         }
 
@@ -513,8 +513,8 @@ mod host_data_test{
         println!("After timeout: {:?}", Utc::now());
         host_data.filter_timeout_host_data();
 
-        assert_eq!(host_data.get_host_hash().len(), 1);
-        if let Some(rr_cache_vec) = host_data.get_host_hash().get(&domain_name) {
+        assert_eq!(host_data.get_domain_names_data().len(), 1);
+        if let Some(rr_cache_vec) = host_data.get_domain_names_data().get(&domain_name) {
             assert_eq!(rr_cache_vec.len(), 1);
         }
     }

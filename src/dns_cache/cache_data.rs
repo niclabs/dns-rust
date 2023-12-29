@@ -3,7 +3,7 @@ pub mod host_data;
 use chrono::Utc;
 //use crate::message::rdata::Rdata;
 use crate::message::type_rtype::Rtype;
-use crate::rr_cache::RRCache;
+use crate::rr_cache::RRStoredData;
 use std::net::IpAddr;
 use crate::dns_cache::cache_data::host_data::HostData;
 use std::collections::HashMap;
@@ -35,7 +35,7 @@ impl CacheData{
     /// let mut cache_data = CacheData::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
-    /// let rr_cache = RRCache::new(resource_record);
+    /// let rr_cache = RRStoredData::new(resource_record);
     /// let mut domain_name = DomainName::new();
     /// domain_name.set_domain_name(String::from("uchile.cl"));
     /// cache_data.add_to_cache_data(Rtype::A, domain_name, rr_cache);
@@ -43,9 +43,9 @@ impl CacheData{
     /// # Arguments
     /// * `rtype` - A Rtype that represents the rtype of the cache data
     /// * `domain_name` - A DomainName that represents the domain name of the cache data
-    /// * `rr_cache` - A RRCache that represents the rr_cache of the cache data
+    /// * `rr_cache` - A RRStoredData that represents the rr_cache of the cache data
 
-    pub fn add_to_cache_data(&mut self, rtype: Rtype, domain_name: DomainName, rr_cache:RRCache){
+    pub fn add_to_cache_data(&mut self, rtype: Rtype, domain_name: DomainName, rr_cache:RRStoredData){
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get_mut(&rtype) { 
             let mut type_hash: HostData = x.clone();
@@ -66,7 +66,7 @@ impl CacheData{
     /// let mut cache_data = CacheData::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
-    /// let rr_cache = RRCache::new(resource_record);
+    /// let rr_cache = RRStoredData::new(resource_record);
     /// let mut domain_name = DomainName::new();
     /// domain_name.set_domain_name(String::from("uchile.cl"));
     /// cache_data.add_to_cache_data(Rtype::A, domain_name, rr_cache);
@@ -93,7 +93,7 @@ impl CacheData{
     /// let mut cache_data = CacheData::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
-    /// let rr_cache = RRCache::new(resource_record);
+    /// let rr_cache = RRStoredData::new(resource_record);
     /// let mut domain_name = DomainName::new();
     /// domain_name.set_domain_name(String::from("uchile.cl"));
     /// cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
@@ -129,7 +129,7 @@ impl CacheData{
     /// let mut cache_data = CacheData::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
-    /// let rr_cache = RRCache::new(resource_record);
+    /// let rr_cache = RRStoredData::new(resource_record);
     /// let mut domain_name = DomainName::new();
     /// domain_name.set_domain_name(String::from("uchile.cl"));
     /// 
@@ -140,7 +140,7 @@ impl CacheData{
     /// # Arguments
     /// * `domain_name` - A DomainName that represents the domain name of the cache data
     /// * `rtype` - A Rtype that represents the rtype of the cache data
-    pub fn get_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>>{
+    pub fn get_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRStoredData>>{
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get(&rtype) {
             let mut type_hash: HostData = x.clone();
@@ -227,7 +227,7 @@ mod cache_data_test{
 
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::type_rtype::Rtype;
-    use crate::rr_cache::RRCache;
+    use crate::rr_cache::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
@@ -267,7 +267,7 @@ mod cache_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
         host_data.add_to_host_data(domain_name, rr_cache);
         cache_data_hash.insert(Rtype::A, host_data);
 
@@ -285,7 +285,7 @@ mod cache_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
 
         cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
 
@@ -295,7 +295,7 @@ mod cache_data_test{
         new_vec.push(String::from("hola"));
         let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
-        let rr_cache_2 = RRCache::new(resource_record_2);
+        let rr_cache_2 = RRStoredData::new(resource_record_2);
 
         cache_data.add_to_cache_data(Rtype::TXT, domain_name.clone(), rr_cache_2);
 
@@ -303,7 +303,7 @@ mod cache_data_test{
 
         let a_rdata_2 = Rdata::A(ARdata::new());
         let resource_record_3 = ResourceRecord::new(a_rdata_2);
-        let rr_cache_3 = RRCache::new(resource_record_3);
+        let rr_cache_3 = RRStoredData::new(resource_record_3);
 
         cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache_3);
 
@@ -319,7 +319,7 @@ mod cache_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
 
         cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
 
@@ -343,7 +343,7 @@ mod cache_data_test{
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
 
         cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);
 
@@ -357,7 +357,7 @@ mod cache_data_test{
         new_vec.push(String::from("hola"));
         let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
-        let rr_cache_2 = RRCache::new(resource_record_2);
+        let rr_cache_2 = RRStoredData::new(resource_record_2);
 
         cache_data.add_to_cache_data(Rtype::TXT, domain_name.clone(), rr_cache_2);
 
@@ -377,7 +377,7 @@ mod cache_data_test{
 
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let mut rr_cache = RRCache::new(resource_record);
+        let mut rr_cache = RRStoredData::new(resource_record);
         let now = Utc::now();
         let time_back = Duration::seconds(3600); 
         let new_time = now - time_back; 
@@ -391,7 +391,7 @@ mod cache_data_test{
         new_vec.push(String::from("uchile.cl"));
         let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
         let resource_record_2 = ResourceRecord::new(text_rdata);
-        let mut rr_cache_2 = RRCache::new(resource_record_2);
+        let mut rr_cache_2 = RRStoredData::new(resource_record_2);
         rr_cache_2.set_last_use(Utc::now());
 
 
@@ -422,7 +422,7 @@ mod cache_data_test{
         a_rdata.set_address(ip_address);
         let rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(rdata);
-        let mut rr_cache = RRCache::new(resource_record);
+        let mut rr_cache = RRStoredData::new(resource_record);
         rr_cache.set_response_time(1000);
 
         cache_data.add_to_cache_data(Rtype::A, domain_name.clone(), rr_cache);

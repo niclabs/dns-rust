@@ -3,7 +3,7 @@ pub mod cache_data;
 use crate::dns_cache::cache_data::CacheData;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
-use crate::rr_cache::RRCache;
+use crate::rr_cache::RRStoredData;
 use crate::message::type_rtype::Rtype;
 use std::net::IpAddr;
 use crate::domain_name::DomainName;
@@ -51,7 +51,7 @@ impl DnsCache {
         }
 
         let rtype = resource_record.get_rtype();
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
 
         let mut cache_data = self.get_cache();
         cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
@@ -67,7 +67,7 @@ impl DnsCache {
             self.remove_oldest_used();
         }
 
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
         let mut cache_data = self.get_cache();
         cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
         self.set_cache(cache_data);
@@ -85,7 +85,7 @@ impl DnsCache {
     }
 
     /// Given a domain_name, gets an element from cache
-    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>> {
+    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRStoredData>> {
         let mut cache = self.get_cache();
         let rr_cache_vec = cache.get_from_cache_data(domain_name, rtype);
         self.set_cache(cache);
@@ -221,7 +221,7 @@ mod dns_cache_test {
     use crate::dns_cache::DnsCache;
     use crate::dns_cache::cache_data::CacheData;
     use crate::dns_cache::cache_data::host_data::HostData;
-    use crate::rr_cache::RRCache;
+    use crate::rr_cache::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
@@ -268,7 +268,7 @@ mod dns_cache_test {
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
         host_data.add_to_host_data(domain_name, rr_cache);
         cache_data_hash.insert(Rtype::A, host_data);
 

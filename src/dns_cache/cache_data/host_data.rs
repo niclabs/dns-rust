@@ -10,6 +10,10 @@ use std::{collections::HashMap, net::IpAddr};
 /// of an specific `Rtype`.
 #[derive(Clone, Debug)]
 pub struct DomainNameCache {
+    /// Contains the Resource Records associated to each host domain name.
+    /// 
+    /// The key is the `DomainName` of the host, and the value is a `Vec<RRStoredData>`,
+    /// which contains all the Resource Records data associated to the host.
     domain_names_data: HashMap<DomainName, Vec<RRStoredData>>,
 }
 

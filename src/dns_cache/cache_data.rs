@@ -5,7 +5,7 @@ use chrono::Utc;
 use crate::message::type_rtype::Rtype;
 use crate::rr_cache::RRStoredData;
 use std::net::IpAddr;
-use crate::dns_cache::cache_data::host_data::HostData;
+use crate::dns_cache::cache_data::host_data::DomainNameCache;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
 
@@ -13,7 +13,7 @@ use crate::domain_name::DomainName;
 ///struct to define the cache data
 #[derive(Clone, Debug)]
 pub struct CacheData {
-    cache_data: HashMap<Rtype, HostData>,
+    cache_data: HashMap<Rtype, DomainNameCache>,
 }
 
 /// functions for the cache data
@@ -48,12 +48,12 @@ impl CacheData{
     pub fn add_to_cache_data(&mut self, rtype: Rtype, domain_name: DomainName, rr_cache:RRStoredData){
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get_mut(&rtype) { 
-            let mut type_hash: HostData = x.clone();
+            let mut type_hash: DomainNameCache = x.clone();
             type_hash.add_to_host_data(domain_name, rr_cache);
             cache_data.insert(rtype, type_hash);
         }
         else {
-            let mut type_hash: HostData = HostData::new();
+            let mut type_hash: DomainNameCache = DomainNameCache::new();
             type_hash.add_to_host_data(domain_name, rr_cache);
             cache_data.insert(rtype, type_hash);
         }
@@ -78,7 +78,7 @@ impl CacheData{
     pub fn remove_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype) -> u32{
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get_mut(&rtype) {
-            let mut type_hash: HostData = x.clone();
+            let mut type_hash: DomainNameCache = x.clone();
             let length = type_hash.remove_from_host_data(domain_name);
             cache_data.insert(rtype, type_hash);
             self.set_cache_data(cache_data);
@@ -143,7 +143,7 @@ impl CacheData{
     pub fn get_from_cache_data(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRStoredData>>{
         let mut cache_data = self.get_cache_data();
         if let Some(x) = cache_data.get(&rtype) {
-            let mut type_hash: HostData = x.clone();
+            let mut type_hash: DomainNameCache = x.clone();
             let rr_cache_vec = type_hash.get_from_host_data(domain_name); 
             cache_data.insert(rtype, type_hash);
             self.set_cache_data(cache_data);
@@ -157,11 +157,11 @@ impl CacheData{
     /// Removes the cache data that has expired.
     /// 
     /// For each type of cache data, it removes the cache data that has expired, using
-    /// the `timeout_rr_cache` method of the `HostData` struct. If the `HostData` struct
+    /// the `timeout_rr_cache` method of the `DomainNameCache` struct. If the `DomainNameCache` struct
     /// is empty after the removal, it is removed from the cache data.
     pub fn filter_timeout_cache_data(&mut self) {
         let cache_data = self.get_cache_data();
-        let clean_cache_data: HashMap<Rtype, HostData> = cache_data
+        let clean_cache_data: HashMap<Rtype, DomainNameCache> = cache_data
         .into_iter()
         .filter_map(|(rtype, mut host_data)| {
             host_data.filter_timeout_host_data();
@@ -192,12 +192,12 @@ impl CacheData{
 
     }
 
-    pub fn insert(&mut self,rtype:Rtype, host_data: HostData) {
+    pub fn insert(&mut self,rtype:Rtype, host_data: DomainNameCache) {
         self.cache_data.insert(rtype, host_data);
 
     }
 
-    pub fn iter(&mut self) -> std::collections::hash_map::Iter<'_, Rtype, HostData>{
+    pub fn iter(&mut self) -> std::collections::hash_map::Iter<'_, Rtype, DomainNameCache>{
         return self.cache_data.iter()
 
     }
@@ -206,15 +206,15 @@ impl CacheData{
 ///setter and getter for the host data
 impl CacheData{
 
-    pub fn get_cache_data(&self) -> HashMap<Rtype, HostData> {
+    pub fn get_cache_data(&self) -> HashMap<Rtype, DomainNameCache> {
         return self.cache_data.clone();
     }
 
-    pub fn set_cache_data(&mut self, cache_data: HashMap<Rtype, HostData>) {
+    pub fn set_cache_data(&mut self, cache_data: HashMap<Rtype, DomainNameCache>) {
         self.cache_data = cache_data;
     }
 
-    pub fn get(&self, rtype : Rtype) -> Option<&HostData>{
+    pub fn get(&self, rtype : Rtype) -> Option<&DomainNameCache>{
          return self.cache_data.get(&rtype);
     }
 }
@@ -232,7 +232,7 @@ mod cache_data_test{
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::dns_cache::cache_data::host_data::HostData;
+    use crate::dns_cache::cache_data::host_data::DomainNameCache;
     use std::{collections::HashMap, net::IpAddr};
 
 
@@ -262,7 +262,7 @@ mod cache_data_test{
         let mut cache_data = CacheData::new();
 
         let mut cache_data_hash = HashMap::new();
-        let mut host_data = HostData::new();
+        let mut host_data = DomainNameCache::new();
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());

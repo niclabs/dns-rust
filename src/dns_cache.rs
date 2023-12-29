@@ -1,6 +1,6 @@
 pub mod cache_data;
 
-use crate::dns_cache::cache_data::CacheData;
+use crate::dns_cache::cache_data::CacheByRecordType;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::rr_cache::RRStoredData;
@@ -13,7 +13,7 @@ use std::cmp;
 /// Struct that represents a cache for dns
 pub struct DnsCache {
     // first hash by type, then by hostname
-    cache: CacheData,
+    cache: CacheByRecordType,
     max_size: u32,
     size: u32,
 }
@@ -30,7 +30,7 @@ impl DnsCache {
     ///
     pub fn new() -> Self {
         let cache = DnsCache {
-            cache: CacheData::new(),
+            cache: CacheByRecordType::new(),
             max_size: 0,
             size: 0,
         };
@@ -183,7 +183,7 @@ impl DnsCache {
 // Getters
 impl DnsCache {
     // Gets the cache from the struct
-    pub fn get_cache(&self) -> CacheData{
+    pub fn get_cache(&self) -> CacheByRecordType{
         self.cache.clone()
     }
 
@@ -201,7 +201,7 @@ impl DnsCache {
 // Setters
 impl DnsCache {
     // Sets the cache
-    pub fn set_cache(&mut self, cache: CacheData) {
+    pub fn set_cache(&mut self, cache: CacheByRecordType) {
         self.cache = cache
     }
 
@@ -219,7 +219,7 @@ impl DnsCache {
 #[cfg(test)] 
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
-    use crate::dns_cache::cache_data::CacheData;
+    use crate::dns_cache::cache_data::CacheByRecordType;
     use crate::dns_cache::cache_data::host_data::CacheByDomainName;
     use crate::rr_cache::RRStoredData;
     use crate::domain_name::DomainName;
@@ -261,7 +261,7 @@ mod dns_cache_test {
     fn set_and_get_cache(){
         let mut cache = DnsCache::new();
         assert!(cache.get_cache().get_cache_data().is_empty());
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
         let mut cache_data_hash = HashMap::new();
         let mut host_data = CacheByDomainName::new();
         let mut domain_name = DomainName::new();

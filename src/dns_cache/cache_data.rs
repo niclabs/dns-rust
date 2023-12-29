@@ -12,19 +12,19 @@ use crate::domain_name::DomainName;
 
 ///struct to define the cache data
 #[derive(Clone, Debug)]
-pub struct CacheData {
+pub struct CacheByRecordType {
     record_types_data: HashMap<Rtype, CacheByDomainName>,
 }
 
 /// functions for the cache data
-impl CacheData{
-    /// function to create a new CacheData
+impl CacheByRecordType{
+    /// function to create a new CacheByRecordType
     /// Example
     /// ```
-    /// let cache_data = CacheData::new();
+    /// let cache_data = CacheByRecordType::new();
     /// ```
-    pub fn new() -> CacheData {
-        CacheData {
+    pub fn new() -> CacheByRecordType {
+        CacheByRecordType {
             record_types_data: HashMap::new(),
         }
     }
@@ -32,7 +32,7 @@ impl CacheData{
     ///function to add a new element into the cache_data
     /// # Example
     /// ```
-    /// let mut cache_data = CacheData::new();
+    /// let mut cache_data = CacheByRecordType::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -63,7 +63,7 @@ impl CacheData{
     ///function to remove an element from the cache data
     /// # Example
     /// ```
-    /// let mut cache_data = CacheData::new();
+    /// let mut cache_data = CacheByRecordType::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -90,7 +90,7 @@ impl CacheData{
     ///function to remove the oldest element from the cache data
     /// # Example
     /// ```
-    /// let mut cache_data = CacheData::new();
+    /// let mut cache_data = CacheByRecordType::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -126,7 +126,7 @@ impl CacheData{
     ///function to get an element from the cache data
     /// # Example
     /// ```
-    /// let mut cache_data = CacheData::new();
+    /// let mut cache_data = CacheByRecordType::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -204,7 +204,7 @@ impl CacheData{
 }
 
 ///setter and getter for the host data
-impl CacheData{
+impl CacheByRecordType{
 
     pub fn get_cache_data(&self) -> HashMap<Rtype, CacheByDomainName> {
         return self.record_types_data.clone();
@@ -237,12 +237,12 @@ mod cache_data_test{
 
 
 
-    use super::CacheData;
+    use super::CacheByRecordType;
 
     //Constructor test
     #[test]
     fn constructor_test(){
-        let cache_data = CacheData::new();
+        let cache_data = CacheByRecordType::new();
 
         assert!(cache_data.record_types_data.is_empty());
     }
@@ -250,7 +250,7 @@ mod cache_data_test{
     //Getter and setter test
     #[test]
     fn get_cache_data(){
-        let cache_data = CacheData::new();
+        let cache_data = CacheByRecordType::new();
 
         let cache_data_hash = cache_data.get_cache_data();
 
@@ -259,7 +259,7 @@ mod cache_data_test{
 
     #[test]
     fn set_cache_data(){
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
 
         let mut cache_data_hash = HashMap::new();
         let mut host_data = CacheByDomainName::new();
@@ -279,7 +279,7 @@ mod cache_data_test{
     //Add to cache data test
     #[test]
     fn add_to_cache_data(){
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
@@ -313,7 +313,7 @@ mod cache_data_test{
     //Remove from cache data test
     #[test]
     fn remove_from_cache_data(){
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
@@ -337,7 +337,7 @@ mod cache_data_test{
     //Get from cache data test
     #[test]
     fn get_from_cache_data(){
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
@@ -373,7 +373,7 @@ mod cache_data_test{
     //remove oldest used test
     #[test]
     fn remove_oldest_used(){
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
 
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
@@ -413,7 +413,7 @@ mod cache_data_test{
     //update response time test
     #[test]
     fn update_response_time(){
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));

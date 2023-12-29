@@ -220,7 +220,7 @@ impl DnsCache {
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
     use crate::dns_cache::cache_data::CacheData;
-    use crate::dns_cache::cache_data::host_data::DomainNameCache;
+    use crate::dns_cache::cache_data::host_data::CacheByDomainName;
     use crate::rr_cache::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
@@ -263,7 +263,7 @@ mod dns_cache_test {
         assert!(cache.get_cache().get_cache_data().is_empty());
         let mut cache_data = CacheData::new();
         let mut cache_data_hash = HashMap::new();
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());

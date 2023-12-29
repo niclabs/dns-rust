@@ -9,7 +9,7 @@ use std::{collections::HashMap, net::IpAddr};
 /// This means, all the cache data associated with a single host
 /// of an specific `Rtype`.
 #[derive(Clone, Debug)]
-pub struct DomainNameCache {
+pub struct CacheByDomainName {
     /// Contains the Resource Records associated to each host domain name.
     /// 
     /// The key is the `DomainName` of the host, and the value is a 
@@ -19,15 +19,15 @@ pub struct DomainNameCache {
 }
 
 ///functions for the host data
-impl DomainNameCache{
+impl CacheByDomainName {
 
     ///function to create a new host data
     /// # Example
     /// ```
-    /// let host_data = DomainNameCache::new();
+    /// let host_data = CacheByDomainName::new();
     /// ```
-    pub fn new() -> DomainNameCache {
-        DomainNameCache {
+    pub fn new() -> CacheByDomainName {
+        CacheByDomainName {
             domain_names_data: HashMap::new(),
         }
     }
@@ -35,7 +35,7 @@ impl DomainNameCache{
     ///function to add a rr_cache to the host data
     /// # Example
     /// ```
-    /// let mut host_data = DomainNameCache::new();
+    /// let mut host_data = CacheByDomainName::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -64,7 +64,7 @@ impl DomainNameCache{
     ///function to remove an element from the host data
     /// # Example
     /// ```
-    /// let mut host_data = DomainNameCache::new();
+    /// let mut host_data = CacheByDomainName::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -89,7 +89,7 @@ impl DomainNameCache{
     /// 
     /// # Example
     /// ```
-    /// let mut host_data = DomainNameCache::new();
+    /// let mut host_data = CacheByDomainName::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -120,7 +120,7 @@ impl DomainNameCache{
     ///function to get the oldest used 
     /// # Example
     /// ```
-    /// let mut host_data = DomainNameCache::new();
+    /// let mut host_data = CacheByDomainName::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let rr_cache = RRStoredData::new(resource_record);
@@ -155,7 +155,7 @@ impl DomainNameCache{
     /// the domain name didn't exist before
     /// # Example
     /// ```
-    /// let mut host_data = DomainNameCache::new();
+    /// let mut host_data = CacheByDomainName::new();
     /// let a_rdata = Rdata::A(ARdata::new());
     /// let resource_record = ResourceRecord::new(a_rdata);
     /// let mut rr_cache = RRStoredData::new(resource_record);
@@ -177,7 +177,7 @@ impl DomainNameCache{
     ///function to update the response time
     /// # Example
     /// ```
-    /// let mut host_data = DomainNameCache::new();
+    /// let mut host_data = CacheByDomainName::new();
     /// let ip_address = IpAddr::from([127, 0, 0, 1]);
     /// let a_rdata = ARdata::new();
     /// a_rdata.set_address(ip_address);
@@ -234,7 +234,7 @@ impl DomainNameCache{
 }
 
 ///setter and getter for the host data
-impl DomainNameCache{
+impl CacheByDomainName{
 
     pub fn get_domain_names_data(&self) -> HashMap<DomainName, Vec<RRStoredData>> {
         return self.domain_names_data.clone();
@@ -261,19 +261,19 @@ mod host_data_test{
     use crate::message::resource_record::ResourceRecord;
     use std::{collections::HashMap, net::IpAddr};
 
-    use super::DomainNameCache;
+    use super::CacheByDomainName;
 
     //Contructor test
     #[test]
     fn constructor_test(){
-        let host_data = DomainNameCache::new();
+        let host_data = CacheByDomainName::new();
         assert!(host_data.domain_names_data.is_empty());
     }
 
     //Getters and setters test
     #[test]
     fn get_domain_names_data(){
-        let host_data = DomainNameCache::new();
+        let host_data = CacheByDomainName::new();
 
         let domain_names_data = host_data.get_domain_names_data();
 
@@ -282,7 +282,7 @@ mod host_data_test{
 
     #[test]
     fn set_domain_names_data(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
 
         let mut domain_names_data = HashMap::new();
         let mut domain_name = DomainName::new();
@@ -301,7 +301,7 @@ mod host_data_test{
     //add_to_host_data test
     #[test]
     fn add_to_host_data(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRStoredData::new(resource_record);
@@ -332,7 +332,7 @@ mod host_data_test{
     //remove_from_host_data test
     #[test]
     fn remove_from_host_data(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRStoredData::new(resource_record);
@@ -354,7 +354,7 @@ mod host_data_test{
     //get_from_host_data test
     #[test]
     fn get_from_host_data(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRStoredData::new(resource_record);
@@ -374,7 +374,7 @@ mod host_data_test{
     //get_from_host_data test with no domain name
     #[test]
     fn get_from_host_data_no_domain_name(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let rr_cache = RRStoredData::new(resource_record);
@@ -396,7 +396,7 @@ mod host_data_test{
     //get test
     #[test]
     fn get(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let mut rr_cache = RRStoredData::new(resource_record);
@@ -415,7 +415,7 @@ mod host_data_test{
     //get oldest used test
     #[test]
     fn get_oldest_used(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let mut rr_cache = RRStoredData::new(resource_record);
@@ -441,7 +441,7 @@ mod host_data_test{
      //get insert  used test
      #[test]
      fn insert(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
         let mut rr_cache = RRStoredData::new(resource_record);
@@ -466,7 +466,7 @@ mod host_data_test{
     //update response time test
     #[test]
     fn update_response_time(){
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let ip_address = IpAddr::from([127, 0, 0, 1]);
         let mut a_rdata = ARdata::new();
         a_rdata.set_address(ip_address);
@@ -491,7 +491,7 @@ mod host_data_test{
     #[test]
     fn timeout_rr_cache() {
         use std::{thread, time};
-        let mut host_data = DomainNameCache::new();
+        let mut host_data = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
 
         let mut resource_record_valid = ResourceRecord::new(a_rdata.clone());

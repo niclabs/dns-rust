@@ -13,7 +13,7 @@ use crate::domain_name::DomainName;
 ///struct to define the cache data
 #[derive(Clone, Debug)]
 pub struct CacheData {
-    pub cache_data: HashMap<Rtype, HostData>,
+    cache_data: HashMap<Rtype, HostData>,
 }
 
 /// functions for the cache data

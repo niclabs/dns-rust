@@ -234,7 +234,10 @@ mod dns_cache_test {
     #[test]
     fn constructor_test(){
         let cache = DnsCache::new();
-        assert!(cache.cache.cache_data.is_empty());
+        assert!(cache
+            .get_cache()
+            .get_cache_data()
+            .is_empty());
     }
 
     //Setters and getters test

@@ -10,9 +10,13 @@ use std::collections::HashMap;
 use crate::domain_name::DomainName;
 
 
-///struct to define the cache data
+/// Struct that represents the cache data of the DNS cache by record type.
 #[derive(Clone, Debug)]
 pub struct CacheByRecordType {
+    /// HashMap that represents the cache data of the DNS cache by record type.
+    /// 
+    /// The key is the record type and the value is the cache data of the DNS 
+    /// cache by domain name.
     record_types_data: HashMap<Rtype, CacheByDomainName>,
 }
 

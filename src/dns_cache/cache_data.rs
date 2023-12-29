@@ -13,7 +13,7 @@ use crate::domain_name::DomainName;
 ///struct to define the cache data
 #[derive(Clone, Debug)]
 pub struct CacheData {
-    cache_data: HashMap<Rtype, CacheByDomainName>,
+    record_types_data: HashMap<Rtype, CacheByDomainName>,
 }
 
 /// functions for the cache data
@@ -25,7 +25,7 @@ impl CacheData{
     /// ```
     pub fn new() -> CacheData {
         CacheData {
-            cache_data: HashMap::new(),
+            record_types_data: HashMap::new(),
         }
     }
 
@@ -193,12 +193,12 @@ impl CacheData{
     }
 
     pub fn insert(&mut self,rtype:Rtype, host_data: CacheByDomainName) {
-        self.cache_data.insert(rtype, host_data);
+        self.record_types_data.insert(rtype, host_data);
 
     }
 
     pub fn iter(&mut self) -> std::collections::hash_map::Iter<'_, Rtype, CacheByDomainName>{
-        return self.cache_data.iter()
+        return self.record_types_data.iter()
 
     }
 }
@@ -207,15 +207,15 @@ impl CacheData{
 impl CacheData{
 
     pub fn get_cache_data(&self) -> HashMap<Rtype, CacheByDomainName> {
-        return self.cache_data.clone();
+        return self.record_types_data.clone();
     }
 
     pub fn set_cache_data(&mut self, cache_data: HashMap<Rtype, CacheByDomainName>) {
-        self.cache_data = cache_data;
+        self.record_types_data = cache_data;
     }
 
     pub fn get(&self, rtype : Rtype) -> Option<&CacheByDomainName>{
-         return self.cache_data.get(&rtype);
+         return self.record_types_data.get(&rtype);
     }
 }
 
@@ -244,7 +244,7 @@ mod cache_data_test{
     fn constructor_test(){
         let cache_data = CacheData::new();
 
-        assert!(cache_data.cache_data.is_empty());
+        assert!(cache_data.record_types_data.is_empty());
     }
 
     //Getter and setter test

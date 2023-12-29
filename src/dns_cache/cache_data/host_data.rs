@@ -10,7 +10,7 @@ use std::{collections::HashMap, net::IpAddr};
 /// of an specific `Rtype`.
 #[derive(Clone, Debug)]
 pub struct HostData {
-    pub host_hash: HashMap<DomainName, Vec<RRCache>>,
+    host_hash: HashMap<DomainName, Vec<RRCache>>,
 }
 
 ///functions for the host data

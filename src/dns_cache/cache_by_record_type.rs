@@ -3,7 +3,7 @@ pub mod cache_by_domain_name;
 use chrono::Utc;
 //use crate::message::rdata::Rdata;
 use crate::message::type_rtype::Rtype;
-use crate::rr_cache::RRStoredData;
+use crate::rr_stored_data::RRStoredData;
 use std::net::IpAddr;
 use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
 use std::collections::HashMap;
@@ -231,7 +231,7 @@ mod cache_data_test{
 
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::type_rtype::Rtype;
-    use crate::rr_cache::RRStoredData;
+    use crate::rr_stored_data::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;

@@ -1,5 +1,5 @@
 use chrono::{Utc, DateTime};
-use crate::{rr_cache::RRStoredData, domain_name::DomainName, message::rdata::Rdata};
+use crate::{rr_stored_data::RRStoredData, domain_name::DomainName, message::rdata::Rdata};
 use std::{collections::HashMap, net::IpAddr};
 
 /// This struct saves the data associated with a host in the cache.
@@ -254,7 +254,7 @@ impl CacheByDomainName{
 mod host_data_test{
     use chrono::Utc;
     use crate::message::rdata::txt_rdata::TxtRdata;
-    use crate::rr_cache::RRStoredData;
+    use crate::rr_stored_data::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;

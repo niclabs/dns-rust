@@ -91,7 +91,7 @@ mod rr_cache_test {
     use crate::message::rdata::Rdata;
     use crate::message::type_rtype::Rtype;
     use crate::message::resource_record::ResourceRecord;
-    use crate::rr_cache::RRStoredData;
+    use crate::rr_stored_data::RRStoredData;
     use std::net::IpAddr;
     use chrono::prelude::*;
 

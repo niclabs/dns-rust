@@ -220,7 +220,7 @@ impl DnsCache {
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
     use crate::dns_cache::cache_data::CacheByRecordType;
-    use crate::dns_cache::cache_data::host_data::CacheByDomainName;
+    use crate::dns_cache::cache_data::cache_by_domain_name::CacheByDomainName;
     use crate::rr_cache::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;

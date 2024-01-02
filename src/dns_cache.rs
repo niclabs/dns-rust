@@ -1,6 +1,6 @@
-pub mod cache_data;
+pub mod cache_by_record_type;
 
-use crate::dns_cache::cache_data::CacheByRecordType;
+use crate::dns_cache::cache_by_record_type::CacheByRecordType;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::rr_cache::RRStoredData;
@@ -219,8 +219,8 @@ impl DnsCache {
 #[cfg(test)] 
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
-    use crate::dns_cache::cache_data::CacheByRecordType;
-    use crate::dns_cache::cache_data::cache_by_domain_name::CacheByDomainName;
+    use crate::dns_cache::cache_by_record_type::CacheByRecordType;
+    use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
     use crate::rr_cache::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;

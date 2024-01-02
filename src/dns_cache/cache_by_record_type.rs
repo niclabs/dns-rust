@@ -5,7 +5,7 @@ use chrono::Utc;
 use crate::message::type_rtype::Rtype;
 use crate::rr_cache::RRStoredData;
 use std::net::IpAddr;
-use crate::dns_cache::cache_data::cache_by_domain_name::CacheByDomainName;
+use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
 use std::collections::HashMap;
 use crate::domain_name::DomainName;
 
@@ -236,7 +236,7 @@ mod cache_data_test{
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::dns_cache::cache_data::cache_by_domain_name::CacheByDomainName;
+    use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
     use std::{collections::HashMap, net::IpAddr};
 
 

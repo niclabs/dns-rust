@@ -104,9 +104,11 @@ impl <T: ClientConnection> Client<T> {
 
         let client_query = self.get_dns_query();
         let conn: &T = &self.get_conn();
+        let ip_addr = conn.get_ip();
 
        let dns_response: DnsMessage = match conn.send(client_query) {
             Ok(response_message) => {
+                //let response_ip = get_sender_ip(&response_message)?;
                 match DnsMessage::from_bytes(&response_message) {
                     Ok(dns_message) => dns_message,
                     Err(_) => return Err(ClientError::FormatError("The name server was unable to interpret the query."))?,

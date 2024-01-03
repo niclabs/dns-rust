@@ -18,6 +18,21 @@ pub struct NsecRdata {
     pub type_bit_maps: Vec<Rtype>,
 }
 
+impl ToBytes for NsecRdata{
+    /// Returns a `Vec<u8>` of bytes that represents the NSEC RDATA.
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+
+        let next_domain_name_bytes = self.get_next_domain_name().to_bytes();
+
+        for byte in next_domain_name_bytes.as_slice() {
+            bytes.push(*byte);
+        }
+
+        bytes
+    }
+}
+
 impl FromBytes<Result<Self, &'static str>> for NsecRdata {
     /// Reads the next_domain_name and type_bit_maps from the slice and returns a `NsecRdata` struct.
     
@@ -119,5 +134,23 @@ impl NsecRdata{
     /// ```
     pub fn set_type_bit_maps(&mut self, type_bit_maps: Vec<Rtype>) {
         self.type_bit_maps = type_bit_maps;
+    }
+}
+
+impl NsecRdata{
+    /// Complementary functions for to_bytes
+    fn add_rtype_to_bitmap(rtype: &Rtype, bitmap: &mut Vec<u8>) {
+        // Calculate the offset and bit for the specific Qtype
+        let rr_type = Rtype::from_rtype_to_int(*rtype);
+        let offset = (rr_type % 256) / 8;
+        let bit = 7 - (rr_type % 8);
+    
+        // Ensure the bitmap has enough space
+        if offset >= bitmap.len() as u16 {
+            bitmap.resize((offset + 1) as usize, 0);
+        }
+    
+        // Set the bit in the bitmap
+        bitmap[offset as usize] |= 1 << bit;
     }
 }

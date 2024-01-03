@@ -18,6 +18,54 @@ pub struct NsecRdata {
     pub type_bit_maps: Vec<Rtype>,
 }
 
+impl FromBytes<Result<Self, &'static str>> for NsecRdata {
+    /// Reads the next_domain_name and type_bit_maps from the slice and returns a `NsecRdata` struct.
+    
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+        
+        if bytes_len < 5 {
+            return Err("Format Error");
+        }
+
+        let domain_result = DomainName::from_bytes(bytes, full_msg);
+
+        match domain_result {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(e);
+            }
+        }
+
+        let (next_domain_name, rest_bytes) = domain_result.unwrap();
+
+        let mut decoded_types = Vec::new();
+        let mut offset = 0;
+
+        while offset < rest_bytes.len() {
+            let window_number = rest_bytes[offset];
+            let bitmap_length = rest_bytes[offset + 1] as usize;
+            let bitmap = &rest_bytes[offset + 2..offset + 2 + bitmap_length];
+            for i in 0..bitmap.len() {
+                let byte = bitmap[i];
+                for j in 0..8 {
+                    let rr_type = window_number as u16 * 256 + i as u16 * 8 + j as u16;
+                    let bit_mask = 1 << (7 - j);
+                    if byte & bit_mask != 0 {
+                        decoded_types.push(Rtype::from_int_to_rtype(rr_type));
+                    }
+                }
+            }
+            // Move the offset to the next window block
+            offset += 2 + bitmap_length;
+        }
+
+        let nsec_rdata = NsecRdata::new(next_domain_name, decoded_types);
+
+        Ok(nsec_rdata)
+    }
+}
+
 impl NsecRdata{
     /// Creates a new `NsecRdata` with next_domain_name and type_bit_maps
     pub fn new(next_domain_name: DomainName, type_bit_maps: Vec<Rtype>) -> Self {

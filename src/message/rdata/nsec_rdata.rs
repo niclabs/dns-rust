@@ -29,6 +29,46 @@ impl ToBytes for NsecRdata{
             bytes.push(*byte);
         }
 
+        let bitmap = self.get_type_bit_maps();
+
+        let mut encoded_types = Vec::new();
+        let mut current_window: Option<u8> = None;
+        let mut current_bitmap = Vec::new();
+
+        for rtype in bitmap {
+            let window = match rtype {
+                Rtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
+                _ => (Rtype::from_rtype_to_int(rtype) / 256) as u8,
+            };
+
+            if let Some(current_window_value) = current_window {
+                if current_window_value == window {
+                    // We're still in the same window, continue adding to the current bitmap
+                    NsecRdata::add_rtype_to_bitmap(&rtype, &mut current_bitmap);
+                    continue;
+                } else {
+                    // New window encountered, write the previous window's data
+                    encoded_types.push(current_window_value);
+                    encoded_types.push(current_bitmap.len() as u8);
+                    encoded_types.extend_from_slice(&current_bitmap);
+                }
+            }
+
+            // Start a new window
+            current_window = Some(window);
+            current_bitmap.clear();
+            NsecRdata::add_rtype_to_bitmap(&rtype, &mut current_bitmap);
+        }
+
+        // Write the final window information
+        if let Some(current_window_value) = current_window {
+            encoded_types.push(current_window_value);
+            encoded_types.push(current_bitmap.len() as u8);
+            encoded_types.extend_from_slice(&current_bitmap);
+        }
+
+        bytes.extend_from_slice(&encoded_types);
+
         bytes
     }
 }

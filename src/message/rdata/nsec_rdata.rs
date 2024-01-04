@@ -206,4 +206,17 @@ mod nsec_rdata_test{
         assert_eq!(nsec_rdata.next_domain_name.get_name(), String::from(""));
         assert_eq!(nsec_rdata.type_bit_maps, vec![]);
     }
+
+    #[test]
+    fn set_and_get_next_domain_name_test() {
+        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+
+        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from(""));
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test"));
+        nsec_rdata.set_next_domain_name(domain_name);
+
+        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("test"));
+    }
 }

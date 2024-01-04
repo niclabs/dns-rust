@@ -48,6 +48,40 @@ impl ToBytes for DsRdata{
     }
 }
 
+impl FromBytes<Result<Self, &'static str>> for DsRdata{
+    /// Function to convert bytes to a DsRdata struct
+    /// # Arguments
+    /// * `bytes` - The bytes to convert
+    /// * `full_msg` - The full message
+    /// # Return
+    /// * `Result<DsRdata, &'static str>` - The result with the DsRdata (or error)
+    /// # Examples
+    /// ```
+    /// let ds_rdata = DsRdata::new(0, 0, 0, vec![0]);
+    /// let ds_rdata_bytes = ds_rdata.to_bytes();
+    /// let ds_rdata = DsRdata::from_bytes(&ds_rdata_bytes, &ds_rdata_bytes).unwrap();
+    /// ```
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
+        if bytes.len() < 4 {
+            return Err("Format error");
+        }
+        let key_tag = u16::from_be_bytes([bytes[0], bytes[1]]);
+        let algorithm = bytes[2];
+        let digest_type = bytes[3];
+        let digest = bytes[4..].to_vec();
+        let digest_len = digest.len();
+        if digest_len > 255 {
+            return Err("Format error");
+        }
+        Ok(DsRdata {
+            key_tag,
+            algorithm,
+            digest_type,
+            digest,
+        })
+    }
+}
+
 impl DsRdata {
     /// Constructor
     /// # Arguments
@@ -110,5 +144,17 @@ impl DsRdata{
     /// Setter for the digest field
     pub fn set_digest(&mut self, digest: Vec<u8>) {
         self.digest = digest;
+    }
+}
+
+#[cfg(test)]
+mod ds_rdata_test{
+    use super::*;
+
+    #[test]
+    fn get_and_set_key_tag(){
+        let mut ds_rdata = DsRdata::new(0, 0, 0, vec![0]);
+        ds_rdata.set_key_tag(1);
+        assert_eq!(ds_rdata.get_key_tag(), 1);
     }
 }

@@ -906,6 +906,21 @@ mod resolver_query_tests {
     }
 
     #[test]
+    fn from_bytes_ds_rdata(){
+        let data_bytes = [0, 1, 2, 3, 1, 2, 3, 4, 0, 43, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::DS(val) => {
+                assert_eq!(val.get_key_tag(), 1);
+                assert_eq!(val.get_algorithm(), 2);
+                assert_eq!(val.get_digest_type(), 3);
+                assert_eq!(val.get_digest(), vec![1, 2, 3, 4]);
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
     #[should_panic]
     fn from_bytes_format_error(){
         let data_bytes = [];

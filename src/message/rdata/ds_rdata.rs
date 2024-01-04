@@ -202,4 +202,11 @@ mod ds_rdata_test{
         let ds_rdata = DsRdata::from_bytes(&ds_rdata_bytes, &ds_rdata_bytes);
         assert_eq!(ds_rdata, Err("Format error"));
     }
+
+    #[test]
+    #[should_panic]
+    fn to_bytes_error_test(){
+        let ds_rdata = DsRdata::new(0, 0, 0, (0..=255).collect());
+        let _ds_rdata_bytes = ds_rdata.to_bytes();
+    }
 }

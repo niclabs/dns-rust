@@ -1,9 +1,9 @@
-pub mod cache_data;
+pub mod cache_by_record_type;
 
-use crate::dns_cache::cache_data::CacheData;
+use crate::dns_cache::cache_by_record_type::CacheByRecordType;
+use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
-use crate::rr_cache::RRCache;
 use crate::message::type_rtype::Rtype;
 use std::net::IpAddr;
 use crate::domain_name::DomainName;
@@ -13,7 +13,7 @@ use std::cmp;
 /// Struct that represents a cache for dns
 pub struct DnsCache {
     // first hash by type, then by hostname
-    cache: CacheData,
+    cache: CacheByRecordType,
     max_size: u32,
     size: u32,
 }
@@ -30,7 +30,7 @@ impl DnsCache {
     ///
     pub fn new() -> Self {
         let cache = DnsCache {
-            cache: CacheData::new(),
+            cache: CacheByRecordType::new(),
             max_size: 0,
             size: 0,
         };
@@ -51,7 +51,7 @@ impl DnsCache {
         }
 
         let rtype = resource_record.get_rtype();
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
 
         let mut cache_data = self.get_cache();
         cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
@@ -67,7 +67,7 @@ impl DnsCache {
             self.remove_oldest_used();
         }
 
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
         let mut cache_data = self.get_cache();
         cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
         self.set_cache(cache_data);
@@ -85,7 +85,7 @@ impl DnsCache {
     }
 
     /// Given a domain_name, gets an element from cache
-    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRCache>> {
+    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRStoredData>> {
         let mut cache = self.get_cache();
         let rr_cache_vec = cache.get_from_cache_data(domain_name, rtype);
         self.set_cache(cache);
@@ -168,12 +168,22 @@ impl DnsCache {
     //         }
     //     }
     // }
+
+    /// Performs the timeout of cache by removing the elements that have expired.
+    /// 
+    /// For each Resource Record in the cache, it checks if it has expired by its TTL.
+    /// If it has expired, it removes it from the cache.
+    pub fn timeout_cache(&mut self) {
+        let mut cache = self.get_cache();
+        cache.filter_timeout_cache_data();
+        self.set_cache(cache);
+    }
 }
 
 // Getters
 impl DnsCache {
     // Gets the cache from the struct
-    pub fn get_cache(&self) -> CacheData{
+    pub fn get_cache(&self) -> CacheByRecordType{
         self.cache.clone()
     }
 
@@ -191,7 +201,7 @@ impl DnsCache {
 // Setters
 impl DnsCache {
     // Sets the cache
-    pub fn set_cache(&mut self, cache: CacheData) {
+    pub fn set_cache(&mut self, cache: CacheByRecordType) {
         self.cache = cache
     }
 
@@ -209,9 +219,9 @@ impl DnsCache {
 #[cfg(test)] 
 mod dns_cache_test {
     use crate::dns_cache::DnsCache;
-    use crate::dns_cache::cache_data::CacheData;
-    use crate::dns_cache::cache_data::host_data::HostData;
-    use crate::rr_cache::RRCache;
+    use crate::dns_cache::cache_by_record_type::CacheByRecordType;
+    use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
+    use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
     use crate::domain_name::DomainName;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
@@ -224,7 +234,10 @@ mod dns_cache_test {
     #[test]
     fn constructor_test(){
         let cache = DnsCache::new();
-        assert!(cache.cache.cache_data.is_empty());
+        assert!(cache
+            .get_cache()
+            .get_cache_data()
+            .is_empty());
     }
 
     //Setters and getters test
@@ -248,14 +261,14 @@ mod dns_cache_test {
     fn set_and_get_cache(){
         let mut cache = DnsCache::new();
         assert!(cache.get_cache().get_cache_data().is_empty());
-        let mut cache_data = CacheData::new();
+        let mut cache_data = CacheByRecordType::new();
         let mut cache_data_hash = HashMap::new();
-        let mut host_data = HostData::new();
+        let mut host_data = CacheByDomainName::new();
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
         host_data.add_to_host_data(domain_name, rr_cache);
         cache_data_hash.insert(Rtype::A, host_data);
 

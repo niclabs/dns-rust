@@ -331,7 +331,7 @@ impl AsyncResolver {
     /// type of response.
     fn store_data_cache(&mut self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
-
+        self.cache.timeout_cache();
         if !truncated {
             // TODO: RFC 1035: 7.4. Using the cache
             response.get_answer()
@@ -343,8 +343,7 @@ impl AsyncResolver {
             });
 
         } 
-
-        self.save_negative_answers( response);
+        self.save_negative_answers(response);
     }
 
     /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.3.3

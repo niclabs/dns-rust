@@ -46,6 +46,7 @@ pub enum Rdata {
     HINFO(HinfoRdata),
     ////// Define here more rdata types //////
     OPT(OptRdata),
+    DS(DsRdata),
     RRSIG(RRSIGRdata),
     NSEC(NsecRdata),
     DNSKEY(DnskeyRdata),
@@ -79,6 +80,7 @@ impl ToBytes for Rdata {
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
             Rdata::OPT(val) => val.to_bytes(),
+            Rdata::DS(val) => val.to_bytes(),
             Rdata::RRSIG(val) => val.to_bytes(),
             Rdata::NSEC(val) => val.to_bytes(),
             Rdata::DNSKEY(val) => val.to_bytes(),
@@ -236,6 +238,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::OPT(rdata.unwrap()))
             }
 
+            43 => {
+                let rdata = DsRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::DS(rdata.unwrap()))
+            }
+
             46 => {
                 let rdata = RRSIGRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -306,6 +320,7 @@ mod resolver_query_tests {
     use super::soa_rdata::SoaRdata;
     use super::txt_rdata::TxtRdata;
     use super::opt_rdata::OptRdata;
+    use super::ds_rdata::DsRdata;
     use super::rrsig_rdata::RRSIGRdata;
     use super::nsec_rdata::NsecRdata;
     use super::dnskey_rdata::DnskeyRdata;
@@ -600,6 +615,21 @@ mod resolver_query_tests {
 
         let rdata = Rdata::NSEC(nsec_rdata);
 
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, bytes_to_test);
+    }
+
+    #[test]
+    fn to_bytes_ds_rdata(){
+        let mut ds_rdata = DsRdata::new(0, 0, 0, vec![1, 2, 3, 4]);
+        ds_rdata.set_key_tag(1);
+        ds_rdata.set_algorithm(2);
+        ds_rdata.set_digest_type(3);
+
+        let bytes_to_test = [0, 1, 2, 3, 1, 2, 3, 4];
+
+        let rdata = Rdata::DS(ds_rdata);
         let bytes = rdata.to_bytes();
 
         assert_eq!(bytes, bytes_to_test);

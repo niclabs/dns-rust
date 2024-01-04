@@ -42,7 +42,6 @@ impl ToBytes for DsRdata{
         if self.digest.len() > 255 {
             panic!("Digest is longer than 255 bytes");
         }
-        bytes.push(self.digest.len() as u8);
         bytes.extend_from_slice(&self.digest);
         bytes
     }
@@ -179,4 +178,11 @@ mod ds_rdata_test{
         assert_eq!(ds_rdata.get_digest(), vec![1, 2, 3]);
     }
 
+
+    #[test]
+    fn to_bytes_test(){
+        let ds_rdata = DsRdata::new(0, 0, 0, vec![1, 2, 3]);
+        let ds_rdata_bytes = ds_rdata.to_bytes();
+        assert_eq!(ds_rdata_bytes, vec![0, 0, 0, 0, 1, 2, 3]);
+    }
 }

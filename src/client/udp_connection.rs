@@ -125,6 +125,15 @@ mod udp_connection_test{
     }
 
     #[test]
+    fn get_ip_v4(){
+        let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientUDPConnection::new(ip_address, timeout);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
     fn set_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);

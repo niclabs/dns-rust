@@ -164,4 +164,11 @@ mod ds_rdata_test{
         ds_rdata.set_algorithm(1);
         assert_eq!(ds_rdata.get_algorithm(), 1);
     }
+
+    #[test]
+    fn get_and_set_digest_type(){
+        let mut ds_rdata = DsRdata::new(0, 0, 0, vec![0]);
+        ds_rdata.set_digest_type(1);
+        assert_eq!(ds_rdata.get_digest_type(), 1);
+    }
 }

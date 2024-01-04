@@ -26,6 +26,11 @@ impl ClientConnection for ClientUDPConnection {
             timeout: timeout,
         }
     }
+    /// implement get_ip
+    /// returns IpAddr
+    fn get_ip(&self) -> IpAddr {
+        return self.server_addr.clone();
+    }
 
     fn send(self, dns_query:DnsMessage) -> Result<Vec<u8>, ClientError> { 
 

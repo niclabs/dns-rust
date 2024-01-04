@@ -497,7 +497,7 @@ mod host_data_test{
 
         let mut resource_record_valid = ResourceRecord::new(a_rdata.clone());
         resource_record_valid.set_ttl(1000);
-        let rr_cache_valid = RRStoredData::new(resource_record_valid);
+        let rr_cache_valid = RRStoredData::new(resource_record_valid.clone());
 
         let mut resource_record_invalid = ResourceRecord::new(a_rdata);
         resource_record_invalid.set_ttl(4);
@@ -522,6 +522,11 @@ mod host_data_test{
         assert_eq!(host_data.get_domain_names_data().len(), 1);
         if let Some(rr_cache_vec) = host_data.get_domain_names_data().get(&domain_name) {
             assert_eq!(rr_cache_vec.len(), 1);
+            //check if the rescource record who survives is the correct
+            if let Some(rrstore_data_valid) = rr_cache_vec.get(0){
+                let resource_record_after_filter = rrstore_data_valid.get_resource_record();
+                assert_eq!(resource_record_after_filter, resource_record_valid);
+            }
         }
     }
 }

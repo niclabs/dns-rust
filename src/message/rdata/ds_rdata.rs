@@ -185,4 +185,21 @@ mod ds_rdata_test{
         let ds_rdata_bytes = ds_rdata.to_bytes();
         assert_eq!(ds_rdata_bytes, vec![0, 0, 0, 0, 1, 2, 3]);
     }
+
+    #[test]
+    fn from_bytes_test(){
+        let ds_rdata_bytes = vec![0, 0, 0, 0, 1, 2, 3];
+        let ds_rdata = DsRdata::from_bytes(&ds_rdata_bytes, &ds_rdata_bytes).unwrap();
+        assert_eq!(ds_rdata.get_key_tag(), 0);
+        assert_eq!(ds_rdata.get_algorithm(), 0);
+        assert_eq!(ds_rdata.get_digest_type(), 0);
+        assert_eq!(ds_rdata.get_digest(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn from_bytes_error_test(){
+        let ds_rdata_bytes = vec![1, 2, 3];
+        let ds_rdata = DsRdata::from_bytes(&ds_rdata_bytes, &ds_rdata_bytes);
+        assert_eq!(ds_rdata, Err("Format error"));
+    }
 }

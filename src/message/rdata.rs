@@ -309,6 +309,7 @@ mod resolver_query_tests {
     use super::dnskey_rdata::DnskeyRdata;
     use super::tsig_rdata::TSigRdata;
     use std::net::IpAddr;
+    use std::vec;
 
     #[test]
     fn to_bytes_rdata(){
@@ -841,6 +842,32 @@ mod resolver_query_tests {
                 assert_eq!(val.get_key_tag(), 1234);
                 assert_eq!(val.get_signer_name().get_name(), "example.com");
                 assert_eq!(val.get_signature(), "abcdefg");
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn from_bytes_nsec_rdata(){
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+
+        let rdata_bytes = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        let extra_bytes = vec![0, 47, 0, 1];
+
+        let data_bytes = [rdata_bytes, extra_bytes].concat();
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::NSEC(val) => {
+                assert_eq!(val.get_next_domain_name().get_name(), String::from("host.example.com"));
+                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
             }
             _ => {}
         }

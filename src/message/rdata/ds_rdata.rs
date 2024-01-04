@@ -63,3 +63,25 @@ impl DsRdata {
         self.digest.clone()
     }
 }
+
+impl DsRdata{
+    /// Setter for the key_tag field
+    pub fn set_key_tag(&mut self, key_tag: u16) {
+        self.key_tag = key_tag;
+    }
+
+    /// Setter for the algorithm field
+    pub fn set_algorithm(&mut self, algorithm: u8) {
+        self.algorithm = algorithm;
+    }
+
+    /// Setter for the digest_type field
+    pub fn set_digest_type(&mut self, digest_type: u8) {
+        self.digest_type = digest_type;
+    }
+
+    /// Setter for the digest field
+    pub fn set_digest(&mut self, digest: Vec<u8>) {
+        self.digest = digest;
+    }
+}

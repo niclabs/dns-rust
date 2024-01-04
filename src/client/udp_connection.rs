@@ -101,7 +101,7 @@ mod udp_connection_test{
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
     use super::*;
-    use std::net::{IpAddr,Ipv4Addr};
+    use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     #[test]
     fn create_udp() {
 
@@ -131,6 +131,15 @@ mod udp_connection_test{
         let connection = ClientUDPConnection::new(ip_address, timeout);
         //check if the ip is the same
         assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
+    fn get_ip_v6(){
+        let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientUDPConnection::new(ip_address, timeout);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
     }
 
     #[test]

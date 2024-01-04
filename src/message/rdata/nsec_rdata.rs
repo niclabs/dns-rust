@@ -274,4 +274,13 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
     }
+
+    #[test]
+    fn from_bytes_error_test(){
+        let error_bytes = vec![0, 6, 64, 1];
+
+        let result = NsecRdata::from_bytes(&error_bytes, &error_bytes);
+
+        assert_eq!(result.is_err(), true);
+    }
 }

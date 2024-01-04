@@ -219,4 +219,15 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("test"));
     }
+
+    #[test]
+    fn set_and_get_type_bit_maps_test() {
+        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+
+        assert_eq!(nsec_rdata.get_type_bit_maps(), vec![]);
+
+        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::NS]);
+
+        assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::NS]);
+    }
 }

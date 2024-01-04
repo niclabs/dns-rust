@@ -44,22 +44,22 @@ impl DsRdata {
     }
 
     /// Getter for the key_tag field
-    pub fn key_tag(&self) -> u16 {
+    pub fn get_key_tag(&self) -> u16 {
         self.key_tag.clone()
     }
 
     /// Getter for the algorithm field
-    pub fn algorithm(&self) -> u8 {
+    pub fn get_algorithm(&self) -> u8 {
         self.algorithm.clone()
     }
 
     /// Getter for the digest_type field
-    pub fn digest_type(&self) -> u8 {
+    pub fn get_digest_type(&self) -> u8 {
         self.digest_type.clone()
     }
 
     /// Getter for the digest field
-    pub fn digest(&self) -> Vec<u8> {
+    pub fn get_digest(&self) -> Vec<u8> {
         self.digest.clone()
     }
 }

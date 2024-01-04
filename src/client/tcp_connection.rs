@@ -137,6 +137,7 @@ mod tcp_connection_test{
 
     #[test]
     fn get_ip_v6(){
+        // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
         let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
         let timeout = Duration::from_secs(100);
         let connection = ClientTCPConnection::new(ip_address, timeout);

@@ -28,6 +28,12 @@ impl ClientConnection for ClientTCPConnection {
         }
     }
 
+    ///implement get_ip
+    /// returns IpAddr
+    fn get_ip(&self) -> IpAddr {
+        return self.server_addr.clone();
+    }
+
     /// creates socket tcp, sends query and receive response
     fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>{
         

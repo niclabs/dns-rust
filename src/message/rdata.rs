@@ -45,6 +45,7 @@ pub enum Rdata {
     ////// Define here more rdata types //////
     OPT(OptRdata),
     RRSIG(RRSIGRdata),
+    NSEC(NsecRdata),
     DNSKEY(DnskeyRdata),
     TSIG(TSigRdata),
 }
@@ -77,6 +78,7 @@ impl ToBytes for Rdata {
             Rdata::HINFO(val) => val.to_bytes(),
             Rdata::OPT(val) => val.to_bytes(),
             Rdata::RRSIG(val) => val.to_bytes(),
+            Rdata::NSEC(val) => val.to_bytes(),
             Rdata::DNSKEY(val) => val.to_bytes(),
             Rdata::TSIG(val) => val.to_bytes(),
         }
@@ -242,6 +244,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     
                 }
                 Ok(Rdata::RRSIG(rdata.unwrap()))
+            }
+
+            47 => {
+                let rdata = NsecRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::NSEC(rdata.unwrap()))
             }
 
             48 => {

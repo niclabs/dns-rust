@@ -712,6 +712,9 @@ impl DnsMessage {
                     Rdata::RRSIG(val) => {
                         println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
+                    Rdata::NSEC(val) => {
+                        println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
+                    }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
                     }
@@ -763,6 +766,9 @@ impl DnsMessage {
                     Rdata::RRSIG(val) => {
                         println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
+                    Rdata::NSEC(val) => {
+                        println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
+                    }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
                     }
@@ -813,6 +819,9 @@ impl DnsMessage {
                     }
                     Rdata::RRSIG(val) => {
                         println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
+                    }
+                    Rdata::NSEC(val) => {
+                        println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())

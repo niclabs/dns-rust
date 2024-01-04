@@ -230,4 +230,26 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::NS]);
     }
+
+    #[test]
+    fn to_bytes_test() {
+        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("host.example.com"));
+        nsec_rdata.set_next_domain_name(domain_name);
+
+        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+
+        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        assert_eq!(nsec_rdata.to_bytes(), bytes_to_test);
+    }
 }

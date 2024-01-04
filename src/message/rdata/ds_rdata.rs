@@ -21,6 +21,33 @@ pub struct DsRdata {
     pub digest: Vec<u8>,
 }
 
+impl ToBytes for DsRdata{
+    /// Function to convert a DsRdata struct to bytes
+    /// # Arguments
+    /// * `&self` - The DsRdata
+    /// # Return
+    /// * `Vec<u8>` - The DsRdata as bytes
+    /// # Panics
+    /// If the digest is longer than 255 bytes
+    /// # Examples
+    /// ```
+    /// let ds_rdata = DsRdata::new(0, 0, 0, vec![0]);
+    /// let ds_rdata_bytes = ds_rdata.to_bytes();
+    /// ```
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+        bytes.extend_from_slice(&self.key_tag.to_be_bytes());
+        bytes.push(self.algorithm);
+        bytes.push(self.digest_type);
+        if self.digest.len() > 255 {
+            panic!("Digest is longer than 255 bytes");
+        }
+        bytes.push(self.digest.len() as u8);
+        bytes.extend_from_slice(&self.digest);
+        bytes
+    }
+}
+
 impl DsRdata {
     /// Constructor
     /// # Arguments

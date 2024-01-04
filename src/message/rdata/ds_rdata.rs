@@ -209,4 +209,15 @@ mod ds_rdata_test{
         let ds_rdata = DsRdata::new(0, 0, 0, (0..=255).collect());
         let _ds_rdata_bytes = ds_rdata.to_bytes();
     }
+
+    #[test]
+    fn to_bytes_and_back(){
+        let ds_rdata = DsRdata::new(0, 0, 0, vec![1, 2, 3]);
+        let ds_rdata_bytes = ds_rdata.to_bytes();
+        let ds_rdata = DsRdata::from_bytes(&ds_rdata_bytes, &ds_rdata_bytes).unwrap();
+        assert_eq!(ds_rdata.get_key_tag(), 0);
+        assert_eq!(ds_rdata.get_algorithm(), 0);
+        assert_eq!(ds_rdata.get_digest_type(), 0);
+        assert_eq!(ds_rdata.get_digest(), vec![1, 2, 3]);
+    }
 }

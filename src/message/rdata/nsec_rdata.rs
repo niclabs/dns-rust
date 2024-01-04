@@ -194,3 +194,16 @@ impl NsecRdata{
         bitmap[offset as usize] |= 1 << bit;
     }
 }
+
+#[cfg(test)]
+mod nsec_rdata_test{
+    use super::*;
+
+    #[test]
+    fn constructor_test() {
+        let nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+
+        assert_eq!(nsec_rdata.next_domain_name.get_name(), String::from(""));
+        assert_eq!(nsec_rdata.type_bit_maps, vec![]);
+    }
+}

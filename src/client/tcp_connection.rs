@@ -105,6 +105,7 @@ impl ClientTCPConnection {
 mod tcp_connection_test{
     
     use super::*;
+    use core::time;
     use std::net::{IpAddr,Ipv4Addr};
     use crate::domain_name::DomainName;
     use crate::message::type_qtype::Qtype;
@@ -123,6 +124,15 @@ mod tcp_connection_test{
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
+    }
+
+    #[test]
+    fn get_ip_v4(){
+        let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientTCPConnection::new(ip_address, timeout);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
 
     //Setters and Getters test

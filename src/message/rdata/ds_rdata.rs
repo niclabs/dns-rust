@@ -157,4 +157,11 @@ mod ds_rdata_test{
         ds_rdata.set_key_tag(1);
         assert_eq!(ds_rdata.get_key_tag(), 1);
     }
+
+    #[test]
+    fn get_and_set_algorithm(){
+        let mut ds_rdata = DsRdata::new(0, 0, 0, vec![0]);
+        ds_rdata.set_algorithm(1);
+        assert_eq!(ds_rdata.get_algorithm(), 1);
+    }
 }

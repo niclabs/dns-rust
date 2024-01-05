@@ -1,5 +1,6 @@
 pub mod cache_by_record_type;
 
+
 use crate::dns_cache::cache_by_record_type::CacheByRecordType;
 use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
 use crate::message::rdata::Rdata;
@@ -218,6 +219,7 @@ impl DnsCache {
 
 #[cfg(test)] 
 mod dns_cache_test {
+    use chrono::Utc;
     use crate::dns_cache::DnsCache;
     use crate::dns_cache::cache_by_record_type::CacheByRecordType;
     use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
@@ -498,4 +500,58 @@ mod dns_cache_test {
 
         assert_eq!(cache.is_cached(domain_name, Rtype::A), true);
     }
+
+    #[test]
+    fn timeout_cache_1_domain_same_type(){
+        use std::{thread, time};
+        let mut dns_cache = DnsCache::new();
+
+        dns_cache.set_max_size(3);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+
+        let a_rdata = Rdata::A(ARdata::new());
+
+        let mut resource_record = ResourceRecord::new(a_rdata.clone());
+        resource_record.set_ttl(4);
+
+        dns_cache.add(domain_name.clone(), resource_record.clone());
+
+        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 1);
+
+        let mut resource_record_2 = ResourceRecord::new(a_rdata.clone());
+        resource_record_2.set_ttl(4);
+
+        dns_cache.add(domain_name.clone(), resource_record_2.clone());
+
+        //because both are of the same type, the cache_data (cache by record type) has 1 element
+        // Rdata::A -> cache_by_domain_name
+        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 1);
+        if let Some(cache_by_domain_name) = dns_cache.get_cache().get(Rtype::A) {
+            if let Some(rrstore_data_vec) = cache_by_domain_name.get(&domain_name) {
+                assert_eq!(rrstore_data_vec.len(), 2);
+            }
+        }
+        assert_eq!(dns_cache.get_size(), 2);
+
+        println!("Before timeout: {:?}", Utc::now());
+        thread::sleep(time::Duration::from_secs(5));
+        println!("After timeout: {:?}", Utc::now());
+        dns_cache.timeout_cache();
+
+        //FIXME: the size shoud be 1 because we have only 1 resocurce_record associated with 1 domain
+        // assert_eq!(dns_cache.get_size(), 1);
+
+        //check iof the resource_record_2 was deleted
+        if let Some(cache_by_domain_name) = dns_cache.get_cache().get(Rtype::A) {
+            if let Some(rrstore_data_vec) = cache_by_domain_name.get(&domain_name) {
+                //FIXME: gives 0 instead of 1, meaning all the rrstored records were deleted, when only 1 shoud have been deleted
+                assert_eq!(rrstore_data_vec.len(), 1);
+            }
+        }
+    
+    }
+
+    
 }

@@ -490,37 +490,38 @@ mod host_data_test{
     }
 
     #[test]
-    fn timeout_rr_cache() {
+    fn timeout_rr_cache_one_domain() {
         use std::{thread, time};
-        let mut host_data = CacheByDomainName::new();
+        let mut cache_by_domain_name = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
 
         let mut resource_record_valid = ResourceRecord::new(a_rdata.clone());
         resource_record_valid.set_ttl(1000);
-        let rr_cache_valid = RRStoredData::new(resource_record_valid.clone());
+        let rrstore_data_valid = RRStoredData::new(resource_record_valid.clone());
 
         let mut resource_record_invalid = ResourceRecord::new(a_rdata);
         resource_record_invalid.set_ttl(4);
-        let rr_cache_invalid = RRStoredData::new(resource_record_invalid);
+        let rrstore_data_invalid = RRStoredData::new(resource_record_invalid);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
 
-        host_data.add_to_host_data(domain_name.clone(), rr_cache_valid);
-        host_data.add_to_host_data(domain_name.clone(), rr_cache_invalid);
+        cache_by_domain_name.add_to_host_data(domain_name.clone(), rrstore_data_valid);
+        cache_by_domain_name.add_to_host_data(domain_name.clone(), rrstore_data_invalid);
 
-        assert_eq!(host_data.get_domain_names_data().len(), 1);
-        if let Some(rr_cache_vec) = host_data.get_domain_names_data().get(&domain_name) {
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name) {
             assert_eq!(rr_cache_vec.len(), 2);
         }
 
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        host_data.filter_timeout_host_data();
+        //clean the data with expired ttl
+        cache_by_domain_name.filter_timeout_host_data();
 
-        assert_eq!(host_data.get_domain_names_data().len(), 1);
-        if let Some(rr_cache_vec) = host_data.get_domain_names_data().get(&domain_name) {
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name) {
             assert_eq!(rr_cache_vec.len(), 1);
             //check if the rescource record who survives is the correct
             if let Some(rrstore_data_valid) = rr_cache_vec.get(0){

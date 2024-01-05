@@ -579,7 +579,7 @@ mod host_data_test{
             }
         }
         //after the filter shoud be just one data in the cache (example.com shoud have been eliminated)
-        //FIXME:
+        //FIXME: Does not eliminated the (key, data), instead the key points to a empty array ( Domain name {example.com} -> [])
         assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
     }
 }

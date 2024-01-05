@@ -530,4 +530,56 @@ mod host_data_test{
             }
         }
     }
+
+    #[test]
+    fn timeout_rr_cache_two_domain(){
+        //this test prove the for iteration in filter_timeout_host_data 
+        use std::{thread, time};
+        let mut cache_by_domain_name = CacheByDomainName::new();
+        let a_rdata = Rdata::A(ARdata::new());
+
+        let mut resource_record_valid = ResourceRecord::new(a_rdata.clone());
+        resource_record_valid.set_ttl(1000);
+        let rrstore_data_valid = RRStoredData::new(resource_record_valid.clone());
+
+        let mut resource_record_invalid = ResourceRecord::new(a_rdata);
+        resource_record_invalid.set_ttl(4);
+        let rrstore_data_invalid = RRStoredData::new(resource_record_invalid);
+
+        let mut domain_name_1 = DomainName::new();
+        domain_name_1.set_name(String::from("uchile.cl"));
+
+        let mut domain_name_2 = DomainName::new();
+        domain_name_2.set_name(String::from("example.com"));
+
+        cache_by_domain_name.add_to_host_data(domain_name_1.clone(), rrstore_data_valid);
+        cache_by_domain_name.add_to_host_data(domain_name_2.clone(), rrstore_data_invalid);
+
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 2);
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_1) {
+            assert_eq!(rr_cache_vec.len(), 1);
+        }
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_2) {
+            assert_eq!(rr_cache_vec.len(), 1);
+        }
+
+        println!("Before timeout: {:?}", Utc::now());
+        thread::sleep(time::Duration::from_secs(5));
+        println!("After timeout: {:?}", Utc::now());
+        //clean the data with expired ttl
+        cache_by_domain_name.filter_timeout_host_data();
+
+        println!("The new cache is {:?} ", cache_by_domain_name.get_domain_names_data());
+        
+        //check if the value who survives is the same
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_2) {
+            if let Some(rrstore_data) = rr_cache_vec.get(0) {
+                let resocurce_record_after_clean = rrstore_data.get_resource_record();
+                assert_eq!(resocurce_record_after_clean, resource_record_valid);
+            }
+        }
+        //after the filter shoud be just one data in the cache (example.com shoud have been eliminated)
+        //FIXME:
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
+    }
 }

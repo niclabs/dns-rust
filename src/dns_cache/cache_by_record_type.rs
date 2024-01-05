@@ -230,6 +230,7 @@ mod cache_data_test{
     //use std::time::Duration as StdDuration;
 
     use crate::message::rdata::cname_rdata::CnameRdata;
+    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::{txt_rdata::TxtRdata, ns_rdata::NsRdata};
     use crate::message::type_rtype::Rtype;
     use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;    
@@ -557,6 +558,48 @@ mod cache_data_test{
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::CNAME){
+            assert_eq!(rr_cache_vec.len(), 1);
+            //chek if the resource record who survives is the right one
+            if let Some(rrstore_data_valid) = rr_cache_vec.get(0){
+                let resource_record_after_filter = rrstore_data_valid.get_resource_record();
+                assert_eq!(resource_record_after_filter, resource_record_valid);
+            }
+        }
+        
+    }
+
+    #[test]
+    fn filter_timeout_cache_data_rtype_soa() {
+        use std::{thread, time};
+        let mut cache_record_type = CacheByRecordType::new();
+        let soa_rdata = Rdata::SOA(SoaRdata::new());
+        
+        let mut resource_record_valid = ResourceRecord::new(soa_rdata.clone());
+        resource_record_valid.set_ttl(1000);
+        let rr_cache_valid = RRStoredData::new(resource_record_valid.clone());
+
+        let mut resource_record_invalid = ResourceRecord::new(soa_rdata);
+        resource_record_invalid.set_ttl(4);
+        let rr_cache_invalid = RRStoredData::new(resource_record_invalid);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+
+        cache_record_type.add_to_cache_data(Rtype::SOA, domain_name.clone(), rr_cache_valid);
+        cache_record_type.add_to_cache_data(Rtype::SOA, domain_name.clone(), rr_cache_invalid);
+
+        //check if the domain with A type has 2 RRStoredData
+        if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::SOA){
+            assert_eq!(rr_cache_vec.len(), 2);
+        }
+
+        println!("Before timeout: {:?}", Utc::now());
+        thread::sleep(time::Duration::from_secs(5));
+        println!("After timeout: {:?}", Utc::now());
+        cache_record_type.filter_timeout_cache_data();
+
+        //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
+        if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::SOA){
             assert_eq!(rr_cache_vec.len(), 1);
             //chek if the resource record who survives is the right one
             if let Some(rrstore_data_valid) = rr_cache_vec.get(0){

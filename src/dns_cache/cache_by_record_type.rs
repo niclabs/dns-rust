@@ -1015,12 +1015,26 @@ mod cache_data_test{
             println!("the cache by domain for A type after the cleaning is : \n {:?}",record_types_data_a.get_domain_names_data());
             //FIXME: Does not delete the invadil rrstore, instead points to a empty array (same error as in cache by domain)
             assert_eq!(record_types_data_a.get_domain_names_data().len(), 1);
+            //check if is the same resource record valid (which survives)
+            if let Some(rrstore_a_after_cleaning) = record_types_data_a.clone().get_from_host_data(domain_name_1.clone()){
+                if let Some(rrstore_data_valid) = rrstore_a_after_cleaning.get(0){
+                    let resource_record_after_filter = rrstore_data_valid.get_resource_record();
+                    assert_eq!(resource_record_after_filter, resource_record_valid_a);
+                }
+            }
         }
         //CacheByDomainName for NS type
         if let Some(record_types_data_ns) = record_types_data_after_cleaning.get(&Rtype::NS) {
             println!("the cache by domain for NS type after the cleaning is : \n {:?}",record_types_data_ns.get_domain_names_data());
             //FIXME: Does not delete the invadil rrstore, instead points to a empty array (same error as in cache by domain)
             assert_eq!(record_types_data_ns.get_domain_names_data().len(), 1);
+            //check if is the same resource record valid (which survives)
+            if let Some(rrstore_ns_after_cleaning) = record_types_data_ns.clone().get_from_host_data(domain_name_2.clone()){
+                if let Some(rrstore_data_valid) = rrstore_ns_after_cleaning.get(0){
+                    let resource_record_after_filter = rrstore_data_valid.get_resource_record();
+                    assert_eq!(resource_record_after_filter, resource_record_valid_a);
+                }
+            }
         }
 
 

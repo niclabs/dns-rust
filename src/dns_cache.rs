@@ -502,7 +502,7 @@ mod dns_cache_test {
     }
 
     #[test]
-    fn timeout_cache_1_domain_same_type(){
+    fn timeout_cache_1_domain_same_rtype(){
         use std::{thread, time};
         let mut dns_cache = DnsCache::new();
 
@@ -514,7 +514,7 @@ mod dns_cache_test {
         let a_rdata = Rdata::A(ARdata::new());
 
         let mut resource_record = ResourceRecord::new(a_rdata.clone());
-        resource_record.set_ttl(4);
+        resource_record.set_ttl(1000);
 
         dns_cache.add(domain_name.clone(), resource_record.clone());
 
@@ -540,14 +540,18 @@ mod dns_cache_test {
         println!("After timeout: {:?}", Utc::now());
         dns_cache.timeout_cache();
 
-        //FIXME: the size shoud be 1 because we have only 1 resocurce_record associated with 1 domain
+        //FIXME: the size shoud be 1 because we have only 1 resocurce_record associated with 1 domain?
         // assert_eq!(dns_cache.get_size(), 1);
 
-        //check iof the resource_record_2 was deleted
+        //check if the resource_record_2 was deleted
         if let Some(cache_by_domain_name) = dns_cache.get_cache().get(Rtype::A) {
             if let Some(rrstore_data_vec) = cache_by_domain_name.get(&domain_name) {
-                //FIXME: gives 0 instead of 1, meaning all the rrstored records were deleted, when only 1 shoud have been deleted
                 assert_eq!(rrstore_data_vec.len(), 1);
+                //check if the resource_record_1 survive
+                if let Some(rrstore_after_cleaning) = rrstore_data_vec.get(0) {
+                    let resource_record_after_cleaning = rrstore_after_cleaning.get_resource_record();
+                    assert_eq!(resource_record_after_cleaning, resource_record);
+                }
             }
         }
     

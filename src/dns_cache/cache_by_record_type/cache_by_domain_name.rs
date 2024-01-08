@@ -542,7 +542,7 @@ mod host_data_test{
         resource_record_valid.set_ttl(1000);
         let rrstore_data_valid = RRStoredData::new(resource_record_valid.clone());
 
-        let mut resource_record_invalid = ResourceRecord::new(a_rdata);
+        let mut resource_record_invalid = ResourceRecord::new(a_rdata.clone());
         resource_record_invalid.set_ttl(4);
         let rrstore_data_invalid = RRStoredData::new(resource_record_invalid);
 
@@ -552,8 +552,8 @@ mod host_data_test{
         let mut domain_name_2 = DomainName::new();
         domain_name_2.set_name(String::from("example.com"));
 
-        cache_by_domain_name.add_to_host_data(domain_name_1.clone(), rrstore_data_valid);
-        cache_by_domain_name.add_to_host_data(domain_name_2.clone(), rrstore_data_invalid);
+        cache_by_domain_name.add_to_host_data(domain_name_1.clone(), rrstore_data_valid.clone());
+        cache_by_domain_name.add_to_host_data(domain_name_2.clone(), rrstore_data_invalid.clone());
 
         assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 2);
         if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_1) {
@@ -569,13 +569,13 @@ mod host_data_test{
         //clean the data with expired ttl
         cache_by_domain_name.filter_timeout_host_data();
 
-        println!("The new cache is {:?} ", cache_by_domain_name.get_domain_names_data());
+        // println!("The new cache is {:?} ", cache_by_domain_name.get_domain_names_data());
         
         //check if the value who survives is the same
-        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_2) {
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_1) {
             if let Some(rrstore_data) = rr_cache_vec.get(0) {
-                let resocurce_record_after_clean = rrstore_data.get_resource_record();
-                assert_eq!(resocurce_record_after_clean, resource_record_valid);
+                println!("the rrstore for domain {:?} afther de timeout is {:?} ", domain_name_1.get_name(), rrstore_data);
+                assert_eq!(rrstore_data_valid, rrstore_data.clone());
             }
         }
         //after the filter shoud be just one data in the cache (example.com shoud have been eliminated)

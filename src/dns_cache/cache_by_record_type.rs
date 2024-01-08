@@ -866,7 +866,9 @@ mod cache_data_test{
         println!("After timeout: {:?}", Utc::now());
         cache_record_type.filter_timeout_cache_data();
 
-        if let Some(record_types_data_a) = record_types_data.get(&Rtype::A) {
+        let record_types_data_after_clean = cache_record_type.get_cache_data();
+
+        if let Some(record_types_data_a) = record_types_data_after_clean.get(&Rtype::A) {
             if let Some(rrstore_data_vec_a) = record_types_data_a.clone().get_from_host_data(domain_name.clone()){
                 //the valid one still having the value
                 assert_eq!(rrstore_data_vec_a.len(), 1);
@@ -926,7 +928,9 @@ mod cache_data_test{
         println!("After timeout: {:?}", Utc::now());
         cache_record_type.filter_timeout_cache_data();
 
-        if let Some(record_types_data_a) = record_types_data.get(&Rtype::A) {
+        let record_types_data_after_cleaning = cache_record_type.get_cache_data();
+
+        if let Some(record_types_data_a) = record_types_data_after_cleaning.get(&Rtype::A) {
             if let Some(rrstore_data_vec_a) = record_types_data_a.clone().get_from_host_data(domain_name_1.clone()){
                 //the valid one still having the value
                 assert_eq!(rrstore_data_vec_a.len(), 1);
@@ -940,4 +944,5 @@ mod cache_data_test{
             assert!(true);
         }
     }
+
 }

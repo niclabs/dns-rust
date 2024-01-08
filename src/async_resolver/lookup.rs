@@ -640,7 +640,7 @@ mod async_resolver_test {
             assert!(false);
         }
     }
-    /*
+    
     #[test]
     fn parse_error() {
         let bytes: [u8; 50] = [
@@ -670,7 +670,8 @@ mod async_resolver_test {
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
         let query_id = 0b10100101;
-        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
+        let ip = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let response_result: Result<(Vec<u8>, IpAddr), ClientError> = Ok((bytes.to_vec(), ip));
         let response_dns_msg = parse_response(response_result,query_id);
         let err_msg = "The name server was unable to interpret the query.".to_string();
 
@@ -680,6 +681,6 @@ mod async_resolver_test {
             assert!(false);
         }
     }
-    */
+
     
 }

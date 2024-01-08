@@ -187,7 +187,7 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let (response, ip) = conn_new.send(dns_query).unwrap();
+        let (response, _ip) = conn_new.send(dns_query).unwrap();
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
         // FIXME:

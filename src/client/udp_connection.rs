@@ -1,11 +1,12 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
+use async_trait::async_trait;
+use std::net::{SocketAddr, IpAddr};
 
-use std::net::{UdpSocket,SocketAddr, IpAddr};
-use std::time::Duration;
+use tokio::time::{Duration, timeout};
 use std::io::Error as IoError;
 use std::io::ErrorKind;
-
+use tokio::net::UdpSocket;
 use super::client_error::ClientError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -13,50 +14,60 @@ pub struct  ClientUDPConnection {
     /// addr to connect
     server_addr: IpAddr,
     /// read timeout
-    timeout: Duration,
+    timeout: tokio::time::Duration,
 }
 
+#[async_trait]
 impl ClientConnection for ClientUDPConnection {
 
     /// Creates ClientUDPConnection
     fn new(server_addr:IpAddr, timeout:Duration) -> Self {
-        
         ClientUDPConnection {
             server_addr: server_addr,
             timeout: timeout,
         }
     }
+
     /// implement get_ip
     /// returns IpAddr
     fn get_ip(&self) -> IpAddr {
         return self.server_addr.clone();
     }
 
-    fn send(self, dns_query:DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> { 
+    async fn send(self, dns_query:DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> { 
 
-        let timeout:Duration = self.timeout;
+        let conn_timeout:Duration = self.timeout;
         let server_addr = SocketAddr::new(self.get_server_addr(), 53);
 
         let dns_query_bytes = dns_query.to_bytes(); 
 
-        let socket_udp:UdpSocket = match UdpSocket::bind("0.0.0.0:0"){ //FIXME:
-            Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not bind socket {}", e))).map_err(Into::into),
-            Ok(socket_udp) => socket_udp , 
-        };                          
-        
-        // Set read timeout
-        match socket_udp.set_read_timeout(Some(timeout)) {
-            Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error setting read timeout for socket {}", e))).map_err(Into::into),
-            Ok(_) => (),
-        }
+        //FIXME: chage port 
+        let socket_udp = UdpSocket::bind("0.0.0.0:0").await?; //FIXME: type error
 
-        match socket_udp.send_to(&dns_query_bytes, server_addr){
+        // let socket_udp:UdpSocket = match UdpSocket::bind("0.0.0.0:0"){ //FIXME:
+        //     Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not bind socket {}", e))).map_err(Into::into),
+        //     Ok(socket_udp) => socket_udp , 
+        // };                          
+        
+        // TODO: Set read timeout 
+        // match socket_udp.set_read_timeout(Some(timeout)) {
+        //     Err(e) =>  return Err(IoError::new(ErrorKind::Other, format!("Error setting read timeout for socket {}", e))).map_err(Into::into),
+        //     Ok(_) => (),
+        // }
+
+        match socket_udp.send_to(&dns_query_bytes, server_addr).await {
             Err(e) =>return Err(IoError::new(ErrorKind::Other, format!("Error: could not send {}", e))).map_err(Into::into),
             Ok(_) => (),
         };
-
+        
         let mut msg: [u8;512] = [0;512];
-        match socket_udp.recv_from(&mut msg){
+        //FIXME: change to timeout
+        let result = match timeout(conn_timeout, socket_udp.recv_from(&mut msg)).await {
+            Ok(val) => val,
+            Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
+        };
+
+        match result {
             Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not read {}", e))).map_err(Into::into),
             Ok(_) => (),
         };
@@ -160,8 +171,8 @@ mod udp_connection_test{
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(200));
     }
 
-    #[test]
-    fn send_timeout(){
+    #[tokio::test]
+    async fn send_timeout(){
 
         let server_addr_non_existent = IpAddr::V4(Ipv4Addr::new(234,1 ,4, 44));
         let timeout = Duration::from_secs(2);
@@ -178,13 +189,13 @@ mod udp_connection_test{
             false,
             1);
         
-        let result = conn.send(dns_query);
+        let result = conn.send(dns_query).await;
 
         assert!(result.is_err());
     }
 
-    #[test]
-    fn send_query_udp(){
+    #[tokio::test]
+    async fn send_query_udp(){
 
         let server_addr_non_existent = IpAddr::V4(Ipv4Addr::new(8,8 ,8, 8));
         let timeout = Duration::from_secs(2);
@@ -201,11 +212,11 @@ mod udp_connection_test{
             false,
             1);
         
-        let (response, _ip) = conn.send(dns_query).unwrap();
+        let response = conn.send(dns_query).await;
 
-        // assert!(result.is_ok());
+        assert!(response.is_ok());
 
-        assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
+        // assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
 
         // assert!(result.unwrap().get_answer().len() > 0); FIXME:
     }

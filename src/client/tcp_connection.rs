@@ -4,7 +4,7 @@ use super::client_error::ClientError;
 
 
 use std::io::{Write, Read};
-use std::net::{TcpStream,SocketAddr,IpAddr, Ipv4Addr};
+use std::net::{TcpStream,SocketAddr,IpAddr};
 use std::time::Duration;
 use std::io::Error as IoError;
 use std::io::ErrorKind;

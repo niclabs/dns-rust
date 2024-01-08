@@ -201,7 +201,7 @@ mod udp_connection_test{
             false,
             1);
         
-        let (response, ip) = conn.send(dns_query).unwrap();
+        let (response, _ip) = conn.send(dns_query).unwrap();
 
         // assert!(result.is_ok());
 

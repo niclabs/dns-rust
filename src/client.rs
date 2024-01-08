@@ -104,11 +104,13 @@ impl <T: ClientConnection> Client<T> {
 
         let client_query = self.get_dns_query();
         let conn: &T = &self.get_conn();
-        let _ip_addr = conn.get_ip();
+        let ip_addr = conn.get_ip();
 
        let dns_response: DnsMessage = match conn.send(client_query) {
-            Ok(response_message) => {
-                //let response_ip = get_sender_ip(&response_message)?;
+            Ok((response_message, ip)) => {
+                if ip != ip_addr {
+                    return Err(ClientError::Message("The ip address of the server is not the same as the one in the connection."))?;
+                }
                 match DnsMessage::from_bytes(&response_message) {
                     Ok(dns_message) => dns_message,
                     Err(_) => return Err(ClientError::FormatError("The name server was unable to interpret the query."))?,

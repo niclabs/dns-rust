@@ -4,7 +4,7 @@ use super::client_error::ClientError;
 
 
 use std::io::{Write, Read};
-use std::net::{TcpStream,SocketAddr,IpAddr};
+use std::net::{TcpStream,SocketAddr,IpAddr, Ipv4Addr};
 use std::time::Duration;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
@@ -34,7 +34,7 @@ impl ClientConnection for ClientTCPConnection {
     }
     
     /// creates socket tcp, sends query and receive response
-    fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>{
+    fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>{
         
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
@@ -58,6 +58,7 @@ impl ClientConnection for ClientTCPConnection {
     
         let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
         let mut vec_msg: Vec<u8> = Vec::new();
+        let ip = self.get_server_addr();
     
         while vec_msg.len() < tcp_msg_len as usize {
             let mut msg = [0; 512];
@@ -69,7 +70,7 @@ impl ClientConnection for ClientTCPConnection {
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
 
-        return Ok(vec_msg);
+        return Ok((vec_msg, ip));
     }
 }
 
@@ -186,7 +187,7 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let response = conn_new.send(dns_query).unwrap();
+        let (response, ip) = conn_new.send(dns_query).unwrap();
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
         // FIXME:

@@ -32,7 +32,7 @@ impl ClientConnection for ClientUDPConnection {
         return self.server_addr.clone();
     }
 
-    fn send(self, dns_query:DnsMessage) -> Result<Vec<u8>, ClientError> { 
+    fn send(self, dns_query:DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> { 
 
         let timeout:Duration = self.timeout;
         let server_addr = SocketAddr::new(self.get_server_addr(), 53);
@@ -61,8 +61,10 @@ impl ClientConnection for ClientUDPConnection {
             Ok(_) => (),
         };
 
+        let ip = self.get_server_addr();
+
         drop(socket_udp);
-        return Ok(msg.to_vec());
+        return Ok((msg.to_vec(), ip));
     }
 
 }
@@ -199,7 +201,7 @@ mod udp_connection_test{
             false,
             1);
         
-        let response = conn.send(dns_query).unwrap();
+        let (response, ip) = conn.send(dns_query).unwrap();
 
         // assert!(result.is_ok());
 

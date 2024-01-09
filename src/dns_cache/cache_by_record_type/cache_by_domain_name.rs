@@ -569,12 +569,12 @@ mod host_data_test{
         //clean the data with expired ttl
         cache_by_domain_name.filter_timeout_host_data();
 
-        // println!("The new cache is {:?} ", cache_by_domain_name.get_domain_names_data());
+        println!("The new cache is {:?} ", cache_by_domain_name.get_domain_names_data());
         
         //check if the value who survives is the same
         if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_1) {
             if let Some(rrstore_data) = rr_cache_vec.get(0) {
-                println!("the rrstore for domain {:?} afther de timeout is {:?} ", domain_name_1.get_name(), rrstore_data);
+                // println!("the rrstore for domain {:?} afther de timeout is {:?} ", domain_name_1.get_name(), rrstore_data);
                 assert_eq!(rrstore_data_valid, rrstore_data.clone());
             }
         }

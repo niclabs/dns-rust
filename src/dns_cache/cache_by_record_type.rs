@@ -874,8 +874,9 @@ mod cache_data_test{
                 assert_eq!(rrstore_data_vec_a.len(), 1);
             }
         }
-
-        if let Some(record_types_data_ns) = record_types_data.get(&Rtype::NS) {
+        
+        //FIXME:
+        if let Some(record_types_data_ns) = record_types_data_after_clean.get(&Rtype::NS) {
             println!(" el CacheByDOmain de NS es {:?}", record_types_data_ns);
             assert!(false, "Si habia algo dentro del Rtype NS y NO debía ser así");
         } else {
@@ -949,7 +950,7 @@ mod cache_data_test{
     //this test is going to prove if the cleaning after the timeout is acting correctly one layer down (CacheByDomain)
     // ------BEFORE THE 5 SECONDS-----
     // RTYPE:A -> {uchile (invalid) -> [..], example.com (valid) -> [..]}
-    // RTYPE:NS -> {uchile (valid) -> [..], example.com (invalid) -> [...]}
+    // RTYPE:NS -> {example (valid) -> [..], example.com (invalid) -> [...]}
     //-------AFTER THE 5 SECONDS-----
     // RTYPE:A -> {example.com -> [...]}
     // RTYPE:NS -> {uchile.com -> [...]}

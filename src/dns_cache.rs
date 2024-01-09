@@ -220,7 +220,7 @@ impl DnsCache {
 #[cfg(test)] 
 mod dns_cache_test {
     use chrono::Utc;
-    use crate::dns_cache::DnsCache;
+    use crate::{dns_cache::DnsCache, message::rdata::ns_rdata::NsRdata};
     use crate::dns_cache::cache_by_record_type::CacheByRecordType;
     use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
     use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
@@ -557,5 +557,46 @@ mod dns_cache_test {
     
     }
 
+    #[test]
+    fn timeout_cache_1_domain_differents_rtype(){
+        use std::{thread, time};
+        let mut dns_cache = DnsCache::new();
+
+        dns_cache.set_max_size(3);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("uchile.cl"));
+
+        let a_rdata = Rdata::A(ARdata::new());
+        let ns_rdata = Rdata::NS(NsRdata::new());
+
+        let mut resource_record_a = ResourceRecord::new(a_rdata.clone());
+        resource_record_a.set_ttl(1000);
+
+        dns_cache.add(domain_name.clone(), resource_record_a.clone());
+
+        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 1);
+
+        let mut resource_record_ns = ResourceRecord::new(ns_rdata.clone());
+        resource_record_ns.set_ttl(4);
+
+        dns_cache.add(domain_name.clone(), resource_record_ns.clone());
+
+        //because rtypes are differents the size of the cache is 2?
+        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 2);
+        
+        println!("Before timeout: {:?}", Utc::now());
+        thread::sleep(time::Duration::from_secs(5));
+        println!("After timeout: {:?}", Utc::now());
+        dns_cache.timeout_cache();
+
+        //FIXME: the size shoud be 1 because we have only 1 resocurce_record associated with 1 domain?
+        // assert_eq!(dns_cache.get_size(), 1);
+
+        //After the cleaning, the size of the cache shoud be 1 (NS Was deleted)
+        println!("the Rtype cache is {:?} : \n", dns_cache.get_cache().get_cache_data());
+        //FIXME: Domain uchile points to a empty array and (NS, CacheByDomainName) still exists
+        assert_eq!(dns_cache.get_cache().get_cache_data().len(),1);
     
+    }
 }

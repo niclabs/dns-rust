@@ -599,4 +599,102 @@ mod dns_cache_test {
         assert_eq!(dns_cache.get_cache().get_cache_data().len(),1);
     
     }
+
+    
+    #[test]
+    //this test is going to prove if the cleaning after the timeout is acting correctly two layer down (CacheByDomain)
+    // ------BEFORE THE 5 SECONDS-----
+    // RTYPE:A -> {uchile (invalid) -> [..], example.com (valid) -> [..]}
+    // RTYPE:NS -> {example (valid) -> [..], example.com (invalid) -> [...]}
+    //-------AFTER THE 5 SECONDS-----
+    // RTYPE:A -> {example.com -> [...]}
+    // RTYPE:NS -> {uchile.com -> [...]}
+    fn filter_timout_cache_data_cleaning_two_layer_down(){
+        use std::{thread, time};
+        let mut dns_cache = DnsCache::new();
+
+        dns_cache.set_max_size(5);
+        //Defaults Rdatas to use
+        let a_rdata = Rdata::A(ARdata::new());
+        let ns_rdata = Rdata::NS(NsRdata::new());
+
+                
+        let mut domain_name_1 = DomainName::new();
+        domain_name_1.set_name(String::from("example.com"));
+
+        let mut domain_name_2 = DomainName::new();
+        domain_name_2.set_name(String::from("uchile.cl"));
+
+        //adding in A rtypes
+        let mut resource_record_valid_a = ResourceRecord::new(a_rdata.clone());
+        resource_record_valid_a.set_ttl(1000);
+        dns_cache.add(domain_name_1.clone(), resource_record_valid_a.clone());
+                
+        let mut resource_record_invalid_a = ResourceRecord::new(a_rdata.clone());
+        resource_record_invalid_a.set_ttl(4);
+        dns_cache.add(domain_name_2.clone(), resource_record_invalid_a.clone());
+
+        //adding in NS rtypes
+        let mut resource_record_valid_ns = ResourceRecord::new(ns_rdata.clone());
+        resource_record_valid_ns.set_ttl(1000);
+        dns_cache.add(domain_name_2.clone(), resource_record_valid_ns.clone());
+    
+        let mut resource_record_invalid_ns = ResourceRecord::new(ns_rdata.clone());
+        resource_record_invalid_ns.set_ttl(4);
+        dns_cache.add(domain_name_1.clone(), resource_record_invalid_ns.clone());
+
+
+        //check if every record_types_data (HashMap for A and for NS) has 2 element 
+        let record_types_data = dns_cache.get_cache().get_cache_data();
+        //CacheByDomainName for A type
+        if let Some(record_types_data_a) = record_types_data.get(&Rtype::A) {
+            // println!("the cache by domain for A type is : \n {:?}",record_types_data_a.get_domain_names_data());
+            assert_eq!(record_types_data_a.get_domain_names_data().len(), 2);
+        }
+        //CacheByDomainName for NS type
+        if let Some(record_types_data_ns) = record_types_data.get(&Rtype::NS) {
+            // println!("the cache by domain for NS type is : \n {:?}",record_types_data_ns.get_domain_names_data());
+            assert_eq!(record_types_data_ns.get_domain_names_data().len(), 2);
+        }
+
+        //check the size of the dns_cache is correctly
+        assert_eq!(dns_cache.get_size(), 4);
+
+        println!("Before timeout: {:?}", Utc::now());
+        thread::sleep(time::Duration::from_secs(5));
+        println!("After timeout: {:?}", Utc::now());
+        dns_cache.timeout_cache();
+
+        let record_types_data_after_cleaning = dns_cache.get_cache().get_cache_data();
+
+        //after the cleaning, each cache shoud have 1 element
+        if let Some(record_types_data_a) = record_types_data_after_cleaning.get(&Rtype::A) {
+            println!("the cache by domain for A type after the cleaning is : \n {:?}",record_types_data_a.get_domain_names_data());
+            //FIXME: Does not delete the invadil rrstore, instead points to a empty array (same error as in cache by domain)
+            assert_eq!(record_types_data_a.get_domain_names_data().len(), 1);
+            //check if is the same resource record valid (which survives)
+            if let Some(rrstore_a_after_cleaning) = record_types_data_a.clone().get_from_host_data(domain_name_1.clone()){
+                if let Some(rrstore_data_valid) = rrstore_a_after_cleaning.get(0){
+                    let resource_record_after_filter = rrstore_data_valid.get_resource_record();
+                    assert_eq!(resource_record_after_filter, resource_record_valid_a);
+                }
+            }
+        }
+        //CacheByDomainName for NS type
+        if let Some(record_types_data_ns) = record_types_data_after_cleaning.get(&Rtype::NS) {
+            println!("the cache by domain for NS type after the cleaning is : \n {:?}",record_types_data_ns.get_domain_names_data());
+            //FIXME: Does not delete the invadil rrstore, instead points to a empty array (same error as in cache by domain)
+            assert_eq!(record_types_data_ns.get_domain_names_data().len(), 1);
+            //check if is the same resource record valid (which survives)
+            if let Some(rrstore_ns_after_cleaning) = record_types_data_ns.clone().get_from_host_data(domain_name_2.clone()){
+                if let Some(rrstore_data_valid) = rrstore_ns_after_cleaning.get(0){
+                    let resource_record_after_filter = rrstore_data_valid.get_resource_record();
+                    assert_eq!(resource_record_after_filter, resource_record_valid_a);
+                }
+            }
+        }
+
+
+    }
+
 }

@@ -134,6 +134,9 @@ impl AsyncResolver {
         let rcode = header.get_rcode();
         if rcode == 0 {
             let answer = dns_mgs.get_answer();
+            if answer.len() == 0 {
+                Err(ClientError::TemporaryError("no answer found"))?;
+            }
             return Ok(answer);
         } 
         match rcode {

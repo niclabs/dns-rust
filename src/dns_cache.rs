@@ -176,7 +176,7 @@ impl DnsCache {
     /// If it has expired, it removes it from the cache.
     pub fn timeout_cache(&mut self) {
         let mut cache = self.get_cache();
-        cache.filter_timeout_cache_data();
+        cache.filter_timeout_by_rtype();
         self.set_cache(cache);
     }
 }

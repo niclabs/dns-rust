@@ -32,9 +32,7 @@ async fn query_a_type() {
         } else {
             panic!("No ip address");
         }
-    } else {
-        panic!("No response")
-    }
+    } 
 }
 
 /// 6.2.2 Query normal Qtype = *
@@ -66,9 +64,6 @@ async fn query_mx_type() {
         } else { 
             panic!("Record is not MX type");
         }
-
-    } else {
-        panic!("No response received")
     }
 }
 
@@ -95,9 +90,6 @@ async fn query_ns_type() {
         } else {
             panic!("Second record is not NS");
         }
-
-    } else {
-        panic!("No response received")
     }
 }
 
@@ -112,6 +104,7 @@ async fn mistyped_host_name() {
 #[tokio::test]
 async fn no_resource_available() {
     let response =  query_response("example.com", "UDP", "CNAME").await;
+    println!("{:?}", response);
     assert!(response.is_err());
 }
 

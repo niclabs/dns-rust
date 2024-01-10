@@ -218,21 +218,24 @@ impl CacheByDomainName {
 
     /// For each domain name, it removes the RRStoredData past its TTL.
     pub fn filter_timeout_by_domain_name(&mut self) {
-        let mut new_hash: HashMap<DomainName, Vec<RRStoredData>> = HashMap::<DomainName, Vec<RRStoredData>>::new();
-        let data = self.get_domain_names_data();
         let current_time = Utc::now();
-        for (domain_name, rr_cache_vec) in data.into_iter() {
+        let data_by_domain = self.get_domain_names_data();
+        let clean_data_by_domain: HashMap<DomainName, Vec<RRStoredData>> = data_by_domain
+        .into_iter()
+        .filter_map(|(domain_name, rr_cache_vec)| {
             let filtered_rr_cache_vec: Vec<RRStoredData> = rr_cache_vec
             .into_iter()
             .filter(|rr_cache| rr_cache.get_absolute_ttl() > current_time)
             .collect();
 
             if !filtered_rr_cache_vec.is_empty() {
-                new_hash.insert(domain_name, filtered_rr_cache_vec);
+                Some((domain_name, filtered_rr_cache_vec))
+            } else {
+                None
             }
-            
-        }
-        self.set_domain_names_data(new_hash);
+        }).collect();
+
+        self.set_domain_names_data(clean_data_by_domain);
     }
 
 }

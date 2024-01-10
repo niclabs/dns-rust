@@ -168,7 +168,7 @@ impl CacheByRecordType{
         let clean_cache_data: HashMap<Rtype, CacheByDomainName> = cache_data
         .into_iter()
         .filter_map(|(rtype, mut host_data)| {
-            host_data.filter_timeout_host_data();
+            host_data.filter_timeout_by_domain_name();
             if host_data.get_domain_names_data().is_empty() {
                 None
             } else {

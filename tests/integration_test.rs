@@ -37,7 +37,7 @@ async fn query_a_type() {
 
 /// 6.2.2 Query normal Qtype = *
 #[tokio::test]
-async fn query_all_type() {
+async fn query_any_type() {
     let udp_response = query_response("example.com", "UDP", "ANY").await;
     let tcp_response = query_response("example.com", "TCP", "ANY").await;
     assert!(udp_response.is_err());

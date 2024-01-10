@@ -938,7 +938,7 @@ mod cache_data_test{
             }
         }
 
-        if let Some(record_types_data_ns) = record_types_data.get(&Rtype::NS) {
+        if let Some(record_types_data_ns) = record_types_data_after_cleaning.get(&Rtype::NS) {
             println!(" el CacheByDomain de NS es : \n {:?}", record_types_data_ns);
             assert!(false, "Si habia algo dentro del Rtype NS y NO debía ser así");
         } else {

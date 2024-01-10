@@ -923,6 +923,7 @@ mod cache_data_test{
                 assert_eq!(rrstore_data_vec_ns.len(), 1);
             }
         }
+        assert_eq!(record_types_data.len(), 2);
 
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
@@ -930,6 +931,8 @@ mod cache_data_test{
         cache_record_type.filter_timeout_by_rtype();
 
         let record_types_data_after_cleaning = cache_record_type.get_cache_data();
+        
+        assert_eq!(record_types_data_after_cleaning.len(), 1);
 
         if let Some(record_types_data_a) = record_types_data_after_cleaning.get(&Rtype::A) {
             if let Some(rrstore_data_vec_a) = record_types_data_a.clone().get_from_host_data(domain_name_1.clone()){

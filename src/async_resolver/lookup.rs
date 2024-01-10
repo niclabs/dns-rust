@@ -208,7 +208,13 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
             break;
         }
 
-        result_dns_msg = send_query_resolver_by_protocol(config.get_protocol(),new_query.clone(), result_dns_msg.clone(), connections).await;
+        result_dns_msg = send_query_resolver_by_protocol(
+            config.get_protocol(),
+            new_query.clone(), 
+            result_dns_msg.clone(), 
+            connections
+        ).await;
+        
         if result_dns_msg.is_err(){
             retry_count = retry_count + 1;
         }

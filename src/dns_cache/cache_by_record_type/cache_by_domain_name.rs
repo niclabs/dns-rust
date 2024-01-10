@@ -227,7 +227,10 @@ impl CacheByDomainName {
             .filter(|rr_cache| rr_cache.get_absolute_ttl() > current_time)
             .collect();
 
-            new_hash.insert(domain_name, filtered_rr_cache_vec);
+            if !filtered_rr_cache_vec.is_empty() {
+                new_hash.insert(domain_name, filtered_rr_cache_vec);
+            }
+            
         }
         self.set_domain_names_data(new_hash);
     }

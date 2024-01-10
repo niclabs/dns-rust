@@ -431,7 +431,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
         rrsig_rdata.set_signature(String::from("abcdefg"));
 
-        let expected_result: Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
+        let expected_result: Vec<u8> = vec![0, 5, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
          46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
          98, 99, 100, 101, 102, 103];
 
@@ -442,7 +442,7 @@ mod rrsig_rdata_test{
 
     #[test]
     fn from_bytes(){
-        let bytes_test: Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
+        let bytes_test: Vec<u8> = vec![0, 5, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
          46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
          98, 99, 100, 101, 102, 103];
 

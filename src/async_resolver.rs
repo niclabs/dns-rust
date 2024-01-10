@@ -524,9 +524,9 @@ mod async_resolver_test {
         }
     }
 
-    /// Test lookup cache
+    /// Test inner lookup cache
     #[tokio::test]
-    async fn lookup_cache() {
+    async fn inner_lookup_cache_available() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.set_max_size(1);
 
@@ -537,7 +537,40 @@ mod async_resolver_test {
 
         resolver.cache.add(domain_name, resource_record);
 
-        let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.get_header().get_aa(), false);
+        } else {
+            panic!("No response from cache");
+        }
+    }
+
+    /// Test inner lookup without cache
+    #[tokio::test]
+    async fn inner_lookup_with_no_cache() {
+        let mut config = ResolverConfig::default();
+        config.set_cache_enabled(false);
+
+        let mut resolver = AsyncResolver::new(config);
+        resolver.cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
+        let a_rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        resolver.cache.add(domain_name, resource_record);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.get_header().get_aa(), false);
+        } else {
+            panic!("No response from nameserver");
+        }
     }
 
     /// Test cache data
@@ -546,7 +579,7 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.set_max_size(1);
         assert_eq!(resolver.cache.is_empty(), true);
-        let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
+        let _response = resolver.lookup("example.com", "UDP", "A", "IN").await;
         assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
 
         // TODO: Test special cases from RFC

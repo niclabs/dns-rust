@@ -243,4 +243,37 @@ mod dnskey_rdata_test{
 
         assert_eq!(Err("Format Error"), result);
     }
+
+    #[test]
+    fn max_values_from_bytes_test(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        //Max value of 2 bytes is 65535 (16 ones in the 2 bytes)
+        dnskey_rdata.set_flags(65535);
+        dnskey_rdata.set_protocol(255);
+        dnskey_rdata.set_algorithm(255);
+        dnskey_rdata.set_public_key(vec![255, 255]);
+
+        let bytes_test: Vec<u8> = vec![255, 255, 255, 255, 255, 255];
+
+        if let Ok(result)= DnskeyRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(dnskey_rdata, result);
+        } 
+        else {
+            assert!(false, "Error");
+        }
+    }
+
+    #[test]
+    fn max_values_to_bytes_test(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        //Max value of 2 bytes is 65535 (16 ones in the 2 bytes)
+        dnskey_rdata.set_flags(65535);
+        dnskey_rdata.set_protocol(255);
+        dnskey_rdata.set_algorithm(255);
+        dnskey_rdata.set_public_key(vec![255, 255]);
+
+        let bytes_test: Vec<u8> = vec![255, 255, 255, 255, 255, 255];
+
+        assert_eq!(dnskey_rdata.to_bytes(), bytes_test);
+    }
 }

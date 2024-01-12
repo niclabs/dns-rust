@@ -533,4 +533,76 @@ mod rrsig_rdata_test{
     
        assert_eq!(result, bytes_test);
     }
+    
+    #[test]
+    fn a(){
+        let a = String::from("\0");
+        let b = a.into_bytes();
+        println!("{:?}", b);
+    }
+
+    #[test]
+    fn from_bytes_min_values() {
+        let bytes_test: Vec<u8> = vec![0, 0, //typed covered
+        0, //algorithm
+        0, //labels
+        0, 0, 0, 0, //TTL
+        0, 0, 0, 0, //Signature expiration
+        0, 0, 0, 0, //Signature Inception
+        0, 0, // key tag
+        0, //empty string in signer name
+        0]; //signature
+
+       let mut rrsig_rdata = RRSIGRdata::new();
+       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(0));
+       rrsig_rdata.set_algorithm(0);
+       rrsig_rdata.set_labels(0);
+       rrsig_rdata.set_original_ttl(0);
+       rrsig_rdata.set_signature_expiration(0);
+       rrsig_rdata.set_signature_inception(0);
+       rrsig_rdata.set_key_tag(0);
+       rrsig_rdata.set_signer_name(DomainName::new_from_str(""));
+       rrsig_rdata.set_signature(String::from("\0"));
+
+       if let Ok(result) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+         assert_eq!(result, rrsig_rdata);
+       }
+       else {
+        assert!(false, "error");
+       }
+    
+    }
+
+    #[test]
+    fn to_bytes_min_values() {
+        let bytes_test: Vec<u8> = vec![0, 0, //typed covered
+        0, //algorithm
+        0, //labels
+        0, 0, 0, 0, //TTL
+        0, 0, 0, 0, //Signature expiration
+        0, 0, 0, 0, //Signature Inception
+        0, 0, // key tag
+        0,  //empty string in signer name
+        0];
+
+       let mut rrsig_rdata = RRSIGRdata::new();
+       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(0));
+       rrsig_rdata.set_algorithm(0);
+       rrsig_rdata.set_labels(0);
+       rrsig_rdata.set_original_ttl(0);
+       rrsig_rdata.set_signature_expiration(0);
+       rrsig_rdata.set_signature_inception(0);
+       rrsig_rdata.set_key_tag(0);
+       rrsig_rdata.set_signer_name(DomainName::new_from_str(""));
+       rrsig_rdata.set_signature(String::from("\0"));
+
+       let result = rrsig_rdata.to_bytes();
+       
+       //FIXME: there is a inconsistency between to_bytes and from_bytes in signer_name
+       // to_bytes : uses to_bytes() which:  "" -> [0,0]
+       // from_bytes, in while loop, if bytes!=0 then do not go inside the loop
+       // then if you have [0,0] -> only will not count the first 0, but the other
+       // will be count it to signature and that is wrong
+       assert_eq!(result, bytes_test);
+    }
 } 

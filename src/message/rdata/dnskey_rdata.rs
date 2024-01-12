@@ -276,4 +276,35 @@ mod dnskey_rdata_test{
 
         assert_eq!(dnskey_rdata.to_bytes(), bytes_test);
     }
+
+    #[test]
+    fn min_values_from_bytes_test(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        dnskey_rdata.set_flags(0);
+        dnskey_rdata.set_protocol(0);
+        dnskey_rdata.set_algorithm(0);
+        dnskey_rdata.set_public_key(vec![0, 0]);
+
+        let bytes_test: Vec<u8> = vec![0, 0, 0, 0, 0, 0];
+
+        if let Ok(result)= DnskeyRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(dnskey_rdata, result);
+        } 
+        else {
+            assert!(false, "Error");
+        }
+    }
+
+    #[test]
+    fn min_values_to_bytes_test(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        dnskey_rdata.set_flags(0);
+        dnskey_rdata.set_protocol(0);
+        dnskey_rdata.set_algorithm(0);
+        dnskey_rdata.set_public_key(vec![0, 0]);
+
+        let bytes_test: Vec<u8> = vec![0, 0, 0, 0, 0, 0];
+
+        assert_eq!(dnskey_rdata.to_bytes(), bytes_test);
+    }
 }

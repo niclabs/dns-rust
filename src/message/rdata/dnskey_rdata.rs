@@ -40,8 +40,11 @@ impl FromBytes<Result<Self, &'static str>> for DnskeyRdata {
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
-        if bytes_len <= 4 {
+        if bytes_len <= 3 {
             return Err("Format Error");
+        }
+        if bytes_len == 4 {
+            return Err("Public key not assigned");
         }
 
         let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
@@ -199,12 +202,12 @@ mod dnskey_rdata_test{
         dnskey_rdata.set_flags(1);
         dnskey_rdata.set_protocol(2);
         dnskey_rdata.set_algorithm(3);
-        dnskey_rdata.set_public_key(vec![0x01, 0x02]);
+        dnskey_rdata.set_public_key(vec![1, 2]);
 
         assert_eq!(dnskey_rdata.get_flags(), 1);
         assert_eq!(dnskey_rdata.get_protocol(), 2);
         assert_eq!(dnskey_rdata.get_algorithm(), 3);
-        assert_eq!(dnskey_rdata.get_public_key(), vec![0x01, 0x02]);
+        assert_eq!(dnskey_rdata.get_public_key(), vec![1, 2]);
     }
 
     #[test]

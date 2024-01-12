@@ -44,7 +44,7 @@ impl FromBytes<Result<Self, &'static str>> for DnskeyRdata {
             return Err("Format Error");
         }
 
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
 
         let array_bytes = [bytes[0], bytes[1]];
         let flags = u16::from_be_bytes(array_bytes);
@@ -74,14 +74,14 @@ impl DnskeyRdata {
     ///
     /// ```
     ///
-    /// let dnskey_rdata = DnskeyRdata::new();
+    /// let dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// ```
-    pub fn new() -> DnskeyRdata {
+    pub fn new(flags: u16, protocol: u8, algorithm: u8, public_key: Vec<u8>) -> DnskeyRdata {
         DnskeyRdata {
-            flags: 0,
-            protocol: 0,
-            algorithm: 0,
-            public_key: Vec::new(),
+            flags,
+            protocol,
+            algorithm,
+            public_key,
         }
     }
 
@@ -90,7 +90,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// assert_eq!(dnskey_rdata.get_flags(), 0);
     /// ```
     pub fn get_flags(&self) -> u16 {
@@ -102,7 +102,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// assert_eq!(dnskey_rdata.get_protocol(), 0);
     /// ```
     pub fn get_protocol(&self) -> u8 {
@@ -114,7 +114,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// assert_eq!(dnskey_rdata.get_algorithm(), 0);
     /// ```
     pub fn get_algorithm(&self) -> u8 {
@@ -126,7 +126,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// assert_eq!(dnskey_rdata.get_public_key(), Vec::new());
     /// ```
     pub fn get_public_key(&self) -> Vec<u8> {
@@ -141,7 +141,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// dnskey_rdata.set_flags(1);
     /// assert_eq!(dnskey_rdata.get_flags(), 1);
     /// ```
@@ -154,7 +154,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// dnskey_rdata.set_protocol(1);
     /// assert_eq!(dnskey_rdata.get_protocol(), 1);
     /// ```
@@ -167,7 +167,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// dnskey_rdata.set_algorithm(1);
     /// assert_eq!(dnskey_rdata.get_algorithm(), 1);
     /// ```
@@ -180,7 +180,7 @@ impl DnskeyRdata {
     /// # Examples
     /// 
     /// ```
-    /// let mut dnskey_rdata = DnskeyRdata::new();
+    /// let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
     /// dnskey_rdata.set_public_key(vec![0x01, 0x02]);
     /// assert_eq!(dnskey_rdata.get_public_key(), vec![0x01, 0x02]);
     /// ```
@@ -195,7 +195,7 @@ mod dnskey_rdata_test{
 
     #[test]
     fn setters_and_getters_test(){
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         dnskey_rdata.set_flags(1);
         dnskey_rdata.set_protocol(2);
         dnskey_rdata.set_algorithm(3);
@@ -209,26 +209,18 @@ mod dnskey_rdata_test{
 
     #[test]
     fn to_bytes_test(){
-        let mut dnskey_rdata = DnskeyRdata::new();
-        dnskey_rdata.set_flags(1);
-        dnskey_rdata.set_protocol(2);
-        dnskey_rdata.set_algorithm(3);
-        dnskey_rdata.set_public_key(vec![0x01, 0x02]);
+        let dnskey_rdata = DnskeyRdata::new(1, 2, 3, vec![1,2]);
 
-        let bytes_test: Vec<u8> = vec![0x00, 0x01, 0x02, 0x03, 0x01, 0x02];
+        let bytes_test: Vec<u8> = vec![0, 1, 2, 3, 1, 2];
 
         assert_eq!(dnskey_rdata.to_bytes(), bytes_test);
     }
 
     #[test]
     fn from_bytes_test(){
-        let mut dnskey_rdata = DnskeyRdata::new();
-        dnskey_rdata.set_flags(1);
-        dnskey_rdata.set_protocol(2);
-        dnskey_rdata.set_algorithm(3);
-        dnskey_rdata.set_public_key(vec![0x01, 0x02]);
+        let dnskey_rdata = DnskeyRdata::new(1, 2, 3, vec![1,2]);
 
-        let bytes_test: Vec<u8> = vec![0x00, 0x01, 0x02, 0x03, 0x01, 0x02];
+        let bytes_test: Vec<u8> = vec![0, 1, 2, 3, 1, 2];
 
         let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
 
@@ -237,7 +229,7 @@ mod dnskey_rdata_test{
 
     #[test]
     fn from_bytes_error_test(){
-        let bytes_test: Vec<u8> = vec![0x00, 0x01, 0x02, 0x03];
+        let bytes_test: Vec<u8> = vec![0, 1, 2, 3];
 
         let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test);
 
@@ -246,7 +238,7 @@ mod dnskey_rdata_test{
 
     #[test]
     fn max_values_from_bytes_test(){
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         //Max value of 2 bytes is 65535 (16 ones in the 2 bytes)
         dnskey_rdata.set_flags(65535);
         dnskey_rdata.set_protocol(255);
@@ -265,7 +257,7 @@ mod dnskey_rdata_test{
 
     #[test]
     fn max_values_to_bytes_test(){
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         //Max value of 2 bytes is 65535 (16 ones in the 2 bytes)
         dnskey_rdata.set_flags(65535);
         dnskey_rdata.set_protocol(255);
@@ -279,7 +271,7 @@ mod dnskey_rdata_test{
 
     #[test]
     fn min_values_from_bytes_test(){
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         dnskey_rdata.set_flags(0);
         dnskey_rdata.set_protocol(0);
         dnskey_rdata.set_algorithm(0);
@@ -297,7 +289,7 @@ mod dnskey_rdata_test{
 
     #[test]
     fn min_values_to_bytes_test(){
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         dnskey_rdata.set_flags(0);
         dnskey_rdata.set_protocol(0);
         dnskey_rdata.set_algorithm(0);
@@ -307,4 +299,5 @@ mod dnskey_rdata_test{
 
         assert_eq!(dnskey_rdata.to_bytes(), bytes_test);
     }
+
 }

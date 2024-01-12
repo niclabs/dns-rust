@@ -554,7 +554,7 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_dnskey_rdata(){
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         dnskey_rdata.set_flags(2 as u16);
         dnskey_rdata.set_protocol(3 as u8);
         dnskey_rdata.set_algorithm(4 as u8);

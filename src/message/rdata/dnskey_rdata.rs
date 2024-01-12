@@ -234,7 +234,7 @@ mod dnskey_rdata_test{
 
     #[test]
     fn from_bytes_error(){
-        let bytes_test: Vec<u8> = vec![0, 1, 2, 3];
+        let bytes_test: Vec<u8> = vec![0, 1, 2];
 
         let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test);
 

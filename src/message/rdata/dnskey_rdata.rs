@@ -194,6 +194,8 @@ impl DnskeyRdata {
 
 #[cfg(test)]
 mod dnskey_rdata_test{
+    use std::vec;
+
     use super::*;
 
     #[test]
@@ -303,4 +305,14 @@ mod dnskey_rdata_test{
         assert_eq!(dnskey_rdata.to_bytes(), bytes_test);
     }
 
+    #[test]
+    fn missing_public_key_from_bytes() {
+        //Bytes array missing the public key
+        let bytes_test: Vec<u8> = vec![0, 1, 3, 5]; 
+
+        let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test);
+
+        assert_eq!(Err("Public key not assigned"), result);
+
+    }
 }

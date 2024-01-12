@@ -213,7 +213,7 @@ mod dnskey_rdata_test{
     }
 
     #[test]
-    fn to_bytes_test(){
+    fn to_bytes(){
         let dnskey_rdata = DnskeyRdata::new(1, 2, 3, vec![1,2]);
 
         let bytes_test: Vec<u8> = vec![0, 1, 2, 3, 1, 2];
@@ -222,7 +222,7 @@ mod dnskey_rdata_test{
     }
 
     #[test]
-    fn from_bytes_test(){
+    fn from_bytes(){
         let dnskey_rdata = DnskeyRdata::new(1, 2, 3, vec![1,2]);
 
         let bytes_test: Vec<u8> = vec![0, 1, 2, 3, 1, 2];
@@ -233,7 +233,7 @@ mod dnskey_rdata_test{
     }
 
     #[test]
-    fn from_bytes_error_test(){
+    fn from_bytes_error(){
         let bytes_test: Vec<u8> = vec![0, 1, 2, 3];
 
         let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test);
@@ -242,7 +242,7 @@ mod dnskey_rdata_test{
     }
 
     #[test]
-    fn max_values_from_bytes_test(){
+    fn max_values_from_bytes(){
         let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         //Max value of 2 bytes is 65535 (16 ones in the 2 bytes)
         dnskey_rdata.set_flags(65535);
@@ -261,7 +261,7 @@ mod dnskey_rdata_test{
     }
 
     #[test]
-    fn max_values_to_bytes_test(){
+    fn max_values_to_bytes(){
         let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         //Max value of 2 bytes is 65535 (16 ones in the 2 bytes)
         dnskey_rdata.set_flags(65535);
@@ -275,7 +275,7 @@ mod dnskey_rdata_test{
     }
 
     #[test]
-    fn min_values_from_bytes_test(){
+    fn min_values_from_bytes(){
         let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         dnskey_rdata.set_flags(0);
         dnskey_rdata.set_protocol(0);
@@ -293,7 +293,7 @@ mod dnskey_rdata_test{
     }
 
     #[test]
-    fn min_values_to_bytes_test(){
+    fn min_values_to_bytes(){
         let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         dnskey_rdata.set_flags(0);
         dnskey_rdata.set_protocol(0);

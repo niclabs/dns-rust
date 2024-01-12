@@ -496,8 +496,41 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
        rrsig_rdata.set_signature(String::from("abcdefg"));
 
-       let result = RRSIGRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
+       if let Ok(result) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+           assert_eq!(result, rrsig_rdata);
+       }
+       else {
+            assert!(false, "error");
+       }
     
-       assert_eq!(result, rrsig_rdata);
+    }
+
+    #[test]
+    fn to_bytes_max_values() {
+        let bytes_test: Vec<u8> = vec![255, 255, //typed covered
+        255, //algorithm
+        2, //labels
+        255, 255, 255, 255, //TTL
+        255, 255, 255, 255, //Signature expiration
+        255, 255, 255, 255, //Signature Inception
+        255, 255,  // key tag
+        7, 101, 120, 97, 109, 112, 108, //domain name
+        101, 3, 99, 111, 109, 0, 
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+       let mut rrsig_rdata = RRSIGRdata::new();
+       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(65535));
+       rrsig_rdata.set_algorithm(255);
+       rrsig_rdata.set_labels(2);
+       rrsig_rdata.set_original_ttl(4294967295);
+       rrsig_rdata.set_signature_expiration(4294967295);
+       rrsig_rdata.set_signature_inception(4294967295);
+       rrsig_rdata.set_key_tag(65535);
+       rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
+       rrsig_rdata.set_signature(String::from("abcdefg"));
+
+       let result = rrsig_rdata.to_bytes();
+    
+       assert_eq!(result, bytes_test);
     }
 } 

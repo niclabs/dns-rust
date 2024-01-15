@@ -28,7 +28,7 @@ use crate::message::type_rtype::Rtype;
 pub struct RRSIGRdata {
     type_covered: Rtype, // RR type mnemonic
     algorithm: u8, // Unsigned decimal integer
-    labels: u8, // Unsigned decimal integer
+    labels: u8, // Unsigned decimal integer, represents the number of layers in the siger name
     original_ttl: u32, // Unsigned decimal integer
     signature_expiration: u32, // Unsigned decimal integer 
     signature_inception: u32, // Unsigned decimal integer
@@ -107,9 +107,28 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
             i += 1;
         }
         signer_name.push(bytes[i]);
+        
+        //check if labels correspond is less or equal to the number of labels in the signer name
+        if let Ok(signer_name_string) = String::from_utf8(signer_name.clone()){
+            //if the signer_name in string format is the root, then labels must be 0
+            if signer_name_string == "." {
+                if labels != 0 {
+                    return Err("Labels is not zero when signer name is root");
+                }
+            }
+            // if the signer_name is not the root, then labels must be less or equal 
+            //than labels of the signer name
+            else{
+                let number_of_subdomains = signer_name_string.split(".").count() as u8;
+                if labels > number_of_subdomains {
+                    return Err("Labels is greater than number of labels in the signer name");
+                }
+            }
+        }
         let signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
         rrsig_rdata.set_signer_name(signer_name.0);
 
+        
         let mut signature: Vec<u8> = Vec::new();
         i += 1;
         while i < bytes_len{
@@ -120,7 +139,7 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
         rrsig_rdata.set_signature(signature);
 
         Ok(rrsig_rdata)
-    }
+        }
 }
 
 impl RRSIGRdata{
@@ -536,8 +555,10 @@ mod rrsig_rdata_test{
     
     #[test]
     fn a(){
-        let a = String::from("\0");
-        let b = a.into_bytes();
+        let a = String::from("www.myfonasa.cl.gob");
+        let b = a.split(".").count();
+        let c : Vec<&str> = a.split(".").collect();
+        println!("{:?}", c);
         println!("{:?}", b);
     }
 
@@ -599,10 +620,11 @@ mod rrsig_rdata_test{
        let result = rrsig_rdata.to_bytes();
        
        //FIXME: there is a inconsistency between to_bytes and from_bytes in signer_name
-       // to_bytes : uses to_bytes() which:  "" -> [0,0]
-       // from_bytes, in while loop, if bytes!=0 then do not go inside the loop
+       // to_bytes : uses the function to_bytes() which means :  "" -> [0,0]
+       // from_bytes: in while loop if bytes!=0 then do not go inside the loop
        // then if you have [0,0] -> only will not count the first 0, but the other
        // will be count it to signature and that is wrong
+       // the problem is the loop in this particular case
        assert_eq!(result, bytes_test);
     }
 } 

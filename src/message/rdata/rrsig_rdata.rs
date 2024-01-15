@@ -675,5 +675,38 @@ mod rrsig_rdata_test{
         }
     }
 
+    #[test]
+    fn from_bytes_good_labels_big_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        8, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        3, 119, 119, 119, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 
+        2, 101, 115, 2, 109, 120, 2, 97, 114, 2, 117, 115, 2, 117, 107, 0, //domain name = www.example.com.es.mx.ar.us.uk
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+        let mut rrsig_rdata = RRSIGRdata::new();
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_algorithm(5);
+        rrsig_rdata.set_labels(8);
+        rrsig_rdata.set_original_ttl(3600);
+        rrsig_rdata.set_signature_expiration(1630435200);
+        rrsig_rdata.set_signature_inception(1630435200);
+        rrsig_rdata.set_key_tag(1234);
+        rrsig_rdata.set_signer_name(DomainName::new_from_str("www.example.com.es.mx.ar.us.uk"));
+        rrsig_rdata.set_signature(String::from("abcdefg"));
+
+
+        if let Ok(rrsig_data_from_bytes) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(rrsig_rdata, rrsig_data_from_bytes);
+        }
+        else {
+            assert!(false, "error");
+        }
+    }
+
 
 } 

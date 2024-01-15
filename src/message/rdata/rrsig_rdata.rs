@@ -652,7 +652,28 @@ mod rrsig_rdata_test{
         else {
             assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
         }
-}
+    }
+
+    #[test]
+    fn from_bytes_wrong_labels_big_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        9, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        3, 119, 119, 119, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 
+        2, 101, 115, 2, 109, 120, 2, 97, 114, 2, 117, 115, 2, 117, 107, 0, //domain name = www.example.com.es.mx.ar.us.uk
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+        if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(error, "Labels is greater than number of labels in the signer name");
+        }
+        else {
+            assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
+        }
+    }
 
 
 } 

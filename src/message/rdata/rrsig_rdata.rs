@@ -107,25 +107,27 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
             i += 1;
         }
         signer_name.push(bytes[i]);
-        
+
+        //create the DomainName
+        let signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
+
         //check if labels is less or equal to the number of labels in the signer name
-        if let Ok(signer_name_string) = String::from_utf8(signer_name.clone()){
-            //if the signer_name in string format is the root, then labels must be 0
-            if signer_name_string == "." {
-                if labels != 0 {
-                    return Err("Labels is not zero when signer name is root");
-                }
-            }
-            // if the signer_name is not the root, then labels must be less or equal 
-            //than labels of the signer name
-            else{
-                let number_of_subdomains = signer_name_string.split(".").count() as u8;
-                if labels > number_of_subdomains {
-                    return Err("Labels is greater than number of labels in the signer name");
-                }
+        let signer_name_string = signer_name.0.get_name();
+        //if the signer_name in string format is the root, then labels must be 0
+        if signer_name_string == "." {
+            if labels != 0 {
+                return Err("Labels is not zero when signer name is root");
             }
         }
-        let signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
+        // if the signer_name is not the root, then labels must be less or equal 
+        //than labels of the signer name
+        else{
+            let number_of_subdomains = signer_name_string.split(".").count() as u8;
+            if labels > number_of_subdomains {
+                //println!("Labels: {} > number of labels in the signer name : {}", labels, number_of_subdomains);
+                return Err("Labels is greater than number of labels in the signer name");
+            }
+        }
         rrsig_rdata.set_signer_name(signer_name.0);
 
         
@@ -561,10 +563,8 @@ mod rrsig_rdata_test{
     
     #[test]
     fn a(){
-        let a = String::from("www.myfonasa.cl.gob");
-        let b = a.split(".").count();
-        let c : Vec<&str> = a.split(".").collect();
-        println!("{:?}", c);
+        let a = DomainName::new_from_str("www.example.com.es.mx.ar.us.uk");
+        let b = a.to_bytes();
         println!("{:?}", b);
     }
 
@@ -635,8 +635,7 @@ mod rrsig_rdata_test{
     }
 
     #[test]
-    #[should_panic]
-    fn from_bytes_wrong_labels_small_domain(){
+    fn from_bytes_wrong_labels_small_signer_name(){
         let bytes_test: Vec<u8> = vec![0, 5, //typed covered
         5, //algorithm
         3, //Labels
@@ -644,26 +643,16 @@ mod rrsig_rdata_test{
         97, 46, 119, 128,//signature expiration
         97, 46, 119, 128, //signature inception
         4, 210, //key tag
-        7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, //domain name
+        7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, //domain name = example.com
         97, 98, 99, 100, 101, 102, 103]; //signature
 
-        let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(Rtype::CNAME);
-        rrsig_rdata.set_algorithm(5);
-            rrsig_rdata.set_labels(2);
-            rrsig_rdata.set_original_ttl(3600);
-            rrsig_rdata.set_signature_expiration(1630435200);
-            rrsig_rdata.set_signature_inception(1630435200);
-            rrsig_rdata.set_key_tag(1234);
-            rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
-            rrsig_rdata.set_signature(String::from("abcdefg"));
+        if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(error, "Labels is greater than number of labels in the signer name");
+        }
+        else {
+            assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
+        }
+}
 
 
-           if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
-               panic!("{}", error);
-           }
-           else {
-               assert!(false);
-           }
-    }
 } 

@@ -732,5 +732,38 @@ mod rrsig_rdata_test{
         }
     }
 
+    #[test]
+    fn from_bytes_good_labels_root_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        0, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        0, 0, 0, //domain name = .
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+
+        let mut rrsig_rdata = RRSIGRdata::new();
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_algorithm(5);
+        rrsig_rdata.set_labels(0);
+        rrsig_rdata.set_original_ttl(3600);
+        rrsig_rdata.set_signature_expiration(1630435200);
+        rrsig_rdata.set_signature_inception(1630435200);
+        rrsig_rdata.set_key_tag(1234);
+        rrsig_rdata.set_signer_name(DomainName::new_from_str("."));
+        rrsig_rdata.set_signature(String::from("abcdefg"));
+
+        //FIXME: same problem with wrong_labels_root_signer_name
+        if let Ok(rrsig_data_from_bytes) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(rrsig_rdata, rrsig_data_from_bytes);
+        }
+        else {
+            assert!(false, "error");
+        }
+    }
+
 
 } 

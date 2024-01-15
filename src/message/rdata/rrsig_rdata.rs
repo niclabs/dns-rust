@@ -108,7 +108,7 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
         }
         signer_name.push(bytes[i]);
         
-        //check if labels correspond is less or equal to the number of labels in the signer name
+        //check if labels is less or equal to the number of labels in the signer name
         if let Ok(signer_name_string) = String::from_utf8(signer_name.clone()){
             //if the signer_name in string format is the root, then labels must be 0
             if signer_name_string == "." {
@@ -450,9 +450,15 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
         rrsig_rdata.set_signature(String::from("abcdefg"));
 
-        let expected_result: Vec<u8> = vec![0, 5, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
-         46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
-         98, 99, 100, 101, 102, 103];
+        let expected_result: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        2, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, //domain name
+        97, 98, 99, 100, 101, 102, 103]; //signature
 
         let result = rrsig_rdata.to_bytes();
 
@@ -626,5 +632,38 @@ mod rrsig_rdata_test{
        // will be count it to signature and that is wrong
        // the problem is the loop in this particular case
        assert_eq!(result, bytes_test);
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_bytes_wrong_labels_small_domain(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        3, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, //domain name
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+        let mut rrsig_rdata = RRSIGRdata::new();
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_algorithm(5);
+            rrsig_rdata.set_labels(2);
+            rrsig_rdata.set_original_ttl(3600);
+            rrsig_rdata.set_signature_expiration(1630435200);
+            rrsig_rdata.set_signature_inception(1630435200);
+            rrsig_rdata.set_key_tag(1234);
+            rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
+            rrsig_rdata.set_signature(String::from("abcdefg"));
+
+
+           if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+               panic!("{}", error);
+           }
+           else {
+               assert!(false);
+           }
     }
 } 

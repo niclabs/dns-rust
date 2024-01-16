@@ -348,4 +348,37 @@ mod nsec_rdata_test{
     }
 
     
+    #[test]
+    fn to_bytes_max_value_unknown(){
+        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("host.example.com"));
+        nsec_rdata.set_next_domain_name(domain_name);
+
+        let expected_next_domain_name = String::from("host.example.com");
+
+        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
+
+        let expected_type_bit_maps = vec![Rtype::UNKNOWN(65535)];
+
+        nsec_rdata.set_type_bit_maps(expected_type_bit_maps.clone());
+
+        assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
+
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bit_map_bytes_to_test = vec![255, 32,
+        0, 0, 0, 0, 0, 0, 0, 0, // 8
+        0, 0, 0, 0, 0, 0, 0, 0, //16
+        0, 0, 0, 0, 0, 0, 0, 0, //24
+        0, 0, 0, 0, 0, 0, 0, 1]; //32
+
+        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        assert_eq!(nsec_rdata.to_bytes(), bytes_to_test);
+    }
+
+
+    
 }

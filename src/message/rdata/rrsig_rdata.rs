@@ -611,7 +611,7 @@ mod rrsig_rdata_test{
         0, 0, 0, 0, //Signature Inception
         0, 0, // key tag
         0,  //empty string in signer name
-        0];
+        0]; //signautre 
 
        let mut rrsig_rdata = RRSIGRdata::new();
        rrsig_rdata.set_type_covered(Rtype::UNKNOWN(0));
@@ -631,7 +631,7 @@ mod rrsig_rdata_test{
        // from_bytes: in while loop if bytes!=0 then do not go inside the loop
        // then if you have [0,0] -> only will not count the first 0, but the other
        // will be count it to signature and that is wrong
-       // the problem is the loop in this particular case
+       // the problem is the loop in this particular case or the codifcation
        assert_eq!(result, bytes_test);
     }
 
@@ -718,11 +718,11 @@ mod rrsig_rdata_test{
         97, 46, 119, 128,//signature expiration
         97, 46, 119, 128, //signature inception
         4, 210, //key tag
-        0, 0, 0, //domain name = .
+        0, 0, 0, // signer name = .
         97, 98, 99, 100, 101, 102, 103]; //signature
 
         // FIXME: the codification of the root is [0,0,0], but because for the while in from_bytes()
-        // the signer name is "" instead of ".".
+        // the signer name from the function from bytes is "" instead of ".".
         //this is a problem in the loop
         if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
             assert_eq!(error, "Labels is not zero when signer name is root");

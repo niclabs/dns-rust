@@ -283,4 +283,19 @@ mod nsec_rdata_test{
 
         assert_eq!(result.is_err(), true);
     }
+
+    #[test]
+    fn from_bytes_empty_bit_map(){
+        let bytes_to_test = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let nsec_rdata = NsecRdata::from_bytes(&bytes_to_test, &bytes_to_test).unwrap();
+
+        let expected_next_domain_name = String::from("host.example.com");
+
+        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
+
+        let expected_type_bit_maps = Vec::new();
+
+        assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
+    }
 }

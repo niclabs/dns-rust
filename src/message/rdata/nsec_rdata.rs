@@ -99,7 +99,11 @@ impl FromBytes<Result<Self, &'static str>> for NsecRdata {
 
         while offset < rest_bytes.len() {
             let window_number = rest_bytes[offset];
-            let bitmap_length = rest_bytes[offset + 1] as usize;
+            let bitmap_length: usize = rest_bytes[offset + 1] as usize;
+            //check if the bitmap_lenght is in the range [0,32]
+            if bitmap_length > 32 {
+                return Err("Some bitmap_lenght is greather than 32");
+            }
             let bitmap = &rest_bytes[offset + 2..offset + 2 + bitmap_length];
             for i in 0..bitmap.len() {
                 let byte = bitmap[i];
@@ -426,6 +430,28 @@ mod nsec_rdata_test{
         let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
 
         assert_eq!(nsec_rdata.to_bytes(), bytes_to_test);
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_bytes_wrong_map_lenght(){
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        //this shoud represent all the Rtypes except the UNKOWNS(value), the first windown (windown 0) only is necessary, 
+        let bit_map_bytes_to_test = vec![0, 33,
+        102, 31, 128, 0, 1, 83, 128, 0, // 102 <-> 01100110 <-> (1, 2, 5, 6) <-> (A, NS, CNAME, SOA) and so on
+        0, 0, 0, 0, 0, 0, 0, 0, //16
+        0, 0, 0, 0, 0, 0, 0, 0, //24
+        0, 0, 0, 0, 0, 0, 0, 32, 1]; //33
+
+        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        if let Err(error)  = NsecRdata::from_bytes(&bytes_to_test, &bytes_to_test){
+            panic!("{}", error);
+        }
+        else{
+            assert!(false, "The map length is greater than 32, must have thrown an error");
+        }
     }
     
 }

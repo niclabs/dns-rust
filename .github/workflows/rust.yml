@@ -21,3 +21,14 @@ jobs:
     #Test the proyect
     - name: Run tests
       run: cargo test --verbose
+  
+  run-coverage:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run coverage script
+        run: ./coverage_script.sh

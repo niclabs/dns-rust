@@ -237,4 +237,21 @@ mod ds_rdata_test{
         assert_eq!(ds_rdata.get_digest_type(), 0);
         assert_eq!(ds_rdata.get_digest(), Vec::new());
     }
+
+    #[test]
+    fn to_bytes_max_values(){
+        let ds_rdata = DsRdata::new(65535, 255, 255, vec![255]);
+        let ds_rdata_bytes = ds_rdata.to_bytes();
+        assert_eq!(ds_rdata_bytes, vec![255, 255, 255, 255, 255]);
+    }
+
+    #[test]
+    fn from_bytes_max_values(){
+        let ds_rdata_bytes = vec![255, 255, 255, 255, 255];
+        let ds_rdata = DsRdata::from_bytes(&ds_rdata_bytes, &ds_rdata_bytes).unwrap();
+        assert_eq!(ds_rdata.get_key_tag(), 65535);
+        assert_eq!(ds_rdata.get_algorithm(), 255);
+        assert_eq!(ds_rdata.get_digest_type(), 255);
+        assert_eq!(ds_rdata.get_digest(), vec![255]);
+    }
 }

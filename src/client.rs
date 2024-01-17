@@ -4,6 +4,7 @@ pub mod udp_connection;
 pub mod client_error;
 
 use crate::message::class_qclass::Qclass;
+use crate::message::rdata::Rdata;
 use crate::{client::client_connection::ClientConnection, message::type_qtype::Qtype};
 use crate::message::DnsMessage;
 use crate::domain_name::DomainName;
@@ -112,7 +113,26 @@ impl <T: ClientConnection> Client<T> {
                     return Err(ClientError::Message("The ip address of the server is not the same as the one in the connection."))?;
                 }
                 match DnsMessage::from_bytes(&response_message) {
-                    Ok(dns_message) => dns_message,
+                    Ok(dns_message) => {
+                        let additional = dns_message.get_additional();
+                        let lenght = additional.len();
+                        let a_r = additional.get(lenght - 1);
+                        match a_r {
+                            Some(a_r) => {
+                                let rdata = a_r.get_rdata();
+                                match rdata {
+                                    Rdata::A(val) => {
+                                        let ipv = val.get_address();
+                                        if ip_addr != ipv{
+                                            return Err(ClientError::Message("The ip address of the server is not the same as the one in the connection."))?;
+                                        }
+                                    },
+                                    _ => {},
+                                }
+                            },
+                            None => {},
+                        }
+                        dns_message},
                     Err(_) => return Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
                 }
             },

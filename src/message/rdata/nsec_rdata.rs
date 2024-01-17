@@ -379,6 +379,29 @@ mod nsec_rdata_test{
         assert_eq!(nsec_rdata.to_bytes(), bytes_to_test);
     }
 
+    #[test]
+    fn from_bytes_all_standar_rtypes(){
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
+        //this shoud represent all the Rtypes except the UNKOWNS(value), the first windown (windown 0) only is necessary, 
+        let bit_map_bytes_to_test = vec![0, 32,
+        102, 31, 128, 0, 1, 83, 128, 0, // 8
+        0, 0, 0, 0, 0, 0, 0, 0, //16
+        0, 0, 0, 0, 0, 0, 0, 0, //24
+        0, 0, 0, 0, 0, 0, 0, 32]; //31
+
+        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        let nsec_rdata = NsecRdata::from_bytes(&bytes_to_test, &bytes_to_test).unwrap();
+
+        let expected_next_domain_name = String::from("host.example.com");
+
+        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
+
+        let expected_type_bit_maps = vec![Rtype::A, Rtype::NS, Rtype::CNAME,Rtype::SOA, Rtype::WKS, Rtype::PTR, Rtype::HINFO, Rtype::MINFO,
+        Rtype::MX, Rtype::TXT, Rtype::DNAME, Rtype::OPT, Rtype::DS, Rtype::RRSIG, Rtype::NSEC, Rtype::DNSKEY, Rtype::TSIG];
+
+        assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
+    }
     
 }

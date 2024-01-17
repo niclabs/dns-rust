@@ -15,10 +15,10 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 
 
 pub struct DsRdata {
-    pub key_tag: u16,
-    pub algorithm: u8,
-    pub digest_type: u8,
-    pub digest: Vec<u8>,
+    pub key_tag: u16, //the key tag of the DNSKEY RR referred
+    pub algorithm: u8, //the algorithm number of the DNSKEY RR referred to by the DS record.
+    pub digest_type: u8, //the algorithm to construct the digest
+    pub digest: Vec<u8>, //digest = digest_algorithm( DNSKEY owner name | DNSKEY RDATA);
 }
 
 impl ToBytes for DsRdata{
@@ -219,5 +219,12 @@ mod ds_rdata_test{
         assert_eq!(ds_rdata.get_algorithm(), 0);
         assert_eq!(ds_rdata.get_digest_type(), 0);
         assert_eq!(ds_rdata.get_digest(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn to_bytes_min_values(){
+        let ds_rdata = DsRdata::new(0, 0, 0, Vec::new());
+        let ds_rdata_bytes = ds_rdata.to_bytes();
+        assert_eq!(ds_rdata_bytes, vec![0, 0, 0, 0]);
     }
 }

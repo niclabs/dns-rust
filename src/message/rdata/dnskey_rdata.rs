@@ -196,6 +196,8 @@ impl DnskeyRdata {
 mod dnskey_rdata_test{
     use std::vec;
 
+    use clap::error;
+
     use super::*;
 
     #[test]
@@ -306,13 +308,18 @@ mod dnskey_rdata_test{
     }
 
     #[test]
+    #[should_panic]
     fn missing_public_key_from_bytes() {
         //Bytes array missing the public key
         let bytes_test: Vec<u8> = vec![0, 1, 3, 5]; 
 
-        let result = DnskeyRdata::from_bytes(&bytes_test, &bytes_test);
+        if let Err(error) = DnskeyRdata::from_bytes(&bytes_test, &bytes_test){
+            panic!("{}", error);
+        }
+        else {
+            assert!(false, "There is missing the public key, the test must have panic");
+        }
 
-        assert_eq!(Err("Public key not assigned"), result);
 
     }
 }

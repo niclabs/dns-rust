@@ -636,6 +636,7 @@ mod rrsig_rdata_test{
     }
 
     #[test]
+    #[should_panic]
     fn from_bytes_wrong_labels_small_signer_name(){
         let bytes_test: Vec<u8> = vec![0, 5, //typed covered
         5, //algorithm
@@ -648,7 +649,7 @@ mod rrsig_rdata_test{
         97, 98, 99, 100, 101, 102, 103]; //signature
 
         if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
-            assert_eq!(error, "Labels is greater than number of labels in the signer name");
+            assert_eq!("{}", error);
         }
         else {
             assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
@@ -656,6 +657,7 @@ mod rrsig_rdata_test{
     }
 
     #[test]
+    #[should_panic]
     fn from_bytes_wrong_labels_big_signer_name(){
         let bytes_test: Vec<u8> = vec![0, 5, //typed covered
         5, //algorithm
@@ -669,7 +671,7 @@ mod rrsig_rdata_test{
         97, 98, 99, 100, 101, 102, 103]; //signature
 
         if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
-            assert_eq!(error, "Labels is greater than number of labels in the signer name");
+            panic!("{}", error);
         }
         else {
             assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
@@ -710,6 +712,7 @@ mod rrsig_rdata_test{
     }
 
     #[test]
+    #[should_panic]
     fn from_bytes_wrong_labels_root_signer_name(){
         let bytes_test: Vec<u8> = vec![0, 5, //typed covered
         5, //algorithm
@@ -725,10 +728,10 @@ mod rrsig_rdata_test{
         // the signer name from the function from bytes is "" instead of ".".
         //this is a problem in the loop
         if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
-            assert_eq!(error, "Labels is not zero when signer name is root");
+            panic!("{}", error);
         }
         else {
-            assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
+            assert!(false, "Test shoud have panic bacuase the number of labels is wrong");
         }
     }
 

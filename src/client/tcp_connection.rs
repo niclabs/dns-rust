@@ -116,7 +116,6 @@ impl ClientTCPConnection {
 mod tcp_connection_test{
     
     use super::*;
-    use core::time;
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     use crate::domain_name::DomainName;
     use crate::message::type_qtype::Qtype;

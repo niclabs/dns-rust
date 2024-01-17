@@ -385,7 +385,7 @@ mod nsec_rdata_test{
 
         //this shoud represent all the Rtypes except the UNKOWNS(value), the first windown (windown 0) only is necessary, 
         let bit_map_bytes_to_test = vec![0, 32,
-        102, 31, 128, 0, 1, 83, 128, 0, // 8
+        102, 31, 128, 0, 1, 83, 128, 0, // 102 <-> 01100110 <-> (1, 2, 5, 6) <-> (A, NS, CNAME, SOA) and so on
         0, 0, 0, 0, 0, 0, 0, 0, //16
         0, 0, 0, 0, 0, 0, 0, 0, //24
         0, 0, 0, 0, 0, 0, 0, 32]; //31
@@ -402,6 +402,30 @@ mod nsec_rdata_test{
         Rtype::MX, Rtype::TXT, Rtype::DNAME, Rtype::OPT, Rtype::DS, Rtype::RRSIG, Rtype::NSEC, Rtype::DNSKEY, Rtype::TSIG];
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
+    }
+
+    #[test]
+    fn to_bytes_all_standar_rtypes() {
+        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("host.example.com"));
+        nsec_rdata.set_next_domain_name(domain_name);
+
+        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::NS, Rtype::CNAME,Rtype::SOA, Rtype::WKS, Rtype::PTR, Rtype::HINFO, Rtype::MINFO,
+            Rtype::MX, Rtype::TXT, Rtype::DNAME, Rtype::OPT, Rtype::DS, Rtype::RRSIG, Rtype::NSEC, Rtype::DNSKEY, Rtype::TSIG]);
+
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bit_map_bytes_to_test = vec![0, 32,
+        102, 31, 128, 0, 1, 83, 128, 0, // 102 <-> 01100110 <-> (1, 2, 5, 6) <-> (A, NS, CNAME, SOA) and so on
+        0, 0, 0, 0, 0, 0, 0, 0, //16
+        0, 0, 0, 0, 0, 0, 0, 0, //24
+        0, 0, 0, 0, 0, 0, 0, 32]; //31;
+
+        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        assert_eq!(nsec_rdata.to_bytes(), bytes_to_test);
     }
     
 }

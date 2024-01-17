@@ -1,5 +1,7 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
+use crate::message::rdata::a_rdata::ARdata;
+
 
 use std::net::{UdpSocket,SocketAddr, IpAddr};
 use std::time::Duration;
@@ -62,6 +64,10 @@ impl ClientConnection for ClientUDPConnection {
         };
 
         let ip = self.get_server_addr();
+
+        let mut rr = ARdata::new();
+        rr.set_address(ip);
+       
 
         drop(socket_udp);
         return Ok((msg.to_vec(), ip));

@@ -1,6 +1,8 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
+use crate::message::rdata::Rdata;
 use crate::message::rdata::a_rdata::ARdata;
+use crate::message::resource_record::ResourceRecord;
 
 
 use std::net::{UdpSocket,SocketAddr, IpAddr};
@@ -64,9 +66,12 @@ impl ClientConnection for ClientUDPConnection {
         };
 
         let ip = self.get_server_addr();
-
-        let mut rr = ARdata::new();
-        rr.set_address(ip);
+        let mut additionals = dns_query.get_additional();
+        let mut ar = ARdata::new();
+        ar.set_address(ip);
+        let a_rdata = Rdata::A(ar);
+        let rr = ResourceRecord::new(a_rdata);
+        additionals.push(rr);
        
 
         drop(socket_udp);

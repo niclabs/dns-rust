@@ -1,5 +1,8 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
+use crate::message::rdata::Rdata;
+use crate::message::rdata::a_rdata::ARdata;
+use crate::message::resource_record::ResourceRecord;
 use super::client_error::ClientError;
 
 
@@ -60,6 +63,13 @@ impl ClientConnection for ClientTCPConnection {
         let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
         let mut vec_msg: Vec<u8> = Vec::new();
         let ip = self.get_server_addr();
+        let mut additionals = dns_query.get_additional();
+        let mut ar = ARdata::new();
+        ar.set_address(ip);
+        let a_rdata = Rdata::A(ar);
+        let rr = ResourceRecord::new(a_rdata);
+        additionals.push(rr);
+        
     
         while vec_msg.len() < tcp_msg_len as usize {
             let mut msg = [0; 512];

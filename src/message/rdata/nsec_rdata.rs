@@ -545,5 +545,4 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
     }
-    //hola
 }

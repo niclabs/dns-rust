@@ -28,8 +28,14 @@ impl ClientConnection for ClientTCPConnection {
         }
     }
 
+    ///implement get_ip
+    /// returns IpAddr
+    fn get_ip(&self) -> IpAddr {
+        return self.server_addr.clone();
+    }
+
     /// creates socket tcp, sends query and receive response
-    fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>{
+    fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>{
         
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
@@ -53,6 +59,7 @@ impl ClientConnection for ClientTCPConnection {
     
         let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
         let mut vec_msg: Vec<u8> = Vec::new();
+        let ip = self.get_server_addr();
     
         while vec_msg.len() < tcp_msg_len as usize {
             let mut msg = [0; 512];
@@ -64,7 +71,7 @@ impl ClientConnection for ClientTCPConnection {
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
 
-        return Ok(vec_msg);
+        return Ok((vec_msg, ip));
     }
 }
 
@@ -99,7 +106,8 @@ impl ClientTCPConnection {
 mod tcp_connection_test{
     
     use super::*;
-    use std::net::{IpAddr,Ipv4Addr};
+    use core::time;
+    use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     use crate::domain_name::DomainName;
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
@@ -117,6 +125,25 @@ mod tcp_connection_test{
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
+    }
+
+    #[test]
+    fn get_ip_v4(){
+        let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientTCPConnection::new(ip_address, timeout);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
+    fn get_ip_v6(){
+        // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
+        let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientTCPConnection::new(ip_address, timeout);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
     }
 
     //Setters and Getters test
@@ -181,7 +208,7 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let response = conn_new.send(dns_query).unwrap();
+        let (response, _ip) = conn_new.send(dns_query).unwrap();
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
         // FIXME:

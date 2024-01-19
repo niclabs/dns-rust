@@ -26,8 +26,13 @@ impl ClientConnection for ClientUDPConnection {
             timeout: timeout,
         }
     }
+    /// implement get_ip
+    /// returns IpAddr
+    fn get_ip(&self) -> IpAddr {
+        return self.server_addr.clone();
+    }
 
-    fn send(self, dns_query:DnsMessage) -> Result<Vec<u8>, ClientError> { 
+    fn send(self, dns_query:DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> { 
 
         let timeout:Duration = self.timeout;
         let server_addr = SocketAddr::new(self.get_server_addr(), 53);
@@ -56,8 +61,10 @@ impl ClientConnection for ClientUDPConnection {
             Ok(_) => (),
         };
 
+        let ip = self.get_server_addr();
+
         drop(socket_udp);
-        return Ok(msg.to_vec());
+        return Ok((msg.to_vec(), ip));
     }
 
 }
@@ -95,7 +102,7 @@ mod udp_connection_test{
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
     use super::*;
-    use std::net::{IpAddr,Ipv4Addr};
+    use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     #[test]
     fn create_udp() {
 
@@ -116,6 +123,25 @@ mod udp_connection_test{
         let mut _conn_new = ClientUDPConnection::new(ip_addr,timeout);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
+    fn get_ip_v4(){
+        let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientUDPConnection::new(ip_address, timeout);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
+    fn get_ip_v6(){
+        // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
+        let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientUDPConnection::new(ip_address, timeout);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
     }
 
     #[test]
@@ -194,7 +220,7 @@ mod udp_connection_test{
             false,
             1);
         
-        let response = conn.send(dns_query).unwrap();
+        let (response, _ip) = conn.send(dns_query).unwrap();
 
         // assert!(result.is_ok());
 

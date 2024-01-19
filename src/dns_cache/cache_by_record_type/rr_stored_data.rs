@@ -2,40 +2,50 @@ use crate::message::resource_record::ResourceRecord;
 use chrono::prelude::*;
 
 #[derive(Clone,PartialEq,Debug)]
-// An structs that represents one element in the dns cache.
-pub struct RRCache {
-    // Resource Records of the domain name
+/// An structs that represents one element in the dns cache.
+pub struct RRStoredData {
+    /// Resource Records of the domain name
     resource_record: ResourceRecord,
-    // Mean of response time of the ip address
+    /// Mean of response time of the ip address
     response_time: u32,
-    // Last use of the rr
+    /// Last use of the rr
     last_use: DateTime<Utc>,
+    /// Time of creation of the `RRStoredData` in the Resolver's cache.
+    creation_time: DateTime<Utc>,
 }
 
-impl RRCache {
-    // Creates a new RRCache struct
+impl RRStoredData {
+    // Creates a new RRStoredData struct
     //
     // # Examples
     // '''
-    // let rr_cache = RRCache::new();
+    // let rr_cache = RRStoredData::new();
     //
     // assert_eq!(rr_cache.resource_records.len(), 0);
     // assert_eq!(rr_cache.response_time, 5);
     // '''
     //
     pub fn new(resource_record: ResourceRecord) -> Self {
-        let rr_cache = RRCache {
+        let rr_cache = RRStoredData {
             resource_record: resource_record,
             response_time: 5000,
             last_use: Utc::now(),
+            creation_time: Utc::now(),
         };
 
         rr_cache
     }
+
+    pub fn get_absolute_ttl(&self) -> DateTime<Utc> {
+        let ttl = self.resource_record.get_ttl();
+        let creation_time = self.creation_time;
+
+        creation_time + chrono::Duration::seconds(ttl as i64)
+    }
 }
 
 // Getters
-impl RRCache {
+impl RRStoredData {
     // Gets the resource record from the domain cache
     pub fn get_resource_record(&self) -> ResourceRecord {
         self.resource_record.clone()
@@ -50,10 +60,15 @@ impl RRCache {
     pub fn get_last_use(&self) -> DateTime<Utc> {
         self.last_use
     }
+
+    // Gets the creation time of the domain in cache
+    pub fn get_creation_time(&self) -> DateTime<Utc> {
+        self.creation_time
+    }
 }
 
 // Setters
-impl RRCache {
+impl RRStoredData {
     // Sets the resource record attribute with new value
     pub fn set_resource_record(&mut self, resource_record: ResourceRecord) {
         self.resource_record = resource_record;
@@ -76,7 +91,7 @@ mod rr_cache_test {
     use crate::message::rdata::Rdata;
     use crate::message::type_rtype::Rtype;
     use crate::message::resource_record::ResourceRecord;
-    use crate::rr_cache::RRCache;
+    use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
     use std::net::IpAddr;
     use chrono::prelude::*;
 
@@ -91,7 +106,7 @@ mod rr_cache_test {
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(Rtype::A);
 
-        let rr_cache = RRCache::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
 
         assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_rtype()), 1);
         assert_eq!(rr_cache.response_time, 5000);
@@ -108,7 +123,7 @@ mod rr_cache_test {
         let mut resource_record = ResourceRecord::new(rdata.clone());
         resource_record.set_type_code(Rtype::A);
 
-        let mut rr_cache = RRCache::new(resource_record);
+        let mut rr_cache = RRStoredData::new(resource_record);
 
         assert_eq!(Rtype::from_rtype_to_int(rr_cache.resource_record.get_rtype()), 1);
 
@@ -137,7 +152,7 @@ mod rr_cache_test {
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(Rtype::A);
 
-        let mut rr_cache = RRCache::new(resource_record);
+        let mut rr_cache = RRStoredData::new(resource_record);
 
         assert_eq!(rr_cache.get_response_time(), 5000);
 
@@ -157,7 +172,7 @@ mod rr_cache_test {
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(Rtype::A);
 
-        let mut rr_cache = RRCache::new(resource_record);
+        let mut rr_cache = RRStoredData::new(resource_record);
 
         let now = Utc::now();
 

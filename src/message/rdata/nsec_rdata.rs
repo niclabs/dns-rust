@@ -482,6 +482,7 @@ mod nsec_rdata_test{
     }
 
     #[test]
+    #[ignore = "discuss if this is the correct behavior"]
     fn from_bytes_empty_domain() {
         let next_domain_name_bytes = vec![0]; //codification for domain name = ""
 

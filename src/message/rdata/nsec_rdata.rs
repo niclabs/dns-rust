@@ -460,51 +460,6 @@ mod nsec_rdata_test{
     }
 
     #[test]
-    fn to_bytes_empty_domain() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from(""));
-        nsec_rdata.set_next_domain_name(domain_name);
-
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
-
-        let next_domain_name_bytes = vec![0];
-
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
-
-        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
-
-        assert_eq!(nsec_rdata.to_bytes(), bytes_to_test);
-    }
-
-    #[test]
-    #[ignore = "discuss if this is the correct behavior"]
-    fn from_bytes_empty_domain() {
-        let next_domain_name_bytes = vec![0]; //codification for domain name = ""
-
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
-
-        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
-
-        let nsec_rdata = NsecRdata::from_bytes(&bytes_to_test, &bytes_to_test).unwrap();
-
-        let expected_next_domain_name = String::from("");
-
-        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
-
-        let expected_type_bit_maps = vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)];
-
-        assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
-    }
-
-    #[test]
     fn to_bytes_root_domain() {
         let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
 

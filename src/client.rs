@@ -108,10 +108,7 @@ impl <T: ClientConnection> Client<T> {
         let ip_addr = conn.get_ip();
 
        let dns_response: DnsMessage = match conn.send(client_query) {
-            Ok((response_message, ip)) => {
-                if ip != ip_addr {
-                    return Err(ClientError::Message("The ip address of the server is not the same as the one in the connection."))?;
-                }
+            Ok(response_message) => {
                 match DnsMessage::from_bytes(&response_message) {
                     Ok(dns_message) => {
                         let additional = dns_message.get_additional();

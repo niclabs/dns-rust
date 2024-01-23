@@ -563,13 +563,6 @@ mod rrsig_rdata_test{
     }
     
     #[test]
-    fn a(){
-        let a = DomainName::new_from_str(".");
-        let b = a.to_bytes();
-        println!("{:?}", b);
-    }
-
-    #[test]
     fn from_bytes_min_values() {
         let bytes_test: Vec<u8> = vec![0, 0, //typed covered
         0, //algorithm

@@ -129,11 +129,10 @@ impl DomainName {
         }
         if first_byte == 0 {
             // It means that the domain name is root
-            domain_name_str.push_str(".");
             no_domain_bytes = &no_domain_bytes[1..];
         }
 
-        if domain_name_str.len() > 0 && domain_name_str != "."{
+        if domain_name_str.len() > 0{
             //remove last value 0
             domain_name_str.remove(domain_name_str.len() - 1);
         }
@@ -321,6 +320,6 @@ mod domain_name_test {
         let bytes = domain_name.to_bytes();
         assert_eq!(bytes, vec![0]);
         let new_domain_name = DomainName::from_bytes(&bytes, &bytes).unwrap();
-        assert_eq!(new_domain_name.0.get_name(), String::from(".") );
+        assert_eq!(new_domain_name.0.get_name(), String::from("") );
     }
 }

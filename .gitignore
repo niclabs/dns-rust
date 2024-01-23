@@ -2,7 +2,7 @@
 CL-test.zone
 .vscode
 .github/workflows
-.github/hooks
+
 
 # coverage
 coverage/

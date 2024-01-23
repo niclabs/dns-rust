@@ -133,6 +133,9 @@ impl FromBytes<Result<Self, &'static str>> for NsecRdata {
 impl NsecRdata{
     /// Creates a new `NsecRdata` with next_domain_name and type_bit_maps
     pub fn new(next_domain_name: DomainName, type_bit_maps: Vec<Rtype>) -> Self {
+        if next_domain_name.get_name() == ""{
+            panic!("The next_domain_name can't be empty");
+        }
         NsecRdata {
             next_domain_name,
             type_bit_maps,

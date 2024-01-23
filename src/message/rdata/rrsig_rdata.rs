@@ -597,7 +597,6 @@ mod rrsig_rdata_test{
     }
 
     #[test]
-    #[ignore = "reason explained in the test"]
     fn to_bytes_min_values() {
         let bytes_test: Vec<u8> = vec![0, 0, //typed covered
         0, //algorithm
@@ -621,13 +620,7 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signature(String::from("\0"));
 
        let result = rrsig_rdata.to_bytes();
-       
-       //FIXME: there is a inconsistency between to_bytes and from_bytes in signer_name
-       // to_bytes : uses the function to_bytes() which means :  "" -> [0,0]
-       // from_bytes: in while loop if bytes!=0 then do not go inside the loop
-       // then if you have [0,0] -> only will not count the first 0, but the other
-       // will be count it to signature and that is wrong
-       // the problem is the loop in this particular case or the codifcation
+
        assert_eq!(result, bytes_test);
     }
 

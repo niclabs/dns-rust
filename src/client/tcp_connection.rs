@@ -38,7 +38,7 @@ impl ClientConnection for ClientTCPConnection {
     }
 
     /// creates socket tcp, sends query and receive response
-    fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>{
+    fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>{
         
         let timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
@@ -81,7 +81,7 @@ impl ClientConnection for ClientTCPConnection {
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
 
-        return Ok((vec_msg, ip));
+        return Ok(vec_msg);
     }
 }
 
@@ -217,7 +217,7 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let (response, _ip) = conn_new.send(dns_query).unwrap();
+        let response = conn_new.send(dns_query).unwrap();
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
         // FIXME:

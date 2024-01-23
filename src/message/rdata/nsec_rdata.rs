@@ -213,17 +213,17 @@ mod nsec_rdata_test{
 
     #[test]
     fn constructor_test() {
-        let nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
-        assert_eq!(nsec_rdata.next_domain_name.get_name(), String::from(""));
+        assert_eq!(nsec_rdata.next_domain_name.get_name(), String::from("."));
         assert_eq!(nsec_rdata.type_bit_maps, vec![]);
     }
 
     #[test]
     fn set_and_get_next_domain_name_test() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
-        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from(""));
+        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("."));
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("test"));
@@ -234,7 +234,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn set_and_get_type_bit_maps_test() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), vec![]);
 
@@ -245,7 +245,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn to_bytes_test() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -313,7 +313,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn to_bytes_empty_bit_map(){
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -362,7 +362,7 @@ mod nsec_rdata_test{
     
     #[test]
     fn to_bytes_max_value_unknown(){
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -418,7 +418,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn to_bytes_all_standar_rtypes() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -464,7 +464,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn to_bytes_root_domain() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("."));

@@ -157,10 +157,11 @@ impl DomainName {
     // Returns an array of bytes that represents the domain name
     pub fn to_bytes(&self) -> Vec<u8> {
         let name = self.get_name();
+        println!("name: {}", name);
         let mut bytes: Vec<u8> = Vec::new();
         for word in name.split(".") {
-            // If the name is root break the loop
-            if name == "." {
+            // If the name is root or empty break the loop
+            if name == "." || name == ""{
                 break;
             }
             let word_length = word.len();

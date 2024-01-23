@@ -115,9 +115,9 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
         //check if labels is less or equal to the number of labels in the signer name
         let signer_name_string = signer_name.0.get_name();
         //if the signer_name in string format is the root, then labels must be 0
-        if signer_name_string == "" {
+        if signer_name_string == "." {
             if labels != 0 {
-                return Err("Labels is not zero when signer name is root");
+                panic!("Labels is not zero when signer name is root");
             }
         }
         // if the signer_name is not the root, then labels must be less or equal 
@@ -714,17 +714,14 @@ mod rrsig_rdata_test{
         97, 46, 119, 128,//signature expiration
         97, 46, 119, 128, //signature inception
         4, 210, //key tag
-        0, 0, 0, // signer name = .
+        0, // signer name = .
         97, 98, 99, 100, 101, 102, 103]; //signature
-
-        // FIXME: the codification of the root is [0,0,0], but because for the while in from_bytes()
-        // the signer name from the function from bytes is "" instead of ".".
-        //this is a problem in the loop
+        
         if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
             panic!("{}", error);
         }
         else {
-            assert!(false, "Test shoud have panic bacuase the number of labels is wrong");
+            assert!(false, "Test should have panic bacuase the number of labels is wrong");
         }
     }
 

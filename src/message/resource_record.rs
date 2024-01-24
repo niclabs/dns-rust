@@ -1019,4 +1019,14 @@ mod resource_record_test {
         resource_record.set_ttl(2147483647);
         assert_eq!(resource_record.get_ttl(), 2147483647);
     }
+
+    #[test]
+    #[should_panic]
+    fn ttl_fail() {
+        let soa_rdata = Rdata::SOA(SoaRdata::new());
+        let mut resource_record = ResourceRecord::new(soa_rdata);
+        assert_eq!(resource_record.get_ttl(), 0);
+        resource_record.set_ttl(2147483648);
+        assert_eq!(resource_record.get_ttl(), 2147483648);
+    }
 }

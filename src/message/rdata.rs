@@ -554,7 +554,7 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_dnskey_rdata(){
-        let mut dnskey_rdata = DnskeyRdata::new();
+        let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
         dnskey_rdata.set_flags(2 as u16);
         dnskey_rdata.set_protocol(3 as u8);
         dnskey_rdata.set_algorithm(4 as u8);
@@ -596,7 +596,7 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_nsec_rdata(){
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));

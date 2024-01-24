@@ -28,7 +28,7 @@ use crate::message::type_rtype::Rtype;
 pub struct RRSIGRdata {
     type_covered: Rtype, // RR type mnemonic
     algorithm: u8, // Unsigned decimal integer
-    labels: u8, // Unsigned decimal integer
+    labels: u8, // Unsigned decimal integer, represents the number of layers in the siger name
     original_ttl: u32, // Unsigned decimal integer
     signature_expiration: u32, // Unsigned decimal integer 
     signature_inception: u32, // Unsigned decimal integer
@@ -107,9 +107,33 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
             i += 1;
         }
         signer_name.push(bytes[i]);
-        let signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
+
+
+        //create the DomainName
+        let mut signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
+
+        //check if labels is less or equal to the number of labels in the signer name
+        let mut signer_name_string = signer_name.0.get_name();
+        //if the signer_name in string format is the root, then labels must be 0
+        if signer_name_string == "" {
+            signer_name_string = ".".to_string();
+            signer_name.0.set_name(signer_name_string);
+            if labels != 0 {
+                panic!("Labels is not zero when signer name is root");
+            }
+        }
+        // if the signer_name is not the root, then labels must be less or equal 
+        //than labels of the signer name
+        else{
+            let number_of_subdomains = signer_name_string.split(".").count() as u8;
+            if labels > number_of_subdomains {
+                //println!("Labels: {} > number of labels in the signer name : {}", labels, number_of_subdomains);
+                return Err("Labels is greater than number of labels in the signer name");
+            }
+        }
         rrsig_rdata.set_signer_name(signer_name.0);
 
+        
         let mut signature: Vec<u8> = Vec::new();
         i += 1;
         while i < bytes_len{
@@ -120,7 +144,7 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
         rrsig_rdata.set_signature(signature);
 
         Ok(rrsig_rdata)
-    }
+        }
 }
 
 impl RRSIGRdata{
@@ -431,9 +455,15 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
         rrsig_rdata.set_signature(String::from("abcdefg"));
 
-        let expected_result: Vec<u8> = vec![0, 5, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
-         46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
-         98, 99, 100, 101, 102, 103];
+        let expected_result: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        2, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, //domain name
+        97, 98, 99, 100, 101, 102, 103]; //signature
 
         let result = rrsig_rdata.to_bytes();
 
@@ -471,4 +501,257 @@ mod rrsig_rdata_test{
 
         assert_eq!(result, Err("Format Error"));
     }
+
+    #[test]
+    fn from_bytes_max_values() {
+        let bytes_test: Vec<u8> = vec![255, 255, //typed covered
+        255, //algorithm
+        2, //labels
+        255, 255, 255, 255, //TTL
+        255, 255, 255, 255, //Signature expiration
+        255, 255, 255, 255, //Signature Inception
+        255, 255,  // key tag
+        7, 101, 120, 97, 109, 112, 108, //domain name
+        101, 3, 99, 111, 109, 0, 
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+       let mut rrsig_rdata = RRSIGRdata::new();
+       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(65535));
+       rrsig_rdata.set_algorithm(255);
+       rrsig_rdata.set_labels(2);
+       rrsig_rdata.set_original_ttl(4294967295);
+       rrsig_rdata.set_signature_expiration(4294967295);
+       rrsig_rdata.set_signature_inception(4294967295);
+       rrsig_rdata.set_key_tag(65535);
+       rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
+       rrsig_rdata.set_signature(String::from("abcdefg"));
+
+       if let Ok(result) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+           assert_eq!(result, rrsig_rdata);
+       }
+       else {
+            assert!(false, "error");
+       }
+    
+    }
+
+    #[test]
+    fn to_bytes_max_values() {
+        let bytes_test: Vec<u8> = vec![255, 255, //typed covered
+        255, //algorithm
+        2, //labels
+        255, 255, 255, 255, //TTL
+        255, 255, 255, 255, //Signature expiration
+        255, 255, 255, 255, //Signature Inception
+        255, 255,  // key tag
+        7, 101, 120, 97, 109, 112, 108, //domain name
+        101, 3, 99, 111, 109, 0, 
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+       let mut rrsig_rdata = RRSIGRdata::new();
+       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(65535));
+       rrsig_rdata.set_algorithm(255);
+       rrsig_rdata.set_labels(2);
+       rrsig_rdata.set_original_ttl(4294967295);
+       rrsig_rdata.set_signature_expiration(4294967295);
+       rrsig_rdata.set_signature_inception(4294967295);
+       rrsig_rdata.set_key_tag(65535);
+       rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
+       rrsig_rdata.set_signature(String::from("abcdefg"));
+
+       let result = rrsig_rdata.to_bytes();
+    
+       assert_eq!(result, bytes_test);
+    }
+    
+    #[test]
+    fn from_bytes_min_values() {
+        let bytes_test: Vec<u8> = vec![0, 0, //typed covered
+        0, //algorithm
+        0, //labels
+        0, 0, 0, 0, //TTL
+        0, 0, 0, 0, //Signature expiration
+        0, 0, 0, 0, //Signature Inception
+        0, 0, // key tag
+        0, //empty string in signer name
+        0]; //signature
+
+       let mut rrsig_rdata = RRSIGRdata::new();
+       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(0));
+       rrsig_rdata.set_algorithm(0);
+       rrsig_rdata.set_labels(0);
+       rrsig_rdata.set_original_ttl(0);
+       rrsig_rdata.set_signature_expiration(0);
+       rrsig_rdata.set_signature_inception(0);
+       rrsig_rdata.set_key_tag(0);
+       rrsig_rdata.set_signer_name(DomainName::new_from_str("."));
+       rrsig_rdata.set_signature(String::from("\0"));
+
+       if let Ok(result) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+         assert_eq!(result, rrsig_rdata);
+       }
+       else {
+        assert!(false, "error");
+       }
+    
+    }
+
+    #[test]
+    fn to_bytes_min_values() {
+        let bytes_test: Vec<u8> = vec![0, 0, //typed covered
+        0, //algorithm
+        0, //labels
+        0, 0, 0, 0, //TTL
+        0, 0, 0, 0, //Signature expiration
+        0, 0, 0, 0, //Signature Inception
+        0, 0, // key tag
+        0,  //empty string in signer name
+        0]; //signautre 
+
+       let mut rrsig_rdata = RRSIGRdata::new();
+       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(0));
+       rrsig_rdata.set_algorithm(0);
+       rrsig_rdata.set_labels(0);
+       rrsig_rdata.set_original_ttl(0);
+       rrsig_rdata.set_signature_expiration(0);
+       rrsig_rdata.set_signature_inception(0);
+       rrsig_rdata.set_key_tag(0);
+       rrsig_rdata.set_signer_name(DomainName::new_from_str(""));
+       rrsig_rdata.set_signature(String::from("\0"));
+
+       let result = rrsig_rdata.to_bytes();
+
+       assert_eq!(result, bytes_test);
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_bytes_wrong_labels_small_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        3, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, //domain name = example.com
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+        if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!("{}", error);
+        }
+        else {
+            assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_bytes_wrong_labels_big_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        9, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        3, 119, 119, 119, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 
+        2, 101, 115, 2, 109, 120, 2, 97, 114, 2, 117, 115, 2, 117, 107, 0, //domain name = www.example.com.es.mx.ar.us.uk
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+        if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            panic!("{}", error);
+        }
+        else {
+            assert!(false, "Test shoud have been panic bacuase the number of labels is wrong");
+        }
+    }
+
+    #[test]
+    fn from_bytes_good_labels_big_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        8, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        3, 119, 119, 119, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 
+        2, 101, 115, 2, 109, 120, 2, 97, 114, 2, 117, 115, 2, 117, 107, 0, //domain name = www.example.com.es.mx.ar.us.uk
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+        let mut rrsig_rdata = RRSIGRdata::new();
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_algorithm(5);
+        rrsig_rdata.set_labels(8);
+        rrsig_rdata.set_original_ttl(3600);
+        rrsig_rdata.set_signature_expiration(1630435200);
+        rrsig_rdata.set_signature_inception(1630435200);
+        rrsig_rdata.set_key_tag(1234);
+        rrsig_rdata.set_signer_name(DomainName::new_from_str("www.example.com.es.mx.ar.us.uk"));
+        rrsig_rdata.set_signature(String::from("abcdefg"));
+
+
+        if let Ok(rrsig_data_from_bytes) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(rrsig_rdata, rrsig_data_from_bytes);
+        }
+        else {
+            assert!(false, "error");
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_bytes_wrong_labels_root_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        1, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        0, // signer name = .
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+        if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            panic!("{}", error);
+        }
+        else {
+            assert!(false, "Test should have panic bacuase the number of labels is wrong");
+        }
+    }
+
+    #[test]
+    fn from_bytes_good_labels_root_signer_name(){
+        let bytes_test: Vec<u8> = vec![0, 5, //typed covered
+        5, //algorithm
+        0, //Labels
+        0, 0, 14, 16, //TTL
+        97, 46, 119, 128,//signature expiration
+        97, 46, 119, 128, //signature inception
+        4, 210, //key tag
+        0, //domain name = .
+        97, 98, 99, 100, 101, 102, 103]; //signature
+
+
+        let mut rrsig_rdata = RRSIGRdata::new();
+        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_algorithm(5);
+        rrsig_rdata.set_labels(0);
+        rrsig_rdata.set_original_ttl(3600);
+        rrsig_rdata.set_signature_expiration(1630435200);
+        rrsig_rdata.set_signature_inception(1630435200);
+        rrsig_rdata.set_key_tag(1234);
+        rrsig_rdata.set_signer_name(DomainName::new_from_str("."));
+        rrsig_rdata.set_signature(String::from("abcdefg"));
+
+        if let Ok(rrsig_data_from_bytes) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
+            assert_eq!(rrsig_rdata, rrsig_data_from_bytes);
+        }
+        else {
+            assert!(false, "error");
+        }
+    }
+
+
 } 

@@ -128,12 +128,13 @@ impl DomainName {
             }
         }
         if first_byte == 0 {
+            // It means that the domain name is root
             no_domain_bytes = &no_domain_bytes[1..];
         }
 
-        if domain_name_str.len() > 0 {
+        if domain_name_str.len() > 0{
             //remove last value 0
-        domain_name_str.remove(domain_name_str.len() - 1);
+            domain_name_str.remove(domain_name_str.len() - 1);
         }
 
         // Check domain name restriction, max 255 octets
@@ -156,9 +157,13 @@ impl DomainName {
     // Returns an array of bytes that represents the domain name
     pub fn to_bytes(&self) -> Vec<u8> {
         let name = self.get_name();
+        println!("name: {}", name);
         let mut bytes: Vec<u8> = Vec::new();
-
         for word in name.split(".") {
+            // If the name is root or empty break the loop
+            if name == "." || name == ""{
+                break;
+            }
             let word_length = word.len();
             bytes.push(word_length as u8);
 
@@ -218,6 +223,8 @@ impl fmt::Display for DomainName {
 
 #[cfg(test)]
 mod domain_name_test {
+    use crate::domain_name;
+
     use super::DomainName;
 
     #[test]
@@ -306,5 +313,15 @@ mod domain_name_test {
             format!("The domain name is: {domain_name}"),
             "The domain name is: XX.LCS.MIT.EDU."
         );
+    }
+
+    #[test]
+    #[ignore = "the domain name should be the root"]
+    fn root_domain_test(){
+        let domain_name = DomainName::new_from_str(".");
+        let bytes = domain_name.to_bytes();
+        assert_eq!(bytes, vec![0]);
+        let new_domain_name = DomainName::from_bytes(&bytes, &bytes).unwrap();
+        assert_eq!(new_domain_name.0.get_name(), String::from(".") );
     }
 }

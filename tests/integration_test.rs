@@ -1,6 +1,6 @@
 use std::{net::IpAddr, str::FromStr};
 
-use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver, resolver_error::ResolverError}, dns_cache::cache_by_record_type::rr_stored_data, domain_name::DomainName, message::{resource_record::ResourceRecord, rdata::{a_rdata::ARdata, Rdata}}};
+use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver, resolver_error::ResolverError}, client::client_error::ClientError, dns_cache::cache_by_record_type::rr_stored_data, domain_name::DomainName, message::{resource_record::ResourceRecord, rdata::{a_rdata::ARdata, Rdata}}};
 use dns_rust::message::type_rtype::Rtype;
 
 
@@ -20,7 +20,7 @@ async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Resul
     response
 }
 
-/// 6.2.1 Query test Qtype = A
+/// 6.2.1 Query test Qtype = A with cache check
 #[tokio::test]
 #[ignore = "Lookup do not save the answer in the cache correctly"]
 async fn query_a_type_check_cache() {
@@ -54,6 +54,25 @@ async fn query_a_type_check_cache() {
     }
 
 }
+
+/// 6.2.1 Query test Qtype = A with cache check
+#[tokio::test]
+#[ignore = "To pass this test you must be offline"]
+async fn query_a_type_check_no_conecction() {
+    //config and resolver
+    let config = ResolverConfig::default();
+    let mut resolver = AsyncResolver::new(config);
+
+    let response = resolver.lookup("example.com", "UDP", "A", "IN").await;
+    println!("{:?}", response);
+    if let Err(error) = response {
+        println!("es un error y es : \n {:?}", error);
+    } else {
+        panic!("The response should be an error");
+    }
+}
+
+
 /// 6.2.1 Query test Qtype = A
 #[tokio::test]
 async fn query_a_type() {

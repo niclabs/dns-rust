@@ -166,12 +166,13 @@ impl AsyncResolver {
     /// assert!(response.is_ok());
     /// ```
     async fn inner_lookup(
-        &mut self, 
+        &self, 
         domain_name: DomainName,
         qtype:Qtype, 
         qclass:Qclass
     ) -> Result<DnsMessage, ResolverError> {
         print!("[INNER LOOKUP]");
+
 
         // Cache lookup
         // Search in cache only if its available
@@ -343,9 +344,9 @@ impl AsyncResolver {
     /// 
     /// This method stores the data of the response in the cache, depending on the
     /// type of response.
-    fn store_data_cache(&mut self, response: DnsMessage) {
+    fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc(); 
-        {
+    
         let mut cache = self.cache.lock().unwrap(); // FIXME: agregar algun tipo de error para esto??
         cache.timeout_cache();
         if !truncated {
@@ -359,7 +360,7 @@ impl AsyncResolver {
             });
 
         } 
-        }
+        
         self.save_negative_answers(response);
     }
 
@@ -393,7 +394,7 @@ impl AsyncResolver {
     /// cached.
     ///
     /// Stores the data of negative answers in the cache. 
-    fn save_negative_answers(&mut self, response: DnsMessage){
+    fn save_negative_answers(&self, response: DnsMessage){
 
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_qtype();
@@ -445,6 +446,7 @@ mod async_resolver_test {
     use crate::async_resolver::config::ResolverConfig;
     use super::AsyncResolver;
     use std::net::IpAddr;
+    use std::ops::Deref;
     use std::str::FromStr;
     use std::time::Duration;
     use std::vec;
@@ -1778,7 +1780,8 @@ mod async_resolver_test {
         cache.set_max_size(9);
         let  rtype =  Qtype::to_rtype(qtype);
         cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
-        *resolver.cache = Mutex::new(cache);
+        let mut cache_guard = resolver.cache.lock().unwrap();
+        *cache_guard = cache;
 
         assert_eq!(resolver.get_cache().get_size(), 1);
 
@@ -1885,10 +1888,10 @@ mod async_resolver_test {
 
     #[tokio::test]
     async fn test3(){
-        let mut resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
+        let resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
         let qtype = Qtype::A;
         let qclass = Qclass::IN;
-        let mi_vector: [&str; 3] = ["example.com", "uchile.cl", "www.u-.cl"];
+        // let mi_vector: [&str; 3] = ["example.com", "uchile.cl", "www.u-.cl"];
         // let mut joins = Vec::with_capacity(4);
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let resolver_1 = resolver.clone();

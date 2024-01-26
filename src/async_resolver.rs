@@ -7,6 +7,7 @@ pub mod slist;
 pub mod resolver_error;
 
 use rand::{thread_rng, Rng};
+use std::sync::{Arc, Mutex};
 
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
@@ -33,10 +34,11 @@ use crate:: message::type_qtype::Qtype;
 /// 
 /// Each query corresponds to a future that is going to be spawned using
 /// `lookup_ip` method. 
+#[derive(Clone)]
 pub struct AsyncResolver {
     /// Cache for the resolver.
-    cache: DnsCache,
-    /// Configuration for the resolver.
+    cache: Arc<Mutex<DnsCache>>,
+    /// Configu ration for the resolver.
     config: ResolverConfig ,
 }
 
@@ -56,7 +58,7 @@ impl AsyncResolver {
     /// ```
     pub fn new(config: ResolverConfig)-> Self {
         let async_resolver = AsyncResolver {
-            cache: DnsCache::new(),
+            cache: Arc::new(Mutex::new(DnsCache::new())),
             config: config,
         };
         async_resolver
@@ -169,12 +171,18 @@ impl AsyncResolver {
         qtype:Qtype, 
         qclass:Qclass
     ) -> Result<DnsMessage, ResolverError> {
+        print!("[INNER LOOKUP]");
 
         // Cache lookup
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
+            let lock_result = self.cache.lock();
+            let cache = match lock_result {
+                Ok(val) => val,
+                Err(_) => Err(ResolverError::Message("Error getting cache"))?,
+            };
             let rtype_saved = Qtype::to_rtype(qtype);
-            if let Some(cache_lookup) = self.cache.clone().get(domain_name.clone(), rtype_saved) {
+            if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), rtype_saved) {
                 
                 // Create random generator
                 let mut rng = thread_rng();
@@ -336,19 +344,22 @@ impl AsyncResolver {
     /// This method stores the data of the response in the cache, depending on the
     /// type of response.
     fn store_data_cache(&mut self, response: DnsMessage) {
-        let truncated = response.get_header().get_tc();
-        self.cache.timeout_cache();
+        let truncated = response.get_header().get_tc(); 
+        {
+        let mut cache = self.cache.lock().unwrap(); // FIXME: agregar algun tipo de error para esto??
+        cache.timeout_cache();
         if !truncated {
             // TODO: RFC 1035: 7.4. Using the cache
             response.get_answer()
             .iter()
             .for_each(|rr| {
                 if rr.get_ttl() > 0 {
-                    self.cache.add(rr.get_name(), rr.clone());
+                    cache.add(rr.get_name(), rr.clone());
                 }
             });
 
         } 
+        }
         self.save_negative_answers(response);
     }
 
@@ -391,12 +402,13 @@ impl AsyncResolver {
         let aa = response.get_header().get_aa();
 
         // If not existence RR for query, add SOA to cache 
+        let mut cache = self.cache.lock().unwrap(); // FIXME: que la función entregue result
         if additionals.len() > 0 && answer.len() == 0 && aa == true{
             additionals.iter()
             .for_each(|rr| {
                 if rr.get_rtype() == Rtype::SOA {
                     let  rtype =  Qtype::to_rtype(qtype);
-                    self.cache.add_negative_answer(qname.clone(),rtype ,rr.clone());
+                    cache.add_negative_answer(qname.clone(),rtype ,rr.clone());
                 }
             });
         }
@@ -410,7 +422,8 @@ impl AsyncResolver {
 impl AsyncResolver {
     // Gets the cache from the struct
     pub fn get_cache(&self) -> DnsCache {
-        self.cache.clone()
+        let cache = self.cache.lock().unwrap(); // FIXME: ver que hacer ocn el error
+        return cache.clone();
     }
 }
 
@@ -436,8 +449,9 @@ mod async_resolver_test {
     use std::time::Duration;
     use std::vec;
     use crate::domain_name::{self, DomainName};
-    use std::sync::Arc;
+    use crate::async_resolver::resolver_error::ResolverError;
     static TIMEOUT: u64 = 10;
+    use std::sync::{Mutex,Arc};
     
     #[test]
     fn create_async_resolver() {
@@ -645,14 +659,14 @@ mod async_resolver_test {
     #[tokio::test]
     async fn lookup_cache() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
+        resolver.cache.lock().unwrap().set_max_size(1);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
 
-        resolver.cache.add(domain_name, resource_record);
+        resolver.cache.lock().unwrap().add(domain_name, resource_record);
 
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
     }
@@ -661,10 +675,10 @@ mod async_resolver_test {
     #[tokio::test]
     async fn cache_data() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
-        assert_eq!(resolver.cache.is_empty(), true);
+        resolver.cache.lock().unwrap().set_max_size(1);
+        assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
-        assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
+        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
 
         // TODO: Test special cases from RFC
     }
@@ -1604,7 +1618,9 @@ mod async_resolver_test {
     #[test]
     fn not_store_data_in_cache_if_truncated() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
+
+        resolver.cache.lock().unwrap().set_max_size(10);
+
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
     
@@ -1629,7 +1645,7 @@ mod async_resolver_test {
     #[test]
     fn not_store_cero_ttl_data_in_cache() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(10);
+        resolver.cache.lock().unwrap().set_max_size(10);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
     
@@ -1674,7 +1690,7 @@ mod async_resolver_test {
     #[test]
     fn save_cache_negative_answer(){
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
+        resolver.cache.lock().unwrap().set_max_size(1);
 
         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
         let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
@@ -1762,7 +1778,7 @@ mod async_resolver_test {
         cache.set_max_size(9);
         let  rtype =  Qtype::to_rtype(qtype);
         cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
-        resolver.cache = cache;
+        *resolver.cache = Mutex::new(cache);
 
         assert_eq!(resolver.get_cache().get_size(), 1);
 
@@ -1792,6 +1808,28 @@ mod async_resolver_test {
 
     }
 
+    // #[tokio::test]
+    // async fn test3(){
+    //     let mut resolver = Arc::new(Mutex::new(AsyncResolver::new(ResolverConfig::default())));
+    //     let qtype = Qtype::A;
+    //     let qclass = Qclass::IN;
+    //     // let mut joins = Vec::with_capacity(4);
+    //     let domain_name = DomainName::new_from_string("example.com".to_string());
+    //     let resolver_1 = resolver.clone();
+    //     let resolver_2 = resolver.clone();
+    //     println!("[1]");
+
+    //     // Bloquear el Mutex para acceder al AsyncResolver
+    //     let mut resolver_1_locked = resolver_1.lock().unwrap();
+    //     let mut resolver_2_locked = resolver_2;
+
+    //     // FIXME: deadlocjk
+    //     let result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
+    //         resolver_1_locked.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
+    //         resolver_2_locked.lock.unwrap().inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
+    //     );
+    // }
+
     // #[test]
     // fn teste2(){ //FIXME: change names
     //     // Runtime
@@ -1801,8 +1839,8 @@ mod async_resolver_test {
     //     .build()
     //     .unwrap();
 
-    //     let mut resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
-    //     let mut cache = resolver.get_cache();
+    //     let mut resolver = Arc::new(Mutex::new(AsyncResolver::new(ResolverConfig::default())));
+    //     // let mut cache = resolver.get_cache();
     //     let qtype = Qtype::A;
     //     let qclass = Qclass::IN;
     //     let mi_vector: [&str; 3] = ["example.com", "uchile.cl", "www.u-.cl"];
@@ -1811,7 +1849,7 @@ mod async_resolver_test {
     //     for i in 1..4 {
     //         let domain_name = DomainName::new_from_string(mi_vector[i].to_string());
     //         let resolver_clone = Arc::clone(&resolver);
-    //         joins.push(rt.spawn(resolver_clone.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())));
+    //         joins.push(rt.spawn(resolver_clone.lock().unwrap().inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())));
     //     }
 
     //     // Wait for work to be done
@@ -1819,8 +1857,53 @@ mod async_resolver_test {
     //         rt.block_on(join).unwrap();
     //     }
       
-    //     rt.spawn(execute_lookup_strategy_async(i));
     // }
+
+
+    // #[tokio::test]
+    // async fn test4(){
+
+    //     let mut resolver = Arc::new(Mutex::new(AsyncResolver::new(ResolverConfig::default())));
+    //     // let mut cache = resolver.get_cache();
+    //     let qtype = Qtype::A;
+    //     let qclass = Qclass::IN;
+
+    //     // for i in 1..4 {
+    //         tokio::spawn(async move{
+    //             let qtype = Qtype::A;
+    //             let qclass = Qclass::IN;
+    //             let resolver_clone = resolver.clone();
+    //             let domain_name = DomainName::new_from_string("example.com".to_string());
+            
+    //             resolver_clone.lock().unwrap().inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()).await;
+    //         });
+    //     // }
+
+
+    // }
+
+
+    #[tokio::test]
+    async fn test3(){
+        let mut resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
+        let qtype = Qtype::A;
+        let qclass = Qclass::IN;
+        let mi_vector: [&str; 3] = ["example.com", "uchile.cl", "www.u-.cl"];
+        // let mut joins = Vec::with_capacity(4);
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let resolver_1 = resolver.clone();
+        let resolver_2 = resolver.clone();
+
+        // Bloquear el Mutex para acceder al AsyncResolver
+        // let mut resolver_1_locked = resolver_1.lock().unwrap();
+        // let mut resolver_2_locked = resolver_2.lock().unwrap();
+
+        // FIXME: deadlocjk
+        let result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
+            resolver_1.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
+            resolver_2.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
+        );
+    }
 
 
 }

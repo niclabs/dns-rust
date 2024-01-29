@@ -91,7 +91,7 @@ impl AsyncResolver {
         &mut self, 
         domain_name: &str, 
         transport_protocol: &str, 
-        qclass:&str
+        qclass: &str
     ) -> Result<Vec<IpAddr>, ClientError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
@@ -102,7 +102,9 @@ impl AsyncResolver {
             Qtype::A,
             Qclass::from_str_to_qclass(qclass)
         ).await;
-          
+
+        println!("THIS IS THE RESPONSE (lookup_ip): {:?}", response);
+
         let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
             let rrs_iter = rrs.into_iter();
@@ -112,6 +114,56 @@ impl AsyncResolver {
         } else {
             Err(ClientError::TemporaryError("Error parsing response."))?
         }
+    }
+
+    /// Performs a lookup of the given domain name, qtype and qclass.
+    /// 
+    /// This method calls the `inner_lookup` method with the given domain name,
+    /// qtype, qclass and the chosen transport protocol. It performs a DNS lookup
+    /// asynchronously and returns the corresponding resource records.
+    /// 
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
+    /// 
+    /// 5.2 Client-resolver interface
+    /// 
+    /// 3. General lookup function
+    /// 
+    /// This function retrieves arbitrary information from the DNS,
+    /// and has no counterpart in previous systems.  The caller
+    /// supplies a QNAME, QTYPE, and QCLASS, and wants all of the
+    /// matching RRs.  This function will often use the DNS format
+    /// for all RR data instead of the local host's, and returns all
+    /// RR content (e.g., TTL) instead of a processed form with local
+    /// quoting conventions.
+    /// 
+    /// # Examples
+    /// ```
+    /// let mut resolver = AsyncResolver::new(ResolverConfig::default());
+    /// let domain_name = "example.com";
+    /// let transport_protocol = "UDP";
+    /// let qtype = "NS";
+    /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+    /// ```
+    pub async fn lookup(
+        &mut self, 
+        domain_name: &str, 
+        transport_protocol: &str,
+        qtype: &str,
+        qclass: &str
+    ) -> Result<Vec<ResourceRecord>, ResolverError> {
+        let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
+        let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
+        self.config.set_protocol(transport_protocol_struct);
+
+        let response = self.inner_lookup(
+            domain_name_struct,
+            Qtype::from_str_to_qtype(qtype),
+            Qclass::from_str_to_qclass(qclass)
+        ).await;
+        
+        println!("THIS IS THE RESPONSE (lookup): {:?}", response);
+        
+        return self.parse_dns_msg(response).map_err(Into::into)
     }
 
     // TODO: move and change as from method  of rr
@@ -211,7 +263,7 @@ impl AsyncResolver {
                         let additionals: Vec<ResourceRecord> = vec![rr];
                         new_query.add_additionals(additionals);
                         let mut new_header = new_query.get_header();
-                        new_header.set_rcode(3);
+                        new_header.set_rcode(3);  // TODO: is here where the other problem originates?
                         new_query.set_header(new_header);
                     }
                     else { //FIXME: change to alg RFC 1034-1035
@@ -257,55 +309,6 @@ impl AsyncResolver {
     /// domain name "4.3.2.1.IN-ADDR.ARPA".
     pub async fn reverse_query() {
         unimplemented!()
-    }
-
-    /// Performs a lookup of the given domain name, qtype and qclass.
-    /// 
-    /// This method calls the `inner_lookup` method with the given domain name,
-    /// qtype, qclass and the chosen transport protocol. It performs a DNS lookup
-    /// asynchronously and returns the corresponding resource records.
-    /// 
-    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
-    /// 
-    /// 5.2 Client-resolver interface
-    /// 
-    /// 3. General lookup function
-    /// 
-    /// This function retrieves arbitrary information from the DNS,
-    /// and has no counterpart in previous systems.  The caller
-    /// supplies a QNAME, QTYPE, and QCLASS, and wants all of the
-    /// matching RRs.  This function will often use the DNS format
-    /// for all RR data instead of the local host's, and returns all
-    /// RR content (e.g., TTL) instead of a processed form with local
-    /// quoting conventions.
-    /// 
-    /// # Examples
-    /// ```
-    /// let mut resolver = AsyncResolver::new(ResolverConfig::default());
-    /// let domain_name = "example.com";
-    /// let transport_protocol = "UDP";
-    /// let qtype = "NS";
-    /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
-    /// ```
-    pub async fn lookup(
-        &mut self, 
-        domain_name: &str, 
-        qtype:&str,
-        qclass:&str,
-        transport_protocol: &str
-    ) -> Result<Vec<ResourceRecord>, ResolverError> {
-        let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
-        let qtype_struct = Qtype::from_str_to_qtype(qtype);
-        let qclass_struct = Qclass::from_str_to_qclass(qclass);
-        let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
-        self.config.set_protocol(transport_protocol_struct);
-
-        let response = self.inner_lookup(
-            domain_name_struct,
-            qtype_struct,
-            qclass_struct).await;
-        
-        return self.parse_dns_msg(response).map_err(Into::into)
     }
 
     /// Stores the data of the response in the cache.
@@ -560,11 +563,15 @@ mod async_resolver_test {
     #[tokio::test]
     async fn lookup_ns() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.config.set_retry(10);
         let domain_name = "example.com";
         let transport_protocol = "UDP";
-        let qtype = "NS";
-        let qclass = "IN";
-        match resolver.lookup(domain_name, transport_protocol,qtype,qclass).await {
+        match resolver.lookup(
+            domain_name, 
+            transport_protocol,
+            "NS",
+            "IN"
+        ).await {
             Ok(val) => {println!("RESPONSE : {:?}",val);},
             Err(e) => assert!(false, "Error: {:?}", e)
         };

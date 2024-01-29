@@ -1,14 +1,12 @@
-use std::net::IpAddr;
-use std::vec;
-
 pub mod config;
 pub mod lookup;
 pub mod slist;
 pub mod resolver_error;
 
+use std::net::IpAddr;
+use std::vec;
 use rand::{thread_rng, Rng};
 use std::sync::{Arc, Mutex};
-
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
@@ -21,6 +19,7 @@ use crate::message::type_rtype::Rtype;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
+
 /// Asynchronous resolver for DNS queries.
 /// 
 /// This struct contains a cache and a configuration for the resolver. 
@@ -432,7 +431,6 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use tokio::io;
-
     use crate::client::client_error::ClientError;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
@@ -445,14 +443,13 @@ mod async_resolver_test {
     use crate::async_resolver::config::ResolverConfig;
     use super::AsyncResolver;
     use std::net::IpAddr;
-    use std::ops::Deref;
     use std::str::FromStr;
     use std::time::Duration;
     use std::vec;
-    use crate::domain_name::{self, DomainName};
+    use crate::domain_name::DomainName;
     use crate::async_resolver::resolver_error::ResolverError;
     static TIMEOUT: u64 = 10;
-    use std::sync::{Mutex,Arc};
+    use std::sync::Arc;
     
     #[test]
     fn create_async_resolver() {

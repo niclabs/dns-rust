@@ -196,10 +196,10 @@ mod client_test {
         let qtype = "A"; 
         let qclass= "IN";
         let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
 
         let expected_ip: [u8; 4] = [93, 184, 216, 34];
         let answers = response.get_answer();
@@ -215,8 +215,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    #[test]
-    fn udp_client_qtype_a() {
+    async fn udp_client_qtype_a() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -230,10 +229,11 @@ mod client_test {
         // sends query, qtype A 
         let qtype = "A"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let a_rdata = answer.get_rdata();
@@ -242,8 +242,8 @@ mod client_test {
         }
     }
 
-    #[test]
-    fn udp_client_qtype_ns() {
+    #[tokio::test]
+    async fn udp_client_qtype_ns() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -257,10 +257,11 @@ mod client_test {
         // sends query, qtype NS
         let qtype = "NS"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let ns_rdata = answer.get_rdata();
@@ -269,8 +270,8 @@ mod client_test {
         }
     }
     
-    #[test]
-    fn udp_client_qtype_cname() {
+    #[tokio::test]
+    async fn udp_client_qtype_cname() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -284,10 +285,11 @@ mod client_test {
         // sends query, qtype CNAME
         let qtype = "CNAME"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let cname_rdata = answer.get_rdata();
@@ -296,8 +298,8 @@ mod client_test {
         }
     }
 
-    #[test]
-    fn udp_client_qtype_soa() {
+    #[tokio::test]
+    async fn udp_client_qtype_soa() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -311,10 +313,11 @@ mod client_test {
         // sends query, qtype SOA
         let qtype = "SOA"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let soa_rdata = answer.get_rdata();
@@ -323,8 +326,8 @@ mod client_test {
         }
     }
 
-    #[test]
-    fn udp_client_qtype_mx(){
+    #[tokio::test]
+    async fn udp_client_qtype_mx(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -338,10 +341,11 @@ mod client_test {
         // sends query, qtype MX
         let qtype = "MX"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let mx_rdata = answer.get_rdata();
@@ -350,8 +354,8 @@ mod client_test {
         }
     }
 
-    #[test]
-    fn udp_client_qtype_ptr(){
+    #[tokio::test]
+    async fn udp_client_qtype_ptr(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -365,10 +369,11 @@ mod client_test {
         // sends query, qtype PTR
         let qtype = "PTR"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let ptr_rdata = answer.get_rdata();
@@ -377,8 +382,8 @@ mod client_test {
         }
     }
 
-    #[test]
-    fn udp_client_qtype_tsig(){
+    #[tokio::test]
+    async fn udp_client_qtype_tsig(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -392,10 +397,11 @@ mod client_test {
         domain_name.set_name(String::from("example.com"));
         let qtype = "TSIG"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let tsig_rdata = answer.get_rdata();
@@ -404,8 +410,8 @@ mod client_test {
         }
     }
 
-    #[test]
-    fn udp_client_qtype_hinfo(){
+    #[tokio::test]
+    async fn udp_client_qtype_hinfo(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -419,10 +425,11 @@ mod client_test {
         domain_name.set_name(String::from("example.com"));
         let qtype = "HINFO"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let hinfo_rdata = answer.get_rdata();
@@ -431,8 +438,8 @@ mod client_test {
         }
     }
 
-    #[test]
-    fn udp_client_qtype_txt(){
+    #[tokio::test]
+    async fn udp_client_qtype_txt(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -446,10 +453,11 @@ mod client_test {
         domain_name.set_name(String::from("example.com"));
         let qtype = "TXT"; 
         let qclass= "IN";
-        let response = match udp_client.query(domain_name, qtype, qclass) {
-            Ok(value) => value,
-            Err(error) => panic!("Error in the response: {:?}", error),
-        };
+        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        //     Ok(value) => value,
+        //     Err(error) => panic!("Error in the response: {:?}", error),
+        // };
         let answers = response.get_answer();
         for answer in answers {
             let txt_rdata = answer.get_rdata();
@@ -457,7 +465,7 @@ mod client_test {
                 assert!(matches!(txt_rdata, Rdata::TXT(_txt_rdata)))
         }
     }
-    #[test]
+    #[tokio::test]
     async fn tcp_client_query() {
         //FIXME: 
         use std::net::{IpAddr,Ipv4Addr};

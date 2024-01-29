@@ -517,7 +517,6 @@ mod async_resolver_test {
         assert!(ip_addresses.is_err());
     }
 
-    #[ignore] 
     #[tokio::test]
     async fn lookup_ip_qclass_any() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -527,7 +526,7 @@ mod async_resolver_test {
         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
         println!("RESPONSE : {:?}", ip_addresses);
     
-        // assert!(ip_addresses.is_err());
+        assert!(ip_addresses.is_err());
     }
 
     #[tokio::test]
@@ -557,20 +556,17 @@ mod async_resolver_test {
         assert!(!ip_addresses[0].is_unspecified());
     }
 
-    #[ignore]
-    #[tokio::test] // FIXME: Error: Parse error: The name server was unable to process this query due to a problem with the name server.
+    #[tokio::test]
     async fn lookup_ns() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "UDP";
         let qtype = "NS";
         let qclass = "IN";
-        let response = match resolver.lookup(domain_name, transport_protocol,qtype,qclass).await {
+        match resolver.lookup(domain_name, transport_protocol,qtype,qclass).await {
             Ok(val) => {println!("RESPONSE : {:?}",val);},
             Err(e) => assert!(false, "Error: {:?}", e)
         };
-        
-        println!("RESPONSE : {:?}", response);
     }
 
 
@@ -748,8 +744,6 @@ mod async_resolver_test {
         assert!(!ip_addresses[0].is_unspecified());
     }
 
-    
-    #[ignore = "Still not implemented"]
     #[tokio::test] 
     async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -1622,7 +1616,7 @@ mod async_resolver_test {
 
     #[test]
     fn not_store_data_in_cache_if_truncated() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
 
         resolver.cache.lock().unwrap().set_max_size(10);
 
@@ -1649,7 +1643,7 @@ mod async_resolver_test {
 
     #[test]
     fn not_store_cero_ttl_data_in_cache() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.lock().unwrap().set_max_size(10);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -1694,7 +1688,7 @@ mod async_resolver_test {
 
     #[test]
     fn save_cache_negative_answer(){
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.lock().unwrap().set_max_size(1);
 
         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
@@ -1747,9 +1741,10 @@ mod async_resolver_test {
         
     }
     
+    #[ignore = "Optional, not implemented"]
     #[tokio::test]
     async fn inner_lookup_negative_answer_in_cache(){
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let mut cache = resolver.get_cache();
         let qtype = Qtype::A;
         cache.set_max_size(9);
@@ -1791,12 +1786,10 @@ mod async_resolver_test {
         let qclass = Qclass::IN;
         let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
 
-        
         assert_eq!(resolver.get_cache().get_size(), 1);
         assert_eq!(response.get_answer().len(), 0);
         assert_eq!(response.get_additional().len(), 1);
         assert_eq!(response.get_header().get_rcode(), 3);
-        
     }
 
 

@@ -192,10 +192,14 @@ mod client_test {
         let mut domain_name = DomainName::new();
 
         // sends query
-        domain_name.set_name(String::from("test.test2.com."));
+        domain_name.set_name(String::from("example.com"));
         let qtype = "A"; 
         let qclass= "IN";
         let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
 
         let expected_ip: [u8; 4] = [93, 184, 216, 34];
         let answers = response.get_answer();
@@ -211,6 +215,249 @@ mod client_test {
     }
 
     #[tokio::test]
+    #[test]
+    fn udp_client_qtype_a() {
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("example.com"));
+
+        // sends query, qtype A 
+        let qtype = "A"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let a_rdata = answer.get_rdata();
+                // Check if the answer is A type
+                assert!(matches!(a_rdata, Rdata::A(_a_rdata)))
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_ns() {
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("example.com"));
+
+        // sends query, qtype NS
+        let qtype = "NS"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let ns_rdata = answer.get_rdata();
+                // Check if the answer is NS type
+                assert!(matches!(ns_rdata, Rdata::NS(_ns_rdata)))
+        }
+    }
+    
+    #[test]
+    fn udp_client_qtype_cname() {
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("example.com"));
+
+        // sends query, qtype CNAME
+        let qtype = "CNAME"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let cname_rdata = answer.get_rdata();
+                // Check if the answer is CNAME type
+                assert!(matches!(cname_rdata, Rdata::CNAME(_cname_rdata)))
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_soa() {
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("example.com"));
+
+        // sends query, qtype SOA
+        let qtype = "SOA"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let soa_rdata = answer.get_rdata();
+                // Check if the answer is SOA type
+                assert!(matches!(soa_rdata, Rdata::SOA(_soa_rdata)))
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_mx(){
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("example.com"));
+
+        // sends query, qtype MX
+        let qtype = "MX"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let mx_rdata = answer.get_rdata();
+                // Check if the answer is MX type
+                assert!(matches!(mx_rdata, Rdata::MX(_mx_rdata)))
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_ptr(){
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("example.com"));
+
+        // sends query, qtype PTR
+        let qtype = "PTR"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let ptr_rdata = answer.get_rdata();
+                // Check if the answer is PTR type
+                assert!(matches!(ptr_rdata, Rdata::PTR(_ptr_rdata)))
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_tsig(){
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+
+        // sends query, qtype TSIG
+        domain_name.set_name(String::from("example.com"));
+        let qtype = "TSIG"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let tsig_rdata = answer.get_rdata();
+                // Check if the answer is TSIG type
+                assert!(matches!(tsig_rdata, Rdata::HINFO(_tsig_rdata)))
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_hinfo(){
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+
+        // sends query, qtype HINFO
+        domain_name.set_name(String::from("example.com"));
+        let qtype = "HINFO"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let hinfo_rdata = answer.get_rdata();
+                // Check if the answer is HINFO type
+                assert!(matches!(hinfo_rdata, Rdata::HINFO(_hinfo_rdata)))
+        }
+    }
+
+    #[test]
+    fn udp_client_qtype_txt(){
+        //create connection
+        let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+        let timeout: Duration = Duration::from_secs(2);
+
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let mut udp_client = Client::new(conn_udp);
+
+        let mut domain_name = DomainName::new();
+
+        // sends query, qtype TXT
+        domain_name.set_name(String::from("example.com"));
+        let qtype = "TXT"; 
+        let qclass= "IN";
+        let response = match udp_client.query(domain_name, qtype, qclass) {
+            Ok(value) => value,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        let answers = response.get_answer();
+        for answer in answers {
+            let txt_rdata = answer.get_rdata();
+                // Check if the answer is TXT type
+                assert!(matches!(txt_rdata, Rdata::TXT(_txt_rdata)))
+        }
+    }
+    #[test]
     async fn tcp_client_query() {
         //FIXME: 
         use std::net::{IpAddr,Ipv4Addr};

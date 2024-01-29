@@ -193,6 +193,9 @@ impl AsyncResolver {
         let rcode = header.get_rcode();
         if rcode == 0 {
             let answer = dns_mgs.get_answer();
+            if answer.len() == 0 {
+                Err(ClientError::TemporaryError("no answer found"))?;
+            }
             return Ok(answer);
         } 
         match rcode {
@@ -470,7 +473,7 @@ mod async_resolver_test {
     }
 
     #[tokio::test]
-    async fn inner_lookup() {
+    async fn inner_lookup_qtype_a() {
         // Create a new resolver with default values
         let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -478,10 +481,195 @@ mod async_resolver_test {
         let record_class = Qclass::IN;
         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
 
-        //FIXME: add assert
-        assert!(response.is_ok());
-    } 
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let a_rdata = answer.get_rdata();
+            // Check if the answer is A type
+            assert!(matches!(a_rdata, Rdata::A(_a_rdata)))
+        }
+    }
 
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_ns() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::NS;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let ns_rdata = answer.get_rdata();
+            // Check if the answer is NS type
+            assert!(matches!(ns_rdata, Rdata::NS(_ns_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_mx() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::MX;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let mx_rdata = answer.get_rdata();
+            // Check if the answer is MX type
+            assert!(matches!(mx_rdata, Rdata::MX(_mx_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_ptr() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::PTR;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let ptr_rdata = answer.get_rdata();
+            // Check if the answer is PTR type
+            assert!(matches!(ptr_rdata, Rdata::PTR(_ptr_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_soa() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::SOA;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let soa_rdata = answer.get_rdata();
+            // Check if the answer is SOA type
+            assert!(matches!(soa_rdata, Rdata::SOA(_soa_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_txt() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::TXT;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let txt_rdata = answer.get_rdata();
+            // Check if the answer is TXT type
+            assert!(matches!(txt_rdata, Rdata::TXT(_txt_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_cname() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::CNAME;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let cname_rdata = answer.get_rdata();
+            // Check if the answer is CNAME type
+            assert!(matches!(cname_rdata, Rdata::CNAME(_cname_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_hinfo() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::HINFO;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let hinfo_rdata = answer.get_rdata();
+            // Check if the answer is HINFO type
+            assert!(matches!(hinfo_rdata, Rdata::HINFO(_hinfo_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_tsig() {
+        // Create a new resolver with default values
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::TSIG;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.get_answer();
+        for answer in answers {
+            let tsig_rdata = answer.get_rdata();
+            // Check if the answer is TSIG type
+            assert!(matches!(tsig_rdata, Rdata::TSIG(_tsig_rdata)))
+        }
+    }
     #[tokio::test]
     async fn inner_lookup_ns() {
         // Create a new resolver with default values
@@ -660,9 +848,9 @@ mod async_resolver_test {
         }
     }
 
-    /// Test lookup cache
+    /// Test inner lookup cache
     #[tokio::test]
-    async fn lookup_cache() {
+    async fn inner_lookup_cache_available() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.lock().unwrap().set_max_size(1);
 
@@ -672,7 +860,40 @@ mod async_resolver_test {
         let resource_record = ResourceRecord::new(a_rdata);
         resolver.cache.lock().unwrap().add(domain_name, resource_record);
 
-        let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.get_header().get_aa(), false);
+        } else {
+            panic!("No response from cache");
+        }
+    }
+
+    /// Test inner lookup without cache
+    #[tokio::test]
+    async fn inner_lookup_with_no_cache() {
+        let mut config = ResolverConfig::default();
+        config.set_cache_enabled(false);
+
+        let mut resolver = AsyncResolver::new(config);
+        resolver.cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
+        let a_rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(a_rdata);
+
+        resolver.cache.add(domain_name, resource_record);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.get_header().get_aa(), false);
+        } else {
+            panic!("No response from nameserver");
+        }
     }
 
     /// Test cache data
@@ -683,6 +904,10 @@ mod async_resolver_test {
         assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
         assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
+        resolver.cache.set_max_size(1);
+        assert_eq!(resolver.cache.is_empty(), true);
+        let _response = resolver.lookup("example.com", "UDP", "A", "IN").await;
+        assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
 
         // TODO: Test special cases from RFC
     }

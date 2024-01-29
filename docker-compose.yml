@@ -1,13 +1,7 @@
 version: "4"
 services:
-  resolver:
-    build: .
-    image: dns-rust:latest
-    ports:
-      - "58396:58396"
-    network_mode: "dns"
-  client:
-    container_name: client
+  dns_rust:
+    container_name: dns_rust
     build: .
     image: dns-rust:latest
   test:

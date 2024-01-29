@@ -7,6 +7,11 @@ pub mod ns_rdata;
 pub mod ptr_rdata;
 pub mod soa_rdata;
 pub mod txt_rdata;
+pub mod opt_rdata;
+pub mod ds_rdata;
+pub mod rrsig_rdata;
+pub mod nsec_rdata;
+pub mod dnskey_rdata;
 pub mod tsig_rdata;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
@@ -19,6 +24,11 @@ use ns_rdata::NsRdata;
 use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
+use opt_rdata::OptRdata;
+use ds_rdata::DsRdata;
+use rrsig_rdata::RRSIGRdata;
+use nsec_rdata::NsecRdata;
+use dnskey_rdata::DnskeyRdata;
 use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -35,6 +45,11 @@ pub enum Rdata {
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
     ////// Define here more rdata types //////
+    OPT(OptRdata),
+    DS(DsRdata),
+    RRSIG(RRSIGRdata),
+    NSEC(NsecRdata),
+    DNSKEY(DnskeyRdata),
     TSIG(TSigRdata),
 }
 
@@ -64,6 +79,11 @@ impl ToBytes for Rdata {
             Rdata::TXT(val) => val.to_bytes(),
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
+            Rdata::OPT(val) => val.to_bytes(),
+            Rdata::DS(val) => val.to_bytes(),
+            Rdata::RRSIG(val) => val.to_bytes(),
+            Rdata::NSEC(val) => val.to_bytes(),
+            Rdata::DNSKEY(val) => val.to_bytes(),
             Rdata::TSIG(val) => val.to_bytes(),
         }
     }
@@ -205,14 +225,66 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::CNAME(rdata.unwrap()))
             }
 
-            //////////////// Replace the next line when type  OPT is implemented ////////////
             41 => {
                 println!("OPT");
-                let rdata = TxtRdata::new(vec!["OPT".to_string()]);
-
-                Ok(Rdata::TXT(rdata))
+                let rdata = OptRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::OPT(rdata.unwrap()))
             }
-            //////////////////////////////////////////////////////////////
+
+            43 => {
+                let rdata = DsRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::DS(rdata.unwrap()))
+            }
+
+            46 => {
+                let rdata = RRSIGRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::RRSIG(rdata.unwrap()))
+            }
+
+            47 => {
+                let rdata = NsecRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::NSEC(rdata.unwrap()))
+            }
+
+            48 => {
+                let rdata = DnskeyRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::DNSKEY(rdata.unwrap()))
+            }
             
             250 => {
                 let rdata = TSigRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -237,6 +309,7 @@ mod resolver_query_tests {
     use crate::domain_name::DomainName;
     use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
+    use crate::message::type_rtype::Rtype;
     use super:: a_ch_rdata::AChRdata;
     use super::a_rdata::ARdata;
     use super::cname_rdata::CnameRdata;
@@ -246,8 +319,14 @@ mod resolver_query_tests {
     use super::ptr_rdata::PtrRdata;
     use super::soa_rdata::SoaRdata;
     use super::txt_rdata::TxtRdata;
+    use super::opt_rdata::OptRdata;
+    use super::ds_rdata::DsRdata;
+    use super::rrsig_rdata::RRSIGRdata;
+    use super::nsec_rdata::NsecRdata;
+    use super::dnskey_rdata::DnskeyRdata;
     use super::tsig_rdata::TSigRdata;
     use std::net::IpAddr;
+    use std::vec;
 
     #[test]
     fn to_bytes_rdata(){
@@ -458,6 +537,104 @@ mod resolver_query_tests {
         assert_eq!(bytes, expected_bytes);
     }
 
+    #[test]
+    fn to_bytes_opt_rdata(){
+        let expected_bytes = vec![
+            0, 1, 0, 2, 6, 4];
+        let mut opt_rdata = OptRdata::new();
+        opt_rdata.set_option_code(1 as u16);
+        opt_rdata.set_option_length(2 as u16);
+        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        let rdata = Rdata::OPT(opt_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_dnskey_rdata(){
+        let mut dnskey_rdata = DnskeyRdata::new();
+        dnskey_rdata.set_flags(2 as u16);
+        dnskey_rdata.set_protocol(3 as u8);
+        dnskey_rdata.set_algorithm(4 as u8);
+        let public_key_simple: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        dnskey_rdata.set_public_key(public_key_simple);
+
+        let expected_bytes = vec![
+            0, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7, 8
+        ];
+
+        let rdata = Rdata::DNSKEY(dnskey_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_rrsig_rdata(){
+        let mut rrsig_rdata = RRSIGRdata::new();
+        rrsig_rdata.set_type_covered(Rtype::A);
+        rrsig_rdata.set_algorithm(5);
+        rrsig_rdata.set_labels(2);
+        rrsig_rdata.set_original_ttl(3600);
+        rrsig_rdata.set_signature_expiration(1630435200);
+        rrsig_rdata.set_signature_inception(1630435200);
+        rrsig_rdata.set_key_tag(1234);
+        rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
+        rrsig_rdata.set_signature(String::from("abcdefg"));
+
+        let expected_bytes:Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
+        46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
+        98, 99, 100, 101, 102, 103];
+
+        let rdata = Rdata::RRSIG(rrsig_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_nsec_rdata(){
+        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("host.example.com"));
+        nsec_rdata.set_next_domain_name(domain_name);
+
+        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+        
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+
+        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        let rdata = Rdata::NSEC(nsec_rdata);
+
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, bytes_to_test);
+    }
+
+    #[test]
+    fn to_bytes_ds_rdata(){
+        let mut ds_rdata = DsRdata::new(0, 0, 0, vec![1, 2, 3, 4]);
+        ds_rdata.set_key_tag(1);
+        ds_rdata.set_algorithm(2);
+        ds_rdata.set_digest_type(3);
+
+        let bytes_to_test = [0, 1, 2, 3, 1, 2, 3, 4];
+
+        let rdata = Rdata::DS(ds_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, bytes_to_test);
+    }
+
     //from bytes tests
     #[test]
     fn from_bytes_a_ch_rdata(){
@@ -639,6 +816,105 @@ mod resolver_query_tests {
                 assert_eq!(val.get_error(), 0);
                 assert_eq!(val.get_other_len(), 0);
                 assert_eq!(val.get_other_data(), Vec::new());
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn from_bytes_opt_rdata(){
+        let data_bytes = vec![
+            0, 1, 0, 2, 6, 4, 0, 41, 0, 1
+        ];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::OPT(val) => {
+                assert_eq!(val.get_option_code(), 1);
+                assert_eq!(val.get_option_length(), 2);
+                assert_eq!(val.get_option_data(), vec![0x06, 0x04]);
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn from_bytes_dnskey_rdata(){
+        let data_bytes = vec![
+            0, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7, 8, 0, 48, 0, 1
+        ];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::DNSKEY(val) => {
+                assert_eq!(val.get_flags(), 2);
+                assert_eq!(val.get_protocol(), 3);
+                assert_eq!(val.get_algorithm(), 4);
+                assert_eq!(val.get_public_key(), vec![1, 2, 3, 4, 5, 6, 7, 8]);
+            }
+            _ => {}
+        }
+    
+    }
+
+    #[test]
+    fn from_bytes_rrsig_rdata(){
+        let data_bytes:Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
+        46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
+        98, 99, 100, 101, 102, 103, 0, 46, 0, 1];
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::RRSIG(val) => {
+                assert_eq!(val.get_type_covered(), Rtype::A);
+                assert_eq!(val.get_algorithm(), 5);
+                assert_eq!(val.get_labels(), 2);
+                assert_eq!(val.get_original_ttl(), 3600);
+                assert_eq!(val.get_signature_expiration(), 1630435200);
+                assert_eq!(val.get_signature_inception(), 1630435200);
+                assert_eq!(val.get_key_tag(), 1234);
+                assert_eq!(val.get_signer_name().get_name(), "example.com");
+                assert_eq!(val.get_signature(), "abcdefg");
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn from_bytes_nsec_rdata(){
+        let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+
+        let rdata_bytes = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
+
+        let extra_bytes = vec![0, 47, 0, 1];
+
+        let data_bytes = [rdata_bytes, extra_bytes].concat();
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::NSEC(val) => {
+                assert_eq!(val.get_next_domain_name().get_name(), String::from("host.example.com"));
+                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn from_bytes_ds_rdata(){
+        let data_bytes = [0, 1, 2, 3, 1, 2, 3, 4, 0, 43, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::DS(val) => {
+                assert_eq!(val.get_key_tag(), 1);
+                assert_eq!(val.get_algorithm(), 2);
+                assert_eq!(val.get_digest_type(), 3);
+                assert_eq!(val.get_digest(), vec![1, 2, 3, 4]);
             }
             _ => {}
         }

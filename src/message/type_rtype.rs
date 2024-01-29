@@ -12,6 +12,11 @@ pub enum Rtype {
     MX,
     TXT,
     DNAME,
+    OPT,
+    DS,
+    RRSIG,
+    NSEC,   
+    DNSKEY,
     TSIG,
     UNKNOWN(u16),
 }
@@ -32,6 +37,11 @@ impl Rtype{
             Rtype::MX => 15,
             Rtype::TXT => 16,
             Rtype::DNAME => 39,
+            Rtype::OPT => 41,
+            Rtype::DS => 43,
+            Rtype::RRSIG => 46,
+            Rtype::NSEC => 47,
+            Rtype::DNSKEY => 48,
             Rtype::TSIG => 250,
             Rtype::UNKNOWN(val) => val
         }
@@ -50,6 +60,11 @@ impl Rtype{
             Rtype::MX => String::from("MX"),
             Rtype::TXT => String::from("TXT"),
             Rtype::DNAME => String::from("DNAME"),
+            Rtype::OPT => String::from("OPT"),
+            Rtype::DS => String::from("DS"),
+            Rtype::RRSIG => String::from("RRSIG"),
+            Rtype::NSEC => String::from("NSEC"),
+            Rtype::DNSKEY => String::from("DNSKEY"),
             Rtype::TSIG => String::from("TSIG"),
             Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
@@ -69,6 +84,11 @@ impl Rtype{
             15 => Rtype::MX,
             16 => Rtype::TXT,
             39 => Rtype::DNAME,
+            41 => Rtype::OPT,
+            43 => Rtype::DS,
+            46 => Rtype::RRSIG,
+            47 => Rtype::NSEC,
+            48 => Rtype::DNSKEY,
             250 => Rtype::TSIG,
             _ => Rtype::UNKNOWN(val),
         }
@@ -88,6 +108,11 @@ impl Rtype{
             "MX" => Rtype::MX,
             "TXT" => Rtype::TXT,
             "DNAME" => Rtype::DNAME,
+            "OPT" => Rtype::OPT,
+            "DS" => Rtype::DS,
+            "RRSIG" => Rtype::RRSIG,
+            "NSEC" => Rtype::NSEC,
+            "DNSKEY" => Rtype::DNSKEY,
             "TSIG" => Rtype::TSIG,
             _ => Rtype::UNKNOWN(99),
         }

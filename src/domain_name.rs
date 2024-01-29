@@ -103,7 +103,8 @@ impl DomainName {
                 no_domain_bytes = &no_domain_bytes[2..];
 
                 break;
-            } else {
+            } 
+            else {
                 if bytes_len < (first_byte + 1) as usize {
                     return Err("Format Error");
                 }
@@ -260,12 +261,14 @@ mod domain_name_test {
 
     #[test]
     fn from_bytes_test() {
-        let bytes_test: Vec<u8> = vec![
-            4, 116, 101, 115, 116, 5, 116, 101, 115, 116, 50, 3, 99, 111, 109, 0,
-        ];
-        let (domain_name, _) = DomainName::from_bytes(&bytes_test, &bytes_test).unwrap();
+        let bytes_test: Vec<u8> = vec![1, 70, 3, 73, 83, 73, 4, 65, 82, 80, 65, 0, 3, 70, 79, 79, 192, 0, 4, 65, 82, 80, 65, 0, 0];
+        let (domain_name, no_domain_bytes) = DomainName::from_bytes(&bytes_test, &bytes_test).unwrap();
 
-        assert_eq!(domain_name.get_name(), String::from("test.test2.com"));
+        let (new_domain_name, _) = DomainName::from_bytes(&no_domain_bytes, &bytes_test).unwrap();
+
+        assert_eq!(domain_name.get_name(), String::from("F.ISI.ARPA"));
+
+        assert_eq!(new_domain_name.get_name(), String::from("FOO.F.ISI.ARPA"));
     }
 
     #[test]

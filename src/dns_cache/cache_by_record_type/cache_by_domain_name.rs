@@ -217,19 +217,25 @@ impl CacheByDomainName {
     }
 
     /// For each domain name, it removes the RRStoredData past its TTL.
-    pub fn filter_timeout_host_data(&mut self) {
-        let mut new_hash = HashMap::<DomainName, Vec<RRStoredData>>::new();
-        let data = self.get_domain_names_data();
+    pub fn filter_timeout_by_domain_name(&mut self) {
         let current_time = Utc::now();
-        for (domain_name, rr_cache_vec) in data.into_iter() {
+        let data_by_domain = self.get_domain_names_data();
+        let clean_data_by_domain: HashMap<DomainName, Vec<RRStoredData>> = data_by_domain
+        .into_iter()
+        .filter_map(|(domain_name, rr_cache_vec)| {
             let filtered_rr_cache_vec: Vec<RRStoredData> = rr_cache_vec
             .into_iter()
             .filter(|rr_cache| rr_cache.get_absolute_ttl() > current_time)
             .collect();
 
-            new_hash.insert(domain_name, filtered_rr_cache_vec);
-        }
-        self.set_domain_names_data(new_hash);
+            if !filtered_rr_cache_vec.is_empty() {
+                Some((domain_name, filtered_rr_cache_vec))
+            } else {
+                None
+            }
+        }).collect();
+
+        self.set_domain_names_data(clean_data_by_domain);
     }
 
 }
@@ -490,38 +496,96 @@ mod host_data_test{
     }
 
     #[test]
-    fn timeout_rr_cache() {
+    fn timeout_rr_cache_one_domain() {
         use std::{thread, time};
-        let mut host_data = CacheByDomainName::new();
+        let mut cache_by_domain_name = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
 
         let mut resource_record_valid = ResourceRecord::new(a_rdata.clone());
         resource_record_valid.set_ttl(1000);
-        let rr_cache_valid = RRStoredData::new(resource_record_valid);
+        let rrstore_data_valid = RRStoredData::new(resource_record_valid.clone());
 
         let mut resource_record_invalid = ResourceRecord::new(a_rdata);
         resource_record_invalid.set_ttl(4);
-        let rr_cache_invalid = RRStoredData::new(resource_record_invalid);
+        let rrstore_data_invalid = RRStoredData::new(resource_record_invalid);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("uchile.cl"));
 
-        host_data.add_to_host_data(domain_name.clone(), rr_cache_valid);
-        host_data.add_to_host_data(domain_name.clone(), rr_cache_invalid);
+        cache_by_domain_name.add_to_host_data(domain_name.clone(), rrstore_data_valid);
+        cache_by_domain_name.add_to_host_data(domain_name.clone(), rrstore_data_invalid);
 
-        assert_eq!(host_data.get_domain_names_data().len(), 1);
-        if let Some(rr_cache_vec) = host_data.get_domain_names_data().get(&domain_name) {
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name) {
             assert_eq!(rr_cache_vec.len(), 2);
         }
 
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        host_data.filter_timeout_host_data();
+        //clean the data with expired ttl
+        cache_by_domain_name.filter_timeout_by_domain_name();
 
-        assert_eq!(host_data.get_domain_names_data().len(), 1);
-        if let Some(rr_cache_vec) = host_data.get_domain_names_data().get(&domain_name) {
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name) {
+            assert_eq!(rr_cache_vec.len(), 1);
+            //check if the rescource record who survives is the correct
+            if let Some(rrstore_data_valid) = rr_cache_vec.get(0){
+                let resource_record_after_filter = rrstore_data_valid.get_resource_record();
+                assert_eq!(resource_record_after_filter, resource_record_valid);
+            }
+        }
+    }
+
+    #[test]
+    fn timeout_rr_cache_two_domain(){
+        //this test prove the for iteration in filter_timeout_by_domain_name 
+        use std::{thread, time};
+        let mut cache_by_domain_name = CacheByDomainName::new();
+        let a_rdata = Rdata::A(ARdata::new());
+
+        let mut resource_record_valid = ResourceRecord::new(a_rdata.clone());
+        resource_record_valid.set_ttl(1000);
+        let rrstore_data_valid = RRStoredData::new(resource_record_valid.clone());
+
+        let mut resource_record_invalid = ResourceRecord::new(a_rdata.clone());
+        resource_record_invalid.set_ttl(4);
+        let rrstore_data_invalid = RRStoredData::new(resource_record_invalid);
+
+        let mut domain_name_1 = DomainName::new();
+        domain_name_1.set_name(String::from("uchile.cl"));
+
+        let mut domain_name_2 = DomainName::new();
+        domain_name_2.set_name(String::from("example.com"));
+
+        cache_by_domain_name.add_to_host_data(domain_name_1.clone(), rrstore_data_valid.clone());
+        cache_by_domain_name.add_to_host_data(domain_name_2.clone(), rrstore_data_invalid.clone());
+
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 2);
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_1) {
             assert_eq!(rr_cache_vec.len(), 1);
         }
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_2) {
+            assert_eq!(rr_cache_vec.len(), 1);
+        }
+
+        println!("Before timeout: {:?}", Utc::now());
+        thread::sleep(time::Duration::from_secs(5));
+        println!("After timeout: {:?}", Utc::now());
+        //clean the data with expired ttl
+        cache_by_domain_name.filter_timeout_by_domain_name();
+
+        println!("The new cache is {:?} ", cache_by_domain_name.get_domain_names_data());
+        
+        //check if the value who survives is the same
+        if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name_1) {
+            if let Some(rrstore_data) = rr_cache_vec.get(0) {
+                // println!("the rrstore for domain {:?} afther de timeout is {:?} ", domain_name_1.get_name(), rrstore_data);
+                assert_eq!(rrstore_data_valid, rrstore_data.clone());
+            }
+        }
+        //after the filter shoud be just one data in the cache (example.com shoud have been eliminated)
+        //FIXME: Does not eliminated the (key, data), instead the key points to a empty array ( Domain name {example.com} -> [])
+        assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
     }
 }

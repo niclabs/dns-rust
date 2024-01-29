@@ -876,16 +876,18 @@ mod async_resolver_test {
         let mut config = ResolverConfig::default();
         config.set_cache_enabled(false);
 
-        let mut resolver = AsyncResolver::new(config);
-        resolver.cache.set_max_size(1);
+        let resolver = AsyncResolver::new(config);
+        {
+        let mut cache = resolver.cache.lock().unwrap();
+        cache.set_max_size(1);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-
-        resolver.cache.add(domain_name, resource_record);
-
+        cache.add(domain_name, resource_record);
+        }
+        
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
 
@@ -904,10 +906,10 @@ mod async_resolver_test {
         assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
         assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
-        resolver.cache.set_max_size(1);
-        assert_eq!(resolver.cache.is_empty(), true);
+        resolver.cache.lock().unwrap().set_max_size(1);
+        assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
         let _response = resolver.lookup("example.com", "UDP", "A", "IN").await;
-        assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
+        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
 
         // TODO: Test special cases from RFC
     }

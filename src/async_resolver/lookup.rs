@@ -140,7 +140,6 @@ impl LookupStrategy {
 /// let name_servers = vec![(conn_udp,conn_tcp)];
 /// let response = execute_lookup_strategy(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
 /// ```
-///
 pub async fn execute_lookup_strategy(
     name: DomainName,
     record_type: Qtype,
@@ -168,7 +167,7 @@ pub async fn execute_lookup_strategy(
     // Create Server failure query 
     let mut response = new_query.clone(); // le quite el to_owned
     let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2);
+    new_header.set_rcode(2); // FIXME: is this the origin of the bug?
     new_header.set_qr(true);
     response.set_header(new_header);
 
@@ -218,15 +217,12 @@ pub async fn execute_lookup_strategy(
     Ok(response_dns_msg)  
 }
 
-
-
 ///  Sends a DNS query to a resolver using the specified connection protocol.
 /// 
 ///  This function takes a DNS query, a result containing a DNS message,
 ///  and connection information. Depending on the specified protocol (UDP or TCP),
 ///  it sends the query using the corresponding connection and updates the result
 ///  with the parsed response.
-
 async fn send_query_resolver_by_protocol(
     protocol: ConnectionProtocol,
     query:DnsMessage,
@@ -249,9 +245,6 @@ async fn send_query_resolver_by_protocol(
     
     result_dns_msg
 }
-
-
-
 
 /// Parse the received response datagram to a `DnsMessage`.
 /// 
@@ -362,8 +355,17 @@ mod async_resolver_test {
 
         println!("response {:?}", response);
 
-        // assert_eq!(response.get_header().get_qr(),true);
-        // assert_ne!(response.get_answer().len(),0);
+        assert_eq!(response
+            .clone()
+            .unwrap().
+            get_header()
+            .get_qr(),
+            true);
+        assert_ne!(response
+            .unwrap()
+            .get_answer()
+            .len(), 
+            0);
     }   
 
     #[tokio::test]
@@ -395,7 +397,6 @@ mod async_resolver_test {
         assert_eq!(response.get_header().get_qr(),true);
         // This changes depending on the server we're using
         assert!(response.get_header().get_ancount() >= 1);
-
     } 
 
     #[tokio::test]
@@ -506,7 +507,6 @@ mod async_resolver_test {
        assert!(response.get_answer().len() == 0);
        assert_eq!(response.get_header().get_rcode(), 2);
        assert!(response.get_header().get_ancount() == 0)
-                
     }
 
     #[tokio::test] // TODO: finish up test
@@ -533,7 +533,6 @@ mod async_resolver_test {
             config.get_name_servers(),
             config, 
             query_sate).await;
-        
     }  
     
 /*

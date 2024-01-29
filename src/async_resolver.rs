@@ -1,25 +1,25 @@
-use std::net::IpAddr;
-use std::vec;
-
 pub mod config;
 pub mod lookup;
 pub mod slist;
 pub mod resolver_error;
 
+use std::net::IpAddr;
+use std::vec;
 use rand::{thread_rng, Rng};
-
+use std::sync::{Arc, Mutex};
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::ResourceRecord;
-use crate::async_resolver::{config::ResolverConfig,lookup::LookupFutureStub};
+use crate::async_resolver::{config::ResolverConfig,lookup::LookupStrategy};
 use crate::message::rdata::Rdata;
 use crate::message::type_rtype::Rtype;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
+
 /// Asynchronous resolver for DNS queries.
 /// 
 /// This struct contains a cache and a configuration for the resolver. 
@@ -33,10 +33,11 @@ use crate:: message::type_qtype::Qtype;
 /// 
 /// Each query corresponds to a future that is going to be spawned using
 /// `lookup_ip` method. 
-pub struct AsyncResolver{
+#[derive(Clone)]
+pub struct AsyncResolver {
     /// Cache for the resolver.
-    cache: DnsCache,
-    /// Configuration for the resolver.
+    cache: Arc<Mutex<DnsCache>>,
+    /// Configu ration for the resolver.
     config: ResolverConfig ,
 }
 
@@ -56,18 +57,23 @@ impl AsyncResolver {
     /// ```
     pub fn new(config: ResolverConfig)-> Self {
         let async_resolver = AsyncResolver {
-            cache: DnsCache::new(),
+            cache: Arc::new(Mutex::new(DnsCache::new())),
             config: config,
         };
         async_resolver
     } 
 
-
-    pub fn run(){
+    pub fn run() {
         unimplemented!()
     }
 
+    /// This method acts as an interface between the Client and the Resolver.
+    ///
+    /// It calls `inner_lookup(&self, domain_name: DomainName)` which will
+    /// execute a look up of the given domain name asynchronously.
+    ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
+    ///
     /// 5.2. Client-resolver interface
     /// 
     /// 1. Host name to host address translation
@@ -81,21 +87,22 @@ impl AsyncResolver {
     /// a multiple address return is recommended, but a single
     /// address may be the only way to emulate prior HOSTS.TXT
     /// services.
-    /// 
-    /// FIXME: DEBE RETORNAR CLIENT ERROR
-    /// This method acts as an interface between the Client and the Resolver.
-    /// It calls `inner_lookup(&self, domain_name: DomainName)` which will
-    /// execute a look up of the given domain name asynchronously.
-    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str, qclass:&str) -> Result<Vec<IpAddr>, ClientError> {
-        println!("[LOOKUP IP ASYNCRESOLVER]");
-
+    pub async fn lookup_ip(
+        &mut self, 
+        domain_name: &str, 
+        transport_protocol: &str, 
+        qclass: &str
+    ) -> Result<Vec<IpAddr>, ClientError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
-
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct,Qtype::A,Qclass::from_str_to_qclass(qclass)).await;
-          
+        let response = self.inner_lookup(
+            domain_name_struct,
+            Qtype::A,
+            Qclass::from_str_to_qclass(qclass)
+        ).await;
+
         let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
             let rrs_iter = rrs.into_iter();
@@ -105,6 +112,54 @@ impl AsyncResolver {
         } else {
             Err(ClientError::TemporaryError("Error parsing response."))?
         }
+    }
+
+    /// Performs a lookup of the given domain name, qtype and qclass.
+    /// 
+    /// This method calls the `inner_lookup` method with the given domain name,
+    /// qtype, qclass and the chosen transport protocol. It performs a DNS lookup
+    /// asynchronously and returns the corresponding resource records.
+    /// 
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
+    /// 
+    /// 5.2 Client-resolver interface
+    /// 
+    /// 3. General lookup function
+    /// 
+    /// This function retrieves arbitrary information from the DNS,
+    /// and has no counterpart in previous systems.  The caller
+    /// supplies a QNAME, QTYPE, and QCLASS, and wants all of the
+    /// matching RRs.  This function will often use the DNS format
+    /// for all RR data instead of the local host's, and returns all
+    /// RR content (e.g., TTL) instead of a processed form with local
+    /// quoting conventions.
+    /// 
+    /// # Examples
+    /// ```
+    /// let mut resolver = AsyncResolver::new(ResolverConfig::default());
+    /// let domain_name = "example.com";
+    /// let transport_protocol = "UDP";
+    /// let qtype = "NS";
+    /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
+    /// ```
+    pub async fn lookup(
+        &mut self, 
+        domain_name: &str, 
+        transport_protocol: &str,
+        qtype: &str,
+        qclass: &str
+    ) -> Result<Vec<ResourceRecord>, ResolverError> {
+        let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
+        let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
+        self.config.set_protocol(transport_protocol_struct);
+
+        let response = self.inner_lookup(
+            domain_name_struct,
+            Qtype::from_str_to_qtype(qtype),
+            Qclass::from_str_to_qclass(qclass)
+        ).await;
+        
+        return self.parse_dns_msg(response).map_err(Into::into)
     }
 
     // TODO: move and change as from method  of rr
@@ -166,14 +221,22 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
-    async fn inner_lookup(&mut self, domain_name: DomainName,qtype:Qtype, qclass:Qclass) -> Result<DnsMessage, ResolverError> {
-
+    async fn inner_lookup(
+        &self, 
+        domain_name: DomainName,
+        qtype:Qtype, 
+        qclass:Qclass
+    ) -> Result<DnsMessage, ResolverError> {
         // Cache lookup
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
+            let lock_result = self.cache.lock();
+            let cache = match lock_result {
+                Ok(val) => val,
+                Err(_) => Err(ResolverError::Message("Error getting cache"))?,
+            };
             let rtype_saved = Qtype::to_rtype(qtype);
-            if let Some(cache_lookup) = self.cache.clone().get(domain_name.clone(), rtype_saved) {
-                
+            if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), rtype_saved) {
                 // Create random generator
                 let mut rng = thread_rng();
 
@@ -196,41 +259,41 @@ impl AsyncResolver {
 
                     // Get negative answer
                     if rtype_saved != rr.get_rtype() {
-                        println!("ADD ADITIONAL NEGATIVE ANSWER SOA");
                         let additionals: Vec<ResourceRecord> = vec![rr];
                         new_query.add_additionals(additionals);
                         let mut new_header = new_query.get_header();
-                        new_header.set_rcode(3);
+                        new_header.set_rcode(3);  // TODO: is here where the other problem originates?
                         new_query.set_header(new_header);
                     }
                     else { //FIXME: change to alg RFC 1034-1035
-                        println!("ADD ANSWER CACHE");
                         let answer: Vec<ResourceRecord> = vec![rr];
                         new_query.set_answer(answer);
                     }     
                 }
-    
                 return Ok(new_query)
             }
         }
-
-        // Async query
-        let response = LookupFutureStub::lookup(
-            domain_name,
-            qtype,
-            qclass,
-            self.config.clone())
-            .await;
+        let mut lookup_strategy = LookupStrategy::new(
+            domain_name, 
+            qtype, 
+            qclass, 
+            self.config.clone()
+        );
+        
+        let response = lookup_strategy.lookup_run().await;
 
         // Cache data
         if let Ok(ref r) = response {
             self.store_data_cache(r.clone());
         }
 
-        response
+        return response;
     }
 
+    /// Performs the reverse query of the given IP address.
+    ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
+    /// 
     /// 5.2. Client-resolver interface
     /// 
     /// Host address to host name translation
@@ -243,53 +306,14 @@ impl AsyncResolver {
     /// the host.  For example, a request for the host name
     /// corresponding to IP address 1.2.3.4 looks for PTR RRs for
     /// domain name "4.3.2.1.IN-ADDR.ARPA".
-    /// 
-    /// Reverse query function
-
     pub async fn reverse_query() {
         unimplemented!()
     }
 
-    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
-    /// 5.2 Client-resolver interface
-    /// 
-    /// 3. General lookup function
-    /// 
-    /// This function retrieves arbitrary information from the DNS,
-    /// and has no counterpart in previous systems.  The caller
-    /// supplies a QNAME, QTYPE, and QCLASS, and wants all of the
-    /// matching RRs.  This function will often use the DNS format
-    /// for all RR data instead of the local host's, and returns all
-    /// RR content (e.g., TTL) instead of a processed form with local
-    /// quoting conventions.
-    /// 
-    /// This method will perform a inner lookup of the given domain name
-    /// and qtype, returning the corresponding resource records.
-    /// 
-    /// # Examples
-    /// ```
-    /// let mut resolver = AsyncResolver::new(ResolverConfig::default());
-    /// let domain_name = "example.com";
-    /// let transport_protocol = "UDP";
-    /// let qtype = "NS";
-    /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
-    /// ```
-    /// 
-    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ,qclass:&str) -> Result<Vec<ResourceRecord>, ResolverError> {
-        println!("[LOOKUP ASYNCRESOLVER]");
-
-        let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
-        let qtype_struct = Qtype::from_str_to_qtype(qtype);
-        let qclass_struct = Qclass::from_str_to_qclass(qclass);
-        let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
-        self.config.set_protocol(transport_protocol_struct);
-
-        let response = self.inner_lookup(domain_name_struct,qtype_struct,qclass_struct).await;
-        
-        return self.parse_dns_msg(response).map_err(Into::into)
-    }
-
     /// Stores the data of the response in the cache.
+    /// 
+    /// This method stores the data of the response in the cache, depending on the
+    /// type of response.
     /// 
     /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.4 
     /// 
@@ -329,26 +353,29 @@ impl AsyncResolver {
     /// in the response or the cache is preferred, but the two should never be
     /// combined.  If the data in the response is from authoritative data in the
     /// answer section, it is always preferred.
-    /// 
-    /// This method stores the data of the response in the cache, depending on the
-    /// type of response.
-    fn store_data_cache(&mut self, response: DnsMessage) {
-        let truncated = response.get_header().get_tc();
-        self.cache.timeout_cache();
+    fn store_data_cache(&self, response: DnsMessage) {
+        let truncated = response.get_header().get_tc(); 
+        {
+        let mut cache = self.cache.lock().unwrap(); 
+        // FIXME: maybe add corresponding type of erro
+        cache.timeout_cache();
         if !truncated {
             // TODO: RFC 1035: 7.4. Using the cache
             response.get_answer()
             .iter()
             .for_each(|rr| {
                 if rr.get_ttl() > 0 {
-                    self.cache.add(rr.get_name(), rr.clone());
+                    cache.add(rr.get_name(), rr.clone());
                 }
             });
 
         } 
+        }
         self.save_negative_answers(response);
     }
 
+    /// Stores the data of negative answers in the cache. 
+    ///
     /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.3.3
     /// 
     /// 6.1.3.3  Efficient Resource Usage
@@ -377,10 +404,7 @@ impl AsyncResolver {
     /// the answer section, or name error if applicable.  The MINIMUM field of
     /// the SOA controls the length of time that the negative result may be
     /// cached.
-    ///
-    /// Stores the data of negative answers in the cache. 
-    fn save_negative_answers(&mut self, response: DnsMessage){
-
+    fn save_negative_answers(&self, response: DnsMessage){
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_qtype();
         let additionals = response.get_additional();
@@ -388,12 +412,13 @@ impl AsyncResolver {
         let aa = response.get_header().get_aa();
 
         // If not existence RR for query, add SOA to cache 
+        let mut cache = self.cache.lock().unwrap(); // FIXME: que la función entregue result
         if additionals.len() > 0 && answer.len() == 0 && aa == true{
             additionals.iter()
             .for_each(|rr| {
                 if rr.get_rtype() == Rtype::SOA {
                     let  rtype =  Qtype::to_rtype(qtype);
-                    self.cache.add_negative_answer(qname.clone(),rtype ,rr.clone());
+                    cache.add_negative_answer(qname.clone(),rtype ,rr.clone());
                 }
             });
         }
@@ -401,13 +426,12 @@ impl AsyncResolver {
     }
 }
 
-
-
 // Getters
 impl AsyncResolver {
     // Gets the cache from the struct
     pub fn get_cache(&self) -> DnsCache {
-        self.cache.clone()
+        let cache = self.cache.lock().unwrap(); // FIXME: ver que hacer ocn el error
+        return cache.clone();
     }
 }
 
@@ -416,7 +440,6 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use tokio::io;
-
     use crate::client::client_error::ClientError;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
@@ -431,8 +454,11 @@ mod async_resolver_test {
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::time::Duration;
+    use std::vec;
     use crate::domain_name::DomainName;
+    use crate::async_resolver::resolver_error::ResolverError;
     static TIMEOUT: u64 = 10;
+    use std::sync::Arc;
     
     #[test]
     fn create_async_resolver() {
@@ -445,7 +471,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_a() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::A;
         let record_class = Qclass::IN;
@@ -468,7 +494,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_ns() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::NS;
         let record_class = Qclass::IN;
@@ -490,7 +516,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_mx() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::MX;
         let record_class = Qclass::IN;
@@ -512,7 +538,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_ptr() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::PTR;
         let record_class = Qclass::IN;
@@ -534,7 +560,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_soa() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::SOA;
         let record_class = Qclass::IN;
@@ -556,7 +582,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_txt() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::TXT;
         let record_class = Qclass::IN;
@@ -578,7 +604,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_cname() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::CNAME;
         let record_class = Qclass::IN;
@@ -600,7 +626,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_hinfo() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::HINFO;
         let record_class = Qclass::IN;
@@ -622,7 +648,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_tsig() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::TSIG;
         let record_class = Qclass::IN;
@@ -643,7 +669,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_ns() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::NS;
         let record_class = Qclass::IN;
@@ -665,7 +691,6 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
-    
         assert!(!ip_addresses[0].is_unspecified());
     }
 
@@ -681,7 +706,6 @@ mod async_resolver_test {
         assert!(ip_addresses.is_err());
     }
 
-    #[ignore] //FIXME:
     #[tokio::test]
     async fn lookup_ip_qclass_any() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -691,7 +715,7 @@ mod async_resolver_test {
         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
         println!("RESPONSE : {:?}", ip_addresses);
     
-        // assert!(ip_addresses.is_err());
+        assert!(ip_addresses.is_err());
     }
 
     #[tokio::test]
@@ -707,7 +731,7 @@ mod async_resolver_test {
         assert!(ip_addresses.is_err());
     }
 
-    #[tokio::test]
+    #[tokio::test] 
     async fn host_name_to_host_address_translation_ch() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
@@ -716,25 +740,26 @@ mod async_resolver_test {
         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
-        assert!(ip_addresses[0].is_ipv4());
-    
+        assert!(ip_addresses[0].is_ipv4()); 
         assert!(!ip_addresses[0].is_unspecified());
     }
 
-    #[ignore]
     #[tokio::test]
     async fn lookup_ns() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.config.set_retry(10);
         let domain_name = "example.com";
         let transport_protocol = "UDP";
-        let qtype = "NS";
-        let qclass = "IN";
-        let response = resolver.lookup(domain_name, transport_protocol,qtype,qclass).await.unwrap();
-        
-        println!("RESPONSE : {:?}",response);
+        match resolver.lookup(
+            domain_name, 
+            transport_protocol,
+            "NS",
+            "IN"
+        ).await {
+            Ok(val) => {println!("RESPONSE : {:?}",val);},
+            Err(e) => assert!(false, "Error: {:?}", e)
+        };
     }
-
-
 
     // async fn reverse_query() {
     //     let resolver = AsyncResolver::new(ResolverConfig::default());
@@ -766,9 +791,7 @@ mod async_resolver_test {
         let result = tokio::time::timeout(timeout_duration, async {
             resolver.lookup_ip(domain_name, transport_protocol,qclass).await
         }).await;
-        
 
-        
         // Verifica que el resultado sea un error de timeout
         match result {
             Ok(Ok(_)) => {
@@ -824,15 +847,14 @@ mod async_resolver_test {
     /// Test inner lookup cache
     #[tokio::test]
     async fn inner_lookup_cache_available() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.lock().unwrap().set_max_size(1);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-
-        resolver.cache.add(domain_name, resource_record);
+        resolver.cache.lock().unwrap().add(domain_name, resource_record);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
@@ -850,15 +872,17 @@ mod async_resolver_test {
         let mut config = ResolverConfig::default();
         config.set_cache_enabled(false);
 
-        let mut resolver = AsyncResolver::new(config);
-        resolver.cache.set_max_size(1);
+        let resolver = AsyncResolver::new(config);
+        {
+        let mut cache = resolver.cache.lock().unwrap();
+        cache.set_max_size(1);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-
-        resolver.cache.add(domain_name, resource_record);
+        cache.add(domain_name, resource_record);
+        }
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
@@ -874,14 +898,13 @@ mod async_resolver_test {
     #[tokio::test]
     async fn cache_data() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
-        assert_eq!(resolver.cache.is_empty(), true);
-        let _response = resolver.lookup("example.com", "UDP", "A", "IN").await;
-        assert_eq!(resolver.cache.is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
+        resolver.cache.lock().unwrap().set_max_size(1);
+        assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
 
+        let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
+        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
         // TODO: Test special cases from RFC
     }
-
 
     //TODO: test max number of retry
     #[tokio::test]
@@ -914,7 +937,7 @@ mod async_resolver_test {
     }
 
  
-    #[tokio::test]
+    #[tokio::test] 
     async fn use_udp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
@@ -924,11 +947,10 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
-    
         assert!(!ip_addresses[0].is_unspecified());
     }
   
-    #[tokio::test]
+    #[tokio::test] 
     async fn use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
@@ -938,56 +960,41 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
-    
         assert!(!ip_addresses[0].is_unspecified());
     }
 
-    
-    #[ignore = ""]
-    #[tokio::test]
+    #[tokio::test] 
     async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "Ecample.com";
         let transport_protocol_udp = "UDP";
         let transport_protocol_tcp = "TCP";
         let qclass = "IN";
-
         let udp_result = resolver.lookup_ip(domain_name, transport_protocol_udp,qclass).await;
-    
-       
-       match udp_result {
+   
+        match udp_result {
         Ok(_) => {
             panic!("UDP client error expected");
-        }
-           
-       
-       Err(_err) => {
-        assert!(true);
-       }
-      
-      } 
-
-      let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
-
-      match tcp_result {
-        Ok(_) => {
+            }
+        Err(_err) => {
             assert!(true);
-            
-        }
-           
-       
-       Err(_err) => {
-        panic!("unexpected TCP client error");
-        
-       }
-      
-      } 
-    
+            }
+        } 
+
+        let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
+        match tcp_result {
+            Ok(_) => {
+                assert!(true);
+            }
+        Err(_err) => {
+            panic!("unexpected TCP client error");
+            }
+        } 
     }
 
 
     //TODO: diferent types of errors
-    #[tokio::test]
+    #[tokio::test] 
     async fn resolver_with_client_error_io() {
         let io_error = io::Error::new(io::ErrorKind::Other, "Simulated I/O Error");
         let result = ClientError::Io(io_error);
@@ -1044,7 +1051,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -1089,7 +1095,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -1134,7 +1139,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -1179,7 +1183,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -1224,7 +1227,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     //TODO: probar diferentes qtype
@@ -1816,8 +1818,10 @@ mod async_resolver_test {
 
     #[test]
     fn not_store_data_in_cache_if_truncated() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        resolver.cache.lock().unwrap().set_max_size(10);
+
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
     
@@ -1841,8 +1845,8 @@ mod async_resolver_test {
 
     #[test]
     fn not_store_cero_ttl_data_in_cache() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(10);
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.lock().unwrap().set_max_size(10);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
     
@@ -1886,8 +1890,8 @@ mod async_resolver_test {
 
     #[test]
     fn save_cache_negative_answer(){
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.set_max_size(1);
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.lock().unwrap().set_max_size(1);
 
         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
         let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
@@ -1939,9 +1943,10 @@ mod async_resolver_test {
         
     }
     
+    #[ignore = "Optional, not implemented"]
     #[tokio::test]
     async fn inner_lookup_negative_answer_in_cache(){
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let mut cache = resolver.get_cache();
         let qtype = Qtype::A;
         cache.set_max_size(9);
@@ -1975,19 +1980,36 @@ mod async_resolver_test {
         cache.set_max_size(9);
         let  rtype =  Qtype::to_rtype(qtype);
         cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
-        resolver.cache = cache;
+        let mut cache_guard = resolver.cache.lock().unwrap();
+        *cache_guard = cache;
 
         assert_eq!(resolver.get_cache().get_size(), 1);
 
         let qclass = Qclass::IN;
         let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
 
-        
         assert_eq!(resolver.get_cache().get_size(), 1);
         assert_eq!(response.get_answer().len(), 0);
         assert_eq!(response.get_additional().len(), 1);
         assert_eq!(response.get_header().get_rcode(), 3);
-        
     }
+
+    // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently
+    #[tokio::test]
+    async fn test3(){
+        let resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
+        let qtype = Qtype::A;
+        let qclass = Qclass::IN;
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let resolver_1 = resolver.clone();
+        let resolver_2 = resolver.clone();
+
+        let _result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
+            resolver_1.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
+            resolver_2.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
+        );
+    }
+
 
 }

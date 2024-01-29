@@ -233,7 +233,6 @@ impl AsyncResolver {
         
         let response = lookup_strategy.lookup_run().await;
 
-
         // Cache data
         if let Ok(ref r) = response {
             self.store_data_cache(r.clone());
@@ -1792,113 +1791,18 @@ mod async_resolver_test {
         assert_eq!(response.get_header().get_rcode(), 3);
     }
 
-
-    #[tokio::test]
-    async fn test(){ //FIXME: change names
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        let mut cache = resolver.get_cache();
-        let qtype = Qtype::A;
-        let qclass = Qclass::IN;
-
-        let domain_name: DomainName = DomainName::new_from_string("banana.exaple".to_string());
-
-        let response =  resolver.inner_lookup(domain_name, qtype, qclass).await;
-        println!("[RESPONSE] {:?}",response)    ;
-
-    }
-
-    // #[tokio::test]
-    // async fn test3(){
-    //     let mut resolver = Arc::new(Mutex::new(AsyncResolver::new(ResolverConfig::default())));
-    //     let qtype = Qtype::A;
-    //     let qclass = Qclass::IN;
-    //     // let mut joins = Vec::with_capacity(4);
-    //     let domain_name = DomainName::new_from_string("example.com".to_string());
-    //     let resolver_1 = resolver.clone();
-    //     let resolver_2 = resolver.clone();
-    //     println!("[1]");
-
-    //     // Bloquear el Mutex para acceder al AsyncResolver
-    //     let mut resolver_1_locked = resolver_1.lock().unwrap();
-    //     let mut resolver_2_locked = resolver_2;
-
-    //     // FIXME: deadlocjk
-    //     let result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
-    //         resolver_1_locked.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
-    //         resolver_2_locked.lock.unwrap().inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
-    //     );
-    // }
-
-    // #[test]
-    // fn teste2(){ //FIXME: change names
-    //     // Runtime
-    //     let rt = tokio::runtime::Builder::new_multi_thread()
-    //     .worker_threads(1)
-    //     .enable_time()
-    //     .build()
-    //     .unwrap();
-
-    //     let mut resolver = Arc::new(Mutex::new(AsyncResolver::new(ResolverConfig::default())));
-    //     // let mut cache = resolver.get_cache();
-    //     let qtype = Qtype::A;
-    //     let qclass = Qclass::IN;
-    //     let mi_vector: [&str; 3] = ["example.com", "uchile.cl", "www.u-.cl"];
-    //     let mut joins = Vec::with_capacity(4);
-
-    //     for i in 1..4 {
-    //         let domain_name = DomainName::new_from_string(mi_vector[i].to_string());
-    //         let resolver_clone = Arc::clone(&resolver);
-    //         joins.push(rt.spawn(resolver_clone.lock().unwrap().inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())));
-    //     }
-
-    //     // Wait for work to be done
-    //     for join in joins {
-    //         rt.block_on(join).unwrap();
-    //     }
-      
-    // }
-
-
-    // #[tokio::test]
-    // async fn test4(){
-
-    //     let mut resolver = Arc::new(Mutex::new(AsyncResolver::new(ResolverConfig::default())));
-    //     // let mut cache = resolver.get_cache();
-    //     let qtype = Qtype::A;
-    //     let qclass = Qclass::IN;
-
-    //     // for i in 1..4 {
-    //         tokio::spawn(async move{
-    //             let qtype = Qtype::A;
-    //             let qclass = Qclass::IN;
-    //             let resolver_clone = resolver.clone();
-    //             let domain_name = DomainName::new_from_string("example.com".to_string());
-            
-    //             resolver_clone.lock().unwrap().inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()).await;
-    //         });
-    //     // }
-
-
-    // }
-
-
+    // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently
     #[tokio::test]
     async fn test3(){
         let resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
         let qtype = Qtype::A;
         let qclass = Qclass::IN;
-        // let mi_vector: [&str; 3] = ["example.com", "uchile.cl", "www.u-.cl"];
-        // let mut joins = Vec::with_capacity(4);
+
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let resolver_1 = resolver.clone();
         let resolver_2 = resolver.clone();
 
-        // Bloquear el Mutex para acceder al AsyncResolver
-        // let mut resolver_1_locked = resolver_1.lock().unwrap();
-        // let mut resolver_2_locked = resolver_2.lock().unwrap();
-
-        // FIXME: deadlocjk
-        let result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
+        let _result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
             resolver_1.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
             resolver_2.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
         );

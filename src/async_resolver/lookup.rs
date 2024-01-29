@@ -398,7 +398,8 @@ mod async_resolver_test {
         ).await.unwrap();
 
         assert_eq!(response.get_header().get_qr(),true);
-        assert_ne!(response.get_header().get_ancount(),2);
+        // This changes depending on the server we're using
+        assert!(response.get_header().get_ancount() >= 1);
 
     } 
 

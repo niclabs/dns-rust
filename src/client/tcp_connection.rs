@@ -4,20 +4,13 @@ use super::client_error::ClientError;
 use async_trait::async_trait;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
-
 use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
-
 use tokio::net::TcpStream;
 use std::net::IpAddr;
 use std::net::SocketAddr;
-// use tokio::net::ToSocketAddrs;
-
-
 use tokio::time::Duration;
 use tokio::time::timeout;
-
-
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClientTCPConnection {
@@ -127,14 +120,11 @@ impl ClientTCPConnection {
 
 #[cfg(test)]
 mod tcp_connection_test{
-    
     use super::*;
-    use core::time;
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     use crate::domain_name::DomainName;
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
-        
 
     #[test]
     fn create_tcp() {

@@ -223,8 +223,6 @@ impl fmt::Display for DomainName {
 
 #[cfg(test)]
 mod domain_name_test {
-    use crate::domain_name;
-
     use super::DomainName;
 
     #[test]

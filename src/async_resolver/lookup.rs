@@ -175,7 +175,7 @@ pub async fn execute_lookup_strategy(
     new_header.set_qr(true);
     response.set_header(new_header);
 
-    let result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
+    let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
     let mut retry_count = 0;
     let mut i = 0;
     
@@ -188,7 +188,7 @@ pub async fn execute_lookup_strategy(
         }
 
         let connections = name_servers.get(i).unwrap();
-        let result_dns_msg = 
+        result_dns_msg = 
                 timeout(Duration::from_secs(6), 
             send_query_resolver_by_protocol(
                         config.get_protocol(),

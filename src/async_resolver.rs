@@ -466,7 +466,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::A;
         let record_class = Qclass::IN;
@@ -479,7 +479,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_ns() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::NS;
         let record_class = Qclass::IN;
@@ -517,7 +517,7 @@ mod async_resolver_test {
         assert!(ip_addresses.is_err());
     }
 
-    #[ignore] //FIXME:
+    #[ignore] 
     #[tokio::test]
     async fn lookup_ip_qclass_any() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -543,7 +543,7 @@ mod async_resolver_test {
         assert!(ip_addresses.is_err());
     }
 
-    #[tokio::test]
+    #[tokio::test] 
     async fn host_name_to_host_address_translation_ch() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
@@ -552,22 +552,25 @@ mod async_resolver_test {
         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
         
-        assert!(ip_addresses[0].is_ipv4());
+        assert!(ip_addresses[0].is_ipv4()); 
     
         assert!(!ip_addresses[0].is_unspecified());
     }
 
     #[ignore]
-    #[tokio::test]
+    #[tokio::test] // FIXME: Error: Parse error: The name server was unable to process this query due to a problem with the name server.
     async fn lookup_ns() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let transport_protocol = "UDP";
         let qtype = "NS";
         let qclass = "IN";
-        let response = resolver.lookup(domain_name, transport_protocol,qtype,qclass).await.unwrap();
+        let response = match resolver.lookup(domain_name, transport_protocol,qtype,qclass).await {
+            Ok(val) => {println!("RESPONSE : {:?}",val);},
+            Err(e) => assert!(false, "Error: {:?}", e)
+        };
         
-        println!("RESPONSE : {:?}",response);
+        println!("RESPONSE : {:?}", response);
     }
 
 
@@ -717,7 +720,7 @@ mod async_resolver_test {
     }
 
  
-    #[tokio::test]
+    #[tokio::test] 
     async fn use_udp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
@@ -731,7 +734,7 @@ mod async_resolver_test {
         assert!(!ip_addresses[0].is_unspecified());
     }
   
-    #[tokio::test]
+    #[tokio::test] 
     async fn use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
@@ -746,8 +749,8 @@ mod async_resolver_test {
     }
 
     
-    #[ignore = ""]
-    #[tokio::test]
+    #[ignore = "Still not implemented"]
+    #[tokio::test] 
     async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "Ecample.com";
@@ -790,7 +793,7 @@ mod async_resolver_test {
 
 
     //TODO: diferent types of errors
-    #[tokio::test]
+    #[tokio::test] 
     async fn resolver_with_client_error_io() {
         let io_error = io::Error::new(io::ErrorKind::Other, "Simulated I/O Error");
         let result = ClientError::Io(io_error);

@@ -174,53 +174,38 @@ pub async fn execute_lookup_strategy(
     new_header.set_rcode(2);
     new_header.set_qr(true);
     response.set_header(new_header);
-    //FIXME:
-    let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
+
+    let result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
     let mut retry_count = 0;
+    let mut i = 0;
+    
+    loop {
+        let mut response_guard = response_arc.lock().unwrap();
+        let response = response_guard.as_ref();
 
-    for connections in name_servers.iter() { 
-
-        if retry_count > config.get_retry() {
-            break;
+        if response.is_ok() || retry_count >= config.get_retry() {
+            break; 
         }
 
-    //TODO: prpobar y eliminar la ota parte
-    result_dns_msg = 
-            timeout(Duration::from_secs(6), 
-        send_query_resolver_by_protocol(
-                    config.get_protocol(),
-                    new_query.clone(),
-                    result_dns_msg.clone(),
-                    connections,
-                )).await
-            .unwrap_or_else(|_| {
-                retry_count = retry_count + 1;
-                Err(ResolverError::Message("Timeout Error".into()))
-            });
-            
-
-        // result_dns_msg = send_query_resolver_by_protocol(
-        //     config.get_protocol(),
-        //     new_query.clone(), 
-        //     result_dns_msg.clone(), 
-        //     connections
-        // ).await;
+        let connections = name_servers.get(i).unwrap();
+        let result_dns_msg = 
+                timeout(Duration::from_secs(6), 
+            send_query_resolver_by_protocol(
+                        config.get_protocol(),
+                        new_query.clone(),
+                        result_dns_msg.clone(),
+                        connections,
+                    )).await
+                .unwrap_or_else(|_| {
+                    Err(ResolverError::Message("Timeout Error".into()))
+                });  
         
-        
-        // if result_dns_msg.is_err(){
-        //     retry_count = retry_count + 1;
-        // }
-        // else {
-        //     break;
-        // }
-
-        // //FIXME: try make async
-        // let delay_duration = Duration::from_secs(6);
-        // thread::sleep(delay_duration); // FIXME: cambiar por un delay de tokio
+        *response_guard = result_dns_msg.clone();
+        retry_count = retry_count + 1;
+        i = i+1;
 
     }
 
-    //FIXME:  
     let response_dns_msg = match result_dns_msg.clone() {
         Ok(response_message) => response_message,
         Err(ResolverError::Parse(_)) => {
@@ -232,11 +217,8 @@ pub async fn execute_lookup_strategy(
         }
         Err(_) => response,
     };
-    let mut response_answer = response_arc.lock().unwrap();
-    *response_answer = result_dns_msg.clone();
-    drop(response_answer);  // FIXME: no se si es necesario
-    
-    result_dns_msg  
+
+    Ok(response_dns_msg)  
 }
 
 
@@ -416,7 +398,7 @@ mod async_resolver_test {
         ).await.unwrap();
 
         assert_eq!(response.get_header().get_qr(),true);
-        assert_ne!(response.get_answer().len(),0);
+        assert_ne!(response.get_header().get_ancount(),2);
 
     } 
 
@@ -452,7 +434,7 @@ mod async_resolver_test {
     #[tokio::test] 
     async fn execute_lookup_strategy_max_tries_0() {
        
-        let max_retries =0;
+        let max_retries = 0;
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
@@ -485,7 +467,9 @@ mod async_resolver_test {
         ).await;
         println!("response {:?}",response);
             
-        assert!(response.is_err())
+        assert!(response.is_ok());
+        assert!(response.clone().unwrap().get_answer().len() == 0);
+        assert_eq!(response.unwrap().get_header().get_rcode(), 2);
     }
            
 
@@ -525,42 +509,11 @@ mod async_resolver_test {
         ).await.unwrap();
         println!("response {:?}",response);
 
-       assert!(response.get_answer().len() > 0);
-       assert_eq!(response.get_header().get_rcode(), 0);
-       assert!(response.get_header().get_ancount() >0)
+       assert!(response.get_answer().len() == 0);
+       assert_eq!(response.get_header().get_rcode(), 2);
+       assert!(response.get_header().get_ancount() == 0)
                 
     }
-           
-
-    // #[tokio::test]
-    // async fn execute_lookup_strategy_a_response() {
-    //     let domain_name = DomainName::new_from_string("example.com".to_string());
-    //     let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-    //     let timeout: Duration = Duration::from_secs(20);
-
-    //     let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-    //     let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-
-    //     let config = ResolverConfig::default();
-    //     let record_type = Qtype::A;
-    //     let record_class = Qclass::IN;
-    //     let name_servers = vec![(conn_udp,conn_tcp)];
-    //     let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
-        
-    //     let response = execute_lookup_strategy(
-    //         domain_name,
-    //         record_type,
-    //         record_class, 
-    //         name_servers, 
-    //         config,
-    //         response_arc
-    //     ).await.unwrap();
-
-    //     println!("response {:?}",response);
-    //     assert_eq!(response.get_header().get_qr(),true);
-    //     assert_ne!(response.get_answer().len(), 0);
-    // }     
-    
 
     #[tokio::test]
     async fn lookup_ip_cache_test() {

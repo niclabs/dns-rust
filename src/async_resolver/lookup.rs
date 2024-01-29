@@ -6,10 +6,8 @@ use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use std::net::IpAddr;
-use std::thread;
 use std::time::Duration;
 use rand::{thread_rng, Rng};
-use tokio::time::error::Elapsed;
 use super::resolver_error::ResolverError;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
@@ -17,6 +15,7 @@ use crate::async_resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
 use tokio::time::timeout;
+
 /// Future returned from `AsyncResolver` when performing a lookup with Rtype A.
 /// 
 /// This implementation of `Future` is used to send a single query to a DNS server.

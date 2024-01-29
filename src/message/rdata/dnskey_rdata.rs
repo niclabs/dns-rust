@@ -195,9 +195,6 @@ impl DnskeyRdata {
 #[cfg(test)]
 mod dnskey_rdata_test{
     use std::vec;
-
-    use clap::error;
-
     use super::*;
 
     #[test]

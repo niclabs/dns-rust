@@ -103,8 +103,6 @@ impl AsyncResolver {
             Qclass::from_str_to_qclass(qclass)
         ).await;
 
-        println!("THIS IS THE RESPONSE (lookup_ip): {:?}", response);
-
         let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
             let rrs_iter = rrs.into_iter();
@@ -160,8 +158,6 @@ impl AsyncResolver {
             Qtype::from_str_to_qtype(qtype),
             Qclass::from_str_to_qclass(qclass)
         ).await;
-        
-        println!("THIS IS THE RESPONSE (lookup): {:?}", response);
         
         return self.parse_dns_msg(response).map_err(Into::into)
     }

@@ -87,13 +87,21 @@ impl AsyncResolver {
     /// a multiple address return is recommended, but a single
     /// address may be the only way to emulate prior HOSTS.TXT
     /// services.
-    pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str, qclass:&str) -> Result<Vec<IpAddr>, ClientError> {
+    pub async fn lookup_ip(
+        &mut self, 
+        domain_name: &str, 
+        transport_protocol: &str, 
+        qclass:&str
+    ) -> Result<Vec<IpAddr>, ClientError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
-
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct,Qtype::A,Qclass::from_str_to_qclass(qclass)).await;
+        let response = self.inner_lookup(
+            domain_name_struct,
+            Qtype::A,
+            Qclass::from_str_to_qclass(qclass)
+        ).await;
           
         let result_rrs = self.parse_dns_msg(response);
         if let Ok(rrs) = result_rrs {
@@ -178,7 +186,6 @@ impl AsyncResolver {
             };
             let rtype_saved = Qtype::to_rtype(qtype);
             if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), rtype_saved) {
-                
                 // Create random generator
                 let mut rng = thread_rng();
 
@@ -212,7 +219,6 @@ impl AsyncResolver {
                         new_query.set_answer(answer);
                     }     
                 }
-    
                 return Ok(new_query)
             }
         }
@@ -233,7 +239,10 @@ impl AsyncResolver {
         return response;
     }
 
+    /// Performs the reverse query of the given IP address.
+    ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
+    /// 
     /// 5.2. Client-resolver interface
     /// 
     /// Host address to host name translation
@@ -246,14 +255,18 @@ impl AsyncResolver {
     /// the host.  For example, a request for the host name
     /// corresponding to IP address 1.2.3.4 looks for PTR RRs for
     /// domain name "4.3.2.1.IN-ADDR.ARPA".
-    /// 
-    /// Reverse query function
-
     pub async fn reverse_query() {
         unimplemented!()
     }
 
+    /// Performs a lookup of the given domain name, qtype and qclass.
+    /// 
+    /// This method calls the `inner_lookup` method with the given domain name,
+    /// qtype, qclass and the chosen transport protocol. It performs a DNS lookup
+    /// asynchronously and returns the corresponding resource records.
+    /// 
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
+    /// 
     /// 5.2 Client-resolver interface
     /// 
     /// 3. General lookup function
@@ -266,9 +279,6 @@ impl AsyncResolver {
     /// RR content (e.g., TTL) instead of a processed form with local
     /// quoting conventions.
     /// 
-    /// This method will perform a inner lookup of the given domain name
-    /// and qtype, returning the corresponding resource records.
-    /// 
     /// # Examples
     /// ```
     /// let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -277,20 +287,31 @@ impl AsyncResolver {
     /// let qtype = "NS";
     /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
     /// ```
-    /// 
-    pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ,qclass:&str) -> Result<Vec<ResourceRecord>, ResolverError> {
+    pub async fn lookup(
+        &mut self, 
+        domain_name: &str, 
+        qtype:&str,
+        qclass:&str,
+        transport_protocol: &str
+    ) -> Result<Vec<ResourceRecord>, ResolverError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let qtype_struct = Qtype::from_str_to_qtype(qtype);
         let qclass_struct = Qclass::from_str_to_qclass(qclass);
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
-        let response = self.inner_lookup(domain_name_struct,qtype_struct,qclass_struct).await;
+        let response = self.inner_lookup(
+            domain_name_struct,
+            qtype_struct,
+            qclass_struct).await;
         
         return self.parse_dns_msg(response).map_err(Into::into)
     }
 
     /// Stores the data of the response in the cache.
+    /// 
+    /// This method stores the data of the response in the cache, depending on the
+    /// type of response.
     /// 
     /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.4 
     /// 
@@ -330,13 +351,11 @@ impl AsyncResolver {
     /// in the response or the cache is preferred, but the two should never be
     /// combined.  If the data in the response is from authoritative data in the
     /// answer section, it is always preferred.
-    /// 
-    /// This method stores the data of the response in the cache, depending on the
-    /// type of response.
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc(); 
         {
-        let mut cache = self.cache.lock().unwrap(); // FIXME: agregar algun tipo de error para esto??
+        let mut cache = self.cache.lock().unwrap(); 
+        // FIXME: maybe add corresponding type of erro
         cache.timeout_cache();
         if !truncated {
             // TODO: RFC 1035: 7.4. Using the cache
@@ -353,6 +372,8 @@ impl AsyncResolver {
         self.save_negative_answers(response);
     }
 
+    /// Stores the data of negative answers in the cache. 
+    ///
     /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.3.3
     /// 
     /// 6.1.3.3  Efficient Resource Usage
@@ -381,8 +402,6 @@ impl AsyncResolver {
     /// the answer section, or name error if applicable.  The MINIMUM field of
     /// the SOA controls the length of time that the negative result may be
     /// cached.
-    ///
-    /// Stores the data of negative answers in the cache. 
     fn save_negative_answers(&self, response: DnsMessage){
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_qtype();
@@ -485,7 +504,6 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
-    
         assert!(!ip_addresses[0].is_unspecified());
     }
 
@@ -536,7 +554,6 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4()); 
-    
         assert!(!ip_addresses[0].is_unspecified());
     }
 
@@ -552,8 +569,6 @@ mod async_resolver_test {
             Err(e) => assert!(false, "Error: {:?}", e)
         };
     }
-
-
 
     // async fn reverse_query() {
     //     let resolver = AsyncResolver::new(ResolverConfig::default());
@@ -585,9 +600,7 @@ mod async_resolver_test {
         let result = tokio::time::timeout(timeout_duration, async {
             resolver.lookup_ip(domain_name, transport_protocol,qclass).await
         }).await;
-        
 
-        
         // Verifica que el resultado sea un error de timeout
         match result {
             Ok(Ok(_)) => {
@@ -650,7 +663,6 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-
         resolver.cache.lock().unwrap().add(domain_name, resource_record);
 
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
@@ -667,7 +679,6 @@ mod async_resolver_test {
 
         // TODO: Test special cases from RFC
     }
-
 
     //TODO: test max number of retry
     #[tokio::test]
@@ -710,7 +721,6 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
-    
         assert!(!ip_addresses[0].is_unspecified());
     }
   
@@ -724,7 +734,6 @@ mod async_resolver_test {
         println!("RESPONSE : {:?}", ip_addresses);
         
         assert!(ip_addresses[0].is_ipv4());
-    
         assert!(!ip_addresses[0].is_unspecified());
     }
 
@@ -735,38 +744,26 @@ mod async_resolver_test {
         let transport_protocol_udp = "UDP";
         let transport_protocol_tcp = "TCP";
         let qclass = "IN";
-
         let udp_result = resolver.lookup_ip(domain_name, transport_protocol_udp,qclass).await;
-    
-       
-       match udp_result {
+   
+        match udp_result {
         Ok(_) => {
             panic!("UDP client error expected");
-        }
-           
-       
-       Err(_err) => {
-        assert!(true);
-       }
-      
-      } 
-
-      let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
-
-      match tcp_result {
-        Ok(_) => {
+            }
+        Err(_err) => {
             assert!(true);
-            
-        }
-           
-       
-       Err(_err) => {
-        panic!("unexpected TCP client error");
-        
-       }
-      
-      } 
-    
+            }
+        } 
+
+        let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
+        match tcp_result {
+            Ok(_) => {
+                assert!(true);
+            }
+        Err(_err) => {
+            panic!("unexpected TCP client error");
+            }
+        } 
     }
 
 
@@ -828,7 +825,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -873,7 +869,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -918,7 +913,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -963,7 +957,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     #[tokio::test]
@@ -1008,7 +1001,6 @@ mod async_resolver_test {
                 panic!("Error parsing response");
             }
         }
-
     }
 
     //TODO: probar diferentes qtype

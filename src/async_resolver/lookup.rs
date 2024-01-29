@@ -50,7 +50,6 @@ impl LookupStrategy {
         config: ResolverConfig,
         
     ) -> Self {
-        
         Self { 
             name: name,
             record_type: qtype,
@@ -150,7 +149,6 @@ pub async fn execute_lookup_strategy(
     config: ResolverConfig,
     response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
 ) -> Result<DnsMessage, ResolverError>  {
-    println!("[execute_lookup_strategy]");
     // Create random generator
     let mut rng = thread_rng();
 
@@ -288,8 +286,6 @@ fn parse_response(response_result: Result<(Vec<u8>, IpAddr), ClientError>, query
 
     // Check ID
     if dns_msg.get_query_id() != query_id {
-        println!("[ID RESPONSE] {:?}",dns_msg.get_query_id());
-        println!("[ID QUERY] {:?}",query_id);
         return  Err(ResolverError::Parse("Error expected ID from query".to_string()))
     }
 
@@ -475,9 +471,7 @@ mod async_resolver_test {
 
     #[tokio::test] 
     async fn execute_lookup_strategy_max_tries_1() {
-       
         let max_retries = 1;
-
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
@@ -515,15 +509,12 @@ mod async_resolver_test {
                 
     }
 
-    #[tokio::test]
+    #[tokio::test] // TODO: finish up test
     async fn lookup_ip_cache_test() {
-
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
-        
         let config: ResolverConfig = ResolverConfig::default();
-        
         let addr = IpAddr::from_str("93.184.216.34").unwrap();
         let a_rdata = ARdata::new_from_addr(addr);
         let rdata = Rdata::A(a_rdata);
@@ -535,9 +526,14 @@ mod async_resolver_test {
 
         let query_sate = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        let _response_future = execute_lookup_strategy(domain_name, record_type, record_class,config.get_name_servers(),config, query_sate).await;
+        let _response_future = execute_lookup_strategy(
+            domain_name, 
+            record_type, 
+            record_class,
+            config.get_name_servers(),
+            config, 
+            query_sate).await;
         
-        // TODO: test
     }  
     
 /*

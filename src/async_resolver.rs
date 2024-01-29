@@ -88,8 +88,6 @@ impl AsyncResolver {
     /// address may be the only way to emulate prior HOSTS.TXT
     /// services.
     pub async fn lookup_ip(&mut self, domain_name: &str, transport_protocol: &str, qclass:&str) -> Result<Vec<IpAddr>, ClientError> {
-        println!("[LOOKUP IP ASYNCRESOLVER]");
-
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
 
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
@@ -170,9 +168,6 @@ impl AsyncResolver {
         qtype:Qtype, 
         qclass:Qclass
     ) -> Result<DnsMessage, ResolverError> {
-        print!("[INNER LOOKUP]");
-
-
         // Cache lookup
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
@@ -206,7 +201,6 @@ impl AsyncResolver {
 
                     // Get negative answer
                     if rtype_saved != rr.get_rtype() {
-                        println!("ADD ADITIONAL NEGATIVE ANSWER SOA");
                         let additionals: Vec<ResourceRecord> = vec![rr];
                         new_query.add_additionals(additionals);
                         let mut new_header = new_query.get_header();
@@ -214,7 +208,6 @@ impl AsyncResolver {
                         new_query.set_header(new_header);
                     }
                     else { //FIXME: change to alg RFC 1034-1035
-                        println!("ADD ANSWER CACHE");
                         let answer: Vec<ResourceRecord> = vec![rr];
                         new_query.set_answer(answer);
                     }     
@@ -286,8 +279,6 @@ impl AsyncResolver {
     /// ```
     /// 
     pub async fn lookup(&mut self, domain_name: &str, transport_protocol: &str, qtype:&str ,qclass:&str) -> Result<Vec<ResourceRecord>, ResolverError> {
-        println!("[LOOKUP ASYNCRESOLVER]");
-
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let qtype_struct = Qtype::from_str_to_qtype(qtype);
         let qclass_struct = Qclass::from_str_to_qclass(qclass);
@@ -393,7 +384,6 @@ impl AsyncResolver {
     ///
     /// Stores the data of negative answers in the cache. 
     fn save_negative_answers(&self, response: DnsMessage){
-
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_qtype();
         let additionals = response.get_additional();
@@ -414,8 +404,6 @@ impl AsyncResolver {
 
     }
 }
-
-
 
 // Getters
 impl AsyncResolver {

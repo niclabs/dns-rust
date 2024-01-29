@@ -346,7 +346,7 @@ impl AsyncResolver {
     /// type of response.
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc(); 
-    
+        {
         let mut cache = self.cache.lock().unwrap(); // FIXME: agregar algun tipo de error para esto??
         cache.timeout_cache();
         if !truncated {
@@ -360,7 +360,7 @@ impl AsyncResolver {
             });
 
         } 
-        
+        }
         self.save_negative_answers(response);
     }
 

@@ -535,7 +535,7 @@ mod async_resolver_test {
             query_sate).await;
     }  
     
-/*
+
 
     #[test]
     #[ignore] //FIXME:
@@ -621,8 +621,7 @@ mod async_resolver_test {
             assert!(false);
         }
     }
-  */  
-
+  
     // TODO: test empty response lookup_run
    
     // TODO: test lookup_run max rieswith max of 0 

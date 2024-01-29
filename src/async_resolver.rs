@@ -498,7 +498,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_ns() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::NS;
         let record_class = Qclass::IN;
@@ -520,7 +520,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_mx() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::MX;
         let record_class = Qclass::IN;
@@ -542,7 +542,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_ptr() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::PTR;
         let record_class = Qclass::IN;
@@ -564,7 +564,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_soa() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::SOA;
         let record_class = Qclass::IN;
@@ -586,7 +586,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_txt() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::TXT;
         let record_class = Qclass::IN;
@@ -608,7 +608,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_cname() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::CNAME;
         let record_class = Qclass::IN;
@@ -630,7 +630,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_hinfo() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::HINFO;
         let record_class = Qclass::IN;
@@ -652,7 +652,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_qtype_tsig() {
         // Create a new resolver with default values
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let qtype = Qtype::TSIG;
         let record_class = Qclass::IN;
@@ -851,7 +851,7 @@ mod async_resolver_test {
     /// Test inner lookup cache
     #[tokio::test]
     async fn inner_lookup_cache_available() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let resolver = AsyncResolver::new(ResolverConfig::default());
         resolver.cache.lock().unwrap().set_max_size(1);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());

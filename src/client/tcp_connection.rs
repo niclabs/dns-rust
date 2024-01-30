@@ -1,27 +1,30 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
 use super::client_error::ClientError;
-
-
-use std::io::{Write, Read};
-use std::net::{TcpStream,SocketAddr,IpAddr};
-use std::time::Duration;
+use async_trait::async_trait;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
+use tokio::io::AsyncWriteExt;
+use tokio::io::AsyncReadExt;
+use tokio::net::TcpStream;
+use std::net::IpAddr;
+use std::net::SocketAddr;
+use tokio::time::Duration;
+use tokio::time::timeout;
 
-
-#[derive(Clone,Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClientTCPConnection {
     /// Client address
     server_addr: IpAddr,
     /// Read time timeout
-    timeout: Duration,
+    timeout: tokio::time::Duration,
 }
 
+#[async_trait]
 impl ClientConnection for ClientTCPConnection {
 
-    ///Creates UDPConnection
-    fn new(server_addr:IpAddr, timeout:Duration) -> Self {
+    /// Creates TCPConnection
+    fn new(server_addr:IpAddr, timeout: Duration) -> Self {
         ClientTCPConnection {
             server_addr: server_addr,
             timeout: timeout,
@@ -35,27 +38,33 @@ impl ClientConnection for ClientTCPConnection {
     }
 
     /// creates socket tcp, sends query and receive response
-    fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>{
+    async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>{
         
-        let timeout: Duration = self.get_timeout();
+        let conn_timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
         let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
 
-        let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
+        // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
+        let conn_task = TcpStream::connect(&server_addr);
+        let mut stream: TcpStream = match timeout(conn_timeout, conn_task).await {
+            Ok(stream_result) => stream_result?,
+            Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
+        };
     
-        //Add len of message len
+        // Add len of message len
         let msg_length: u16 = bytes.len() as u16;
         let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
         
-        stream.set_read_timeout(Some(timeout))?; 
+        // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
 
-        stream.write(&full_msg)?;
-    
-        //Read response
+        // stream.write(&full_msg)?;
+        stream.write(&full_msg).await?;
+        
+        // Read response
         let mut msg_size_response: [u8; 2] = [0; 2];
 
-        stream.read_exact(&mut msg_size_response)?;
+        stream.read_exact(&mut msg_size_response).await?;
     
         let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
         let mut vec_msg: Vec<u8> = Vec::new();
@@ -63,11 +72,18 @@ impl ClientConnection for ClientTCPConnection {
     
         while vec_msg.len() < tcp_msg_len as usize {
             let mut msg = [0; 512];
-            let number_of_bytes_msg = match stream.read(&mut msg) {
+            let read_task = stream.read(&mut msg);
+            let number_of_bytes_msg_result = match timeout(conn_timeout, read_task).await {
+                Ok(n) => n,
+                Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
+            };
+
+            let number_of_bytes_msg = match number_of_bytes_msg_result {
                 Ok(n) if n > 0 => n,
                 _ => return Err(IoError::new(ErrorKind::Other, format!("Error: no data received "))).map_err(Into::into),
                 
             };
+
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
 
@@ -104,14 +120,11 @@ impl ClientTCPConnection {
 
 #[cfg(test)]
 mod tcp_connection_test{
-    
     use super::*;
-    use core::time;
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     use crate::domain_name::DomainName;
     use crate::message::type_qtype::Qtype;
     use crate::message::class_qclass::Qclass;
-        
 
     #[test]
     fn create_tcp() {
@@ -191,8 +204,8 @@ mod tcp_connection_test{
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(200));
     }
 
-    #[test]
-    fn send_query_tcp(){
+    #[tokio::test]
+    async fn send_query_tcp(){
 
         let ip_addr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let _port: u16 = 8088;
@@ -208,21 +221,21 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let (response, _ip) = conn_new.send(dns_query).unwrap();
+        let (response, _ip) = conn_new.send(dns_query).await.unwrap();
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
         // FIXME:
     }
 
-    #[test]
-    fn send_timeout() {
+    #[tokio::test]
+    async fn send_timeout() {
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(2);
 
         let conn_new = ClientTCPConnection::new(ip_addr,timeout);
         let dns_query = DnsMessage::new();
-        let response = conn_new.send(dns_query);
+        let response = conn_new.send(dns_query).await;
 
         assert!(response.is_err());
     }

@@ -99,9 +99,13 @@ pub async fn main() {
             let conn = ClientTCPConnection::new(addr.unwrap(), Duration::from_secs(10));
             let mut client = Client::new(conn);
 
-            let response = client.query(DomainName::new_from_string(client_args.host_name.clone()), client_args.qtype.as_str(), client_args.qclass.as_str());
+            let response = client.query(
+                DomainName::new_from_string(client_args.host_name.clone()), 
+                client_args.qtype.as_str(), 
+                client_args.qclass.as_str()
+            );
 
-            if let Ok(mut resp) = response {
+            if let Ok(mut resp) = response.await {
                 resp.print_dns_message()
             }
         }

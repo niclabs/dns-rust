@@ -596,7 +596,7 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_nsec_rdata(){
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));

@@ -92,7 +92,11 @@ impl FromBytes<Result<Self, &'static str>> for NsecRdata {
             }
         }
 
-        let (next_domain_name, rest_bytes) = domain_result.unwrap();
+        let (mut next_domain_name, rest_bytes) = domain_result.unwrap();
+
+        if next_domain_name.get_name() == ""{
+            next_domain_name.set_name(String::from("."));
+        }
 
         let mut decoded_types = Vec::new();
         let mut offset = 0;
@@ -129,6 +133,9 @@ impl FromBytes<Result<Self, &'static str>> for NsecRdata {
 impl NsecRdata{
     /// Creates a new `NsecRdata` with next_domain_name and type_bit_maps
     pub fn new(next_domain_name: DomainName, type_bit_maps: Vec<Rtype>) -> Self {
+        if next_domain_name.get_name() == ""{
+            panic!("The next_domain_name can't be empty");
+        }
         NsecRdata {
             next_domain_name,
             type_bit_maps,
@@ -206,17 +213,17 @@ mod nsec_rdata_test{
 
     #[test]
     fn constructor_test() {
-        let nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
-        assert_eq!(nsec_rdata.next_domain_name.get_name(), String::from(""));
+        assert_eq!(nsec_rdata.next_domain_name.get_name(), String::from("."));
         assert_eq!(nsec_rdata.type_bit_maps, vec![]);
     }
 
     #[test]
     fn set_and_get_next_domain_name_test() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
-        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from(""));
+        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("."));
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("test"));
@@ -227,7 +234,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn set_and_get_type_bit_maps_test() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), vec![]);
 
@@ -238,7 +245,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn to_bytes_test() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -306,7 +313,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn to_bytes_empty_bit_map(){
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -355,7 +362,7 @@ mod nsec_rdata_test{
     
     #[test]
     fn to_bytes_max_value_unknown(){
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -411,7 +418,7 @@ mod nsec_rdata_test{
 
     #[test]
     fn to_bytes_all_standar_rtypes() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("host.example.com"));
@@ -456,54 +463,8 @@ mod nsec_rdata_test{
     }
 
     #[test]
-    fn to_bytes_empty_domain() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from(""));
-        nsec_rdata.set_next_domain_name(domain_name);
-
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
-
-        let next_domain_name_bytes = vec![0, 0];
-
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
-
-        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
-
-        assert_eq!(nsec_rdata.to_bytes(), bytes_to_test);
-    }
-
-    #[test]
-    fn from_bytes_empty_domain() {
-        let next_domain_name_bytes = vec![0, 0]; //codification for domain name = ""
-
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
-
-        let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
-
-        //FIXME: If the domain name in bytes is the "", then from_bytes reads the 64 like the map lenght instead of 6
-        // this must because are two zeros in the domain, and after read the first zero, the other (the second) became part of the bitmap
-        let nsec_rdata = NsecRdata::from_bytes(&bytes_to_test, &bytes_to_test).unwrap();
-
-        let expected_next_domain_name = String::from("");
-
-        assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
-
-        let expected_type_bit_maps = vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)];
-
-        assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
-    }
-
-    #[test]
     fn to_bytes_root_domain() {
-        let mut nsec_rdata = NsecRdata::new(DomainName::new(), vec![]);
+        let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("."), vec![]);
 
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("."));
@@ -511,7 +472,7 @@ mod nsec_rdata_test{
 
         nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
 
-        let next_domain_name_bytes = vec![0, 0, 0];
+        let next_domain_name_bytes = vec![0];
 
         let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
                                     4, 27, 0, 0, 0, 0, 0, 0, 0,
@@ -525,7 +486,7 @@ mod nsec_rdata_test{
     
     #[test]
     fn from_bytes_root_domain() {
-        let next_domain_name_bytes = vec![0, 0, 0]; //codification for domain name = ""
+        let next_domain_name_bytes = vec![0]; //codification for domain name = ""
 
         let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
                                     4, 27, 0, 0, 0, 0, 0, 0, 0,
@@ -538,7 +499,6 @@ mod nsec_rdata_test{
         
         let expected_next_domain_name = String::from(".");
         
-        //FIXME: the domain name instead of been "." is ""
          assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
 
         let expected_type_bit_maps = vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)];

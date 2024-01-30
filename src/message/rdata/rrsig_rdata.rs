@@ -110,14 +110,16 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
 
 
         //create the DomainName
-        let signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
+        let mut signer_name = DomainName::from_bytes(&signer_name, _full_msg).unwrap();
 
         //check if labels is less or equal to the number of labels in the signer name
-        let signer_name_string = signer_name.0.get_name();
+        let mut signer_name_string = signer_name.0.get_name();
         //if the signer_name in string format is the root, then labels must be 0
         if signer_name_string == "" {
+            signer_name_string = ".".to_string();
+            signer_name.0.set_name(signer_name_string);
             if labels != 0 {
-                return Err("Labels is not zero when signer name is root");
+                panic!("Labels is not zero when signer name is root");
             }
         }
         // if the signer_name is not the root, then labels must be less or equal 
@@ -582,7 +584,7 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signature_expiration(0);
        rrsig_rdata.set_signature_inception(0);
        rrsig_rdata.set_key_tag(0);
-       rrsig_rdata.set_signer_name(DomainName::new_from_str(""));
+       rrsig_rdata.set_signer_name(DomainName::new_from_str("."));
        rrsig_rdata.set_signature(String::from("\0"));
 
        if let Ok(result) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
@@ -618,13 +620,7 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signature(String::from("\0"));
 
        let result = rrsig_rdata.to_bytes();
-       
-       //FIXME: there is a inconsistency between to_bytes and from_bytes in signer_name
-       // to_bytes : uses the function to_bytes() which means :  "" -> [0,0]
-       // from_bytes: in while loop if bytes!=0 then do not go inside the loop
-       // then if you have [0,0] -> only will not count the first 0, but the other
-       // will be count it to signature and that is wrong
-       // the problem is the loop in this particular case or the codifcation
+
        assert_eq!(result, bytes_test);
     }
 
@@ -714,17 +710,14 @@ mod rrsig_rdata_test{
         97, 46, 119, 128,//signature expiration
         97, 46, 119, 128, //signature inception
         4, 210, //key tag
-        0, 0, 0, // signer name = .
+        0, // signer name = .
         97, 98, 99, 100, 101, 102, 103]; //signature
 
-        // FIXME: the codification of the root is [0,0,0], but because for the while in from_bytes()
-        // the signer name from the function from bytes is "" instead of ".".
-        //this is a problem in the loop
         if let Err(error) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
             panic!("{}", error);
         }
         else {
-            assert!(false, "Test shoud have panic bacuase the number of labels is wrong");
+            assert!(false, "Test should have panic bacuase the number of labels is wrong");
         }
     }
 
@@ -737,7 +730,7 @@ mod rrsig_rdata_test{
         97, 46, 119, 128,//signature expiration
         97, 46, 119, 128, //signature inception
         4, 210, //key tag
-        0, 0, 0, //domain name = .
+        0, //domain name = .
         97, 98, 99, 100, 101, 102, 103]; //signature
 
 
@@ -752,7 +745,6 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signer_name(DomainName::new_from_str("."));
         rrsig_rdata.set_signature(String::from("abcdefg"));
 
-        //FIXME: same problem with wrong_labels_root_signer_name
         if let Ok(rrsig_data_from_bytes) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
             assert_eq!(rrsig_rdata, rrsig_data_from_bytes);
         }

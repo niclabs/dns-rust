@@ -11,9 +11,10 @@ rand = "0.8.4"
 chrono = "0.4"
 hex = "0.4.3"
 clap = { version = "4.0", features = ["derive"] }
-tokio = { version = "1.29.1", features = ["full"]}
+tokio = { version = "1.35.1", features = ["full"]}
 thiserror = "1.0.20"
 futures-util = "0.3.28"
+async-trait = "0.1.77"
 
 [lib]
 doctest = false

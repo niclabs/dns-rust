@@ -20,59 +20,6 @@ async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Resul
     response
 }
 
-/// 6.2.1 Query test Qtype = A with cache check
-#[tokio::test]
-#[ignore = "Lookup do not save the answer in the cache correctly"]
-async fn query_a_type_check_cache() {
-    //config and resolver
-    let config = ResolverConfig::default();
-    let mut resolver = AsyncResolver::new(config);
-
-    let response = resolver.lookup("example.com", "UDP", "A", "IN").await;
-
-    //check if the rrs is in the cache in the resolver
-    let dnscache = resolver.get_cache();
-    println!("DnsCache is : {:?}", dnscache);
-    //FIXME: THERE IS NOTHING INSIDE THE CACHE, lookup do not save the answer in the cache correctly
-    assert!(dnscache.is_cached(DomainName::new_from_string("example.com".to_string()), Rtype::A));
-    
-    //check if the rrs in the cache is the same with the response
-    if let Some(cache_domain_name) = dnscache.get_cache().get(Rtype::A) {
-        assert_eq!(cache_domain_name.get_domain_names_data().len(), 1);
-        if let Some(rr_stored_vec) = cache_domain_name.get(&DomainName::new_from_string("example.com".to_string())) {
-            if let Some(rr_stored) = rr_stored_vec.get(0) {
-                if let Ok(response_rr_stored_vec) = response {
-                    if let Some(response_rr_stored) = response_rr_stored_vec.get(0) {
-                        assert_eq!(&rr_stored.get_resource_record(), response_rr_stored);
-                    }
-                }   
-            }
-        }
-    }
-    else {
-        println!("No cache for Type A");
-    }
-
-}
-
-/// Test offline
-#[tokio::test]
-#[ignore = "To pass this test you must be offline"]
-async fn query_a_type_check_no_conecction() {
-    //config and resolver
-    let config = ResolverConfig::default();
-    let mut resolver = AsyncResolver::new(config);
-
-    let response = resolver.lookup("example.com", "UDP", "A", "IN").await;
-    println!("{:?}", response);
-    if let Err(error) = response {
-        println!("the error is : \n {:?}", error);
-        assert!(true);
-    } else {
-        panic!("The response should be an error");
-    }
-}
-
 
 /// 6.2.1 Query test Qtype = A
 #[tokio::test]
@@ -176,5 +123,55 @@ async fn no_resource_available() {
     assert!(response.is_err());
 }
 
-        
-        
+/// 6.2.1 Query test Qtype = A with cache check
+#[tokio::test]
+#[ignore = "Lookup do not save the answer in the cache correctly"]
+async fn query_a_type_check_cache() {
+    //config and resolver
+    let config = ResolverConfig::default();
+    let mut resolver = AsyncResolver::new(config);
+
+    let response = resolver.lookup("example.com", "UDP", "A", "IN").await;
+
+    //check if the rrs is in the cache in the resolver
+    let dnscache = resolver.get_cache();
+    println!("DnsCache is : {:?}", dnscache);
+    //FIXME: THERE IS NOTHING INSIDE THE CACHE, lookup do not save the answer in the cache correctly
+    assert!(dnscache.is_cached(DomainName::new_from_string("example.com".to_string()), Rtype::A));
+    
+    //check if the rrs in the cache is the same with the response
+    if let Some(cache_domain_name) = dnscache.get_cache().get(Rtype::A) {
+        assert_eq!(cache_domain_name.get_domain_names_data().len(), 1);
+        if let Some(rr_stored_vec) = cache_domain_name.get(&DomainName::new_from_string("example.com".to_string())) {
+            if let Some(rr_stored) = rr_stored_vec.get(0) {
+                if let Ok(response_rr_stored_vec) = response {
+                    if let Some(response_rr_stored) = response_rr_stored_vec.get(0) {
+                        assert_eq!(&rr_stored.get_resource_record(), response_rr_stored);
+                    }
+                }   
+            }
+        }
+    }
+    else {
+        println!("No cache for Type A");
+    }
+
+}
+
+/// Test offline
+#[tokio::test]
+#[ignore = "To pass this test you must be offline"]
+async fn query_a_type_check_no_conecction() {
+    //config and resolver
+    let config = ResolverConfig::default();
+    let mut resolver = AsyncResolver::new(config);
+
+    let response = resolver.lookup("example.com", "UDP", "A", "IN").await;
+    println!("{:?}", response);
+    if let Err(error) = response {
+        println!("the error is : \n {:?}", error);
+        assert!(true);
+    } else {
+        panic!("The response should be an error");
+    }
+}

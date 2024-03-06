@@ -18,3 +18,18 @@ pub struct AAAARdata {
     /// A 128 bit Internet address.
     address: IpAddr,
 }
+/// Getter for the struct AAAARdata
+impl AAAARdata{
+    /// Function to get the address of the AAAA Rdata
+    pub fn get_address(&self) -> IpAddr{
+        self.address
+    }
+}
+
+/// Setter for the struct AAAARdata
+impl AAAARdata{
+    /// Function to set the address of the AAAA Rdata
+    pub fn set_address(&mut self, address: IpAddr){
+        self.address = address;
+    }
+}

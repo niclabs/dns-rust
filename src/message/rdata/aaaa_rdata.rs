@@ -19,6 +19,17 @@ pub struct AAAARdata {
     address: IpAddr,
 }
 
+impl ToBytes for AAAARdata {
+    /// Returns a `Vec<u8>` of bytes that represents the AAAA RDATA.
+    fn to_bytes(&self) -> Vec<u8> {
+        let address = self.get_address();
+        match address {
+            IpAddr::V4(_val) => panic!("This is not an IPv6 address"),
+            IpAddr::V6(val) => val.octets().to_vec(),
+        }
+    }
+}
+
 impl AAAARdata{
     /// Creates a new `AAAARdata` with default values.
     ///

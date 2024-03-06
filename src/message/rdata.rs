@@ -25,6 +25,7 @@ use ns_rdata::NsRdata;
 use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
+use aaaa_rdata::AAAARdata;
 use opt_rdata::OptRdata;
 use ds_rdata::DsRdata;
 use rrsig_rdata::RRSIGRdata;
@@ -46,6 +47,7 @@ pub enum Rdata {
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
     ////// Define here more rdata types //////
+    AAAA(AAAARdata),
     OPT(OptRdata),
     DS(DsRdata),
     RRSIG(RRSIGRdata),
@@ -78,6 +80,7 @@ impl ToBytes for Rdata {
             Rdata::PTR(val) => val.to_bytes(),
             Rdata::SOA(val) => val.to_bytes(),
             Rdata::TXT(val) => val.to_bytes(),
+            Rdata::AAAA(val) => val.to_bytes(),
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
             Rdata::OPT(val) => val.to_bytes(),
@@ -206,13 +209,20 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::TXT(rdata.unwrap()))
             }
-            //////////////// Replace the next line when AAAA is implemented ////////////
-            28 => {
-                let rdata = TxtRdata::new(vec!["AAAA".to_string()]);
 
-                Ok(Rdata::TXT(rdata))
+            28 => {
+                let rdata = AAAARdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::AAAA(rdata.unwrap()))
             }
-            ///////////////////////////////////////////////////////////////////////////
+
             39 => {
                 let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 

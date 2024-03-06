@@ -162,6 +162,15 @@ mod aaaa_rdata_test{
     }
 
     #[test]
+    fn from_bytes_error_test(){
+        let bytes: [u8; 15] = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0];
+
+        let aaaa_rdata = AAAARdata::from_bytes(&bytes, &bytes);
+
+        assert_eq!(aaaa_rdata, Err("Format Error"));
+    }
+
+    #[test]
     fn get_address_as_string_test(){
         let mut aaaa_rdata = AAAARdata::new();
 

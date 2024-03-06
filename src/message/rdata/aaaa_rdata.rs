@@ -30,6 +30,26 @@ impl ToBytes for AAAARdata {
     }
 }
 
+impl FromBytes<Result<Self, &'static str>> for AAAARdata {
+    /// Creates a new `AAAARdata` from an array of bytes.
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 16 {
+            return Err("Format Error");
+        }
+
+        let mut aaaa_rdata = AAAARdata::new();
+
+        let array_bytes = [bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]];
+        let ip_address = IpAddr::from(array_bytes);
+
+        aaaa_rdata.set_address(ip_address);
+
+        Ok(aaaa_rdata)
+    }
+}
+
 impl AAAARdata{
     /// Creates a new `AAAARdata` with default values.
     ///

@@ -1,11 +1,6 @@
-use crate::domain_name::DomainName;
-use crate::message::rdata::Rdata;
-use crate::message::Rtype;
-use crate::message::Rclass;
-use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes};
 use std::net::IpAddr;
 
-use std::str::SplitWhitespace;
 
 /// Struct for the AAAA Rdata
 /// 2.2 AAAA data format
@@ -94,3 +89,5 @@ impl AAAARdata{
         self.address = address;
     }
 }
+
+

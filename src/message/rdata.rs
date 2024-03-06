@@ -946,6 +946,18 @@ mod resolver_query_tests {
     }
 
     #[test]
+    fn from_bytes_aaaa_rdata(){
+        let data_bytes = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0, 28, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::AAAA(val) => {
+                assert_eq!(val.get_address(), IpAddr::from([1,1,1,1,1,1,1,1]));
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
     #[should_panic]
     fn from_bytes_format_error(){
         let data_bytes = [];

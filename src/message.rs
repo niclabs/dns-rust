@@ -703,6 +703,10 @@ impl DnsMessage {
                         println!("Txt: {:#?}", val.get_text())
                     }
 
+                    Rdata::AAAA(val) => {
+                        println!("Ip Address: {}", val.get_address_as_string())
+                    }
+
                     Rdata::TSIG(_val) => {
                     }
 
@@ -761,6 +765,11 @@ impl DnsMessage {
                     Rdata::TXT(val) => {
                         println!("Txt: {:#?}", val.get_text())
                     }
+
+                    Rdata::AAAA(val) => {
+                        println!("Ip Address: {}", val.get_address_as_string())
+                    }
+
                     Rdata::TSIG(_val) => {
                     }
                     Rdata::OPT(_val) => {
@@ -817,6 +826,9 @@ impl DnsMessage {
                     }
                     Rdata::TXT(val) => {
                         println!("Txt: {:#?}", val.get_text())
+                    }
+                    Rdata::AAAA(val) => {
+                        println!("Ip Address: {}", val.get_address_as_string())
                     }
                     Rdata::TSIG(_val) => {
                     }

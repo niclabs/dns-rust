@@ -119,4 +119,25 @@ mod aaaa_rdata_test{
 
         assert_eq!(aaaa_rdata.get_address(), IpAddr::from(array));
     }
+
+    #[test]
+    fn to_bytes_test(){
+        let mut aaaa_rdata = AAAARdata::new();
+
+        let array = [1,1,1,1,1,1,1,1];
+        aaaa_rdata.set_address(IpAddr::from(array.clone()));
+
+        let aaaa_rdata_to_bytes = aaaa_rdata.to_bytes();
+
+        for i in 0..16{
+            
+            if i % 2 == 0 {
+                assert_eq!(aaaa_rdata_to_bytes[i], 0);
+            }
+
+            else {
+                assert_eq!(aaaa_rdata_to_bytes[i], 1);
+            }
+        }
+    }
 }

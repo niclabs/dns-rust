@@ -7,6 +7,7 @@ pub mod ns_rdata;
 pub mod ptr_rdata;
 pub mod soa_rdata;
 pub mod txt_rdata;
+pub mod aaaa_rdata;
 pub mod opt_rdata;
 pub mod ds_rdata;
 pub mod rrsig_rdata;
@@ -24,6 +25,7 @@ use ns_rdata::NsRdata;
 use ptr_rdata::PtrRdata;
 use soa_rdata::SoaRdata;
 use txt_rdata::TxtRdata;
+use aaaa_rdata::AAAARdata;
 use opt_rdata::OptRdata;
 use ds_rdata::DsRdata;
 use rrsig_rdata::RRSIGRdata;
@@ -45,6 +47,7 @@ pub enum Rdata {
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
     ////// Define here more rdata types //////
+    AAAA(AAAARdata),
     OPT(OptRdata),
     DS(DsRdata),
     RRSIG(RRSIGRdata),
@@ -77,6 +80,7 @@ impl ToBytes for Rdata {
             Rdata::PTR(val) => val.to_bytes(),
             Rdata::SOA(val) => val.to_bytes(),
             Rdata::TXT(val) => val.to_bytes(),
+            Rdata::AAAA(val) => val.to_bytes(),
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
             Rdata::OPT(val) => val.to_bytes(),
@@ -205,13 +209,20 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::TXT(rdata.unwrap()))
             }
-            //////////////// Replace the next line when AAAA is implemented ////////////
-            28 => {
-                let rdata = TxtRdata::new(vec!["AAAA".to_string()]);
 
-                Ok(Rdata::TXT(rdata))
+            28 => {
+                let rdata = AAAARdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::AAAA(rdata.unwrap()))
             }
-            ///////////////////////////////////////////////////////////////////////////
+
             39 => {
                 let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -325,6 +336,7 @@ mod resolver_query_tests {
     use super::nsec_rdata::NsecRdata;
     use super::dnskey_rdata::DnskeyRdata;
     use super::tsig_rdata::TSigRdata;
+    use super::aaaa_rdata::AAAARdata;
     use std::net::IpAddr;
     use std::vec;
 
@@ -635,6 +647,19 @@ mod resolver_query_tests {
         assert_eq!(bytes, bytes_to_test);
     }
 
+    #[test]
+    fn to_bytes_aaaa_rdata(){
+        let mut aaaa_rdata = AAAARdata::new();
+        aaaa_rdata.set_address(IpAddr::from([1,1,1,1,1,1,1,1]));
+
+        let bytes_to_test = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1];
+
+        let rdata = Rdata::AAAA(aaaa_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, bytes_to_test);
+    }
+
     //from bytes tests
     #[test]
     fn from_bytes_a_ch_rdata(){
@@ -915,6 +940,18 @@ mod resolver_query_tests {
                 assert_eq!(val.get_algorithm(), 2);
                 assert_eq!(val.get_digest_type(), 3);
                 assert_eq!(val.get_digest(), vec![1, 2, 3, 4]);
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn from_bytes_aaaa_rdata(){
+        let data_bytes = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0, 28, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::AAAA(val) => {
+                assert_eq!(val.get_address(), IpAddr::from([1,1,1,1,1,1,1,1]));
             }
             _ => {}
         }

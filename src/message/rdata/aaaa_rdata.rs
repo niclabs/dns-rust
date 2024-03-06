@@ -80,6 +80,15 @@ impl AAAARdata{
     pub fn get_address(&self) -> IpAddr{
         self.address
     }
+
+    /// Function to get the address of the AAAA Rdata as a string
+    pub fn get_address_as_string(&self) -> String{
+        let ip = self.get_address();
+        match ip {
+            IpAddr::V4(val) => val.to_string(),
+            IpAddr::V6(val) => val.to_string(),
+        }
+    }
 }
 
 /// Setter for the struct AAAARdata
@@ -149,5 +158,17 @@ mod aaaa_rdata_test{
 
         let array = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1];
         assert_eq!(aaaa_rdata.get_address(), IpAddr::from(array));
+    }
+
+    #[test]
+    fn get_address_as_string_test(){
+        let mut aaaa_rdata = AAAARdata::new();
+
+        let array = [1,1,1,1,1,1,1,1];
+        aaaa_rdata.set_address(IpAddr::from(array.clone()));
+
+        let string_address = aaaa_rdata.get_address_as_string();
+
+        assert_eq!(string_address, "1:1:1:1:1:1:1:1");
     }
 }

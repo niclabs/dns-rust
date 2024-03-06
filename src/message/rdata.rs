@@ -7,6 +7,7 @@ pub mod ns_rdata;
 pub mod ptr_rdata;
 pub mod soa_rdata;
 pub mod txt_rdata;
+pub mod aaaa_rdata;
 pub mod opt_rdata;
 pub mod ds_rdata;
 pub mod rrsig_rdata;

@@ -140,4 +140,14 @@ mod aaaa_rdata_test{
             }
         }
     }
+
+    #[test]
+    fn from_bytes_test(){
+        let bytes: [u8; 16] = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1];
+
+        let aaaa_rdata = AAAARdata::from_bytes(&bytes, &bytes).unwrap();
+
+        let array = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1];
+        assert_eq!(aaaa_rdata.get_address(), IpAddr::from(array));
+    }
 }

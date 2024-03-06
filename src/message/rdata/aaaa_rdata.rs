@@ -90,4 +90,33 @@ impl AAAARdata{
     }
 }
 
+#[cfg(test)]
+mod aaaa_rdata_test{
+    use super::*;
 
+    #[test]
+    fn constructor_test(){
+        let aaaa_rdata = AAAARdata::new();
+        let array = [0, 0, 0, 0, 0, 0, 0, 0];
+        assert_eq!(aaaa_rdata.address, IpAddr::from(array));
+    }
+
+    #[test]
+    fn from_addr_constructor_test(){
+        let array = [1,1,1,1,1,1,1,1];
+        let aaaa_rdata = AAAARdata::new_from_addr(IpAddr::from(array.clone()));
+        assert_eq!(aaaa_rdata.address, IpAddr::from(array));
+    }
+
+    #[test]
+    fn set_and_get_address_test(){
+        let mut aaaa_rdata = AAAARdata::new();
+
+        let array = [1,1,1,1,1,1,1,1];
+        assert_eq!(aaaa_rdata.get_address(), IpAddr::from([0, 0, 0, 0, 0, 0, 0, 0]));
+
+        aaaa_rdata.set_address(IpAddr::from(array.clone()));
+
+        assert_eq!(aaaa_rdata.get_address(), IpAddr::from(array));
+    }
+}

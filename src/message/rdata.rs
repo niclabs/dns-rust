@@ -336,6 +336,7 @@ mod resolver_query_tests {
     use super::nsec_rdata::NsecRdata;
     use super::dnskey_rdata::DnskeyRdata;
     use super::tsig_rdata::TSigRdata;
+    use super::aaaa_rdata::AAAARdata;
     use std::net::IpAddr;
     use std::vec;
 
@@ -641,6 +642,19 @@ mod resolver_query_tests {
         let bytes_to_test = [0, 1, 2, 3, 1, 2, 3, 4];
 
         let rdata = Rdata::DS(ds_rdata);
+        let bytes = rdata.to_bytes();
+
+        assert_eq!(bytes, bytes_to_test);
+    }
+
+    #[test]
+    fn to_bytes_aaaa_rdata(){
+        let mut aaaa_rdata = AAAARdata::new();
+        aaaa_rdata.set_address(IpAddr::from([1,1,1,1,1,1,1,1]));
+
+        let bytes_to_test = [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1];
+
+        let rdata = Rdata::AAAA(aaaa_rdata);
         let bytes = rdata.to_bytes();
 
         assert_eq!(bytes, bytes_to_test);

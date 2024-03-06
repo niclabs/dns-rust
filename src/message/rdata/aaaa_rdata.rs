@@ -18,6 +18,36 @@ pub struct AAAARdata {
     /// A 128 bit Internet address.
     address: IpAddr,
 }
+
+impl AAAARdata{
+    /// Creates a new `AAAARdata` with default values.
+    ///
+    /// # Examples
+    /// ```
+    /// let aaaa_rdata = AAAARdata::new();
+    /// assert_eq!(aaaa_rdata.address[0], 0);
+    /// ```
+    pub fn new() -> AAAARdata {
+        let array = [0 as u16, 0 as u16, 0 as u16, 0 as u16, 0 as u16, 0 as u16, 0 as u16, 0 as u16];
+        let ip_address = IpAddr::from(array);
+        AAAARdata {
+            address: ip_address,
+        }
+    }
+
+    /// Creates a new `AAAARdata` with a specified address
+    /// 
+    /// # Examples
+    /// ```
+    /// let aaaa_rdata = AAAARdata::new_from_addr(IpAddr::from([1,1,1,1,1,1,1,1]));
+    /// ```
+    pub fn new_from_addr(address: IpAddr) -> AAAARdata {
+        AAAARdata {
+            address: address,
+        }
+    }
+
+}
 /// Getter for the struct AAAARdata
 impl AAAARdata{
     /// Function to get the address of the AAAA Rdata

@@ -1,4 +1,5 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
+use core::panic;
 use std::net::IpAddr;
 
 
@@ -85,7 +86,7 @@ impl AAAARdata{
     pub fn get_address_as_string(&self) -> String{
         let ip = self.get_address();
         match ip {
-            IpAddr::V4(val) => val.to_string(),
+            IpAddr::V4(_val) => panic!("This is not an IPv6 address"),
             IpAddr::V6(val) => val.to_string(),
         }
     }

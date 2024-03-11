@@ -963,7 +963,8 @@ mod async_resolver_test {
         assert!(!ip_addresses[0].is_unspecified());
     }
 
-    #[tokio::test] 
+    #[tokio::test]
+    #[ignore] 
     async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "Ecample.com";

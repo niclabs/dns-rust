@@ -208,7 +208,7 @@ impl AsyncResolver {
     /// 
     /// Performs a DNS lookup for the given domain name and returns the 
     /// corresponding IP address. This lookup is done asynchronously using
-    /// the future `LookupIpFutureStub`.
+    /// the future `LookupIpFutureStub`.  FIXME: fix docs according to changes
     /// 
     /// # Examples
     /// 

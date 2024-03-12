@@ -171,38 +171,6 @@ impl AsyncResolver {
             Err(ClientError::TemporaryError("Response does not match type A."))?
         }
     }
- 
-    /// Parses the received `DnsMessage` and returns the corresponding RRs.
-    /// 
-    /// After receiving the response of the query, this method parses the DNS message
-    /// of type `DnsMessage` to a `Vec<ResourceRecord>` with the corresponding resource
-    /// records contained in the message. It will return the RRs if the response was
-    /// successful. If the response was not successful, it will return the corresponding
-    /// error message to the Client.
-    fn parse_dns_msg(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
-        let dns_mgs = match response {
-            Ok(val) => val,
-            Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
-        };
-
-        let header = dns_mgs.get_header();
-        let rcode = header.get_rcode();
-        if rcode == 0 {
-            let answer = dns_mgs.get_answer();
-            if answer.len() == 0 {
-                Err(ClientError::TemporaryError("no answer found"))?;
-            }
-            return Ok(answer);
-        } 
-        match rcode {
-            1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
-            2 => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
-            3 => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
-            4 => Err(ClientError::NotImplemented("The name server does not support the requested kind of query."))?,
-            5 => Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons."))?,
-            _ => Err(ClientError::ResponseError(rcode))?,
-        }
-    }
 
     /// Host name to address translation.
     /// 
@@ -423,6 +391,38 @@ impl AsyncResolver {
             });
         }
 
+    }
+
+    /// Parses the received `DnsMessage` and returns the corresponding RRs.
+    /// 
+    /// After receiving the response of the query, this method parses the DNS message
+    /// of type `DnsMessage` to a `Vec<ResourceRecord>` with the corresponding resource
+    /// records contained in the message. It will return the RRs if the response was
+    /// successful. If the response was not successful, it will return the corresponding
+    /// error message to the Client.
+    fn parse_dns_msg(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
+        let dns_mgs = match response {
+            Ok(val) => val,
+            Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
+        };
+
+        let header = dns_mgs.get_header();
+        let rcode = header.get_rcode();
+        if rcode == 0 {
+            let answer = dns_mgs.get_answer();
+            if answer.len() == 0 {
+                Err(ClientError::TemporaryError("no answer found"))?;
+            }
+            return Ok(answer);
+        } 
+        match rcode {
+            1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
+            2 => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
+            3 => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
+            4 => Err(ClientError::NotImplemented("The name server does not support the requested kind of query."))?,
+            5 => Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons."))?,
+            _ => Err(ClientError::ResponseError(rcode))?,
+        }
     }
 }
 

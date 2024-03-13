@@ -232,7 +232,7 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let response = conn_new.send(dns_query).unwrap().await.unwrap();
+        let response = conn_new.send(dns_query).await.unwrap();
         // let (response, _ip) = conn_new.send(dns_query).await.unwrap();
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 

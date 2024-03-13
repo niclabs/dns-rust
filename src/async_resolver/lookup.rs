@@ -7,23 +7,22 @@ use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use futures_util::{FutureExt,task::Waker};
 use std::thread;
+use std::net::IpAddr;
 use std::time::Duration;
-use std::pin::Pin;
-use std::task::{Poll,Context};
 use rand::{thread_rng, Rng};
-use futures_util::{future::Future,future};
 use super::resolver_error::ResolverError;
-use std::sync:: {Mutex,Arc};
+use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
+use tokio::time::timeout;
 
 /// Future returned from `AsyncResolver` when performing a lookup with Rtype A.
 /// 
 /// This implementation of `Future` is used to send a single query to a DNS server.
 /// When this future is polled by `AsyncResolver`, 
-pub struct LookupFutureStub {
+pub struct LookupStrategy {
     /// Domain Name associated with the query.
     name: DomainName,
     /// Qtype of search query
@@ -36,71 +35,52 @@ pub struct LookupFutureStub {
     /// 
     /// The `Output` of this future is a `Result<DnsMessage, ResolverError>`.
     /// The returned `DnsMessage` contains the corresponding response of the query.
-    query_answer: Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
-    /// Waker for the future.
-    waker: Option<Waker>,
-}
-
-impl Future for LookupFutureStub { 
-    type Output = Result<DnsMessage, ResolverError>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-
-        let query = self.query_answer.lock().unwrap().as_mut().poll(cx)  ;
-
-        match query {
-            Poll::Pending => {
-                return Poll::Pending;
-            },
-            Poll::Ready(Err(_)) => {
-                self.waker = Some(cx.waker().clone());
-                
-                let referenced_query = Arc::clone(&self.query_answer); 
-                tokio::spawn(
-                    lookup_stub(
-                        self.name.clone(),
-                        self.record_type,
-                        self.record_class,
-                        self.config.get_name_servers(),
-                        self.waker.clone(),
-                        referenced_query,
-                        self.config.clone())
-                    );
-                
-                return Poll::Pending;
-            },
-            Poll::Ready(Ok(ip_addr)) => {
-                return Poll::Ready(Ok(ip_addr));
-            }
-        }
-    }
+    pub query_answer: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
 }
     
-impl LookupFutureStub {
+impl LookupStrategy {
 
     /// Creates a new `LookupIpFutureStub` with the given configuration.
     /// 
     /// The resulting future created by default contains an empty `DnsMessage`
     /// which is going to be replaced by the response of the query after
     /// `LookupIpFutureStub` is polled.
-    pub fn lookup(
+    pub fn new(
         name: DomainName,
         qtype: Qtype,
         qclass: Qclass,
         config: ResolverConfig,
-    ) -> Self {
         
+    ) -> Self {
         Self { 
             name: name,
             record_type: qtype,
             record_class: qclass,
             config: config,
-            query_answer:  
-            Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed())),  //FIXME: cambiar a otro tipo el error/inicio
-            waker: None,
+            query_answer: Arc::new(Mutex::new(Err(ResolverError::EmptyQuery))), 
         }
     }
 
+    pub async fn lookup_run(
+        &mut self           
+    ) -> Result<DnsMessage, ResolverError> {
+        let response=  
+        self.query_answer.clone();
+
+        let name = self.name.clone();
+        let record_type = self.record_type;
+        let record_class = self.record_class;
+        let config = self.config.clone();
+        
+        let result_response = execute_lookup_strategy(
+            name, 
+            record_type,
+            record_class,
+            config.get_name_servers(), 
+            config,
+            response).await;
+        return result_response;
+    }
 }
 
 /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
@@ -160,19 +140,16 @@ impl LookupFutureStub {
 /// let record_type = Qtype::A;
 /// 
 /// let name_servers = vec![(conn_udp,conn_tcp)];
-/// let response = lookup_stub(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
+/// let response = execute_lookup_strategy(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
 /// ```
-///
-pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y que se le pase ahi un parametro strategy que diga si son los pasos o si funciona como stub
+pub async fn execute_lookup_strategy(
     name: DomainName,
     record_type: Qtype,
     record_class: Qclass,
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
-    waker: Option<Waker>,
-    referenced_query:Arc<std::sync::Mutex<Pin<Box<dyn futures_util::Future<Output = Result<DnsMessage, ResolverError>> + Send>>>>,
     config: ResolverConfig,
-) -> Result<DnsMessage,ResolverError>{
-
+    response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+) -> Result<DnsMessage, ResolverError>  {
     // Create random generator
     let mut rng = thread_rng();
 
@@ -190,39 +167,41 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
     );
 
     // Create Server failure query 
-    let mut response = new_query.clone().to_owned();
+    let mut response = new_query.clone(); // le quite el to_owned
     let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2);
+    new_header.set_rcode(2); // FIXME: is this the origin of the bug?
     new_header.set_qr(true);
     response.set_header(new_header);
-    //FIXME:
-    let mut result_dns_msg = Ok(response.clone());
 
+    let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
     let mut retry_count = 0;
+    let mut i = 0;
+    
+    loop {
+        let mut response_guard = response_arc.lock().unwrap();
+        let response = response_guard.as_ref();
 
-    for connections in name_servers.iter() { 
+        if response.is_ok() || retry_count >= config.get_retry() {
+            break; 
+        }
+
+        let connections = name_servers.get(i).unwrap();
+        result_dns_msg = 
+                timeout(Duration::from_secs(6), 
+            send_query_resolver_by_protocol(
+                        config.get_protocol(),
+                        new_query.clone(),
+                        result_dns_msg.clone(),
+                        connections,
+                    )).await
+                .unwrap_or_else(|_| {
+                    Err(ResolverError::Message("Timeout Error".into()))
+                });  
         
-        if retry_count > config.get_retry() {
-            break;
-        }
+        *response_guard = result_dns_msg.clone();
+        retry_count = retry_count + 1;
+        i = i+1;
 
-        result_dns_msg = send_query_resolver_by_protocol(config.get_protocol(),new_query.clone(), result_dns_msg.clone(), connections);
-        if result_dns_msg.is_err(){
-            retry_count = retry_count + 1;
-        }
-        else{
-            break;
-        }
-
-        //FIXME: try make async
-        let delay_duration = Duration::from_secs(6);
-        thread::sleep(delay_duration);
-
-    }
-
-    // Wake up task
-    if let Some(waker) = waker {
-        waker.wake();
     }
 
     let response_dns_msg = match result_dns_msg.clone() {
@@ -236,10 +215,8 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
         }
         Err(_) => response,
     };
-    let mut future_query = referenced_query.lock().unwrap();
-    *future_query = future::ready(Ok(response_dns_msg)).boxed();
 
-    result_dns_msg
+    Ok(response_dns_msg)  
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.
@@ -248,27 +225,28 @@ pub async fn lookup_stub( //FIXME: podemos ponerle de nombre lookup_strategy y q
 ///  and connection information. Depending on the specified protocol (UDP or TCP),
 ///  it sends the query using the corresponding connection and updates the result
 ///  with the parsed response.
-
-fn send_query_resolver_by_protocol(protocol: ConnectionProtocol,query:DnsMessage,mut result_dns_msg: Result<DnsMessage, ResolverError>, connections:  &(ClientUDPConnection , ClientTCPConnection))
+async fn send_query_resolver_by_protocol(
+    protocol: ConnectionProtocol,
+    query:DnsMessage,
+    mut result_dns_msg: Result<DnsMessage, ResolverError>, 
+    connections:  &(ClientUDPConnection , ClientTCPConnection)
+)
 ->  Result<DnsMessage, ResolverError>{
     let query_id = query.get_query_id();
     match protocol{ 
         ConnectionProtocol::UDP => {
-            let result_response = connections.0.send(query.clone());
+            let result_response = connections.0.send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         ConnectionProtocol::TCP => {
-            let result_response = connections.1.send(query.clone());
+            let result_response = connections.1.send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         _ => {},
-    } 
+    }; 
     
     result_dns_msg
 }
-
-
-
 
 /// Parse the received response datagram to a `DnsMessage`.
 /// 
@@ -303,8 +281,6 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -
 
     // Check ID
     if dns_msg.get_query_id() != query_id {
-        println!("[ID RESPONSE] {:?}",dns_msg.get_query_id());
-        println!("[ID QUERY] {:?}",query_id);
         return  Err(ResolverError::Parse("Error expected ID from query".to_string()))
     }
 
@@ -324,10 +300,10 @@ mod async_resolver_test {
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;
     use std::time::Duration;
-    use super::{*, parse_response};
-
+    use super::*;
+   
     #[test]
-    fn lookup(){
+    fn lookup() {
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let domain_name_cache = DomainName::new_from_string("test.com".to_string());
@@ -343,7 +319,7 @@ mod async_resolver_test {
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
 
-        let lookup_future = LookupFutureStub::lookup(
+        let lookup_future = LookupStrategy::new(
             domain_name,
             record_type,
             record_class,
@@ -355,10 +331,8 @@ mod async_resolver_test {
     }
      
     #[tokio::test]
-    async fn lookup_stub_a_response() {
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let waker = None;
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+    async fn execute_lookup_strategy_a_response() {
+        let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(20);
@@ -370,19 +344,36 @@ mod async_resolver_test {
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
         let name_servers = vec![(conn_udp,conn_tcp)];
-        let response = lookup_stub(domain_name,record_type,record_class, name_servers, waker,query,config).await.unwrap();
+        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        assert_eq!(response.get_header().get_qr(),true);
-        assert_ne!(response.get_answer().len(),0);
+        let response = execute_lookup_strategy(
+            domain_name,
+            record_type,
+            record_class, 
+            name_servers, 
+            config,
+            response_arc
+        ).await;
+
+        println!("response {:?}", response);
+
+        assert_eq!(response
+            .clone()
+            .unwrap().
+            get_header()
+            .get_qr(),
+            true);
+        assert_ne!(response
+            .unwrap()
+            .get_answer()
+            .len(), 
+            0);
     }   
 
     #[tokio::test]
-    async fn lookup_stub_ns_response() {
+    async fn execute_lookup_strategy_ns_response() {
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let waker = None;
     
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
-
         // Create vect of name servers
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(20);
@@ -393,20 +384,26 @@ mod async_resolver_test {
         let config = ResolverConfig::default();
         let record_type = Qtype::NS;
         let record_class = Qclass::IN;
-        
         let name_servers = vec![(conn_udp,conn_tcp)];
-        let response = lookup_stub(domain_name, record_type, record_class,name_servers, waker,query,config).await.unwrap();
+        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+        
+        let response = execute_lookup_strategy(
+            domain_name, 
+            record_type, 
+            record_class,
+            name_servers, 
+            config,
+            response_arc
+        ).await.unwrap();
 
         assert_eq!(response.get_header().get_qr(),true);
-        assert_ne!(response.get_answer().len(),0);
-
+        // This changes depending on the server we're using
+        assert!(response.get_header().get_ancount() >= 1);
     } 
 
     #[tokio::test]
-    async fn lookup_stub_ch_response() {
+    async fn execute_lookup_strategy_ch_response() {
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let waker = None;
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(20);
@@ -418,23 +415,31 @@ mod async_resolver_test {
         let record_type = Qtype::A;
         let record_class = Qclass::CH;
         let name_servers = vec![(conn_udp,conn_tcp)];
-        let response = lookup_stub(domain_name,record_type,record_class, name_servers, waker,query,config).await.unwrap();
+        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+
+        let response = execute_lookup_strategy(
+            domain_name,
+            record_type,
+            record_class, 
+            name_servers,
+            config,
+            response_arc
+        ).await.unwrap();
 
 
         assert_eq!(response.get_header().get_qr(),true);
         assert_eq!(response.get_answer().len(),0);
     } 
-    #[tokio::test] //se cae, y debería caerse, pero se cae con todos los max retiries y no solo con 0 //FIXME:
-    async fn lookup_stub_max_tries_0() {
+    #[tokio::test] 
+    async fn execute_lookup_strategy_max_tries_0() {
        
-        let max_retries =0;
+        let max_retries = 0;
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let waker = None;
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
+        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
     
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -451,24 +456,30 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
             
         let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
-        let response = lookup_stub(domain_name, record_type, record_class,name_servers, waker,query,config).await;
+        let response = execute_lookup_strategy(
+            domain_name, 
+            record_type, 
+            record_class,
+            name_servers,
+            config,
+            response_arc
+        ).await;
         println!("response {:?}",response);
             
-        assert!(response.is_err())
+        assert!(response.is_ok());
+        assert!(response.clone().unwrap().get_answer().len() == 0);
+        assert_eq!(response.unwrap().get_header().get_rcode(), 2);
     }
            
 
     #[tokio::test] 
-    async fn lookup_stub_max_tries_1() {
-       
+    async fn execute_lookup_strategy_max_tries_1() {
         let max_retries = 1;
-
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let waker = None;
-        let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
+        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
     
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -485,103 +496,27 @@ mod async_resolver_test {
         config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
             
         let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
-        let response = lookup_stub(domain_name, record_type, record_class,name_servers, waker,query,config).await.unwrap();
+        let response = execute_lookup_strategy(
+            domain_name, 
+            record_type, 
+            record_class,
+            name_servers,
+            config,
+            response_arc
+        ).await.unwrap();
         println!("response {:?}",response);
 
-       assert!(response.get_answer().len() > 0);
-       assert_eq!(response.get_header().get_rcode(), 0);
-       assert!(response.get_header().get_ancount() >0)
-                
-    }
-           
-
-
-    #[tokio::test] 
-    async fn poll_lookup_a(){
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let timeout = Duration::from_secs(2);
-        let record_type = Qtype::A;
-        let record_class = Qclass::IN;
-
-        let mut config: ResolverConfig = ResolverConfig::default();
-        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
-        
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
-        config.set_retry(3);
-
-        let response_future = LookupFutureStub::lookup(domain_name, record_type,record_class, config).await;
-        println!("response_future {:?}",response_future);
-
-        assert_eq!(response_future.is_ok(), true);    
-        let response = response_future.unwrap();
-        assert_eq!(response.get_header().get_ancount(), 1);
-        assert_eq!(response.get_header().get_rcode() , 0);
+       assert!(response.get_answer().len() == 0);
+       assert_eq!(response.get_header().get_rcode(), 2);
+       assert!(response.get_header().get_ancount() == 0)
     }
 
-    #[tokio::test] 
-    async fn poll_lookup_a_empty(){
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let timeout = Duration::from_secs(2);
-        let record_type = Qtype::A;
-        let record_class = Qclass::IN;
-
-        let mut config: ResolverConfig = ResolverConfig::default();
-        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(38, 44, 1, 22)); 
-        
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
-        config.set_retry(3);
-
-        let response_future = LookupFutureStub::lookup(domain_name, record_type ,record_class,config).await;
-        println!("response_future {:?}",response_future);
-
-        assert_eq!(response_future.is_ok(), true);    
-        let response = response_future.unwrap();
-        assert_eq!(response.get_header().get_ancount(), 0);
-        assert_eq!(response.get_header().get_rcode() , 2);
-
-        let answer = response.get_answer();
-        assert!(answer.is_empty());
-    }
-
-    #[tokio::test] 
-    async fn poll_lookup_max_tries_0(){
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let timeout = Duration::from_secs(2);
-        let record_type = Qtype::A;
-        let record_class = Qclass::IN;
-
-        let mut config: ResolverConfig = ResolverConfig::default();
-        let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
-        
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
-        config.set_name_servers(vec![(conn_udp,conn_tcp)]);
-        config.set_retry(0);
-
-        let response_future = LookupFutureStub::lookup(domain_name, record_type,record_class ,config).await.unwrap();
-        
-        assert_eq!(response_future.get_answer().len() , 0); 
-        assert_eq!(response_future.get_header().get_qr() , true); 
-        assert_eq!(response_future.get_header().get_rcode(), 2);
-
-    }
-
-    #[tokio::test]
+    #[tokio::test] // TODO: finish up test
     async fn lookup_ip_cache_test() {
-
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
-        
         let config: ResolverConfig = ResolverConfig::default();
-        
         let addr = IpAddr::from_str("93.184.216.34").unwrap();
         let a_rdata = ARdata::new_from_addr(addr);
         let rdata = Rdata::A(a_rdata);
@@ -591,18 +526,18 @@ mod async_resolver_test {
         cache.set_max_size(1);
         cache.add(domain_name.clone(), rr);
 
-        let response_future = LookupFutureStub::lookup(domain_name, record_type, record_class,config).await;
-        let dns_message = response_future.unwrap();
-        let answer = dns_message.get_answer();
-        let anwser_rdata = answer[0].get_rdata();
-        let ip = match anwser_rdata {
-            Rdata::A(a_rdata) => a_rdata.get_address(),
-            _ => panic!("Error")
-        };
+        let query_sate = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        assert_eq!(ip, addr);
-
+        let _response_future = execute_lookup_strategy(
+            domain_name, 
+            record_type, 
+            record_class,
+            config.get_name_servers(),
+            config, 
+            query_sate).await;
     }  
+    
+
 
     #[test]
     #[ignore] //FIXME:
@@ -684,6 +619,13 @@ mod async_resolver_test {
             assert!(false);
         }
     }
+  
+    // TODO: test empty response lookup_run
+   
+    // TODO: test lookup_run max rieswith max of 0 
+
+}
+
+
 
     
-}

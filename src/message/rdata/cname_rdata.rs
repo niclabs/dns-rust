@@ -147,10 +147,10 @@ mod cname_rdata_test {
         assert_eq!(cname_rdata.get_cname().get_name(), String::from(""));
 
         let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("test"));
+        domain_name.set_name(String::from("test.cname"));
         cname_rdata.set_cname(domain_name);
 
-        assert_eq!(cname_rdata.get_cname().get_name(), String::from("test"));
+        assert_eq!(cname_rdata.get_cname().get_name(), String::from("test.cname"));
     }
 
     #[test]

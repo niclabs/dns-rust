@@ -176,7 +176,7 @@ impl DnsCache {
     /// If it has expired, it removes it from the cache.
     pub fn timeout_cache(&mut self) {
         let mut cache = self.get_cache();
-        cache.filter_timeout_cache_data();
+        cache.filter_timeout_by_rtype();
         self.set_cache(cache);
     }
 }
@@ -689,12 +689,10 @@ mod dns_cache_test {
             if let Some(rrstore_ns_after_cleaning) = record_types_data_ns.clone().get_from_host_data(domain_name_2.clone()){
                 if let Some(rrstore_data_valid) = rrstore_ns_after_cleaning.get(0){
                     let resource_record_after_filter = rrstore_data_valid.get_resource_record();
-                    assert_eq!(resource_record_after_filter, resource_record_valid_a);
+                    assert_eq!(resource_record_after_filter, resource_record_valid_ns);
                 }
             }
         }
-
-
     }
 
 }

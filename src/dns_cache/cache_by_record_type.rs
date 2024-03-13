@@ -163,16 +163,16 @@ impl CacheByRecordType{
     /// For each type of cache data, it removes the cache data that has expired, using
     /// the `timeout_rr_cache` method of the `CacheByDomainName` struct. If the `CacheByDomainName` struct
     /// is empty after the removal, it is removed from the cache data.
-    pub fn filter_timeout_cache_data(&mut self) {
+    pub fn filter_timeout_by_rtype(&mut self) {
         let cache_data = self.get_cache_data();
         let clean_cache_data: HashMap<Rtype, CacheByDomainName> = cache_data
         .into_iter()
-        .filter_map(|(rtype, mut host_data)| {
-            host_data.filter_timeout_host_data();
-            if host_data.get_domain_names_data().is_empty() {
+        .filter_map(|(rtype, mut data_by_domain)| {
+            data_by_domain.filter_timeout_by_domain_name();
+            if data_by_domain.get_domain_names_data().is_empty() {
                 None
             } else {
-                Some((rtype, host_data))
+                Some((rtype, data_by_domain))
             }
         })
         .collect();
@@ -447,7 +447,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_a() {
+    fn filter_timeout_by_rtype_rtype_a() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let a_rdata = Rdata::A(ARdata::new());
@@ -474,7 +474,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::A){
@@ -489,7 +489,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_ns() {
+    fn filter_timeout_by_rtype_rtype_ns() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let ns_rdata = Rdata::NS(NsRdata::new());
@@ -516,7 +516,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::NS){
@@ -531,7 +531,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_cname() {
+    fn filter_timeout_by_rtype_rtype_cname() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let cname_rdata = Rdata::CNAME(CnameRdata::new());
@@ -558,7 +558,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::CNAME){
@@ -573,7 +573,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_soa() {
+    fn filter_timeout_by_rtype_rtype_soa() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let soa_rdata = Rdata::SOA(SoaRdata::new());
@@ -600,7 +600,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::SOA){
@@ -615,7 +615,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_ptr() {
+    fn filter_timeout_by_rtype_rtype_ptr() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let ptr_rdata = Rdata::PTR(PtrRdata::new());
@@ -642,7 +642,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::PTR){
@@ -657,7 +657,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_mx() {
+    fn filter_timeout_by_rtype_rtype_mx() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let mx_rdata = Rdata::MX(MxRdata::new());
@@ -684,7 +684,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::MX){
@@ -699,7 +699,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_txt() {
+    fn filter_timeout_by_rtype_rtype_txt() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec![String::from("test")]));
@@ -726,7 +726,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::TXT){
@@ -741,7 +741,7 @@ mod cache_data_test{
     }
 
     #[test]
-    fn filter_timeout_cache_data_rtype_hinfo() {
+    fn filter_timeout_by_rtype_rtype_hinfo() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let hinfo_rdata = Rdata::HINFO(HinfoRdata::new());
@@ -768,7 +768,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::HINFO){
@@ -784,7 +784,7 @@ mod cache_data_test{
 
 
     #[test]
-    fn filter_timeout_cache_data_rtype_tsig() {
+    fn filter_timeout_by_rtype_rtype_tsig() {
         use std::{thread, time};
         let mut cache_record_type = CacheByRecordType::new();
         let tsig_rdata = Rdata::TSIG(TSigRdata::new());
@@ -811,7 +811,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         //check if the len is 1 instead of 2 (one RRStoredData was eliminated)
         if let Some(rr_cache_vec) = cache_record_type.get_from_cache_data(domain_name.clone(), Rtype::TSIG){
@@ -864,7 +864,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         let record_types_data_after_clean = cache_record_type.get_cache_data();
 
@@ -923,13 +923,16 @@ mod cache_data_test{
                 assert_eq!(rrstore_data_vec_ns.len(), 1);
             }
         }
+        assert_eq!(record_types_data.len(), 2);
 
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         let record_types_data_after_cleaning = cache_record_type.get_cache_data();
+
+        assert_eq!(record_types_data_after_cleaning.len(), 1);
 
         if let Some(record_types_data_a) = record_types_data_after_cleaning.get(&Rtype::A) {
             if let Some(rrstore_data_vec_a) = record_types_data_a.clone().get_from_host_data(domain_name_1.clone()){
@@ -938,7 +941,7 @@ mod cache_data_test{
             }
         }
 
-        if let Some(record_types_data_ns) = record_types_data.get(&Rtype::NS) {
+        if let Some(record_types_data_ns) = record_types_data_after_cleaning.get(&Rtype::NS) {
             println!(" el CacheByDomain de NS es : \n {:?}", record_types_data_ns);
             assert!(false, "Si habia algo dentro del Rtype NS y NO debía ser así");
         } else {
@@ -1007,7 +1010,7 @@ mod cache_data_test{
         println!("Before timeout: {:?}", Utc::now());
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
-        cache_record_type.filter_timeout_cache_data();
+        cache_record_type.filter_timeout_by_rtype();
 
         let record_types_data_after_cleaning = cache_record_type.get_cache_data();
 
@@ -1024,16 +1027,20 @@ mod cache_data_test{
                 }
             }
         }
+
         //CacheByDomainName for NS type
         if let Some(record_types_data_ns) = record_types_data_after_cleaning.get(&Rtype::NS) {
             println!("the cache by domain for NS type after the cleaning is : \n {:?}",record_types_data_ns.get_domain_names_data());
             //FIXME: Does not delete the invadil rrstore, instead points to a empty array (same error as in cache by domain)
             assert_eq!(record_types_data_ns.get_domain_names_data().len(), 1);
             //check if is the same resource record valid (which survives)
-            if let Some(rrstore_ns_after_cleaning) = record_types_data_ns.clone().get_from_host_data(domain_name_2.clone()){
-                if let Some(rrstore_data_valid) = rrstore_ns_after_cleaning.get(0){
+            if let Some(rrstore_ns_after_cleaning) = 
+            record_types_data_ns
+            .clone()
+            .get_from_host_data(domain_name_2.clone()) {
+                if let Some(rrstore_data_valid) = rrstore_ns_after_cleaning.get(0) {
                     let resource_record_after_filter = rrstore_data_valid.get_resource_record();
-                    assert_eq!(resource_record_after_filter, resource_record_valid_a);
+                    assert_eq!(resource_record_after_filter, resource_record_valid_ns);
                 }
             }
         }

@@ -217,19 +217,25 @@ impl CacheByDomainName {
     }
 
     /// For each domain name, it removes the RRStoredData past its TTL.
-    pub fn filter_timeout_host_data(&mut self) {
-        let mut new_hash = HashMap::<DomainName, Vec<RRStoredData>>::new();
-        let data = self.get_domain_names_data();
+    pub fn filter_timeout_by_domain_name(&mut self) {
         let current_time = Utc::now();
-        for (domain_name, rr_cache_vec) in data.into_iter() {
+        let data_by_domain = self.get_domain_names_data();
+        let clean_data_by_domain: HashMap<DomainName, Vec<RRStoredData>> = data_by_domain
+        .into_iter()
+        .filter_map(|(domain_name, rr_cache_vec)| {
             let filtered_rr_cache_vec: Vec<RRStoredData> = rr_cache_vec
             .into_iter()
             .filter(|rr_cache| rr_cache.get_absolute_ttl() > current_time)
             .collect();
 
-            new_hash.insert(domain_name, filtered_rr_cache_vec);
-        }
-        self.set_domain_names_data(new_hash);
+            if !filtered_rr_cache_vec.is_empty() {
+                Some((domain_name, filtered_rr_cache_vec))
+            } else {
+                None
+            }
+        }).collect();
+
+        self.set_domain_names_data(clean_data_by_domain);
     }
 
 }
@@ -518,7 +524,7 @@ mod host_data_test{
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
         //clean the data with expired ttl
-        cache_by_domain_name.filter_timeout_host_data();
+        cache_by_domain_name.filter_timeout_by_domain_name();
 
         assert_eq!(cache_by_domain_name.get_domain_names_data().len(), 1);
         if let Some(rr_cache_vec) = cache_by_domain_name.get_domain_names_data().get(&domain_name) {
@@ -533,7 +539,7 @@ mod host_data_test{
 
     #[test]
     fn timeout_rr_cache_two_domain(){
-        //this test prove the for iteration in filter_timeout_host_data 
+        //this test prove the for iteration in filter_timeout_by_domain_name 
         use std::{thread, time};
         let mut cache_by_domain_name = CacheByDomainName::new();
         let a_rdata = Rdata::A(ARdata::new());
@@ -567,7 +573,7 @@ mod host_data_test{
         thread::sleep(time::Duration::from_secs(5));
         println!("After timeout: {:?}", Utc::now());
         //clean the data with expired ttl
-        cache_by_domain_name.filter_timeout_host_data();
+        cache_by_domain_name.filter_timeout_by_domain_name();
 
         println!("The new cache is {:?} ", cache_by_domain_name.get_domain_names_data());
         

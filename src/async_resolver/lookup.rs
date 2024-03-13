@@ -591,9 +591,17 @@ mod async_resolver_test {
         cache.set_max_size(1);
         cache.add(domain_name.clone(), rr);
 
-        let _response_future = LookupFutureStub::lookup(domain_name, record_type, record_class,config).await;
-        
-        // TODO: test
+        let response_future = LookupFutureStub::lookup(domain_name, record_type, record_class,config).await;
+        let dns_message = response_future.unwrap();
+        let answer = dns_message.get_answer();
+        let anwser_rdata = answer[0].get_rdata();
+        let ip = match anwser_rdata {
+            Rdata::A(a_rdata) => a_rdata.get_address(),
+            _ => panic!("Error")
+        };
+
+        assert_eq!(ip, addr);
+
     }  
 
     #[test]

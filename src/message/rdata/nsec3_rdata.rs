@@ -129,4 +129,9 @@ impl Nsec3Rdata {
     pub fn set_hash_length(&mut self, hash_length: u8) {
         self.hash_length = hash_length;
     }
+
+    /// Setter for the next_hashed_owner_name
+    pub fn set_next_hashed_owner_name(&mut self, next_hashed_owner_name: &'static str) {
+        self.next_hashed_owner_name = next_hashed_owner_name;
+    }
 }

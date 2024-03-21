@@ -134,4 +134,9 @@ impl Nsec3Rdata {
     pub fn set_next_hashed_owner_name(&mut self, next_hashed_owner_name: &'static str) {
         self.next_hashed_owner_name = next_hashed_owner_name;
     }
+
+    /// Setter for the type_bit_maps
+    pub fn set_type_bit_maps(&mut self, type_bit_maps: Vec<Rtype>) {
+        self.type_bit_maps = type_bit_maps;
+    }
 }

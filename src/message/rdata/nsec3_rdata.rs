@@ -1,5 +1,6 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::message::type_rtype::Rtype;
+use crate::message::rdata::NsecRdata;
 
 #[derive(Clone, PartialEq, Debug)]
 /// Struct for the NSEC3 Rdata
@@ -30,6 +31,67 @@ pub struct Nsec3Rdata {
     hash_length: u8,
     next_hashed_owner_name: &'static str,
     type_bit_maps: Vec<Rtype>,
+}
+
+impl ToBytes for Nsec3Rdata {
+    /// Convert the NSEC3 Rdata to bytes
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+
+        let hash_algorithm: u8 = self.get_hash_algorithm();
+        bytes.push(hash_algorithm);
+        let flags: u8 = self.get_flags();
+        bytes.push(flags);
+        let iterations: u16 = self.get_iterations();
+        bytes.extend_from_slice(&iterations.to_be_bytes());
+        let salt_length: u8 = self.get_salt_length();
+        bytes.push(salt_length);
+        let salt: &str = self.get_salt();
+        bytes.extend_from_slice(salt.as_bytes());
+        let hash_length: u8 = self.get_hash_length();
+        bytes.push(hash_length);
+        let next_hashed_owner_name: &str = self.get_next_hashed_owner_name();
+        bytes.extend_from_slice(next_hashed_owner_name.as_bytes());
+        let type_bit_maps: Vec<Rtype> = self.get_type_bit_maps();
+
+        let mut enconded_type_bit_maps: Vec<u8> = Vec::new();
+        let mut current_window: Option<u8> = None;
+        let mut current_bitmap: Vec<u8> = Vec::new();
+
+        for rtype in type_bit_maps {
+            let window = match rtype {
+                Rtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
+                _ => (Rtype::from_rtype_to_int(rtype) / 256) as u8,
+            };
+
+            if let Some(current_window_value) = current_window {
+                if current_window_value == window {
+                    NsecRdata::add_rtype_to_bitmap(&rtype, &mut current_bitmap);
+                    continue;
+                }
+                else {
+                    enconded_type_bit_maps.push(current_window_value);
+                    enconded_type_bit_maps.push(current_bitmap.len() as u8);
+                    enconded_type_bit_maps.extend_from_slice(&current_bitmap);
+                }
+            }
+
+            // New window
+            current_window = Some(window);
+            current_bitmap.clear();
+            NsecRdata::add_rtype_to_bitmap(&rtype, &mut current_bitmap);
+        }
+
+        if let Some(current_window_value) = current_window {
+            enconded_type_bit_maps.push(current_window_value);
+            enconded_type_bit_maps.push(current_bitmap.len() as u8);
+            enconded_type_bit_maps.extend_from_slice(&current_bitmap);
+        }
+
+        bytes.extend_from_slice(&enconded_type_bit_maps);
+
+        bytes
+    }
 }
 
 impl Nsec3Rdata {

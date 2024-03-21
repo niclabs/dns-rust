@@ -58,26 +58,31 @@ impl Nsec3Rdata {
 
     /// Getter for the hash_algorithm
     pub fn get_hash_algorithm(&self) -> u8 {
-        self.hash_algorithm
+        self.hash_algorithm.clone()
     }
 
     /// Getter for the flags
     pub fn get_flags(&self) -> u8 {
-        self.flags
+        self.flags.clone()
     }
 
     /// Getter for the iterations
     pub fn get_iterations(&self) -> u16 {
-        self.iterations
+        self.iterations.clone()
     }
 
     /// Getter for the salt_length
     pub fn get_salt_length(&self) -> u8 {
-        self.salt_length
+        self.salt_length.clone()
     }
 
     /// Getter for the salt
     pub fn get_salt(&self) -> &'static str {
         self.salt
+    }
+
+    /// Getter for the hash_length
+    pub fn get_hash_length(&self) -> u8 {
+        self.hash_length.clone()
     }
 }

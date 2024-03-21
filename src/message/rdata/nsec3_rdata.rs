@@ -124,4 +124,9 @@ impl Nsec3Rdata {
     pub fn set_salt(&mut self, salt: &'static str) {
         self.salt = salt;
     }
+
+    /// Setter for the hash_length
+    pub fn set_hash_length(&mut self, hash_length: u8) {
+        self.hash_length = hash_length;
+    }
 }

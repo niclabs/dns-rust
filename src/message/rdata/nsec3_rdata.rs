@@ -70,4 +70,9 @@ impl Nsec3Rdata {
     pub fn get_iterations(&self) -> u16 {
         self.iterations
     }
+
+    /// Getter for the salt_length
+    pub fn get_salt_length(&self) -> u8 {
+        self.salt_length
+    }
 }

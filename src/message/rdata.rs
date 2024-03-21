@@ -13,6 +13,7 @@ pub mod ds_rdata;
 pub mod rrsig_rdata;
 pub mod nsec_rdata;
 pub mod dnskey_rdata;
+pub mod nsec3_rdata;
 pub mod tsig_rdata;
 
 use crate::message::resource_record::{FromBytes, ToBytes};

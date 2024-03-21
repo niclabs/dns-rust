@@ -25,7 +25,9 @@ pub struct Nsec3Rdata {
     hash_algorithm: u8,
     flags: u8,
     iterations: u16,
+    salt_length: u8,
     salt: &'static str,
+    hash_length: u8,
     next_hashed_owner_name: &'static str,
     type_bit_maps: Vec<Rtype>,
 }
@@ -36,7 +38,9 @@ impl Nsec3Rdata {
         hash_algorithm: u8,
         flags: u8,
         iterations: u16,
+        salt_length: u8,
         salt: &'static str,
+        hash_length: u8,
         next_hashed_owner_name: &'static str,
         type_bit_maps: Vec<Rtype>,
     ) -> Nsec3Rdata {
@@ -44,7 +48,9 @@ impl Nsec3Rdata {
             hash_algorithm,
             flags,
             iterations,
+            salt_length,
             salt,
+            hash_length,
             next_hashed_owner_name,
             type_bit_maps,
         }

@@ -104,4 +104,9 @@ impl Nsec3Rdata {
     pub fn set_hash_algorithm(&mut self, hash_algorithm: u8) {
         self.hash_algorithm = hash_algorithm;
     }
+
+    /// Setter for the flags
+    pub fn set_flags(&mut self, flags: u8) {
+        self.flags = flags;
+    }
 }

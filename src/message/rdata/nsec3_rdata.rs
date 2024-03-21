@@ -59,4 +59,9 @@ impl Nsec3Rdata {
     pub fn get_flags(&self) -> u8 {
         self.flags
     }
+
+    /// Getter for the iterations
+    pub fn get_iterations(&self) -> u16 {
+        self.iterations
+    }
 }

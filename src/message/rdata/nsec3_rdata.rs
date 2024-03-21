@@ -21,11 +21,11 @@ use crate::message::type_rtype::Rtype;
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// ```
 
-pub struct Nsec3 {
+pub struct Nsec3Rdata {
     hash_algorithm: u8,
     flags: u8,
     iterations: u16,
-    salt: &str,
-    next_hashed_owner_name: &str,
+    salt: &'static str,
+    next_hashed_owner_name: &'static str,
     type_bit_maps: Vec<Rtype>,
 }

@@ -85,4 +85,9 @@ impl Nsec3Rdata {
     pub fn get_hash_length(&self) -> u8 {
         self.hash_length.clone()
     }
+
+    /// Getter for the next_hashed_owner_name
+    pub fn get_next_hashed_owner_name(&self) -> &'static str {
+        self.next_hashed_owner_name
+    }
 }

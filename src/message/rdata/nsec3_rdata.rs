@@ -109,4 +109,9 @@ impl Nsec3Rdata {
     pub fn set_flags(&mut self, flags: u8) {
         self.flags = flags;
     }
+
+    /// Setter for the iterations
+    pub fn set_iterations(&mut self, iterations: u16) {
+        self.iterations = iterations;
+    }
 }

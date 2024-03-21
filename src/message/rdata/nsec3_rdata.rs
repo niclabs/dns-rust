@@ -29,3 +29,29 @@ pub struct Nsec3Rdata {
     next_hashed_owner_name: &'static str,
     type_bit_maps: Vec<Rtype>,
 }
+
+impl Nsec3Rdata {
+    /// Create a new NSEC3 Rdata
+    pub fn new(
+        hash_algorithm: u8,
+        flags: u8,
+        iterations: u16,
+        salt: &'static str,
+        next_hashed_owner_name: &'static str,
+        type_bit_maps: Vec<Rtype>,
+    ) -> Nsec3Rdata {
+        Nsec3Rdata {
+            hash_algorithm,
+            flags,
+            iterations,
+            salt,
+            next_hashed_owner_name,
+            type_bit_maps,
+        }
+    }
+
+    /// Getter for the hash_algorithm
+    pub fn hash_algorithm(&self) -> u8 {
+        self.hash_algorithm
+    }
+}

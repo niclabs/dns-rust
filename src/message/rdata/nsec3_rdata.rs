@@ -114,4 +114,14 @@ impl Nsec3Rdata {
     pub fn set_iterations(&mut self, iterations: u16) {
         self.iterations = iterations;
     }
+
+    /// Setter for the salt_length
+    pub fn set_salt_length(&mut self, salt_length: u8) {
+        self.salt_length = salt_length;
+    }
+
+    /// Setter for the salt
+    pub fn set_salt(&mut self, salt: &'static str) {
+        self.salt = salt;
+    }
 }

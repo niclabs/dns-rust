@@ -20,6 +20,7 @@ pub enum Qtype {
     RRSIG,
     NSEC,
     DNSKEY,
+    NSEC3,
     ANY,
     TSIG,
     AXFR,
@@ -50,6 +51,7 @@ impl Qtype{
             Qtype::RRSIG => 46,
             Qtype::NSEC => 47,
             Qtype::DNSKEY => 48,
+            Qtype::NSEC3 => 50,
             Qtype::AXFR => 252,
             Qtype::TSIG => 250,
             Qtype::MAILB => 253,
@@ -78,6 +80,7 @@ impl Qtype{
             Qtype::RRSIG => String::from("RRSIG"),
             Qtype::NSEC => String::from("NSEC"),
             Qtype::DNSKEY => String::from("DNSKEY"),
+            Qtype::NSEC3 => String::from("NSEC3"),
             Qtype::TSIG => String::from("TSIG"),
             Qtype::AXFR => String::from("AXFR"),
             Qtype::MAILB => String::from("MAILB"),
@@ -107,6 +110,7 @@ impl Qtype{
             46 => Qtype::RRSIG,
             47 => Qtype::NSEC,
             48 => Qtype::DNSKEY,
+            50 => Qtype::NSEC3,
             250 => Qtype::TSIG,
             252 => Qtype::AXFR,
             253 => Qtype::MAILB,
@@ -136,6 +140,7 @@ impl Qtype{
             "RRSIG" => Qtype::RRSIG,
             "NSEC" => Qtype::NSEC,
             "DNSKEY" => Qtype::DNSKEY,
+            "NSEC3" => Qtype::NSEC3,
             "TSIG" => Qtype::TSIG,
             "AXFR" => Qtype::AXFR,
             "MAILB" => Qtype::MAILB,
@@ -165,6 +170,7 @@ impl Qtype{
             Qtype::RRSIG => Rtype::RRSIG,
             Qtype::NSEC => Rtype::NSEC,
             Qtype::DNSKEY => Rtype::DNSKEY,
+            Qtype::NSEC3 => Rtype::NSEC3,
             _ => Rtype::UNKNOWN(Self::from_qtype_to_int(qtype))
         }
     } 

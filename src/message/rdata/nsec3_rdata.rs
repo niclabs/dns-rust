@@ -75,4 +75,9 @@ impl Nsec3Rdata {
     pub fn get_salt_length(&self) -> u8 {
         self.salt_length
     }
+
+    /// Getter for the salt
+    pub fn get_salt(&self) -> &'static str {
+        self.salt
+    }
 }

@@ -51,12 +51,12 @@ impl Nsec3Rdata {
     }
 
     /// Getter for the hash_algorithm
-    pub fn hash_algorithm(&self) -> u8 {
+    pub fn get_hash_algorithm(&self) -> u8 {
         self.hash_algorithm
     }
 
     /// Getter for the flags
-    pub fn flags(&self) -> u8 {
+    pub fn get_flags(&self) -> u8 {
         self.flags
     }
 }

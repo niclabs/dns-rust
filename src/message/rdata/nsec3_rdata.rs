@@ -96,3 +96,12 @@ impl Nsec3Rdata {
         self.type_bit_maps.clone()
     }
 }
+
+impl Nsec3Rdata {
+    /// Setters for the NSEC3 Rdata
+    
+    /// Setter for the hash_algorithm
+    pub fn set_hash_algorithm(&mut self, hash_algorithm: u8) {
+        self.hash_algorithm = hash_algorithm;
+    }
+}

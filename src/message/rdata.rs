@@ -32,6 +32,7 @@ use ds_rdata::DsRdata;
 use rrsig_rdata::RRSIGRdata;
 use nsec_rdata::NsecRdata;
 use dnskey_rdata::DnskeyRdata;
+use nsec3_rdata::Nsec3Rdata;
 use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]

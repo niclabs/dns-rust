@@ -90,4 +90,9 @@ impl Nsec3Rdata {
     pub fn get_next_hashed_owner_name(&self) -> &'static str {
         self.next_hashed_owner_name
     }
+
+    /// Getter for the type_bit_maps
+    pub fn get_type_bit_maps(&self) -> Vec<Rtype> {
+        self.type_bit_maps.clone()
+    }
 }

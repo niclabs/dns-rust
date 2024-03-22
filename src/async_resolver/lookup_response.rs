@@ -5,6 +5,7 @@ use crate::message::{resource_record::ResourceRecord, DnsMessage};
 /// It contains the list of IP addresses associated with the domain name. Depending
 /// on the resquested format of the response, the IP addresses can be represented
 /// as strings, structs or bytes.
+#[derive(Clone, Debug)]
 pub struct LookupResponse {
     dns_msg_response: DnsMessage,
 }
@@ -27,11 +28,11 @@ impl LookupResponse {
         self.dns_msg_response.to_bytes()
     }
 
-    pub fn to_struct(&self) -> DnsMessage {
+    pub fn to_dns_msg(&self) -> DnsMessage {
         self.dns_msg_response.clone()
     }
 
-    pub fn to_vec(&self) -> Vec<ResourceRecord> {
+    pub fn to_vec_of_rr(&self) -> Vec<ResourceRecord> {
         self.dns_msg_response.get_answer()
     }
 }

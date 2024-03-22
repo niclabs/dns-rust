@@ -105,9 +105,12 @@ impl AsyncResolver {
             Qclass::from_str_to_qclass(qclass)
         ).await;
 
-        let result_rrs = self.check_error_from_msg(response);
-        if let Ok(rrs) = result_rrs {
-            let rrs_iter = rrs.into_iter();
+        let result_lookup = self.check_error_from_msg(response);
+        if let Ok(lookup_response) = result_lookup {
+            let rrs_iter = lookup_response
+            .to_dns_msg()
+            .get_answer()
+            .into_iter();
             let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr|
                 {AsyncResolver::from_rr_to_ip(rr)}).collect();
             return ip_addresses;
@@ -150,7 +153,7 @@ impl AsyncResolver {
         transport_protocol: &str,
         qtype: &str,
         qclass: &str
-    ) -> Result<Vec<ResourceRecord>, ResolverError> {
+    ) -> Result<LookupResponse, ResolverError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
@@ -407,8 +410,8 @@ impl AsyncResolver {
     fn check_error_from_msg(
         &self, 
         response: Result<LookupResponse, ResolverError>
-    ) -> Result<Vec<ResourceRecord>, ClientError> {
-        let  lookup_response = match response {
+    ) -> Result<LookupResponse, ClientError> {
+        let lookup_response = match response {
             Ok(val) => val,
             Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
         };
@@ -420,7 +423,7 @@ impl AsyncResolver {
             if answer.len() == 0 {
                 Err(ClientError::TemporaryError("no answer found"))?;
             }
-            return Ok(answer);
+            return Ok(lookup_response);
         }
         match rcode {
             1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,

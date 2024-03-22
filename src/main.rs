@@ -76,7 +76,7 @@ async fn query(
 ) -> Result<Vec<ResourceRecord>, ResolverError> {
     let response = resolver.lookup(domain_name.as_str(),protocol.as_str(), qtype.as_str(),qclass.as_str()).await;
 
-    response
+    response.map(|lookup_response| lookup_response.to_vec_of_rr())
 }
 
 fn print_response(response: Result<Vec<ResourceRecord>, ResolverError>) {

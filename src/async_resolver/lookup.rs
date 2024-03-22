@@ -8,6 +8,7 @@ use crate::message::type_qtype::Qtype;
 use std::net::IpAddr;
 use std::time::Duration;
 use rand::{thread_rng, Rng};
+use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
@@ -61,7 +62,7 @@ impl LookupStrategy {
 
     pub async fn lookup_run(
         &mut self           
-    ) -> Result<DnsMessage, ResolverError> {
+    ) -> Result<LookupResponse, ResolverError> {
         let response=  
         self.query_answer.clone();
 
@@ -147,7 +148,7 @@ pub async fn execute_lookup_strategy(
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     config: ResolverConfig,
     response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
-) -> Result<DnsMessage, ResolverError>  {
+) -> Result<LookupResponse, ResolverError>  {
     // Create random generator
     let mut rng = thread_rng();
 
@@ -214,7 +215,7 @@ pub async fn execute_lookup_strategy(
         Err(_) => response,
     };
 
-    Ok(response_dns_msg)  
+    Ok(LookupResponse::new(response_dns_msg))  
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.
@@ -357,12 +358,14 @@ mod async_resolver_test {
 
         assert_eq!(response
             .clone()
-            .unwrap().
-            get_header()
+            .unwrap()
+            .to_dns_msg()
+            .get_header()
             .get_qr(),
             true);
         assert_ne!(response
             .unwrap()
+            .to_dns_msg()
             .get_answer()
             .len(), 
             0);
@@ -394,9 +397,14 @@ mod async_resolver_test {
             response_arc
         ).await.unwrap();
 
-        assert_eq!(response.get_header().get_qr(),true);
+        assert_eq!(response
+            .to_dns_msg()
+            .get_header()
+            .get_qr(),true);
         // This changes depending on the server we're using
-        assert!(response.get_header().get_ancount() >= 1);
+        assert!(response
+            .to_dns_msg()
+            .get_header().get_ancount() >= 1);
     } 
 
     #[tokio::test]
@@ -425,8 +433,14 @@ mod async_resolver_test {
         ).await.unwrap();
 
 
-        assert_eq!(response.get_header().get_qr(),true);
-        assert_eq!(response.get_answer().len(),0);
+        assert_eq!(response
+            .to_dns_msg()
+            .get_header()
+            .get_qr(),true);
+        assert_eq!(response
+            .to_dns_msg()
+            .get_answer()
+            .len(),0);
     } 
     #[tokio::test] 
     async fn execute_lookup_strategy_max_tries_0() {
@@ -465,8 +479,17 @@ mod async_resolver_test {
         println!("response {:?}",response);
             
         assert!(response.is_ok());
-        assert!(response.clone().unwrap().get_answer().len() == 0);
-        assert_eq!(response.unwrap().get_header().get_rcode(), 2);
+        assert!(response
+            .clone()
+            .unwrap()
+            .to_dns_msg()
+            .get_answer()
+            .len() == 0);
+        assert_eq!(response
+            .unwrap()
+            .to_dns_msg()
+            .get_header()
+            .get_rcode(), 2);
     }
            
 
@@ -504,9 +527,18 @@ mod async_resolver_test {
         ).await.unwrap();
         println!("response {:?}",response);
 
-       assert!(response.get_answer().len() == 0);
-       assert_eq!(response.get_header().get_rcode(), 2);
-       assert!(response.get_header().get_ancount() == 0)
+       assert!(response
+        .to_dns_msg()
+        .get_answer()
+        .len() == 0);
+       assert_eq!(response
+        .to_dns_msg()
+        .get_header()
+        .get_rcode(), 2);
+       assert!(response
+        .to_dns_msg()
+        .get_header()
+        .get_ancount() == 0)
     }
 
     #[tokio::test] // TODO: finish up test

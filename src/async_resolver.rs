@@ -103,7 +103,7 @@ impl AsyncResolver {
             Qclass::from_str_to_qclass(qclass)
         ).await;
 
-        let result_rrs = self.parse_dns_msg(response);
+        let result_rrs = self.check_error_from_msg(response);
         if let Ok(rrs) = result_rrs {
             let rrs_iter = rrs.into_iter();
             let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr| 
@@ -159,7 +159,7 @@ impl AsyncResolver {
             Qclass::from_str_to_qclass(qclass)
         ).await;
         
-        return self.parse_dns_msg(response).map_err(Into::into)
+        return self.check_error_from_msg(response).map_err(Into::into)
     }
 
     // TODO: move and change as from method  of rr
@@ -400,7 +400,7 @@ impl AsyncResolver {
     /// records contained in the message. It will return the RRs if the response was
     /// successful. If the response was not successful, it will return the corresponding
     /// error message to the Client.
-    fn parse_dns_msg(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
+    fn check_error_from_msg(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
         let dns_mgs = match response {
             Ok(val) => val,
             Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
@@ -830,7 +830,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1035,7 +1035,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(1);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1079,7 +1079,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(2);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1123,7 +1123,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(3);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1167,7 +1167,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(4);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1211,7 +1211,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(5);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1255,7 +1255,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1294,7 +1294,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1333,7 +1333,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1372,7 +1372,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1412,7 +1412,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1451,7 +1451,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1490,7 +1490,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1529,7 +1529,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1568,7 +1568,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1607,7 +1607,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1646,7 +1646,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1685,7 +1685,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1724,7 +1724,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1763,7 +1763,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();
@@ -1802,7 +1802,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let result_vec_rr = resolver.parse_dns_msg(Ok(dns_response));
+        let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
 
         if let Ok(rrs) = result_vec_rr {
             let rdata = rrs[0].get_rdata();

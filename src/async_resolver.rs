@@ -456,7 +456,7 @@ mod async_resolver_test {
     use crate::message::type_rtype::Rtype;
     use crate::async_resolver::config::ResolverConfig;
     use super::lookup_response::LookupResponse;
-    use super::{lookup_response, AsyncResolver};
+    use super::AsyncResolver;
     use std::net::IpAddr;
     use std::str::FromStr;
     use std::time::Duration;
@@ -1971,73 +1971,79 @@ mod async_resolver_test {
 
     }
 
-    // #[ignore = "Optional, not implemented"]
-    // #[tokio::test]
-    // async fn inner_lookup_negative_answer_in_cache(){
-    //     let resolver = AsyncResolver::new(ResolverConfig::default());
-    //     let mut cache = resolver.get_cache();
-    //     let qtype = Qtype::A;
-    //     cache.set_max_size(9);
+    #[ignore = "Optional, not implemented"]
+    #[tokio::test]
+    async fn inner_lookup_negative_answer_in_cache(){
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let mut cache = resolver.get_cache();
+        let qtype = Qtype::A;
+        cache.set_max_size(9);
 
-    //     let domain_name = DomainName::new_from_string("banana.exaple".to_string());
+        let domain_name = DomainName::new_from_string("banana.exaple".to_string());
 
-    //     //Create RR type SOA
-    //     let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
-    //     let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
-    //     let serial = 2023112900;
-    //     let refresh = 1800;
-    //     let retry = 900;
-    //     let expire = 604800;
-    //     let minimum = 86400;
+        //Create RR type SOA
+        let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
+        let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
+        let serial = 2023112900;
+        let refresh = 1800;
+        let retry = 900;
+        let expire = 604800;
+        let minimum = 86400;
 
-    //     let mut soa_rdata = SoaRdata::new();
-    //     soa_rdata.set_mname(mname);
-    //     soa_rdata.set_rname(rname);
-    //     soa_rdata.set_serial(serial);
-    //     soa_rdata.set_refresh(refresh);
-    //     soa_rdata.set_retry(retry);
-    //     soa_rdata.set_expire(expire);
-    //     soa_rdata.set_minimum(minimum);
+        let mut soa_rdata = SoaRdata::new();
+        soa_rdata.set_mname(mname);
+        soa_rdata.set_rname(rname);
+        soa_rdata.set_serial(serial);
+        soa_rdata.set_refresh(refresh);
+        soa_rdata.set_retry(retry);
+        soa_rdata.set_expire(expire);
+        soa_rdata.set_minimum(minimum);
 
-    //     let rdata = Rdata::SOA(soa_rdata);
-    //     let mut rr = ResourceRecord::new(rdata);
-    //     rr.set_name(domain_name.clone());
+        let rdata = Rdata::SOA(soa_rdata);
+        let mut rr = ResourceRecord::new(rdata);
+        rr.set_name(domain_name.clone());
 
-    //     // Add negative answer to cache
-    //     let mut cache  = resolver.get_cache();
-    //     cache.set_max_size(9);
-    //     let  rtype =  Qtype::to_rtype(qtype);
-    //     cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
-    //     let mut cache_guard = resolver.cache.lock().unwrap();
-    //     *cache_guard = cache;
+        // Add negative answer to cache
+        let mut cache  = resolver.get_cache();
+        cache.set_max_size(9);
+        let  rtype =  Qtype::to_rtype(qtype);
+        cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
+        let mut cache_guard = resolver.cache.lock().unwrap();
+        *cache_guard = cache;
 
-    //     assert_eq!(resolver.get_cache().get_size(), 1);
+        assert_eq!(resolver.get_cache().get_size(), 1);
 
-    //     let qclass = Qclass::IN;
-    //     let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
+        let qclass = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
 
-    //     assert_eq!(resolver.get_cache().get_size(), 1);
-    //     assert_eq!(response.to_dns_msg().get_answer().len(), 0);
-    //     assert_eq!(response.get_additional().len(), 1);
-    //     assert_eq!(response.get_header().get_rcode(), 3);
-    // }
+        assert_eq!(resolver.get_cache().get_size(), 1);
+        assert_eq!(response.to_dns_msg().get_answer().len(), 0);
+        assert_eq!(response
+            .to_dns_msg()
+            .get_additional()
+            .len(), 1);
+        assert_eq!(response
+            .to_dns_msg()
+            .get_header()
+            .get_rcode(), 3);
+    }
 
-    // // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently
-    // #[tokio::test]
-    // async fn test3(){
-    //     let resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
-    //     let qtype = Qtype::A;
-    //     let qclass = Qclass::IN;
+    // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently
+    #[tokio::test]
+    async fn test3(){
+        let resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
+        let qtype = Qtype::A;
+        let qclass = Qclass::IN;
 
-    //     let domain_name = DomainName::new_from_string("example.com".to_string());
-    //     let resolver_1 = resolver.clone();
-    //     let resolver_2 = resolver.clone();
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let resolver_1 = resolver.clone();
+        let resolver_2 = resolver.clone();
 
-    //     let _result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
-    //         resolver_1.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
-    //         resolver_2.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
-    //     );
-    //}
+        let _result: (Result<LookupResponse, ResolverError>, Result<LookupResponse, ResolverError>) = tokio::join!(
+            resolver_1.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
+            resolver_2.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
+        );
+    }
 
 
 }

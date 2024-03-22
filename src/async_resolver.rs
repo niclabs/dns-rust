@@ -153,7 +153,7 @@ impl AsyncResolver {
         transport_protocol: &str,
         qtype: &str,
         qclass: &str
-    ) -> Result<LookupResponse, ResolverError> {
+    ) -> Result<LookupResponse, ClientError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
@@ -164,7 +164,7 @@ impl AsyncResolver {
             Qclass::from_str_to_qclass(qclass)
         ).await;
 
-        return self.check_error_from_msg(response).map_err(Into::into)
+        return self.check_error_from_msg(response);
     }
 
     // TODO: move and change as from method  of rr

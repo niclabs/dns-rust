@@ -2,6 +2,7 @@ pub mod config;
 pub mod lookup;
 pub mod slist;
 pub mod resolver_error;
+pub mod lookup_response;
 
 use std::net::IpAddr;
 use std::vec;

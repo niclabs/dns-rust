@@ -24,18 +24,18 @@ use crate:: message::type_qtype::Qtype;
 use self::lookup_response::LookupResponse;
 
 /// Asynchronous resolver for DNS queries.
-/// 
-/// This struct contains a cache and a configuration for the resolver. 
+///
+/// This struct contains a cache and a configuration for the resolver.
 /// The cache is used to store the responses of the queries and the
 /// configuration is used to set the parameters of the resolver.
-/// 
-/// The `AsyncResolver` struct is used to send queries to a DNS server in 
+///
+/// The `AsyncResolver` struct is used to send queries to a DNS server in
 /// a asynchronous way. This means that the queries are sent and the
 /// resolver continues with the execution of the program without waiting
 /// for the response of the query.
-/// 
+///
 /// Each query corresponds to a future that is going to be spawned using
-/// `lookup_ip` method. 
+/// `lookup_ip` method.
 #[derive(Clone)]
 pub struct AsyncResolver {
     /// Cache for the resolver.
@@ -47,13 +47,13 @@ pub struct AsyncResolver {
 impl AsyncResolver {
 
     /// Creates a new `AsyncResolver` with the given configuration.
-    /// 
+    ///
     /// # Example
     /// ```
     /// use std::time::Duration;
     /// use dns_resolver::resolver::config::ResolverConfig;
     /// use dns_resolver::resolver::async_resolver::AsyncResolver;
-    /// 
+    ///
     /// let config = ReolverConfig::default();
     /// let resolver = AsyncResolver::new(config.clone());
     /// assert_eq!(resolver.config, config);
@@ -64,7 +64,7 @@ impl AsyncResolver {
             config: config,
         };
         async_resolver
-    } 
+    }
 
     pub fn run() {
         unimplemented!()
@@ -78,7 +78,7 @@ impl AsyncResolver {
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     ///
     /// 5.2. Client-resolver interface
-    /// 
+    ///
     /// 1. Host name to host address translation
     /// This function is often defined to mimic a previous HOSTS.TXT
     /// based function.  Given a character string, the caller wants
@@ -91,9 +91,9 @@ impl AsyncResolver {
     /// address may be the only way to emulate prior HOSTS.TXT
     /// services.
     pub async fn lookup_ip(
-        &mut self, 
-        domain_name: &str, 
-        transport_protocol: &str, 
+        &mut self,
+        domain_name: &str,
+        transport_protocol: &str,
         qclass: &str
     ) -> Result<Vec<IpAddr>, ClientError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
@@ -109,7 +109,7 @@ impl AsyncResolver {
         let result_rrs = self.check_error_from_msg(response);
         if let Ok(rrs) = result_rrs {
             let rrs_iter = rrs.into_iter();
-            let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr| 
+            let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr|
                 {AsyncResolver::from_rr_to_ip(rr)}).collect();
             return ip_addresses;
         } else {
@@ -118,17 +118,17 @@ impl AsyncResolver {
     }
 
     /// Performs a lookup of the given domain name, qtype and qclass.
-    /// 
+    ///
     /// This method calls the `inner_lookup` method with the given domain name,
     /// qtype, qclass and the chosen transport protocol. It performs a DNS lookup
     /// asynchronously and returns the corresponding resource records.
-    /// 
+    ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
-    /// 
+    ///
     /// 5.2 Client-resolver interface
-    /// 
+    ///
     /// 3. General lookup function
-    /// 
+    ///
     /// This function retrieves arbitrary information from the DNS,
     /// and has no counterpart in previous systems.  The caller
     /// supplies a QNAME, QTYPE, and QCLASS, and wants all of the
@@ -136,7 +136,7 @@ impl AsyncResolver {
     /// for all RR data instead of the local host's, and returns all
     /// RR content (e.g., TTL) instead of a processed form with local
     /// quoting conventions.
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let mut resolver = AsyncResolver::new(ResolverConfig::default());
@@ -146,8 +146,8 @@ impl AsyncResolver {
     /// let response = resolver.lookup(domain_name, transport_protocol,qtype).await.unwrap();
     /// ```
     pub async fn lookup(
-        &mut self, 
-        domain_name: &str, 
+        &mut self,
+        domain_name: &str,
         transport_protocol: &str,
         qtype: &str,
         qclass: &str
@@ -161,7 +161,7 @@ impl AsyncResolver {
             Qtype::from_str_to_qtype(qtype),
             Qclass::from_str_to_qclass(qclass)
         ).await;
-        
+
         return self.check_error_from_msg(response).map_err(Into::into)
     }
 
@@ -176,26 +176,26 @@ impl AsyncResolver {
     }
 
     /// Host name to address translation.
-    /// 
-    /// Performs a DNS lookup for the given domain name and returns the 
+    ///
+    /// Performs a DNS lookup for the given domain name and returns the
     /// corresponding IP address. This lookup is done asynchronously using
     /// the future `LookupIpFutureStub`.  FIXME: fix docs according to changes
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use dns_resolver::resolver::config::ResolverConfig;
     /// use dns_resolver::resolver::async_resolver::AsyncResolver;
-    /// 
+    ///
     /// let resolver = AsyncResolver::new(ResolverConfig::default());
     /// let domain_name = DomainName::new_from_string("example.com".to_string());
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
     async fn inner_lookup(
-        &self, 
+        &self,
         domain_name: DomainName,
-        qtype:Qtype, 
+        qtype:Qtype,
         qclass:Qclass
     ) -> Result<LookupResponse, ResolverError> {
         // Cache lookup
@@ -239,7 +239,7 @@ impl AsyncResolver {
                     else { //FIXME: change to alg RFC 1034-1035
                         let answer: Vec<ResourceRecord> = vec![rr];
                         new_query.set_answer(answer);
-                    }     
+                    }
                 }
                 let new_lookup_response = LookupResponse::new(new_query);
 
@@ -247,12 +247,12 @@ impl AsyncResolver {
             }
         }
         let mut lookup_strategy = LookupStrategy::new(
-            domain_name, 
-            qtype, 
-            qclass, 
+            domain_name,
+            qtype,
+            qclass,
             self.config.clone()
         );
-        
+
         let response = lookup_strategy.lookup_run().await;
 
         // Cache data
@@ -266,11 +266,11 @@ impl AsyncResolver {
     /// Performs the reverse query of the given IP address.
     ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
-    /// 
+    ///
     /// 5.2. Client-resolver interface
-    /// 
+    ///
     /// Host address to host name translation
-    /// 
+    ///
     /// This function will often follow the form of previous
     /// functions.  Given a 32 bit IP address, the caller wants a
     /// character string.  The octets of the IP address are reversed,
@@ -284,14 +284,14 @@ impl AsyncResolver {
     }
 
     /// Stores the data of the response in the cache.
-    /// 
+    ///
     /// This method stores the data of the response in the cache, depending on the
     /// type of response.
-    /// 
-    /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.4 
-    /// 
+    ///
+    /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-7.4
+    ///
     /// 7.4. Using the cache
-    /// 
+    ///
     /// In general, we expect a resolver to cache all data which it receives in
     /// responses since it may be useful in answering future client requests.
     /// However, there are several types of data which should not be cached:
@@ -327,9 +327,9 @@ impl AsyncResolver {
     /// combined.  If the data in the response is from authoritative data in the
     /// answer section, it is always preferred.
     fn store_data_cache(&self, response: DnsMessage) {
-        let truncated = response.get_header().get_tc(); 
+        let truncated = response.get_header().get_tc();
         {
-        let mut cache = self.cache.lock().unwrap(); 
+        let mut cache = self.cache.lock().unwrap();
         // FIXME: maybe add corresponding type of erro
         cache.timeout_cache();
         if !truncated {
@@ -342,26 +342,26 @@ impl AsyncResolver {
                 }
             });
 
-        } 
+        }
         }
         self.save_negative_answers(response);
     }
 
-    /// Stores the data of negative answers in the cache. 
+    /// Stores the data of negative answers in the cache.
     ///
     /// [RFC 1123]: https://datatracker.ietf.org/doc/html/rfc1123#section-6.1.3.3
-    /// 
+    ///
     /// 6.1.3.3  Efficient Resource Usage
-    /// 
+    ///
     /// (4)  All DNS name servers and resolvers SHOULD cache
     /// negative responses that indicate the specified name, or
     /// data of the specified type, does not exist, as
     /// described in [DNS:2].
     ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-4.3.4
-    /// 
+    ///
     /// 4.3.4. Negative response caching (Optional)
-    /// 
+    ///
     /// The DNS provides an optional service which allows name servers to
     /// distribute, and resolvers to cache, negative results with TTLs.  For
     /// example, a name server can distribute a TTL along with a name error
@@ -384,7 +384,7 @@ impl AsyncResolver {
         let answer = response.get_answer();
         let aa = response.get_header().get_aa();
 
-        // If not existence RR for query, add SOA to cache 
+        // If not existence RR for query, add SOA to cache
         let mut cache = self.cache.lock().unwrap(); // FIXME: que la función entregue result
         if additionals.len() > 0 && answer.len() == 0 && aa == true{
             additionals.iter()
@@ -399,7 +399,7 @@ impl AsyncResolver {
     }
 
     /// Parses the received `DnsMessage` and returns the corresponding RRs.
-    /// 
+    ///
     /// After receiving the response of the query, this method parses the DNS message
     /// of type `DnsMessage` to a `Vec<ResourceRecord>` with the corresponding resource
     /// records contained in the message. It will return the RRs if the response was
@@ -419,7 +419,7 @@ impl AsyncResolver {
                 Err(ClientError::TemporaryError("no answer found"))?;
             }
             return Ok(answer);
-        } 
+        }
         match rcode {
             1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
             2 => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
@@ -444,1578 +444,1600 @@ impl AsyncResolver {
 
 #[cfg(test)]
 mod async_resolver_test {
-    // use tokio::io;
-    // use crate::client::client_error::ClientError;
-    // use crate::message::DnsMessage;
-    // use crate::message::class_qclass::Qclass;
-    // use crate::message::rdata::Rdata;
-    // use crate::message::rdata::a_rdata::ARdata;
-    // use crate::message::rdata::soa_rdata::SoaRdata;
-    // use crate::message::resource_record::ResourceRecord;
-    // use crate:: message::type_qtype::Qtype;
-    // use crate::message::type_rtype::Rtype;
-    // use crate::async_resolver::config::ResolverConfig;
-    // use super::AsyncResolver;
-    // use std::net::IpAddr;
-    // use std::str::FromStr;
-    // use std::time::Duration;
-    // use std::vec;
-    // use crate::domain_name::DomainName;
-    // use crate::async_resolver::resolver_error::ResolverError;
-    // static TIMEOUT: u64 = 10;
-    // use std::sync::Arc;
-    
-//     #[test]
-//     fn create_async_resolver() {
-//         let config = ResolverConfig::default();
-//         let resolver = AsyncResolver::new(config.clone());
-//         assert_eq!(resolver.config, config);
-//         assert_eq!(resolver.config.get_timeout(), Duration::from_secs(TIMEOUT));
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_a() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::A;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let a_rdata = answer.get_rdata();
-//             // Check if the answer is A type
-//             assert!(matches!(a_rdata, Rdata::A(_a_rdata)))
-//         }
-//     }
-
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_ns() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::NS;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let ns_rdata = answer.get_rdata();
-//             // Check if the answer is NS type
-//             assert!(matches!(ns_rdata, Rdata::NS(_ns_rdata)))
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_mx() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::MX;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let mx_rdata = answer.get_rdata();
-//             // Check if the answer is MX type
-//             assert!(matches!(mx_rdata, Rdata::MX(_mx_rdata)))
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_ptr() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::PTR;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let ptr_rdata = answer.get_rdata();
-//             // Check if the answer is PTR type
-//             assert!(matches!(ptr_rdata, Rdata::PTR(_ptr_rdata)))
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_soa() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::SOA;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let soa_rdata = answer.get_rdata();
-//             // Check if the answer is SOA type
-//             assert!(matches!(soa_rdata, Rdata::SOA(_soa_rdata)))
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_txt() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::TXT;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let txt_rdata = answer.get_rdata();
-//             // Check if the answer is TXT type
-//             assert!(matches!(txt_rdata, Rdata::TXT(_txt_rdata)))
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_cname() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::CNAME;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let cname_rdata = answer.get_rdata();
-//             // Check if the answer is CNAME type
-//             assert!(matches!(cname_rdata, Rdata::CNAME(_cname_rdata)))
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_hinfo() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::HINFO;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let hinfo_rdata = answer.get_rdata();
-//             // Check if the answer is HINFO type
-//             assert!(matches!(hinfo_rdata, Rdata::HINFO(_hinfo_rdata)))
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn inner_lookup_qtype_tsig() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::TSIG;
-//         let record_class = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-
-//         let response = match response {
-//             Ok(val) => val,
-//             Err(error) => panic!("Error in the response: {:?}", error),
-//         };
-//         //analize if the response has the correct type according with the qtype
-//         let answers = response.get_answer();
-//         for answer in answers {
-//             let tsig_rdata = answer.get_rdata();
-//             // Check if the answer is TSIG type
-//             assert!(matches!(tsig_rdata, Rdata::TSIG(_tsig_rdata)))
-//         }
-//     }
-//     #[tokio::test]
-//     async fn inner_lookup_ns() {
-//         // Create a new resolver with default values
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let qtype = Qtype::NS;
-//         let record_class = Qclass::IN;
-
-//         let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
-//         assert!(response.is_ok());
-
-//         //FIXME: add assert
-//         println!("Response: {:?}",response);
-//     }
-
-//     #[tokio::test]
-//     async fn host_name_to_host_address_translation() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "example.com";
-//         let transport_protocol = "TCP";
-//         let qclass = "IN";
-//         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
-//         println!("RESPONSE : {:?}", ip_addresses);
-        
-//         assert!(ip_addresses[0].is_ipv4());
-//         assert!(!ip_addresses[0].is_unspecified());
-//     }
-
-//     #[tokio::test]
-//     async fn lookup_ip_ch() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "example.com";
-//         let transport_protocol = "UDP";
-//         let qclass = "CH";
-//         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
-//         println!("RESPONSE : {:?}", ip_addresses);
-    
-//         assert!(ip_addresses.is_err());
-//     }
-
-//     #[tokio::test]
-//     async fn lookup_ip_qclass_any() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "example.com";
-//         let transport_protocol = "UDP";
-//         let qclass = "ANY";
-//         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
-//         println!("RESPONSE : {:?}", ip_addresses);
-    
-//         assert!(ip_addresses.is_err());
-//     }
-
-//     #[tokio::test]
-//     async fn lookup_ch() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "example.com";
-//         let transport_protocol = "UDP";
-//         let qtype = "NS";
-//         let qclass = "CH";
-//         let ip_addresses = resolver.lookup(domain_name, transport_protocol,qtype,qclass).await;
-//         println!("RESPONSE : {:?}", ip_addresses);
-    
-//         assert!(ip_addresses.is_err());
-//     }
-
-//     #[tokio::test] 
-//     async fn host_name_to_host_address_translation_ch() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "example.com";
-//         let transport_protocol = "TCP";
-//         let qclass = "IN";
-//         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
-//         println!("RESPONSE : {:?}", ip_addresses);
-        
-//         assert!(ip_addresses[0].is_ipv4()); 
-//         assert!(!ip_addresses[0].is_unspecified());
-//     }
-
-//     #[tokio::test]
-//     async fn lookup_ns() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         resolver.config.set_retry(10);
-//         let domain_name = "example.com";
-//         let transport_protocol = "UDP";
-//         match resolver.lookup(
-//             domain_name, 
-//             transport_protocol,
-//             "NS",
-//             "IN"
-//         ).await {
-//             Ok(val) => {println!("RESPONSE : {:?}",val);},
-//             Err(e) => assert!(false, "Error: {:?}", e)
-//         };
-//     }
-
-//     // async fn reverse_query() {
-//     //     let resolver = AsyncResolver::new(ResolverConfig::default());
-//     //     let ip_address = "192.168.0.1"; 
-//     //     let domain_name = resolver.reverse_query(ip_address).await;
-    
-//     //     // Realiza aserciones para verificar que domain_name contiene un nombre de dominio válido.
-//     //     assert!(!domain_name.is_empty(), "El nombre de dominio no debe estar vacío");
-    
-//     //     // Debe verificar que devuelve el nombre de dominio correspondiente a la dirección IP dada.
-//     //     // Dependiendo de tu implementación, puedes comparar el resultado con un valor esperado.
-//     //     // Por ejemplo, si esperas que la dirección IP "192.168.0.1" se traduzca a "ejemplo.com":
-//     //     assert_eq!(domain_name, "ejemplo.com", "El nombre de dominio debe ser 'ejemplo.com'");
-//     // }
-
-//     #[tokio::test]
-//     async fn timeout() {
-//         // Crea una instancia de tu resolutor con la configuración adecuada
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-    
-//         // Intenta resolver un nombre de dominio que no existe o no está accesible
-//         let domain_name = "nonexistent-example.com";
-//         let transport_protocol = "UDP";
-//         let qclass = "IN";
-    
-//         // Configura un timeout corto para la resolución (ajusta según tus necesidades)
-//         let timeout_duration = std::time::Duration::from_secs(2);
-        
-//         let result = tokio::time::timeout(timeout_duration, async {
-//             resolver.lookup_ip(domain_name, transport_protocol,qclass).await
-//         }).await;
-
-//         // Verifica que el resultado sea un error de timeout
-//         match result {
-//             Ok(Ok(_)) => {
-//                 panic!("Se esperaba un error de timeout, pero se resolvió exitosamente");
-//             }
-//             Ok(Err(_err)) => {
-//                assert!(true);
-//             }
-//             Err(_) => {
-//                 panic!("El timeout no se manejó correctamente");
-//             }
-//         }
-//     }
-
-//     #[test]
-//     fn parse_dns_msg_ip() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-//             panic!("Error parsing response");
-//         }
-//     }
-
-//     /// Test inner lookup cache
-//     #[tokio::test]
-//     async fn inner_lookup_cache_available() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         resolver.cache.lock().unwrap().set_max_size(1);
-
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-//         let a_rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(a_rdata);
-//         resolver.cache.lock().unwrap().add(domain_name, resource_record);
-
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
-
-//         if let Ok(msg) = response {
-//             assert_eq!(msg.get_header().get_aa(), false);
-//         } else {
-//             panic!("No response from cache");
-//         }
-//     }
-
-//     /// Test inner lookup without cache
-//     #[tokio::test]
-//     async fn inner_lookup_with_no_cache() {
-//         let mut config = ResolverConfig::default();
-//         config.set_cache_enabled(false);
-
-//         let resolver = AsyncResolver::new(config);
-//         {
-//         let mut cache = resolver.cache.lock().unwrap();
-//         cache.set_max_size(1);
-
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-//         let a_rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(a_rdata);
-//         cache.add(domain_name, resource_record);
-//         }
-
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
-
-//         if let Ok(msg) = response {
-//             assert_eq!(msg.get_header().get_aa(), false);
-//         } else {
-//             panic!("No response from nameserver");
-//         }
-//     }
-
-//     /// Test cache data
-//     #[tokio::test]
-//     async fn cache_data() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         resolver.cache.lock().unwrap().set_max_size(1);
-//         assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
-
-//         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
-//         assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
-//         // TODO: Test special cases from RFC
-//     }
-
-//     //TODO: test max number of retry
-//     #[tokio::test]
-//     async fn max_number_of_retry() {
-//         let mut config = ResolverConfig::default();
-//         let max_retries = 6;
-//         config.set_retry(max_retries);
-//         let mut resolver = AsyncResolver::new(config);
-
-//         // Realiza una resolución de DNS que sabes que fallará
-//         //let result = resolver.lookup_ip("nonexisten.comt-domain", "UDP").await;
-
-//         let mut retries_attempted = 0;
-
-//         // Realiza la resolución de DNS que sabes que fallará
-//         while retries_attempted < max_retries {
-//             let result = resolver.lookup_ip("nonexistent-domain.com", "UDP", "IN").await;
-//              retries_attempted += 1;
-
-//             if result.is_ok() {
-//                 break; // La resolución tuvo éxito, sal del bucle
-//             }
-//         }
-//         if retries_attempted == max_retries {
-//             assert!(retries_attempted == max_retries, "Número incorrecto de reintentos");
-//         } else {
-//             panic!("La resolución DNS tuvo éxito antes de lo esperado");
-//         }
-        
-//     }
-
- 
-//     #[tokio::test] 
-//     async fn use_udp() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "example.com";
-//         let transport_protocol = "UDP";
-//         let qclass = "IN";
-//         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
-//         println!("RESPONSE : {:?}", ip_addresses);
-        
-//         assert!(ip_addresses[0].is_ipv4());
-//         assert!(!ip_addresses[0].is_unspecified());
-//     }
-  
-//     #[tokio::test] 
-//     async fn use_tcp() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "example.com";
-//         let transport_protocol = "TCP";
-//         let qclass = "IN";
-//         let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
-//         println!("RESPONSE : {:?}", ip_addresses);
-        
-//         assert!(ip_addresses[0].is_ipv4());
-//         assert!(!ip_addresses[0].is_unspecified());
-//     }
-
-//     #[tokio::test]
-//     #[ignore] 
-//     async fn use_udp_but_fails_and_use_tcp() {
-//         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-//         let domain_name = "Ecample.com";
-//         let transport_protocol_udp = "UDP";
-//         let transport_protocol_tcp = "TCP";
-//         let qclass = "IN";
-//         let udp_result = resolver.lookup_ip(domain_name, transport_protocol_udp,qclass).await;
-   
-//         match udp_result {
-//         Ok(_) => {
-//             panic!("UDP client error expected");
-//             }
-//         Err(_err) => {
-//             assert!(true);
-//             }
-//         } 
-
-//         let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
-//         match tcp_result {
-//             Ok(_) => {
-//                 assert!(true);
-//             }
-//         Err(_err) => {
-//             panic!("unexpected TCP client error");
-//             }
-//         } 
-//     }
-
-
-//     //TODO: diferent types of errors
-//     #[tokio::test] 
-//     async fn resolver_with_client_error_io() {
-//         let io_error = io::Error::new(io::ErrorKind::Other, "Simulated I/O Error");
-//         let result = ClientError::Io(io_error);
-
-//         match result {
-//            ClientError::Io(_) => {
-//             // La operación generó un error de I/O simulado, la prueba es exitosa
-//            }
-//            _ => {
-//                panic!("Se esperaba un error de I/O simulado");
-//            }
-//         }
-//     }
-    
-//     #[tokio::test]
-//     async fn parse_dns_msg_1() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         header.set_rcode(1);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-//             if let Err(ClientError::FormatError("The name server was unable to interpret the query.")) = result_vec_rr {
-//                 assert!(true);
-//             }
-//             else {
-//                 panic!("Error parsing response");
-//             }
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn parse_dns_msg_2() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         header.set_rcode(2);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-//             if let Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server.")) = result_vec_rr {
-//                 assert!(true);
-//             }
-//             else {
-//                 panic!("Error parsing response");
-//             }
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn parse_dns_msg_3() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         header.set_rcode(3);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-//             if let Err(ClientError::NameError("The domain name referenced in the query does not exist.")) = result_vec_rr {
-//                 assert!(true);
-//             }
-//             else {
-//                 panic!("Error parsing response");
-//             }
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn parse_dns_msg_4() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         header.set_rcode(4);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-//             if let Err(ClientError::NotImplemented("The name server does not support the requested kind of query.")) = result_vec_rr {
-//                 assert!(true);
-//             }
-//             else {
-//                 panic!("Error parsing response");
-//             }
-//         }
-//     }
-
-//     #[tokio::test]
-//     async fn parse_dns_msg_5() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         header.set_rcode(5);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-//             if let Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons.")) = result_vec_rr {
-//                 assert!(true);
-//             }
-//             else {
-//                 panic!("Error parsing response");
-//             }
-//         }
-//     }
-
-//     //TODO: probar diferentes qtype
-//     #[tokio::test]
-//     async fn qtypes_a() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_ns() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::NS,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_cname() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::CNAME,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_soa() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::SOA,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-
-//     #[tokio::test]
-//     async fn qtypes_ptr() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::PTR,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_hinfo() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::HINFO,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_minfo() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::MINFO,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_wks() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::WKS,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_txt() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::TXT,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_dname() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::DNAME,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_any() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response 
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::ANY,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_tsig() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::TSIG,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_axfr() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::AXFR,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_mailb() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::MAILB,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[tokio::test]
-//     async fn qtypes_maila() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         // Create a new dns response
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let mut a_rdata = ARdata::new();
-//         a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-//         let resource_record = ResourceRecord::new(rdata);
-//         answer.push(resource_record);
-
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 DomainName::new_from_string("example.com".to_string()),
-//                 Qtype::MAILA,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         dns_response.set_answer(answer);
-//         let mut header = dns_response.get_header();
-//         header.set_qr(true);
-//         dns_response.set_header(header);
-//         let result_vec_rr = resolver.check_error_from_msg(Ok(dns_response));
-
-//         if let Ok(rrs) = result_vec_rr {
-//             let rdata = rrs[0].get_rdata();
-//             if let Rdata::A(ip) = rdata {
-//                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
-//             } else {
-//                 panic!("Error parsing response");
-//             }
-//         } else {
-            
-//                 panic!("Error parsing response");
-//             }
-//     }
-
-//     #[test]
-//     fn not_store_data_in_cache_if_truncated() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-
-//         resolver.cache.lock().unwrap().set_max_size(10);
-
-
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-    
-//         // Create truncated dns response
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 domain_name,
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         let mut truncated_header = dns_response.get_header();
-//         truncated_header.set_tc(true);
-//         dns_response.set_header(truncated_header);
-
-//         resolver.store_data_cache(dns_response);
-
-//         assert_eq!(resolver.get_cache().get_size(), 0);
-//     }    
-
-//     #[test]
-//     fn not_store_cero_ttl_data_in_cache() {
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         resolver.cache.lock().unwrap().set_max_size(10);
-
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-    
-//         // Create dns response with ttl = 0
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 domain_name,
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         // let mut truncated_header = dns_response.get_header();
-//         // truncated_header.set_tc(false);
-//         // dns_response.set_header(truncated_header);
-//         let mut answer: Vec<ResourceRecord> = Vec::new();
-//         let a_rdata = ARdata::new_from_addr(IpAddr::from([127, 0, 0, 1]));
-//         let rdata = Rdata::A(a_rdata);
-
-//         // Cero ttl
-//         let mut rr_cero_ttl = ResourceRecord::new(rdata.clone());
-//         rr_cero_ttl.set_ttl(0);
-//         answer.push(rr_cero_ttl);
-
-//         // Positive ttl
-//         let mut rr_ttl_1 = ResourceRecord::new(rdata.clone());
-//         rr_ttl_1.set_ttl(1);
-//         answer.push(rr_ttl_1);
-
-//         let mut rr_ttl_2 = ResourceRecord::new(rdata);
-//         rr_ttl_2.set_ttl(2);
-//         answer.push(rr_ttl_2);
-
-//         dns_response.set_answer(answer);
-//         assert_eq!(dns_response.get_answer().len(), 3);
-//         assert_eq!(resolver.get_cache().get_size(), 0);
-        
-//         resolver.store_data_cache(dns_response);
-//         assert_eq!(resolver.get_cache().get_size(), 2); 
-//     }
-
-//     #[test]
-//     fn save_cache_negative_answer(){
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         resolver.cache.lock().unwrap().set_max_size(1);
-
-//         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
-//         let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
-//         let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
-//         let serial = 2023112900;
-//         let refresh = 1800;
-//         let retry = 900;
-//         let expire = 604800;
-//         let minimum = 86400;
-
-//         //Create RR type SOA
-//         let mut soa_rdata = SoaRdata::new();
-//         soa_rdata.set_mname(mname);
-//         soa_rdata.set_rname(rname);
-//         soa_rdata.set_serial(serial);
-//         soa_rdata.set_refresh(refresh);
-//         soa_rdata.set_retry(retry);
-//         soa_rdata.set_expire(expire);
-//         soa_rdata.set_minimum(minimum);
-
-   
-//         let rdata = Rdata::SOA(soa_rdata);
-//         let mut rr = ResourceRecord::new(rdata);
-//         rr.set_name(domain_name.clone());
-    
-//         // Create dns response
-//         let mut dns_response =
-//             DnsMessage::new_query_message(
-//                 domain_name,
-//                 Qtype::A,
-//                 Qclass::IN,
-//                 0,
-//                 false,
-//                 1);
-//         let mut new_header = dns_response.get_header();
-//         new_header.set_aa(true);
-//         dns_response.set_header(new_header);
-
-//         // Save RR type SOA in Additional section of response
-//         dns_response.add_additionals(vec![rr]);
-
-//         resolver.save_negative_answers(dns_response.clone());
-
-//         let qtype_search = Rtype::A;
-//         assert_eq!(dns_response.get_answer().len(), 0);
-//         assert_eq!(dns_response.get_additional().len(), 1);
-//         assert_eq!(resolver.get_cache().get_size(), 1);
-//         assert!(resolver.get_cache().get_cache().get_cache_data().get(&qtype_search).is_some())
-        
-//     }
-    
-//     #[ignore = "Optional, not implemented"]
-//     #[tokio::test]
-//     async fn inner_lookup_negative_answer_in_cache(){
-//         let resolver = AsyncResolver::new(ResolverConfig::default());
-//         let mut cache = resolver.get_cache();
-//         let qtype = Qtype::A;
-//         cache.set_max_size(9);
-
-//         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
-
-//         //Create RR type SOA
-//         let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
-//         let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
-//         let serial = 2023112900;
-//         let refresh = 1800;
-//         let retry = 900;
-//         let expire = 604800;
-//         let minimum = 86400;
-
-//         let mut soa_rdata = SoaRdata::new();
-//         soa_rdata.set_mname(mname);
-//         soa_rdata.set_rname(rname);
-//         soa_rdata.set_serial(serial);
-//         soa_rdata.set_refresh(refresh);
-//         soa_rdata.set_retry(retry);
-//         soa_rdata.set_expire(expire);
-//         soa_rdata.set_minimum(minimum);
-
-//         let rdata = Rdata::SOA(soa_rdata);
-//         let mut rr = ResourceRecord::new(rdata);
-//         rr.set_name(domain_name.clone());
-        
-//         // Add negative answer to cache
-//         let mut cache  = resolver.get_cache();
-//         cache.set_max_size(9);
-//         let  rtype =  Qtype::to_rtype(qtype);
-//         cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
-//         let mut cache_guard = resolver.cache.lock().unwrap();
-//         *cache_guard = cache;
-
-//         assert_eq!(resolver.get_cache().get_size(), 1);
-
-//         let qclass = Qclass::IN;
-//         let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
-
-//         assert_eq!(resolver.get_cache().get_size(), 1);
-//         assert_eq!(response.get_answer().len(), 0);
-//         assert_eq!(response.get_additional().len(), 1);
-//         assert_eq!(response.get_header().get_rcode(), 3);
-//     }
-
-//     // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently
-//     #[tokio::test]
-//     async fn test3(){
-//         let resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
-//         let qtype = Qtype::A;
-//         let qclass = Qclass::IN;
-
-//         let domain_name = DomainName::new_from_string("example.com".to_string());
-//         let resolver_1 = resolver.clone();
-//         let resolver_2 = resolver.clone();
-
-//         let _result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
-//             resolver_1.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
-//             resolver_2.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
-//         );
-//     }
+    use tokio::io;
+    use crate::client::client_error::ClientError;
+    use crate::message::DnsMessage;
+    use crate::message::class_qclass::Qclass;
+    use crate::message::rdata::Rdata;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::soa_rdata::SoaRdata;
+    use crate::message::resource_record::ResourceRecord;
+    use crate:: message::type_qtype::Qtype;
+    use crate::message::type_rtype::Rtype;
+    use crate::async_resolver::config::ResolverConfig;
+    use super::lookup_response::LookupResponse;
+    use super::{lookup_response, AsyncResolver};
+    use std::net::IpAddr;
+    use std::str::FromStr;
+    use std::time::Duration;
+    use std::vec;
+    use crate::domain_name::DomainName;
+    use crate::async_resolver::resolver_error::ResolverError;
+    static TIMEOUT: u64 = 10;
+    use std::sync::Arc;
+
+    #[test]
+    fn create_async_resolver() {
+        let config = ResolverConfig::default();
+        let resolver = AsyncResolver::new(config.clone());
+        assert_eq!(resolver.config, config);
+        assert_eq!(resolver.config.get_timeout(), Duration::from_secs(TIMEOUT));
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_a() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::A;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let a_rdata = answer.get_rdata();
+            // Check if the answer is A type
+            assert!(matches!(a_rdata, Rdata::A(_a_rdata)))
+        }
+    }
+
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_ns() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::NS;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let ns_rdata = answer.get_rdata();
+            // Check if the answer is NS type
+            assert!(matches!(ns_rdata, Rdata::NS(_ns_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_mx() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::MX;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let mx_rdata = answer.get_rdata();
+            // Check if the answer is MX type
+            assert!(matches!(mx_rdata, Rdata::MX(_mx_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_ptr() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::PTR;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let ptr_rdata = answer.get_rdata();
+            // Check if the answer is PTR type
+            assert!(matches!(ptr_rdata, Rdata::PTR(_ptr_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_soa() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::SOA;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let soa_rdata = answer.get_rdata();
+            // Check if the answer is SOA type
+            assert!(matches!(soa_rdata, Rdata::SOA(_soa_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_txt() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::TXT;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let txt_rdata = answer.get_rdata();
+            // Check if the answer is TXT type
+            assert!(matches!(txt_rdata, Rdata::TXT(_txt_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_cname() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::CNAME;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let cname_rdata = answer.get_rdata();
+            // Check if the answer is CNAME type
+            assert!(matches!(cname_rdata, Rdata::CNAME(_cname_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_hinfo() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::HINFO;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let hinfo_rdata = answer.get_rdata();
+            // Check if the answer is HINFO type
+            assert!(matches!(hinfo_rdata, Rdata::HINFO(_hinfo_rdata)))
+        }
+    }
+
+    #[tokio::test]
+    async fn inner_lookup_qtype_tsig() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::TSIG;
+        let record_class = Qclass::IN;
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+
+        let response = match response {
+            Ok(val) => val,
+            Err(error) => panic!("Error in the response: {:?}", error),
+        };
+        //analize if the response has the correct type according with the qtype
+        let answers = response.to_dns_msg().get_answer();
+        for answer in answers {
+            let tsig_rdata = answer.get_rdata();
+            // Check if the answer is TSIG type
+            assert!(matches!(tsig_rdata, Rdata::TSIG(_tsig_rdata)))
+        }
+    }
+    #[tokio::test]
+    async fn inner_lookup_ns() {
+        // Create a new resolver with default values
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let qtype = Qtype::NS;
+        let record_class = Qclass::IN;
+
+        let response = resolver.inner_lookup(domain_name,qtype,record_class).await;
+        assert!(response.is_ok());
+
+        //FIXME: add assert
+        println!("Response: {:?}",response);
+    }
+
+    #[tokio::test]
+    async fn host_name_to_host_address_translation() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "TCP";
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+
+        assert!(ip_addresses[0].is_ipv4());
+        assert!(!ip_addresses[0].is_unspecified());
+    }
+
+    #[tokio::test]
+    async fn lookup_ip_ch() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qclass = "CH";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
+        println!("RESPONSE : {:?}", ip_addresses);
+
+        assert!(ip_addresses.is_err());
+    }
+
+    #[tokio::test]
+    async fn lookup_ip_qclass_any() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qclass = "ANY";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await;
+        println!("RESPONSE : {:?}", ip_addresses);
+
+        assert!(ip_addresses.is_err());
+    }
+
+    #[tokio::test]
+    async fn lookup_ch() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qtype = "NS";
+        let qclass = "CH";
+        let ip_addresses = resolver.lookup(domain_name, transport_protocol,qtype,qclass).await;
+        println!("RESPONSE : {:?}", ip_addresses);
+
+        assert!(ip_addresses.is_err());
+    }
+
+    #[tokio::test]
+    async fn host_name_to_host_address_translation_ch() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "TCP";
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+
+        assert!(ip_addresses[0].is_ipv4());
+        assert!(!ip_addresses[0].is_unspecified());
+    }
+
+    #[tokio::test]
+    async fn lookup_ns() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.config.set_retry(10);
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        match resolver.lookup(
+            domain_name,
+            transport_protocol,
+            "NS",
+            "IN"
+        ).await {
+            Ok(val) => {println!("RESPONSE : {:?}",val);},
+            Err(e) => assert!(false, "Error: {:?}", e)
+        };
+    }
+
+    // async fn reverse_query() {
+    //     let resolver = AsyncResolver::new(ResolverConfig::default());
+    //     let ip_address = "192.168.0.1";
+    //     let domain_name = resolver.reverse_query(ip_address).await;
+
+    //     // Realiza aserciones para verificar que domain_name contiene un nombre de dominio válido.
+    //     assert!(!domain_name.is_empty(), "El nombre de dominio no debe estar vacío");
+
+    //     // Debe verificar que devuelve el nombre de dominio correspondiente a la dirección IP dada.
+    //     // Dependiendo de tu implementación, puedes comparar el resultado con un valor esperado.
+    //     // Por ejemplo, si esperas que la dirección IP "192.168.0.1" se traduzca a "ejemplo.com":
+    //     assert_eq!(domain_name, "ejemplo.com", "El nombre de dominio debe ser 'ejemplo.com'");
+    // }
+
+    #[tokio::test]
+    async fn timeout() {
+        // Crea una instancia de tu resolutor con la configuración adecuada
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Intenta resolver un nombre de dominio que no existe o no está accesible
+        let domain_name = "nonexistent-example.com";
+        let transport_protocol = "UDP";
+        let qclass = "IN";
+
+        // Configura un timeout corto para la resolución (ajusta según tus necesidades)
+        let timeout_duration = std::time::Duration::from_secs(2);
+
+        let result = tokio::time::timeout(timeout_duration, async {
+            resolver.lookup_ip(domain_name, transport_protocol,qclass).await
+        }).await;
+
+        // Verifica que el resultado sea un error de timeout
+        match result {
+            Ok(Ok(_)) => {
+                panic!("Se esperaba un error de timeout, pero se resolvió exitosamente");
+            }
+            Ok(Err(_err)) => {
+               assert!(true);
+            }
+            Err(_) => {
+                panic!("El timeout no se manejó correctamente");
+            }
+        }
+    }
+
+    #[test]
+    fn parse_dns_msg_ip() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            panic!("Error parsing response");
+        }
+    }
+
+    /// Test inner lookup cache
+    #[tokio::test]
+    async fn inner_lookup_cache_available() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.lock().unwrap().set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
+        let a_rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(a_rdata);
+        resolver.cache.lock().unwrap().add(domain_name, resource_record);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.to_dns_msg().get_header().get_aa(), false);
+        } else {
+            panic!("No response from cache");
+        }
+    }
+
+    /// Test inner lookup without cache
+    #[tokio::test]
+    async fn inner_lookup_with_no_cache() {
+        let mut config = ResolverConfig::default();
+        config.set_cache_enabled(false);
+
+        let resolver = AsyncResolver::new(config);
+        {
+        let mut cache = resolver.cache.lock().unwrap();
+        cache.set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
+        let a_rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(a_rdata);
+        cache.add(domain_name, resource_record);
+        }
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+        let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
+
+        if let Ok(msg) = response {
+            assert_eq!(msg.to_dns_msg().get_header().get_aa(), false);
+        } else {
+            panic!("No response from nameserver");
+        }
+    }
+
+    /// Test cache data
+    #[tokio::test]
+    async fn cache_data() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.lock().unwrap().set_max_size(1);
+        assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
+
+        let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
+        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
+        // TODO: Test special cases from RFC
+    }
+
+    //TODO: test max number of retry
+    #[tokio::test]
+    async fn max_number_of_retry() {
+        let mut config = ResolverConfig::default();
+        let max_retries = 6;
+        config.set_retry(max_retries);
+        let mut resolver = AsyncResolver::new(config);
+
+        // Realiza una resolución de DNS que sabes que fallará
+        //let result = resolver.lookup_ip("nonexisten.comt-domain", "UDP").await;
+
+        let mut retries_attempted = 0;
+
+        // Realiza la resolución de DNS que sabes que fallará
+        while retries_attempted < max_retries {
+            let result = resolver.lookup_ip("nonexistent-domain.com", "UDP", "IN").await;
+             retries_attempted += 1;
+
+            if result.is_ok() {
+                break; // La resolución tuvo éxito, sal del bucle
+            }
+        }
+        if retries_attempted == max_retries {
+            assert!(retries_attempted == max_retries, "Número incorrecto de reintentos");
+        } else {
+            panic!("La resolución DNS tuvo éxito antes de lo esperado");
+        }
+
+    }
+
+
+    #[tokio::test]
+    async fn use_udp() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "UDP";
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+
+        assert!(ip_addresses[0].is_ipv4());
+        assert!(!ip_addresses[0].is_unspecified());
+    }
+
+    #[tokio::test]
+    async fn use_tcp() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        let transport_protocol = "TCP";
+        let qclass = "IN";
+        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,qclass).await.unwrap();
+        println!("RESPONSE : {:?}", ip_addresses);
+
+        assert!(ip_addresses[0].is_ipv4());
+        assert!(!ip_addresses[0].is_unspecified());
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn use_udp_but_fails_and_use_tcp() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "Ecample.com";
+        let transport_protocol_udp = "UDP";
+        let transport_protocol_tcp = "TCP";
+        let qclass = "IN";
+        let udp_result = resolver.lookup_ip(domain_name, transport_protocol_udp,qclass).await;
+
+        match udp_result {
+        Ok(_) => {
+            panic!("UDP client error expected");
+            }
+        Err(_err) => {
+            assert!(true);
+            }
+        }
+
+        let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, qclass).await;
+        match tcp_result {
+            Ok(_) => {
+                assert!(true);
+            }
+        Err(_err) => {
+            panic!("unexpected TCP client error");
+            }
+        }
+    }
+
+
+    //TODO: diferent types of errors
+    #[tokio::test]
+    async fn resolver_with_client_error_io() {
+        let io_error = io::Error::new(io::ErrorKind::Other, "Simulated I/O Error");
+        let result = ClientError::Io(io_error);
+
+        match result {
+           ClientError::Io(_) => {
+            // La operación generó un error de I/O simulado, la prueba es exitosa
+           }
+           _ => {
+               panic!("Se esperaba un error de I/O simulado");
+           }
+        }
+    }
+
+    #[tokio::test]
+    async fn parse_dns_msg_1() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        header.set_rcode(1);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            if let Err(ClientError::FormatError("The name server was unable to interpret the query.")) = result_vec_rr {
+                assert!(true);
+            }
+            else {
+                panic!("Error parsing response");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn parse_dns_msg_2() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        header.set_rcode(2);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            if let Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server.")) = result_vec_rr {
+                assert!(true);
+            }
+            else {
+                panic!("Error parsing response");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn parse_dns_msg_3() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        header.set_rcode(3);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            if let Err(ClientError::NameError("The domain name referenced in the query does not exist.")) = result_vec_rr {
+                assert!(true);
+            }
+            else {
+                panic!("Error parsing response");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn parse_dns_msg_4() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        header.set_rcode(4);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            if let Err(ClientError::NotImplemented("The name server does not support the requested kind of query.")) = result_vec_rr {
+                assert!(true);
+            }
+            else {
+                panic!("Error parsing response");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn parse_dns_msg_5() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        header.set_rcode(5);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+            if let Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons.")) = result_vec_rr {
+                assert!(true);
+            }
+            else {
+                panic!("Error parsing response");
+            }
+        }
+    }
+
+    //TODO: probar diferentes qtype
+    #[tokio::test]
+    async fn qtypes_a() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_ns() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::NS,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_cname() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::CNAME,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_soa() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::SOA,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+
+    #[tokio::test]
+    async fn qtypes_ptr() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::PTR,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_hinfo() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::HINFO,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_minfo() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::MINFO,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);    
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_wks() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::WKS,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_txt() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::TXT,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_dname() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::DNAME,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_any() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::ANY,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_tsig() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::TSIG,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_axfr() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::AXFR,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_mailb() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::MAILB,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);        
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[tokio::test]
+    async fn qtypes_maila() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        // Create a new dns response
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let resource_record = ResourceRecord::new(rdata);
+        answer.push(resource_record);
+
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Qtype::MAILA,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        dns_response.set_answer(answer);
+        let mut header = dns_response.get_header();
+        header.set_qr(true);
+        dns_response.set_header(header);
+        let lookup_response = LookupResponse::new(dns_response);
+        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+
+        if let Ok(rrs) = result_vec_rr {
+            let rdata = rrs[0].get_rdata();
+            if let Rdata::A(ip) = rdata {
+                assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
+            } else {
+                panic!("Error parsing response");
+            }
+        } else {
+
+                panic!("Error parsing response");
+            }
+    }
+
+    #[test]
+    fn not_store_data_in_cache_if_truncated() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+
+        resolver.cache.lock().unwrap().set_max_size(10);
+
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+
+        // Create truncated dns response
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                domain_name,
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        let mut truncated_header = dns_response.get_header();
+        truncated_header.set_tc(true);
+        dns_response.set_header(truncated_header);
+
+        resolver.store_data_cache(dns_response);
+
+        assert_eq!(resolver.get_cache().get_size(), 0);
+    }
+
+    #[test]
+    fn not_store_cero_ttl_data_in_cache() {
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.lock().unwrap().set_max_size(10);
+
+        let domain_name = DomainName::new_from_string("example.com".to_string());
+
+        // Create dns response with ttl = 0
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                domain_name,
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        // let mut truncated_header = dns_response.get_header();
+        // truncated_header.set_tc(false);
+        // dns_response.set_header(truncated_header);
+        let mut answer: Vec<ResourceRecord> = Vec::new();
+        let a_rdata = ARdata::new_from_addr(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+
+        // Cero ttl
+        let mut rr_cero_ttl = ResourceRecord::new(rdata.clone());
+        rr_cero_ttl.set_ttl(0);
+        answer.push(rr_cero_ttl);
+
+        // Positive ttl
+        let mut rr_ttl_1 = ResourceRecord::new(rdata.clone());
+        rr_ttl_1.set_ttl(1);
+        answer.push(rr_ttl_1);
+
+        let mut rr_ttl_2 = ResourceRecord::new(rdata);
+        rr_ttl_2.set_ttl(2);
+        answer.push(rr_ttl_2);
+
+        dns_response.set_answer(answer);
+        assert_eq!(dns_response.get_answer().len(), 3);
+        assert_eq!(resolver.get_cache().get_size(), 0);
+
+        resolver.store_data_cache(dns_response);
+        assert_eq!(resolver.get_cache().get_size(), 2);
+    }
+
+    #[test]
+    fn save_cache_negative_answer(){
+        let resolver = AsyncResolver::new(ResolverConfig::default());
+        resolver.cache.lock().unwrap().set_max_size(1);
+
+        let domain_name = DomainName::new_from_string("banana.exaple".to_string());
+        let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
+        let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
+        let serial = 2023112900;
+        let refresh = 1800;
+        let retry = 900;
+        let expire = 604800;
+        let minimum = 86400;
+
+        //Create RR type SOA
+        let mut soa_rdata = SoaRdata::new();
+        soa_rdata.set_mname(mname);
+        soa_rdata.set_rname(rname);
+        soa_rdata.set_serial(serial);
+        soa_rdata.set_refresh(refresh);
+        soa_rdata.set_retry(retry);
+        soa_rdata.set_expire(expire);
+        soa_rdata.set_minimum(minimum);
+
+
+        let rdata = Rdata::SOA(soa_rdata);
+        let mut rr = ResourceRecord::new(rdata);
+        rr.set_name(domain_name.clone());
+
+        // Create dns response
+        let mut dns_response =
+            DnsMessage::new_query_message(
+                domain_name,
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+        let mut new_header = dns_response.get_header();
+        new_header.set_aa(true);
+        dns_response.set_header(new_header);
+
+        // Save RR type SOA in Additional section of response
+        dns_response.add_additionals(vec![rr]);
+
+        resolver.save_negative_answers(dns_response.clone());
+
+        let qtype_search = Rtype::A;
+        assert_eq!(dns_response.get_answer().len(), 0);
+        assert_eq!(dns_response.get_additional().len(), 1);
+        assert_eq!(resolver.get_cache().get_size(), 1);
+        assert!(resolver.get_cache().get_cache().get_cache_data().get(&qtype_search).is_some())
+
+    }
+
+    // #[ignore = "Optional, not implemented"]
+    // #[tokio::test]
+    // async fn inner_lookup_negative_answer_in_cache(){
+    //     let resolver = AsyncResolver::new(ResolverConfig::default());
+    //     let mut cache = resolver.get_cache();
+    //     let qtype = Qtype::A;
+    //     cache.set_max_size(9);
+
+    //     let domain_name = DomainName::new_from_string("banana.exaple".to_string());
+
+    //     //Create RR type SOA
+    //     let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
+    //     let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
+    //     let serial = 2023112900;
+    //     let refresh = 1800;
+    //     let retry = 900;
+    //     let expire = 604800;
+    //     let minimum = 86400;
+
+    //     let mut soa_rdata = SoaRdata::new();
+    //     soa_rdata.set_mname(mname);
+    //     soa_rdata.set_rname(rname);
+    //     soa_rdata.set_serial(serial);
+    //     soa_rdata.set_refresh(refresh);
+    //     soa_rdata.set_retry(retry);
+    //     soa_rdata.set_expire(expire);
+    //     soa_rdata.set_minimum(minimum);
+
+    //     let rdata = Rdata::SOA(soa_rdata);
+    //     let mut rr = ResourceRecord::new(rdata);
+    //     rr.set_name(domain_name.clone());
+
+    //     // Add negative answer to cache
+    //     let mut cache  = resolver.get_cache();
+    //     cache.set_max_size(9);
+    //     let  rtype =  Qtype::to_rtype(qtype);
+    //     cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
+    //     let mut cache_guard = resolver.cache.lock().unwrap();
+    //     *cache_guard = cache;
+
+    //     assert_eq!(resolver.get_cache().get_size(), 1);
+
+    //     let qclass = Qclass::IN;
+    //     let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
+
+    //     assert_eq!(resolver.get_cache().get_size(), 1);
+    //     assert_eq!(response.to_dns_msg().get_answer().len(), 0);
+    //     assert_eq!(response.get_additional().len(), 1);
+    //     assert_eq!(response.get_header().get_rcode(), 3);
+    // }
+
+    // // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently
+    // #[tokio::test]
+    // async fn test3(){
+    //     let resolver = Arc::new(AsyncResolver::new(ResolverConfig::default()));
+    //     let qtype = Qtype::A;
+    //     let qclass = Qclass::IN;
+
+    //     let domain_name = DomainName::new_from_string("example.com".to_string());
+    //     let resolver_1 = resolver.clone();
+    //     let resolver_2 = resolver.clone();
+
+    //     let _result: (Result<DnsMessage, ResolverError>, Result<DnsMessage, ResolverError>) = tokio::join!(
+    //         resolver_1.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone()),
+    //         resolver_2.inner_lookup(domain_name.clone(), qtype.clone(), qclass.clone())
+    //     );
+    //}
 
 
 }

@@ -257,3 +257,8 @@ impl Nsec3Rdata {
         self.type_bit_maps = type_bit_maps;
     }
 }
+
+/// TODO: Add tests
+#[cfg(test)]
+mod nsec3_rdata_tests {   
+}

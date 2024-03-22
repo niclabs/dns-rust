@@ -27,9 +27,9 @@ pub struct Nsec3Rdata {
     flags: u8,
     iterations: u16,
     salt_length: u8,
-    salt: &'static str,
+    salt: String,
     hash_length: u8,
-    next_hashed_owner_name: &'static str,
+    next_hashed_owner_name: String,
     type_bit_maps: Vec<Rtype>,
 }
 
@@ -46,11 +46,11 @@ impl ToBytes for Nsec3Rdata {
         bytes.extend_from_slice(&iterations.to_be_bytes());
         let salt_length: u8 = self.get_salt_length();
         bytes.push(salt_length);
-        let salt: &str = self.get_salt();
+        let salt = self.get_salt();
         bytes.extend_from_slice(salt.as_bytes());
         let hash_length: u8 = self.get_hash_length();
         bytes.push(hash_length);
-        let next_hashed_owner_name: &str = self.get_next_hashed_owner_name();
+        let next_hashed_owner_name = self.get_next_hashed_owner_name();
         bytes.extend_from_slice(next_hashed_owner_name.as_bytes());
         let type_bit_maps: Vec<Rtype> = self.get_type_bit_maps();
 
@@ -94,6 +94,61 @@ impl ToBytes for Nsec3Rdata {
     }
 }
 
+impl FromBytes<Result<Self, &'static str>> for Nsec3Rdata {
+    /// Create a new `Nsec3Rdata` from an array of bytes.
+    fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        let hash_algorithm = bytes[0];
+        let flags = bytes[1];
+        let array_bytes = [bytes[2], bytes[3]];
+        let iterations = u16::from_be_bytes(array_bytes);
+        let salt_length = bytes[4];
+        let salt: String = String::from_utf8_lossy(&bytes[5..(5 + salt_length as usize)]).to_string();
+        let hash_length = bytes[5 + salt_length as usize];
+        let next_hashed_owner_name: String = String::from_utf8_lossy(&bytes[(6 + salt_length as usize)..(6 + salt_length as usize + hash_length as usize)]).to_string();
+
+        let rest_bytes = &bytes[(6 + salt_length as usize + hash_length as usize)..bytes_len];
+        let mut decoded_type_bit_maps: Vec<Rtype> = Vec::new();
+        let mut offset = 0;
+
+        while offset < rest_bytes.len() {
+            let window_number = rest_bytes[offset];
+            let bitmap_length = rest_bytes[offset + 1] as usize;
+
+            if bitmap_length > 32 {
+                println!("The bitmap length is {}", bitmap_length);
+                return Err("Bitmap length is greater than 32");
+            }
+            let bitmap = &rest_bytes[(offset + 2)..(offset + 2 + bitmap_length)];
+            for i in 0..bitmap.len() {
+                let byte = bitmap[i];
+                for j in 0..8 {
+                    let rr_type = window_number as u16 * 256 + i as u16 * 8 + j as u16;
+                    let bit_mask = 1 << (7 - j);
+                    if byte & bit_mask != 0 {
+                        decoded_type_bit_maps.push(Rtype::from_int_to_rtype(rr_type));
+                    }
+                }
+            }
+            offset += 2 + bitmap_length;
+        }
+
+        let nsec3_rdata = Nsec3Rdata::new(
+            hash_algorithm,
+            flags,
+            iterations,
+            salt_length,
+            salt,
+            hash_length,
+            next_hashed_owner_name,
+            decoded_type_bit_maps,
+        );
+
+        Ok(nsec3_rdata)
+    }
+}
+
 impl Nsec3Rdata {
     /// Create a new NSEC3 Rdata
     pub fn new(
@@ -101,9 +156,9 @@ impl Nsec3Rdata {
         flags: u8,
         iterations: u16,
         salt_length: u8,
-        salt: &'static str,
+        salt: String,
         hash_length: u8,
-        next_hashed_owner_name: &'static str,
+        next_hashed_owner_name: String,
         type_bit_maps: Vec<Rtype>,
     ) -> Nsec3Rdata {
         Nsec3Rdata {
@@ -139,8 +194,8 @@ impl Nsec3Rdata {
     }
 
     /// Getter for the salt
-    pub fn get_salt(&self) -> &'static str {
-        self.salt
+    pub fn get_salt(&self) -> String {
+        self.salt.clone()
     }
 
     /// Getter for the hash_length
@@ -149,8 +204,8 @@ impl Nsec3Rdata {
     }
 
     /// Getter for the next_hashed_owner_name
-    pub fn get_next_hashed_owner_name(&self) -> &'static str {
-        self.next_hashed_owner_name
+    pub fn get_next_hashed_owner_name(&self) -> String {
+        self.next_hashed_owner_name.clone()
     }
 
     /// Getter for the type_bit_maps
@@ -183,7 +238,7 @@ impl Nsec3Rdata {
     }
 
     /// Setter for the salt
-    pub fn set_salt(&mut self, salt: &'static str) {
+    pub fn set_salt(&mut self, salt: String) {
         self.salt = salt;
     }
 
@@ -193,7 +248,7 @@ impl Nsec3Rdata {
     }
 
     /// Setter for the next_hashed_owner_name
-    pub fn set_next_hashed_owner_name(&mut self, next_hashed_owner_name: &'static str) {
+    pub fn set_next_hashed_owner_name(&mut self, next_hashed_owner_name: String) {
         self.next_hashed_owner_name = next_hashed_owner_name;
     }
 

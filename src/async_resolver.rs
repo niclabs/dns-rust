@@ -21,6 +21,8 @@ use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
 
+use self::lookup_response::LookupResponse;
+
 /// Asynchronous resolver for DNS queries.
 /// 
 /// This struct contains a cache and a configuration for the resolver. 
@@ -195,7 +197,7 @@ impl AsyncResolver {
         domain_name: DomainName,
         qtype:Qtype, 
         qclass:Qclass
-    ) -> Result<DnsMessage, ResolverError> {
+    ) -> Result<LookupResponse, ResolverError> {
         // Cache lookup
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
@@ -239,7 +241,9 @@ impl AsyncResolver {
                         new_query.set_answer(answer);
                     }     
                 }
-                return Ok(new_query)
+                let new_lookup_response = LookupResponse::new(new_query);
+
+                return Ok(new_lookup_response)
             }
         }
         let mut lookup_strategy = LookupStrategy::new(
@@ -253,7 +257,7 @@ impl AsyncResolver {
 
         // Cache data
         if let Ok(ref r) = response {
-            self.store_data_cache(r.clone());
+            self.store_data_cache(r.to_dns_msg().clone());
         }
 
         return response;
@@ -401,16 +405,16 @@ impl AsyncResolver {
     /// records contained in the message. It will return the RRs if the response was
     /// successful. If the response was not successful, it will return the corresponding
     /// error message to the Client.
-    fn check_error_from_msg(&self, response: Result<DnsMessage, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
-        let dns_mgs = match response {
+    fn check_error_from_msg(&self, response: Result<LookupResponse, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
+        let  lookup_response = match response {
             Ok(val) => val,
             Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
         };
 
-        let header = dns_mgs.get_header();
+        let header = lookup_response.to_dns_msg().get_header();
         let rcode = header.get_rcode();
         if rcode == 0 {
-            let answer = dns_mgs.get_answer();
+            let answer = lookup_response.to_dns_msg().get_answer();
             if answer.len() == 0 {
                 Err(ClientError::TemporaryError("no answer found"))?;
             }

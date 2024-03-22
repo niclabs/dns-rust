@@ -20,7 +20,6 @@ use crate::message::type_rtype::Rtype;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
-
 use self::lookup_response::LookupResponse;
 
 /// Asynchronous resolver for DNS queries.
@@ -405,7 +404,10 @@ impl AsyncResolver {
     /// records contained in the message. It will return the RRs if the response was
     /// successful. If the response was not successful, it will return the corresponding
     /// error message to the Client.
-    fn check_error_from_msg(&self, response: Result<LookupResponse, ResolverError>) -> Result<Vec<ResourceRecord>, ClientError> {
+    fn check_error_from_msg(
+        &self, 
+        response: Result<LookupResponse, ResolverError>
+    ) -> Result<Vec<ResourceRecord>, ClientError> {
         let  lookup_response = match response {
             Ok(val) => val,
             Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,

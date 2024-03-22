@@ -5,7 +5,7 @@ use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver, resolver_
 
 
 // TODO: Change params type to intoDomainName
-async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Result<Vec<ResourceRecord>, ResolverError>{
+async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Result<Vec<ResourceRecord>, ResolverError> {
 
     let config = ResolverConfig::default();
     let mut resolver = AsyncResolver::new(config);
@@ -16,7 +16,7 @@ async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Resul
         qtype,
         "IN").await;
 
-    response
+    response.map(|lookup_response| lookup_response.to_vec_of_rr())
 }
 
 /// 6.2.1 Query test Qtype = A

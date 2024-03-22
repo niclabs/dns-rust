@@ -1,3 +1,4 @@
+use crate::message::{resource_record::ResourceRecord, DnsMessage};
 
 /// This struct represents the response of a DNS lookup.
 /// 
@@ -5,38 +6,46 @@
 /// on the resquested format of the response, the IP addresses can be represented
 /// as strings, structs or bytes.
 pub struct LookupResponse {
-    pub addresses: Vec<SocketAddr>,
+    dns_msg_response: DnsMessage,
 }
-
 
 impl LookupResponse {
     /// Create a new LookupResponse instance.
-    pub fn new(addresses: Vec<SocketAddr>) -> LookupResponse {
-        LookupResponse { addresses }
+    pub fn new(dns_msg_response: DnsMessage) -> LookupResponse {
+        LookupResponse { dns_msg_response }
     }
 
     pub fn to_string(&self) -> String {
         let mut result = String::new();
-        for address in &self.addresses {
+        for address in &self.dns_msg_response.get_answer() {
             result.push_str(&format!("{}\n", address));
         }
         result
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut result = Vec::new();
-        for address in &self.addresses {
-            result.extend_from_slice(&address.ip().octets());
-            result.extend_from_slice(&address.port().to_be_bytes());
-        }
-        result
+        self.dns_msg_response.to_bytes()
     }
 
-    pub fn to_struct(&self) -> Vec<SocketAddr> {
-        self.addresses.clone()
+    pub fn to_struct(&self) -> DnsMessage {
+        self.dns_msg_response.clone()
     }
 
-    pub fn to_vec(&self) -> Vec<String> {
-        self.addresses.iter().map(|addr| addr.to_string()).collect()
+    pub fn to_vec(&self) -> Vec<ResourceRecord> {
+        self.dns_msg_response.get_answer()
     }
+}
+
+
+
+#[cfg(test)]
+mod lookup_response_tests {
+    // use tokio::runtime::Runtime;
+
+
+
+
+
+
+
 }

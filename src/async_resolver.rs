@@ -818,7 +818,7 @@ mod async_resolver_test {
     }
 
     #[test]
-    fn parse_dns_msg_ip() {
+    fn check_dns_msg_ip() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
 
         // Create a new dns response
@@ -842,10 +842,10 @@ mod async_resolver_test {
         header.set_qr(true);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1023,7 +1023,7 @@ mod async_resolver_test {
     }
 
     #[tokio::test]
-    async fn parse_dns_msg_1() {
+    async fn check_dns_msg_1() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
 
         // Create a new dns response
@@ -1048,17 +1048,17 @@ mod async_resolver_test {
         header.set_rcode(1);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
             }
         } else {
-            if let Err(ClientError::FormatError("The name server was unable to interpret the query.")) = result_vec_rr {
+            if let Err(ClientError::FormatError("The name server was unable to interpret the query.")) = result_lookup {
                 assert!(true);
             }
             else {
@@ -1093,17 +1093,18 @@ mod async_resolver_test {
         header.set_rcode(2);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
             }
         } else {
-            if let Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server.")) = result_vec_rr {
+            if let Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server.")) = 
+            result_lookup {
                 assert!(true);
             }
             else {
@@ -1138,17 +1139,17 @@ mod async_resolver_test {
         header.set_rcode(3);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
             }
         } else {
-            if let Err(ClientError::NameError("The domain name referenced in the query does not exist.")) = result_vec_rr {
+            if let Err(ClientError::NameError("The domain name referenced in the query does not exist.")) = result_lookup {
                 assert!(true);
             }
             else {
@@ -1183,17 +1184,17 @@ mod async_resolver_test {
         header.set_rcode(4);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
             }
         } else {
-            if let Err(ClientError::NotImplemented("The name server does not support the requested kind of query.")) = result_vec_rr {
+            if let Err(ClientError::NotImplemented("The name server does not support the requested kind of query.")) = result_lookup {
                 assert!(true);
             }
             else {
@@ -1228,17 +1229,17 @@ mod async_resolver_test {
         header.set_rcode(5);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
                 panic!("Error parsing response");
             }
         } else {
-            if let Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons.")) = result_vec_rr {
+            if let Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons.")) = result_lookup {
                 assert!(true);
             }
             else {
@@ -1273,10 +1274,10 @@ mod async_resolver_test {
         header.set_qr(true);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1313,10 +1314,10 @@ mod async_resolver_test {
         header.set_qr(true);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
-        let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
+        let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_lookup {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1355,8 +1356,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1395,8 +1396,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1436,8 +1437,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1476,8 +1477,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1516,8 +1517,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);    
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1556,8 +1557,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1596,8 +1597,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1636,8 +1637,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1676,8 +1677,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1716,8 +1717,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1756,8 +1757,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1796,8 +1797,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);        
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {
@@ -1836,8 +1837,8 @@ mod async_resolver_test {
         let lookup_response = LookupResponse::new(dns_response);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
-        if let Ok(rrs) = result_vec_rr {
-            let rdata = rrs[0].get_rdata();
+        if let Ok(lookup_response) = result_vec_rr {
+            let rdata = lookup_response.to_dns_msg().get_answer()[0].get_rdata();
             if let Rdata::A(ip) = rdata {
                 assert_eq!(ip.get_address(), IpAddr::from([127, 0, 0, 1]));
             } else {

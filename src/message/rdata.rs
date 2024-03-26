@@ -55,6 +55,7 @@ pub enum Rdata {
     RRSIG(RRSIGRdata),
     NSEC(NsecRdata),
     DNSKEY(DnskeyRdata),
+    NSEC3(Nsec3Rdata),
     TSIG(TSigRdata),
 }
 
@@ -90,6 +91,7 @@ impl ToBytes for Rdata {
             Rdata::RRSIG(val) => val.to_bytes(),
             Rdata::NSEC(val) => val.to_bytes(),
             Rdata::DNSKEY(val) => val.to_bytes(),
+            Rdata::NSEC3(val) => val.to_bytes(),
             Rdata::TSIG(val) => val.to_bytes(),
         }
     }
@@ -298,6 +300,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::DNSKEY(rdata.unwrap()))
             }
+
+            50 => {
+                let rdata = Nsec3Rdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::NSEC3(rdata.unwrap()))
+            }
             
             250 => {
                 let rdata = TSigRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -337,6 +351,7 @@ mod resolver_query_tests {
     use super::rrsig_rdata::RRSIGRdata;
     use super::nsec_rdata::NsecRdata;
     use super::dnskey_rdata::DnskeyRdata;
+    use super::nsec3_rdata::Nsec3Rdata;
     use super::tsig_rdata::TSigRdata;
     use super::aaaa_rdata::AAAARdata;
     use std::net::IpAddr;

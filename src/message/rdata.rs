@@ -677,6 +677,28 @@ mod resolver_query_tests {
         assert_eq!(bytes, bytes_to_test);
     }
 
+    #[test]
+    fn to_bytes_nsec3_rdata(){
+        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
+            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+
+        let rdata = Rdata::NSEC3(nsec3_rdata);
+        let bytes = rdata.to_bytes();
+
+        let first_expected_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116, 22, 110, 101, 120, 116, 95, 104,
+                                                97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+            
+        
+        let expected_bytes = [&first_expected_bytes[..], &bit_map_bytes_to_test[..]].concat();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
     //from bytes tests
     #[test]
     fn from_bytes_a_ch_rdata(){

@@ -725,6 +725,10 @@ impl DnsMessage {
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
                     }
+
+                    Rdata::NSEC3(val) => {
+                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
+                    }
                 }
             }
 
@@ -787,6 +791,9 @@ impl DnsMessage {
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
                     }
+                    Rdata::NSEC3(val) => {
+                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
+                    }
                 }
             }
 
@@ -846,6 +853,9 @@ impl DnsMessage {
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
+                    }
+                    Rdata::NSEC3(val) => {
+                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
                     }
                 }
             }

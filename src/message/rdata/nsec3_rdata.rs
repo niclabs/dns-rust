@@ -258,7 +258,34 @@ impl Nsec3Rdata {
     }
 }
 
-/// TODO: Add tests
+
 #[cfg(test)]
-mod nsec3_rdata_tests {   
+mod nsec3_rdata_tests {
+    use super::*;
+
+    #[test]
+    fn constructor(){
+        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::AAAA]);
+        assert_eq!(nsec3_rdata.hash_algorithm, 1);
+        assert_eq!(nsec3_rdata.flags, 2);
+        assert_eq!(nsec3_rdata.iterations, 3);
+        assert_eq!(nsec3_rdata.salt_length, 4);
+        assert_eq!(nsec3_rdata.salt, "salt".to_string());
+        assert_eq!(nsec3_rdata.hash_length, 5);
+        assert_eq!(nsec3_rdata.next_hashed_owner_name, "next_hashed_owner_name".to_string());
+        assert_eq!(nsec3_rdata.type_bit_maps, vec![Rtype::A, Rtype::AAAA]);
+    }
+
+    #[test]
+    fn getters(){
+        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::AAAA]);
+        assert_eq!(nsec3_rdata.get_hash_algorithm(), 1);
+        assert_eq!(nsec3_rdata.get_flags(), 2);
+        assert_eq!(nsec3_rdata.get_iterations(), 3);
+        assert_eq!(nsec3_rdata.get_salt_length(), 4);
+        assert_eq!(nsec3_rdata.get_salt(), "salt".to_string());
+        assert_eq!(nsec3_rdata.get_hash_length(), 5);
+        assert_eq!(nsec3_rdata.get_next_hashed_owner_name(), "next_hashed_owner_name".to_string());
+        assert_eq!(nsec3_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::AAAA]);
+    }
 }

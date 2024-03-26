@@ -400,20 +400,20 @@ impl AsyncResolver {
 
     }
 
-    /// Parses the received `DnsMessage` and returns the corresponding RRs.
+    /// Checks the received `LookupResponse` for errors to return to the Client.
     ///
-    /// After receiving the response of the query, this method parses the DNS message
-    /// of type `DnsMessage` to a `Vec<ResourceRecord>` with the corresponding resource
-    /// records contained in the message. It will return the RRs if the response was
-    /// successful. If the response was not successful, it will return the corresponding
-    /// error message to the Client.
+    /// After receiving the response of the query, this method checks if the
+    /// corresponding `DnsMessage` contained in the `LookupResponse` has any
+    /// error. This error could be specified in the RCODE of the DNS message or it
+    /// could be any other temporary error. If the response has an error, the method 
+    /// returns the corresponding`ClientError` to the Client.
     fn check_error_from_msg(
         &self, 
         response: Result<LookupResponse, ResolverError>
     ) -> Result<LookupResponse, ClientError> {
         let lookup_response = match response {
             Ok(val) => val,
-            Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,
+            Err(_) => Err(ClientError::TemporaryError("no DNS message found"))?,  
         };
 
         let header = lookup_response.to_dns_msg().get_header();

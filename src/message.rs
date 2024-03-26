@@ -729,6 +729,9 @@ impl DnsMessage {
                     Rdata::NSEC3(val) => {
                         println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
                     }
+                    Rdata::NSEC3PARAM(val) => {
+                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
+                    }
                 }
             }
 
@@ -794,6 +797,9 @@ impl DnsMessage {
                     Rdata::NSEC3(val) => {
                         println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
                     }
+                    Rdata::NSEC3PARAM(val) => {
+                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
+                    }
                 }
             }
 
@@ -856,6 +862,9 @@ impl DnsMessage {
                     }
                     Rdata::NSEC3(val) => {
                         println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
+                    }
+                    Rdata::NSEC3PARAM(val) => {
+                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
                     }
                 }
             }

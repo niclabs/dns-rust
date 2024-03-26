@@ -34,6 +34,7 @@ use rrsig_rdata::RRSIGRdata;
 use nsec_rdata::NsecRdata;
 use dnskey_rdata::DnskeyRdata;
 use nsec3_rdata::Nsec3Rdata;
+use nsec3param_rdata::Nsec3ParamRdata;
 use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -57,6 +58,7 @@ pub enum Rdata {
     NSEC(NsecRdata),
     DNSKEY(DnskeyRdata),
     NSEC3(Nsec3Rdata),
+    NSEC3PARAM(Nsec3ParamRdata),
     TSIG(TSigRdata),
 }
 
@@ -93,6 +95,7 @@ impl ToBytes for Rdata {
             Rdata::NSEC(val) => val.to_bytes(),
             Rdata::DNSKEY(val) => val.to_bytes(),
             Rdata::NSEC3(val) => val.to_bytes(),
+            Rdata::NSEC3PARAM(val) => val.to_bytes(),
             Rdata::TSIG(val) => val.to_bytes(),
         }
     }
@@ -312,6 +315,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                     
                 }
                 Ok(Rdata::NSEC3(rdata.unwrap()))
+            }
+
+            51 => {
+                let rdata = Nsec3ParamRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::NSEC3PARAM(rdata.unwrap()))
             }
             
             250 => {

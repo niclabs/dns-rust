@@ -39,7 +39,7 @@ use self::lookup_response::LookupResponse;
 pub struct AsyncResolver {
     /// Cache for the resolver.
     cache: Arc<Mutex<DnsCache>>,
-    /// Configu ration for the resolver.
+    /// Configuration for the resolver.
     config: ResolverConfig ,
 }
 
@@ -72,7 +72,9 @@ impl AsyncResolver {
     /// This method acts as an interface between the Client and the Resolver.
     ///
     /// It calls `inner_lookup(&self, domain_name: DomainName)` which will
-    /// execute a look up of the given domain name asynchronously.
+    /// execute a look up of the given domain name asynchronously. The method
+    /// retuns the corresponding `Result<Vec<IpAddr>, ClientError>` to the Client.
+    /// The `Vec<IpAddr>` contains the IP addresses of the domain name.
     ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     ///
@@ -108,8 +110,7 @@ impl AsyncResolver {
         let result_lookup = self.check_error_from_msg(response);
         if let Ok(lookup_response) = result_lookup {
             let rrs_iter = lookup_response
-            .to_dns_msg()
-            .get_answer()
+            .to_vec_of_rr()
             .into_iter();
             let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr|
                 {AsyncResolver::from_rr_to_ip(rr)}).collect();
@@ -119,11 +120,16 @@ impl AsyncResolver {
         }
     }
 
-    /// Performs a lookup of the given domain name, qtype and qclass.
+    /// Performs a DNS lookup of the given domain name, qtype and qclass.
     ///
     /// This method calls the `inner_lookup` method with the given domain name,
     /// qtype, qclass and the chosen transport protocol. It performs a DNS lookup
-    /// asynchronously and returns the corresponding resource records.
+    /// asynchronously and returns the corresponding `Result<LookupResponse, ClientError>`.
+    /// The `LookupResponse` contains the response of the query which can be translated
+    /// to different formats.
+    /// 
+    /// If the response has an error, the method returns the corresponding `ClientError`
+    /// to the Client.
     ///
     /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.2
     ///
@@ -179,10 +185,17 @@ impl AsyncResolver {
 
     /// Host name to address translation.
     ///
-    /// Performs a DNS lookup for the given domain name and returns the
-    /// corresponding IP address. This lookup is done asynchronously using
-    /// the future `LookupIpFutureStub`.  FIXME: fix docs according to changes
-    ///
+    /// Performs a DNS lookup for the given domain name and returns the corresponding 
+    /// `Result<LookupResponse, ResolverError>`. Here, the `LookupResponse` contains the
+    /// response of the query which can translate the response to different formats.
+    /// 
+    /// This lookup is done asynchronously using the `tokio` runtime. It calls the 
+    /// asynchronous method `lookup_run()` of the `LookupStrategy` struct. This method
+    /// is used to perform the DNS lookup and return the response of the query.
+    /// 
+    /// If the response has an error, the method returns the corresponding `ResolverError`
+    /// to the Client.
+    /// 
     /// # Examples
     ///
     /// ```

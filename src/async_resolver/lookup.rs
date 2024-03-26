@@ -17,10 +17,14 @@ use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
 use tokio::time::timeout;
 
-/// Future returned from `AsyncResolver` when performing a lookup with Rtype A.
+/// Struct that represents the execution of a lookup.
 /// 
-/// This implementation of `Future` is used to send a single query to a DNS server.
-/// When this future is polled by `AsyncResolver`, 
+/// The result of the lookup is stored in the `query_answer` field.
+/// First it is initialized with an empty `DnsMessage` and then it is updated
+/// with the response of the query.
+/// 
+/// The lookup is done asynchronously after calling the asynchronoyus 
+/// `lookup_run` method.
 pub struct LookupStrategy {
     /// Domain Name associated with the query.
     name: DomainName,
@@ -30,20 +34,13 @@ pub struct LookupStrategy {
     record_class: Qclass,
     /// Resolver configuration.
     config: ResolverConfig,
-    /// Future that contains the response of the query.
-    /// 
-    /// The `Output` of this future is a `Result<DnsMessage, ResolverError>`.
-    /// The returned `DnsMessage` contains the corresponding response of the query.
+    /// Reference to the response of the query.
     pub query_answer: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
 }
     
 impl LookupStrategy {
 
-    /// Creates a new `LookupIpFutureStub` with the given configuration.
-    /// 
-    /// The resulting future created by default contains an empty `DnsMessage`
-    /// which is going to be replaced by the response of the query after
-    /// `LookupIpFutureStub` is polled.
+    /// Creates a new `LookupStrategy` with the given configuration.
     pub fn new(
         name: DomainName,
         qtype: Qtype,
@@ -60,6 +57,10 @@ impl LookupStrategy {
         }
     }
 
+    /// Executes the lookup of the Domain Name asynchronously.
+    /// 
+    /// This function performs the lookup of the requested records asynchronously.
+    /// It returns a `LookupResponse` with the response of the query.
     pub async fn lookup_run(
         &mut self           
     ) -> Result<LookupResponse, ResolverError> {
@@ -82,7 +83,18 @@ impl LookupStrategy {
     }
 }
 
+/// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
+/// 
+/// This function performs the lookup of the requested records asynchronously. 
+/// After creating the query with the given parameters, the function sends it to 
+/// the name servers specified in the configuration. 
+/// 
+/// When a response is received, the function performs the parsing of the response 
+/// to a `DnsMessage`. After the response is checked, the function updates the 
+/// value of the reference in `response_arc` with the parsed response.
+/// 
 /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
+/// 
 /// 5.3.1. Stub resolvers
 /// 
 /// One option for implementing a resolver is to move the resolution
@@ -110,17 +122,6 @@ impl LookupStrategy {
 /// requests.  Use of TCP may be an answer, but TCP may well place burdens
 /// on the host's capabilities which are similar to those of a real
 /// resolver.
-/// 
-/// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
-/// This function performs the lookup of the requested records asynchronously. 
-/// The given `waker` is used to wake up the task when the query is answered. 
-/// The `referenced_query` is used to update the future that contains the response of the query.
-/// 
-/// After creating the query with the given parameters, the function sends it to the name servers 
-/// specified in the configuration. 
-/// 
-/// When a response is received, the function performs the parsing of the response to a `DnsMessage`.
-/// After the response is checked, the function updates the future that contains the response of the query.
 /// 
 /// # Example
 /// ```

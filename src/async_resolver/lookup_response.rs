@@ -193,6 +193,8 @@ mod lookup_response_tests {
         assert_eq!(dns_from_lookup.get_header().get_qdcount(), 1);
         assert_eq!(dns_from_lookup.get_question().get_qname().get_name(), "test.com");
         assert_eq!(dns_from_lookup.get_question().get_qtype(), Qtype::CNAME);
+        assert_eq!(dns_from_lookup.get_question().get_qclass(), Qclass::CS);
+        assert_eq!(dns_from_lookup.get_answer()[0].get_name().get_name(), "dcc.cl");
     }
 
 

@@ -2,10 +2,10 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 
 #[derive(Clone, PartialEq, Debug)]
 /// Struct for the NSEC3 Rdata
-/// [RFC 5155](https://tools.ietf.org/html/rfc5155#section-3.2)
+/// [RFC 5155](https://tools.ietf.org/html/rfc5155#section-4.2)
 /// ```text
-/// 3.2.  The NSEC3 Wire Format
-/// The RDATA of the NSEC3 RR is as shown below:
+/// 4.2.  The NSEC3PARAM Wire Format
+/// The RDATA of the NSEC3PARAM RR is as shown below:
 ///
 /// 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3
 /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -13,10 +13,6 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 /// |   Hash Alg.   |     Flags     |          Iterations           |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// |  Salt Length  |                     Salt                      /
-/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/// |  Hash Length  |             Next Hashed Owner Name            /
-/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/// /                         Type Bit Maps                         /
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// ```
 

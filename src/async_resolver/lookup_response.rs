@@ -41,7 +41,17 @@ impl LookupResponse {
 
 #[cfg(test)]
 mod lookup_response_tests {
+    use crate::message::DnsMessage;
+    use super::LookupResponse;
+
     // use tokio::runtime::Runtime;
+    #[test]
+    fn new_lookup_response() {
+        let dns_response = DnsMessage::new();
+        let lookup_response = LookupResponse::new(dns_response);
+        assert_eq!(lookup_response.to_string(), "");
+    }
+    
 
 
 

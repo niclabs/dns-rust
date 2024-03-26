@@ -1,4 +1,5 @@
 use crate::message::{resource_record::ResourceRecord, DnsMessage};
+use std::fmt;
 
 /// This struct represents the response of a DNS lookup.
 /// 
@@ -7,7 +8,7 @@ use crate::message::{resource_record::ResourceRecord, DnsMessage};
 /// With the methods of this struct, you can convert the response to a string,
 /// a byte vector, a `DnsMessage` struct or a vector of `ResourceRecord` structs,
 /// depending on your needs.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LookupResponse {
     // The DNS message response.
     dns_msg_response: DnsMessage,
@@ -19,18 +20,6 @@ impl LookupResponse {
         LookupResponse { dns_msg_response }
     }
 
-
-    // FIXME: make this method an implementation of the Display trait.
-    /// Convert the response to a string.
-    pub fn to_string(&self) -> String {
-        let mut result = String::new();
-        for address in &self.dns_msg_response.get_answer() {
-            result.push_str(&format!("{}\n", address));
-        }
-        result
-    }
-
-    // FIXME: make this method an implementation of to_bytes trait.
     /// Convert the response to a byte vector.
     pub fn to_bytes(&self) -> Vec<u8> {
         self.dns_msg_response.to_bytes()
@@ -56,12 +45,23 @@ impl LookupResponse {
     }
 }
 
+impl fmt::Display for LookupResponse {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut result = String::new();
+        for address in &self.dns_msg_response.get_answer() {
+            result.push_str(&format!("{:?}", address));
+        }
+        write!(f, "{}", result)
+    }
+}
+
 #[cfg(test)]
 mod lookup_response_tests {
+    use std::net::IpAddr;
+
     use crate::{domain_name::DomainName,  message::{class_qclass::Qclass, class_rclass::Rclass, header::Header, question::Question, rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, resource_record::ResourceRecord, type_qtype::Qtype, type_rtype::Rtype, DnsMessage}};
     use super::LookupResponse;
 
-    // use tokio::runtime::Runtime;
     #[test]
     fn new_lookup_response() {
         let dns_response = DnsMessage::new();
@@ -72,8 +72,10 @@ mod lookup_response_tests {
     #[test]
     fn to_string() {
         let mut answer: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
+        let a_rdata = ARdata::new_from_addr(IpAddr::from([127, 0, 0, 1]));
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_name(DomainName::new_from_string("example.com".to_string()));
         answer.push(resource_record);
 
         let mut dns_query_message =
@@ -84,10 +86,15 @@ mod lookup_response_tests {
                 0,
                 false,
                 1);
+
         dns_query_message.set_answer(answer);
+
         let lookup_response = LookupResponse::new(dns_query_message);
-        assert_eq!(lookup_response.to_string(), "RR: - type:1 - class:1");
-           
+
+        assert_eq!(
+            lookup_response.to_string(), 
+            "ResourceRecord { name: DomainName { name: \"example.com\" }, rtype: A, rclass: IN, ttl: 0, rdlength: 0, rdata: A(ARdata { address: 127.0.0.1 }) }".to_string()
+        );
     }
 
     #[test]

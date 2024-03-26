@@ -997,6 +997,37 @@ mod resolver_query_tests {
     }
 
     #[test]
+    fn from_bytes_nsec3_rdata(){
+        let first_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116, 22, 110, 101, 120, 116, 95, 104,
+                                                97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+        
+        let extra_bytes = vec![0, 50, 0, 1];
+
+        let data_bytes = [&first_bytes[..], &bit_map_bytes_to_test[..], &extra_bytes[..]].concat();
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::NSEC3(val) => {
+                assert_eq!(val.get_hash_algorithm(), 1);
+                assert_eq!(val.get_flags(), 2);
+                assert_eq!(val.get_iterations(), 3);
+                assert_eq!(val.get_salt_length(), 4);
+                assert_eq!(val.get_salt(), "salt");
+                assert_eq!(val.get_hash_length(), 22);
+                assert_eq!(val.get_next_hashed_owner_name(), "next_hashed_owner_name");
+                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            }
+            _ => {}
+        } 
+    }
+
+    #[test]
     #[should_panic]
     fn from_bytes_format_error(){
         let data_bytes = [];

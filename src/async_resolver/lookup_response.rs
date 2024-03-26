@@ -197,11 +197,48 @@ mod lookup_response_tests {
         assert_eq!(dns_from_lookup.get_answer()[0].get_name().get_name(), "dcc.cl");
     }
 
+    #[test]
+    fn to_vec_of_rr() {
+        let mut header = Header::new();
 
+        header.set_id(0b0010010010010101);
+        header.set_qr(true);
+        header.set_op_code(2);
+        header.set_tc(true);
+        header.set_rcode(8);
+        header.set_ancount(0b0000000000000001);
+        header.set_qdcount(1);
 
+        let mut question = Question::new();
 
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
 
+        question.set_qname(domain_name);
+        question.set_qtype(Qtype::CNAME);
+        question.set_qclass(Qclass::CS);
 
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
+        let mut resource_record = ResourceRecord::new(txt_rdata);
 
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("dcc.cl"));
 
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_rclass(Rclass::IN);
+        resource_record.set_ttl(5642);
+        resource_record.set_rdlength(6);
+
+        let answer = vec![resource_record];
+
+        let mut dns_msg = DnsMessage::new();
+        dns_msg.set_header(header);
+        dns_msg.set_question(question);
+        dns_msg.set_answer(answer);
+      
+        let lookup_response = LookupResponse::new(dns_msg);
+        let vec_of_rr = lookup_response.to_vec_of_rr();
+        assert_eq!(vec_of_rr[0].get_name().get_name(), "dcc.cl");
+    }
 }

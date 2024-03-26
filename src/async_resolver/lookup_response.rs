@@ -58,7 +58,7 @@ impl LookupResponse {
 
 #[cfg(test)]
 mod lookup_response_tests {
-    use crate::{domain_name::DomainName,  message::{class_qclass::Qclass, rdata::{a_rdata::ARdata, Rdata}, resource_record::ResourceRecord, type_qtype::Qtype, DnsMessage}};
+    use crate::{domain_name::DomainName,  message::{class_qclass::Qclass, class_rclass::Rclass, header::Header, question::Question, rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, resource_record::ResourceRecord, type_qtype::Qtype, type_rtype::Rtype, DnsMessage}};
     use super::LookupResponse;
 
     // use tokio::runtime::Runtime;
@@ -87,10 +87,60 @@ mod lookup_response_tests {
         dns_query_message.set_answer(answer);
         let lookup_response = LookupResponse::new(dns_query_message);
         assert_eq!(lookup_response.to_string(), "RR: - type:1 - class:1");
-        
-        
+           
     }
-    
+
+    #[test]
+    fn to_bytes() {
+        let mut header = Header::new();
+
+        header.set_id(0b0010010010010101);
+        header.set_qr(true);
+        header.set_op_code(2);
+        header.set_tc(true);
+        header.set_rcode(8);
+        header.set_ancount(0b0000000000000001);
+        header.set_qdcount(1);
+
+        let mut question = Question::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        question.set_qname(domain_name);
+        question.set_qtype(Qtype::CNAME);
+        question.set_qclass(Qclass::CS);
+
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
+        let mut resource_record = ResourceRecord::new(txt_rdata);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("dcc.cl"));
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_rclass(Rclass::IN);
+        resource_record.set_ttl(5642);
+        resource_record.set_rdlength(6);
+
+        let answer = vec![resource_record];
+
+        let mut dns_msg = DnsMessage::new();
+        dns_msg.set_header(header);
+        dns_msg.set_question(question);
+        dns_msg.set_answer(answer);
+      
+
+        let real_bytes: [u8; 50] = [
+            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 1, 0b00000000, 0b00000001, 0, 0, 0,
+            0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
+            0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
+        ];
+
+        assert_eq!(dns_msg.to_bytes(), real_bytes.to_vec());
+
+    }
+
 
 
 

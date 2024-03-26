@@ -191,7 +191,7 @@ impl NsecRdata{
 
 impl NsecRdata{
     /// Complementary functions for to_bytes
-    fn add_rtype_to_bitmap(rtype: &Rtype, bitmap: &mut Vec<u8>) {
+    pub fn add_rtype_to_bitmap(rtype: &Rtype, bitmap: &mut Vec<u8>) {
         // Calculate the offset and bit for the specific Qtype
         let rr_type = Rtype::from_rtype_to_int(*rtype);
         let offset = (rr_type % 256) / 8;

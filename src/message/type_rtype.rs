@@ -19,6 +19,7 @@ pub enum Rtype {
     NSEC,   
     DNSKEY,
     NSEC3,
+    NSEC3PARAM,
     TSIG,
     UNKNOWN(u16),
 }
@@ -46,6 +47,7 @@ impl Rtype{
             Rtype::NSEC => 47,
             Rtype::DNSKEY => 48,
             Rtype::NSEC3 => 50,
+            Rtype::NSEC3PARAM => 51,
             Rtype::TSIG => 250,
             Rtype::UNKNOWN(val) => val
         }
@@ -71,6 +73,7 @@ impl Rtype{
             Rtype::NSEC => String::from("NSEC"),
             Rtype::DNSKEY => String::from("DNSKEY"),
             Rtype::NSEC3 => String::from("NSEC3"),
+            Rtype::NSEC3PARAM => String::from("NSEC3PARAM"),
             Rtype::TSIG => String::from("TSIG"),
             Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
@@ -97,6 +100,7 @@ impl Rtype{
             47 => Rtype::NSEC,
             48 => Rtype::DNSKEY,
             50 => Rtype::NSEC3,
+            51 => Rtype::NSEC3PARAM,
             250 => Rtype::TSIG,
             _ => Rtype::UNKNOWN(val),
         }
@@ -123,6 +127,7 @@ impl Rtype{
             "NSEC" => Rtype::NSEC,
             "DNSKEY" => Rtype::DNSKEY,
             "NSEC3" => Rtype::NSEC3,
+            "NSEC3PARAM" => Rtype::NSEC3PARAM,
             "TSIG" => Rtype::TSIG,
             _ => Rtype::UNKNOWN(99),
         }

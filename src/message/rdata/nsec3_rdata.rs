@@ -288,4 +288,26 @@ mod nsec3_rdata_tests {
         assert_eq!(nsec3_rdata.get_next_hashed_owner_name(), "next_hashed_owner_name".to_string());
         assert_eq!(nsec3_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::AAAA]);
     }
+
+    #[test]
+    fn setters(){
+        let mut nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::AAAA]);
+        nsec3_rdata.set_hash_algorithm(10);
+        nsec3_rdata.set_flags(20);
+        nsec3_rdata.set_iterations(30);
+        nsec3_rdata.set_salt_length(40);
+        nsec3_rdata.set_salt("new_salt".to_string());
+        nsec3_rdata.set_hash_length(50);
+        nsec3_rdata.set_next_hashed_owner_name("new_next_hashed_owner_name".to_string());
+        nsec3_rdata.set_type_bit_maps(vec![Rtype::CNAME, Rtype::MX]);
+
+        assert_eq!(nsec3_rdata.hash_algorithm, 10);
+        assert_eq!(nsec3_rdata.flags, 20);
+        assert_eq!(nsec3_rdata.iterations, 30);
+        assert_eq!(nsec3_rdata.salt_length, 40);
+        assert_eq!(nsec3_rdata.salt, "new_salt".to_string());
+        assert_eq!(nsec3_rdata.hash_length, 50);
+        assert_eq!(nsec3_rdata.next_hashed_owner_name, "new_next_hashed_owner_name".to_string());
+        assert_eq!(nsec3_rdata.type_bit_maps, vec![Rtype::CNAME, Rtype::MX]);
+    }
 }

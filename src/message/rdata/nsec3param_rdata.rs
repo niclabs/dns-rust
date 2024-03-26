@@ -20,7 +20,7 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// ```
 
-pub struct Nsec3Rdata {
+pub struct Nsec3ParamRdata {
     hash_algorithm: u8,
     flags: u8,
     iterations: u16,
@@ -28,7 +28,7 @@ pub struct Nsec3Rdata {
     salt: String,
 }
 
-impl ToBytes for Nsec3Rdata {
+impl ToBytes for Nsec3ParamRdata {
     /// Convert the NSEC3 Rdata to bytes
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
@@ -48,8 +48,8 @@ impl ToBytes for Nsec3Rdata {
     }
 }
 
-impl FromBytes<Result<Self, &'static str>> for Nsec3Rdata {
-    /// Create a new `Nsec3Rdata` from an array of bytes.
+impl FromBytes<Result<Self, &'static str>> for Nsec3ParamRdata {
+    /// Create a new `Nsec3ParamRdata` from an array of bytes.
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let hash_algorithm = bytes[0];
         let flags = bytes[1];
@@ -58,7 +58,7 @@ impl FromBytes<Result<Self, &'static str>> for Nsec3Rdata {
         let salt_length = bytes[4];
         let salt: String = String::from_utf8_lossy(&bytes[5..(5 + salt_length as usize)]).to_string();
 
-        let nsec3_rdata = Nsec3Rdata::new(
+        let nsec3_rdata = Nsec3ParamRdata::new(
             hash_algorithm,
             flags,
             iterations,
@@ -70,7 +70,7 @@ impl FromBytes<Result<Self, &'static str>> for Nsec3Rdata {
     }
 }
 
-impl Nsec3Rdata {
+impl Nsec3ParamRdata {
     /// Create a new NSEC3 Rdata
     pub fn new(
         hash_algorithm: u8,
@@ -78,8 +78,8 @@ impl Nsec3Rdata {
         iterations: u16,
         salt_length: u8,
         salt: String,
-    ) -> Nsec3Rdata {
-        Nsec3Rdata {
+    ) -> Nsec3ParamRdata {
+        Nsec3ParamRdata {
             hash_algorithm,
             flags,
             iterations,
@@ -114,7 +114,7 @@ impl Nsec3Rdata {
     }
 }
 
-impl Nsec3Rdata {
+impl Nsec3ParamRdata {
     /// Setters for the NSEC3 Rdata
     
     /// Setter for the hash_algorithm
@@ -150,7 +150,7 @@ mod nsec3_rdata_tests {
 
     #[test]
     fn constructor(){
-        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string());
+        let nsec3_rdata = Nsec3ParamRdata::new(1, 2, 3, 4, "salt".to_string());
         assert_eq!(nsec3_rdata.hash_algorithm, 1);
         assert_eq!(nsec3_rdata.flags, 2);
         assert_eq!(nsec3_rdata.iterations, 3);
@@ -160,7 +160,7 @@ mod nsec3_rdata_tests {
 
     #[test]
     fn getters(){
-        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string());
+        let nsec3_rdata = Nsec3ParamRdata::new(1, 2, 3, 4, "salt".to_string());
         assert_eq!(nsec3_rdata.get_hash_algorithm(), 1);
         assert_eq!(nsec3_rdata.get_flags(), 2);
         assert_eq!(nsec3_rdata.get_iterations(), 3);
@@ -170,7 +170,7 @@ mod nsec3_rdata_tests {
 
     #[test]
     fn setters(){
-        let mut nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string());
+        let mut nsec3_rdata = Nsec3ParamRdata::new(1, 2, 3, 4, "salt".to_string());
         nsec3_rdata.set_hash_algorithm(10);
         nsec3_rdata.set_flags(20);
         nsec3_rdata.set_iterations(30);
@@ -186,7 +186,7 @@ mod nsec3_rdata_tests {
 
     #[test]
     fn to_bytes(){
-        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
+        let nsec3_rdata = Nsec3ParamRdata::new(1, 2, 3, 
             4, "salt".to_string());
         
         let bytes = nsec3_rdata.to_bytes();
@@ -200,10 +200,10 @@ mod nsec3_rdata_tests {
     fn from_bytes(){
         let bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116];
 
-        let expected_nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
+        let expected_nsec3_rdata = Nsec3ParamRdata::new(1, 2, 3, 
             4, "salt".to_string());
         
-        let nsec3_rdata = Nsec3Rdata::from_bytes(&bytes, &bytes).unwrap();
+        let nsec3_rdata = Nsec3ParamRdata::from_bytes(&bytes, &bytes).unwrap();
 
         assert_eq!(nsec3_rdata.hash_algorithm, expected_nsec3_rdata.hash_algorithm);
     }

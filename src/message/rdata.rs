@@ -368,6 +368,7 @@ mod resolver_query_tests {
     use super::nsec_rdata::NsecRdata;
     use super::dnskey_rdata::DnskeyRdata;
     use super::nsec3_rdata::Nsec3Rdata;
+    use super::nsec3param_rdata::Nsec3ParamRdata;
     use super::tsig_rdata::TSigRdata;
     use super::aaaa_rdata::AAAARdata;
     use std::net::IpAddr;
@@ -715,6 +716,19 @@ mod resolver_query_tests {
         assert_eq!(bytes, expected_bytes);
     }
 
+    #[test]
+    fn to_bytes_nsec3param_rdata(){
+        let nsec3param_rdata = Nsec3ParamRdata::new(1, 2, 3, 
+            4, "salt".to_string());
+
+        let rdata = Rdata::NSEC3PARAM(nsec3param_rdata);
+        let bytes = rdata.to_bytes();
+
+        let expected_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116];
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
     //from bytes tests
     #[test]
     fn from_bytes_a_ch_rdata(){
@@ -1038,6 +1052,28 @@ mod resolver_query_tests {
                 assert_eq!(val.get_hash_length(), 22);
                 assert_eq!(val.get_next_hashed_owner_name(), "next_hashed_owner_name");
                 assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            }
+            _ => {}
+        } 
+    }
+
+    #[test]
+    fn from_bytes_nsec3param_rdata(){
+        let first_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116];
+        
+        let extra_bytes = vec![0, 51, 0, 1];
+
+        let data_bytes = [&first_bytes[..], &extra_bytes[..]].concat();
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::NSEC3(val) => {
+                assert_eq!(val.get_hash_algorithm(), 1);
+                assert_eq!(val.get_flags(), 2);
+                assert_eq!(val.get_iterations(), 3);
+                assert_eq!(val.get_salt_length(), 4);
+                assert_eq!(val.get_salt(), "salt");
             }
             _ => {}
         } 

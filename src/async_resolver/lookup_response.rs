@@ -141,6 +141,60 @@ mod lookup_response_tests {
 
     }
 
+    #[test]
+    fn to_dns_msg() {
+        let mut header = Header::new();
+
+        header.set_id(0b0010010010010101);
+        header.set_qr(true);
+        header.set_op_code(2);
+        header.set_tc(true);
+        header.set_rcode(8);
+        header.set_ancount(0b0000000000000001);
+        header.set_qdcount(1);
+
+        let mut question = Question::new();
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("test.com"));
+
+        question.set_qname(domain_name);
+        question.set_qtype(Qtype::CNAME);
+        question.set_qclass(Qclass::CS);
+
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
+        let mut resource_record = ResourceRecord::new(txt_rdata);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(String::from("dcc.cl"));
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_rclass(Rclass::IN);
+        resource_record.set_ttl(5642);
+        resource_record.set_rdlength(6);
+
+        let answer = vec![resource_record];
+
+        let mut dns_msg = DnsMessage::new();
+        dns_msg.set_header(header);
+        dns_msg.set_question(question);
+        dns_msg.set_answer(answer);
+      
+
+        let lookup_response = LookupResponse::new(dns_msg);
+        let dns_from_lookup = lookup_response.to_dns_msg();
+        assert_eq!(dns_from_lookup.get_header().get_id(), 0b0010010010010101);
+        assert_eq!(dns_from_lookup.get_header().get_qr(), true);
+        assert_eq!(dns_from_lookup.get_header().get_op_code(), 2);
+        assert_eq!(dns_from_lookup.get_header().get_tc(), true);
+        assert_eq!(dns_from_lookup.get_header().get_rcode(), 8);
+        assert_eq!(dns_from_lookup.get_header().get_ancount(), 0b0000000000000001);
+        assert_eq!(dns_from_lookup.get_header().get_qdcount(), 1);
+        assert_eq!(dns_from_lookup.get_question().get_qname().get_name(), "test.com");
+        assert_eq!(dns_from_lookup.get_question().get_qtype(), Qtype::CNAME);
+    }
+
 
 
 

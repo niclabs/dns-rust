@@ -2,6 +2,8 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::message::type_rtype::Rtype;
 use crate::message::rdata::NsecRdata;
 
+use std::fmt;
+
 #[derive(Clone, PartialEq, Debug)]
 /// Struct for the NSEC3 Rdata
 /// [RFC 5155](https://tools.ietf.org/html/rfc5155#section-3.2)
@@ -258,6 +260,20 @@ impl Nsec3Rdata {
     }
 }
 
+impl fmt::Display for Nsec3Rdata {
+    /// Display the NSEC3 Rdata
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {} {} {} {} {} {:?}", 
+        self.get_hash_algorithm(), 
+        self.get_flags(), 
+        self.get_iterations(), 
+        self.get_salt_length(), 
+        self.get_salt(), 
+        self.get_hash_length(), 
+        self.get_next_hashed_owner_name(), 
+        self.get_type_bit_maps())
+    }
+}
 
 #[cfg(test)]
 mod nsec3_rdata_tests {

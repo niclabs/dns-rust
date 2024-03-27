@@ -17,6 +17,7 @@ pub mod nsec3_rdata;
 pub mod nsec3param_rdata;
 pub mod tsig_rdata;
 
+use core::fmt;
 use crate::message::resource_record::{FromBytes, ToBytes};
 use a_ch_rdata::AChRdata;
 use a_rdata::ARdata;
@@ -38,7 +39,6 @@ use nsec3param_rdata::Nsec3ParamRdata;
 use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]
-
 /// Enumerates the differents types of `Rdata` struct.
 pub enum Rdata {
     A(ARdata),
@@ -50,7 +50,6 @@ pub enum Rdata {
     TXT(TxtRdata),
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
-    ////// Define here more rdata types //////
     AAAA(AAAARdata),
     OPT(OptRdata),
     DS(DsRdata),
@@ -217,7 +216,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::TXT(rdata.unwrap()))
             }
-
             28 => {
                 let rdata = AAAARdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -230,7 +228,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::AAAA(rdata.unwrap()))
             }
-
             39 => {
                 let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -243,7 +240,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::CNAME(rdata.unwrap()))
             }
-
             41 => {
                 println!("OPT");
                 let rdata = OptRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -256,7 +252,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::OPT(rdata.unwrap()))
             }
-
             43 => {
                 let rdata = DsRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -268,7 +263,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::DS(rdata.unwrap()))
             }
-
             46 => {
                 let rdata = RRSIGRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -280,7 +274,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::RRSIG(rdata.unwrap()))
             }
-
             47 => {
                 let rdata = NsecRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -292,7 +285,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::NSEC(rdata.unwrap()))
             }
-
             48 => {
                 let rdata = DnskeyRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -304,7 +296,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::DNSKEY(rdata.unwrap()))
             }
-
             50 => {
                 let rdata = Nsec3Rdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -316,7 +307,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::NSEC3(rdata.unwrap()))
             }
-
             51 => {
                 let rdata = Nsec3ParamRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -328,7 +318,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::NSEC3PARAM(rdata.unwrap()))
             }
-            
             250 => {
                 let rdata = TSigRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -347,6 +336,34 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
         especific_rdata
     }
 }
+
+impl fmt::Display for Rdata {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: change after implementing the Display trait for each Rdata type
+        write!(f, "{:?}", self)
+        // match self {
+        //     Rdata::A(val) => write!(f, "{}", val),
+        //     Rdata::ACH(val) => write!(f, "{}", val),
+        //     Rdata::MX(val) => write!(f, "{}", val),
+        //     Rdata::NS(val) => write!(f, "{}", val),
+        //     Rdata::PTR(val) => write!(f, "{}", val),
+        //     Rdata::SOA(val) => write!(f, "{}", val),
+        //     Rdata::TXT(val) => write!(f, "{}", val),
+        //     Rdata::AAAA(val) => write!(f, "{}", val),
+        //     Rdata::CNAME(val) => write!(f, "{}", val),
+        //     Rdata::HINFO(val) => write!(f, "{}", val),
+        //     Rdata::OPT(val) => write!(f, "{}", val),
+        //     Rdata::DS(val) => write!(f, "{}", val),
+        //     Rdata::RRSIG(val) => write!(f, "{}", val),
+        //     Rdata::NSEC(val) => write!(f, "{}", val),
+        //     Rdata::DNSKEY(val) => write!(f, "{}", val),
+        //     Rdata::NSEC3(val) => write!(f, "{}", val),
+        //     Rdata::NSEC3PARAM(val) => write!(f, "{}", val),
+        //     Rdata::TSIG(val) => write!(f, "{}", val),
+        // }
+    }
+}
+
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;

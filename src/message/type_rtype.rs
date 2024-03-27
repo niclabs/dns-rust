@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, PartialEq, Debug, Hash, PartialOrd, Ord, Eq, Copy)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
@@ -25,7 +27,7 @@ pub enum Rtype {
 }
 
 /// Functions for the RType Enum
-impl Rtype{
+impl Rtype {
     /// Function to get the int equivalent of a type
     pub fn from_rtype_to_int(rtype: Rtype) -> u16{
         match rtype {
@@ -52,6 +54,8 @@ impl Rtype{
             Rtype::UNKNOWN(val) => val
         }
     }
+
+    // FIXME: This function is not used anywhere in the code, it should be GONE
     /// Function to get the String equivalent of a type
     pub fn from_rtype_to_str(rtype: Rtype) -> String {
         match rtype {
@@ -136,4 +140,32 @@ impl Rtype{
 
 impl Default for Rtype {
     fn default() -> Self { Rtype::A }
+}
+
+impl fmt::Display for Rtype {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Rtype::A => "A",
+            Rtype::NS => "NS",
+            Rtype::CNAME => "CNAME",
+            Rtype::SOA => "SOA",
+            Rtype::PTR => "PTR",
+            Rtype::HINFO => "HINFO",
+            Rtype::MINFO => "MINFO",
+            Rtype::WKS => "WKS",
+            Rtype::MX => "MX",
+            Rtype::TXT => "TXT",
+            Rtype::AAAA => "AAAA",
+            Rtype::DNAME => "DNAME",
+            Rtype::OPT => "OPT",
+            Rtype::DS => "DS",
+            Rtype::RRSIG => "RRSIG",
+            Rtype::NSEC => "NSEC",
+            Rtype::DNSKEY => "DNSKEY",
+            Rtype::NSEC3 => "NSEC3",
+            Rtype::NSEC3PARAM => "NSEC3PARAM",
+            Rtype::TSIG => "TSIG",
+            Rtype::UNKNOWN(val) => "UNKNOWN",
+        })
+    }
 }

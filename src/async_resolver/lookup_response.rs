@@ -49,7 +49,7 @@ impl fmt::Display for LookupResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::new();
         for address in &self.dns_msg_response.get_answer() {
-            result.push_str(&format!("{:?}", address));
+            result.push_str(&format!("{}", address));
         }
         write!(f, "{}", result)
     }
@@ -103,9 +103,10 @@ mod lookup_response_tests {
 
         let lookup_response = LookupResponse::new(dns_query_message);
 
+        println!("{}", lookup_response.to_string());
         assert_eq!(
             lookup_response.to_string(), 
-            "ResourceRecord { name: DomainName { name: \"example.com\" }, rtype: A, rclass: IN, ttl: 0, rdlength: 0, rdata: A(ARdata { address: 127.0.0.1 }) }".to_string()
+            "example.com  IN  A  0  127.0.0.1".to_string()
         );
     }
 

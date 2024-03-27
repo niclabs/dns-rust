@@ -4,6 +4,7 @@ use crate::message::Rtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.9
@@ -209,6 +210,22 @@ impl MxRdata {
     /// Sets the `exchange` attibute with a given value.
     pub fn set_exchange(&mut self, exchange: DomainName) {
         self.exchange = exchange;
+    }
+}
+
+impl fmt::Display for MxRdata {
+    /// Formats the `MxRdata` as a string.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use dns_message_parser::message::rdata::mx_rdata::MxRdata;
+    /// 
+    /// let mx_rdata = MxRdata::new();
+    /// assert_eq!(mx_rdata.to_string(), "0 test.com");
+    /// ```
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.get_preference(), self.get_exchange())
     }
 }
 

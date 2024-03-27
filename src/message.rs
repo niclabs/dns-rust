@@ -18,6 +18,7 @@ use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use rand::thread_rng;
 use rand::Rng;
+use core::fmt;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -892,6 +893,13 @@ impl DnsMessage {
 
 }
 
+impl fmt::Display for DnsMessage {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Answer: {:?}\nAuthority: {:?}\nAdditional: {:?}",
+               self.answer, self.authority, self.additional)
+    }
+}
+
 // Getters
 impl DnsMessage {
     /// Gets the header field.
@@ -1356,7 +1364,9 @@ mod message_test {
         dns_query_message.set_additional(new_additional);
 
         dns_query_message.update_header_counters();
+        println!("The message is: ");
         dns_query_message.print_dns_message();
+        println!("end message");
 
         assert_eq!(dns_query_message.get_header().get_ancount(), 3);
         assert_eq!(dns_query_message.get_header().get_nscount(), 2);

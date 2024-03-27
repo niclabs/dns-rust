@@ -2,10 +2,10 @@ use crate::message::rdata::Rdata;
 use crate::message::Rclass;
 use crate::message::Rtype;
 use crate::utils;
-
 use crate::domain_name::DomainName;
 use std::fmt;
 use std::vec::Vec;
+use super::rdata;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.2.1
@@ -564,14 +564,15 @@ impl ResourceRecord {
 
 impl fmt::Display for ResourceRecord {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        // We need to remove "-" from the number output.
         let name = self.get_name();
-        let type_code = self.get_rtype();
-        let class = self.get_rclass();
-
+        let rtype = self.get_rtype();
+        let rclass = self.get_rclass();
+        let ttl = self.get_ttl();
+        let rdata = self.get_rdata();
+                                                                                                  
         formatter.write_fmt(format_args!(
-            "RR:{} - type:{} - class:{}",
-            name, Rtype::from_rtype_to_int(type_code), Rclass::from_rclass_to_int(class)
+            "{}  {}  {}  {}  {}",
+            name, rclass, rtype, ttl, rdata
         ))
     }
 }

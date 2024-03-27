@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, PartialEq, Debug)]
 /// Enum for the Class of a RR in a DnsMessage
 pub enum Rclass {
@@ -21,6 +23,7 @@ impl Rclass {
         }
     }
 
+    // FIXME: This function is not used anywhere in the code, it should be GONE
     ///Function to get an string representing the class
     pub fn from_rclass_to_str(class: Rclass) -> String{
         match class {
@@ -57,4 +60,16 @@ impl Rclass {
 
 impl Default for Rclass {
     fn default() -> Self { Rclass::IN }
+}
+
+impl fmt::Display for Rclass {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Rclass::IN => "IN",
+            Rclass::CS => "CS",
+            Rclass::CH => "CH",
+            Rclass::HS => "HS",
+            Rclass::UNKNOWN(_) => "UNKNOWN",
+        })
+    }
 }

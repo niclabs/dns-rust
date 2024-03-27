@@ -58,8 +58,20 @@ impl fmt::Display for LookupResponse {
 #[cfg(test)]
 mod lookup_response_tests {
     use std::net::IpAddr;
-
-    use crate::{domain_name::DomainName,  message::{class_qclass::Qclass, class_rclass::Rclass, header::Header, question::Question, rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, resource_record::ResourceRecord, type_qtype::Qtype, type_rtype::Rtype, DnsMessage}};
+    use crate::{
+        domain_name::DomainName,  
+        message::{
+            class_qclass::Qclass, 
+            class_rclass::Rclass, 
+            header::Header, 
+            question::Question, 
+            rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, 
+            resource_record::ResourceRecord, 
+            type_qtype::Qtype, 
+            type_rtype::Rtype, 
+            DnsMessage
+        }
+    };
     use super::LookupResponse;
 
     #[test]

@@ -2,7 +2,6 @@ use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
 use crate::message::Rtype;
-use std::fmt::Formatter;
 use std::net::IpAddr;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 

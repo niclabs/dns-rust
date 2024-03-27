@@ -124,6 +124,12 @@ impl CnameRdata {
     }
 }
 
+impl std::fmt::Display for CnameRdata {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.cname)
+    }
+}
+
 #[cfg(test)]
 mod cname_rdata_test {
     use crate::domain_name::DomainName;

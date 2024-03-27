@@ -4,6 +4,7 @@ use crate::message::Rclass;
 use crate::message::Rtype;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.1
@@ -124,8 +125,8 @@ impl CnameRdata {
     }
 }
 
-impl std::fmt::Display for CnameRdata {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for CnameRdata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.cname)
     }
 }

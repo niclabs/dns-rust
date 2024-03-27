@@ -1,11 +1,10 @@
 use std::{net::IpAddr, str::FromStr};
-
-use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver, resolver_error::ResolverError}, message::{resource_record::ResourceRecord, rdata::Rdata}, domain_name::DomainName};
+use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rdata::Rdata, resource_record::ResourceRecord}};
 
 
 
 // TODO: Change params type to intoDomainName
-async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Result<Vec<ResourceRecord>, ResolverError>{
+async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Result<Vec<ResourceRecord>, ClientError> {
 
     let config = ResolverConfig::default();
     let mut resolver = AsyncResolver::new(config);
@@ -16,7 +15,7 @@ async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Resul
         qtype,
         "IN").await;
 
-    response
+    response.map(|lookup_response| lookup_response.to_vec_of_rr())
 }
 
 /// 6.2.1 Query test Qtype = A

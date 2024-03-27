@@ -1,5 +1,7 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 
+use std::fmt;
+
 #[derive(Clone, Debug, PartialEq)]
 /// Struct for DNSKEY Rdata
 ///                       1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3
@@ -189,6 +191,13 @@ impl DnskeyRdata {
     /// ```
     pub fn set_public_key(&mut self, public_key: Vec<u8>) {
         self.public_key = public_key;
+    }
+}
+
+impl fmt::Display for DnskeyRdata {
+    /// Formats the Rdata as a string.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {}", self.flags, self.protocol, self.algorithm)
     }
 }
 

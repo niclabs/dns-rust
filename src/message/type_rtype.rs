@@ -165,7 +165,7 @@ impl fmt::Display for Rtype {
             Rtype::NSEC3 => "NSEC3",
             Rtype::NSEC3PARAM => "NSEC3PARAM",
             Rtype::TSIG => "TSIG",
-            Rtype::UNKNOWN(val) => "UNKNOWN",
+            Rtype::UNKNOWN(_) => "UNKNOWN",
         })
     }
 }

@@ -1,4 +1,6 @@
 use super::type_rtype::Rtype;
+use std::fmt;
+
 
 #[derive(Clone, PartialEq, Debug,Copy)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
@@ -184,4 +186,36 @@ impl Qtype{
 
 impl Default for Qtype {
     fn default() -> Self { Qtype::A }
+}
+
+impl fmt::Display for Qtype {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Qtype::A => "A",
+            Qtype::NS => "NS",
+            Qtype::CNAME => "CNAME",
+            Qtype::SOA => "SOA",
+            Qtype::PTR => "PTR",
+            Qtype::HINFO => "HINFO",
+            Qtype::MINFO => "MINFO",
+            Qtype::WKS => "WKS",
+            Qtype::MX => "MX",
+            Qtype::TXT => "TXT",
+            Qtype::AAAA => "AAAA",
+            Qtype::DNAME => "DNAME",
+            Qtype::OPT => "OPT",
+            Qtype::DS => "DS",
+            Qtype::RRSIG => "RRSIG",
+            Qtype::NSEC => "NSEC",
+            Qtype::DNSKEY => "DNSKEY",
+            Qtype::NSEC3 => "NSEC3",
+            Qtype::NSEC3PARAM => "NSEC3PARAM",
+            Qtype::TSIG => "TSIG",
+            Qtype::AXFR => "AXFR",
+            Qtype::MAILB => "MAILB",
+            Qtype::MAILA => "MAILA",
+            Qtype::ANY => "ANY",
+            Qtype::UNKNOWN(_) => "UNKNOWN",
+        })
+    }
 }

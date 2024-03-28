@@ -1,4 +1,5 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// Struct for the NSEC3 Rdata
@@ -139,6 +140,16 @@ impl Nsec3ParamRdata {
     }
 }
 
+impl fmt::Display for Nsec3ParamRdata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {} {} {} {}", 
+        self.get_hash_algorithm(), 
+        self.get_flags(), 
+        self.get_iterations(), 
+        self.get_salt_length(), 
+        self.get_salt())
+    }
+}
 
 #[cfg(test)]
 mod nsec3_rdata_tests {

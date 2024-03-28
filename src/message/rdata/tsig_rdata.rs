@@ -4,6 +4,7 @@ use crate::message::Rtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// Struct for the TSIG RData
@@ -400,6 +401,32 @@ impl TSigRdata{
     /// Sets the other_data attibute with a value
     pub fn set_other_data(&mut self, other_data: Vec<u8>) {
         self.other_data = other_data;
+    }
+}
+
+impl fmt::Display for TSigRdata {
+    /// Formats the record data for display
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut mac_str = String::new();
+        for byte in self.get_mac().iter() {
+            mac_str.push_str(&format!("{:X} ", byte));
+        }
+
+        let mut other_data_str = String::new();
+        for byte in self.get_other_data().iter() {
+            other_data_str.push_str(&format!("{:X} ", byte));
+        }
+
+        write!(f, "{} {} {} {} {} {} {} {} {}", 
+        self.get_algorithm_name().get_name(),
+        self.get_time_signed(),
+        self.get_fudge(),
+        self.get_mac_size(),
+        mac_str,
+        self.get_original_id(),
+        self.get_error(),
+        self.get_other_len(),
+        other_data_str)
     }
 }
 

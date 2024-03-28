@@ -1,4 +1,5 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
+use std::fmt;
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -104,6 +105,15 @@ impl OptRdata {
     }
 }
 
+
+impl fmt::Display for OptRdata {
+    /// Formats the record data for display
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {:?}", self.get_option_code(), 
+        self.get_option_length(), 
+        self.get_option_data())
+    }
+}
 
 #[cfg(test)]
 mod opt_rdata_test{

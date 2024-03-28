@@ -339,27 +339,25 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
 impl fmt::Display for Rdata {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: change after implementing the Display trait for each Rdata type
         match self {
             Rdata::A(val) => write!(f, "{}", val),
             Rdata::ACH(val) => write!(f, "{}", val),
             Rdata::MX(val) => write!(f, "{}", val),
             Rdata::NS(val) => write!(f, "{}", val),
-            // Rdata::PTR(val) => write!(f, "{}", val),
-            // Rdata::SOA(val) => write!(f, "{}", val),
-            // Rdata::TXT(val) => write!(f, "{}", val),
-            // Rdata::AAAA(val) => write!(f, "{}", val),
-            // Rdata::CNAME(val) => write!(f, "{}", val),
-            // Rdata::HINFO(val) => write!(f, "{}", val),
-            // Rdata::OPT(val) => write!(f, "{}", val),
-            // Rdata::DS(val) => write!(f, "{}", val),
-            // Rdata::RRSIG(val) => write!(f, "{}", val),
-            // Rdata::NSEC(val) => write!(f, "{}", val),
-            // Rdata::DNSKEY(val) => write!(f, "{}", val),
-            // Rdata::NSEC3(val) => write!(f, "{}", val),
-            // Rdata::NSEC3PARAM(val) => write!(f, "{}", val),
-            // Rdata::TSIG(val) => write!(f, "{}", val),
-            _ => write!(f, "{:?}", self),
+            Rdata::PTR(val) => write!(f, "{}", val),
+            Rdata::SOA(val) => write!(f, "{}", val),
+            Rdata::TXT(val) => write!(f, "{}", val),
+            Rdata::AAAA(val) => write!(f, "{}", val),
+            Rdata::CNAME(val) => write!(f, "{}", val),
+            Rdata::HINFO(val) => write!(f, "{}", val),
+            Rdata::OPT(val) => write!(f, "{}", val),
+            Rdata::DS(val) => write!(f, "{}", val),
+            Rdata::RRSIG(val) => write!(f, "{}", val),
+            Rdata::NSEC(val) => write!(f, "{}", val),
+            Rdata::DNSKEY(val) => write!(f, "{}", val),
+            Rdata::NSEC3(val) => write!(f, "{}", val),
+            Rdata::NSEC3PARAM(val) => write!(f, "{}", val),
+            Rdata::TSIG(val) => write!(f, "{}", val),
         }
     }
 }

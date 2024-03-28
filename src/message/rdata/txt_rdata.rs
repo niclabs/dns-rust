@@ -5,6 +5,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
 use std::string::String;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.14
@@ -146,6 +147,17 @@ impl TxtRdata {
     /// Sets the text field with a value.
     pub fn set_text(&mut self, text: Vec<String>) {
         self.text = text;
+    }
+}
+
+impl fmt::Display for TxtRdata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut text = String::new();
+        for string in &self.text {
+            text.push_str(string);
+            text.push_str(" ");
+        }
+        write!(f, "{}", text)
     }
 }
 

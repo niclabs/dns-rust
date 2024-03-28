@@ -5,7 +5,6 @@ use crate::utils;
 use crate::domain_name::DomainName;
 use std::fmt;
 use std::vec::Vec;
-use super::rdata;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.2.1

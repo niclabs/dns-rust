@@ -462,7 +462,7 @@ impl ResourceRecord {
     }
 
     pub fn get_string_type(&self) -> String {
-        let qtype = Rtype::from_rtype_to_str(self.get_rtype());
+        let qtype = self.get_rtype().to_string();
         qtype
     }
 

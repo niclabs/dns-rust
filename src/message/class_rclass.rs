@@ -23,18 +23,6 @@ impl Rclass {
         }
     }
 
-    // FIXME: This function is not used anywhere in the code, it should be GONE
-    ///Function to get an string representing the class
-    pub fn from_rclass_to_str(class: Rclass) -> String{
-        match class {
-            Rclass::IN => String::from("IN"),
-            Rclass::CS => String::from("CS"),
-            Rclass::CH => String::from("CH"),
-            Rclass::HS => String::from("HS"),
-            Rclass::UNKNOWN(_val) => String::from("UNKNOWN CLASS")
-        }
-    }
-
     ///Function to get the Rclass from a value
     pub fn from_int_to_rclass(val:u16) -> Rclass{
         match val {

@@ -55,34 +55,6 @@ impl Rtype {
         }
     }
 
-    // FIXME: This function is not used anywhere in the code, it should be GONE
-    /// Function to get the String equivalent of a type
-    pub fn from_rtype_to_str(rtype: Rtype) -> String {
-        match rtype {
-            Rtype::A => String::from("A"),
-            Rtype::NS => String::from("NS"),
-            Rtype::CNAME => String::from("CNAME"),
-            Rtype::SOA => String::from("SOA"),
-            Rtype::WKS => String::from("WKS"),
-            Rtype::PTR => String::from("PTR"),
-            Rtype::HINFO => String::from("HINFO"),
-            Rtype::MINFO => String::from("MINFO"),
-            Rtype::MX => String::from("MX"),
-            Rtype::TXT => String::from("TXT"),
-            Rtype::AAAA => String::from("AAAA"),
-            Rtype::DNAME => String::from("DNAME"),
-            Rtype::OPT => String::from("OPT"),
-            Rtype::DS => String::from("DS"),
-            Rtype::RRSIG => String::from("RRSIG"),
-            Rtype::NSEC => String::from("NSEC"),
-            Rtype::DNSKEY => String::from("DNSKEY"),
-            Rtype::NSEC3 => String::from("NSEC3"),
-            Rtype::NSEC3PARAM => String::from("NSEC3PARAM"),
-            Rtype::TSIG => String::from("TSIG"),
-            Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
-        }
-    }
-
     /// Function to get the int equivalent of a type
     pub fn from_int_to_rtype(val: u16) -> Rtype{
         match val {

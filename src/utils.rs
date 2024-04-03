@@ -44,7 +44,7 @@ pub fn domain_validity_syntax(domain_name: DomainName) -> Result<DomainName, &'s
 
 /// Given the value of the STYPE, obtains its corresponding string.
 pub fn get_string_stype(stype: Rtype) -> String {
-    let s_type = Rtype::from_rtype_to_str(stype);
+    let s_type = stype.to_string();
     s_type
 }
 

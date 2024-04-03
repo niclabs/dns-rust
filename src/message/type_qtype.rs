@@ -64,36 +64,6 @@ impl Qtype{
             Qtype::UNKNOWN(val) => val
         }
     }
-    /// Function to get the String equivalent of a type
-    pub fn from_qtype_to_str(qtype: Qtype) -> String {
-        match qtype {
-            Qtype::A => String::from("A"),
-            Qtype::NS => String::from("NS"),
-            Qtype::CNAME => String::from("CNAME"),
-            Qtype::SOA => String::from("SOA"),
-            Qtype::WKS => String::from("WKS"),
-            Qtype::PTR => String::from("PTR"),
-            Qtype::HINFO => String::from("HINFO"),
-            Qtype::MINFO => String::from("MINFO"),
-            Qtype::MX => String::from("MX"),
-            Qtype::TXT => String::from("TXT"),
-            Qtype::AAAA => String::from("AAAA"),
-            Qtype::DNAME => String::from("DNAME"),
-            Qtype::OPT => String::from("OPT"),
-            Qtype::DS => String::from("DS"),
-            Qtype::RRSIG => String::from("RRSIG"),
-            Qtype::NSEC => String::from("NSEC"),
-            Qtype::DNSKEY => String::from("DNSKEY"),
-            Qtype::NSEC3 => String::from("NSEC3"),
-            Qtype::NSEC3PARAM => String::from("NSEC3PARAM"),
-            Qtype::TSIG => String::from("TSIG"),
-            Qtype::AXFR => String::from("AXFR"),
-            Qtype::MAILB => String::from("MAILB"),
-            Qtype::MAILA => String::from("MAILA"),
-            Qtype::ANY => String::from("ANY"),
-            Qtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
-        }
-    }
 
     /// Function to get the int equivalent of a type
     pub fn from_int_to_qtype(val: u16) -> Qtype{

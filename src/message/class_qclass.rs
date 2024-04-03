@@ -25,18 +25,6 @@ impl Qclass {
         }
     }
 
-    ///Function to get an string representing the class
-    pub fn from_qclass_to_str(class: Qclass) -> String{
-        match class {
-            Qclass::IN => String::from("IN"),
-            Qclass::CS => String::from("CS"),
-            Qclass::CH => String::from("CH"),
-            Qclass::HS => String::from("HS"),
-            Qclass::ANY => String::from("ANY"),
-            Qclass::UNKNOWN(_val) => String::from("UNKNOWN CLASS")
-        }
-    }
-
     ///Function to get the Qclass from a value
     pub fn from_int_to_qclass(val:u16) -> Qclass{
         match val {

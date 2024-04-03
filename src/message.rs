@@ -1449,7 +1449,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::A, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("A"));
     }
@@ -1460,7 +1460,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::NS, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("NS"));
     }
@@ -1471,7 +1471,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::CNAME, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("CNAME"));
     }
@@ -1482,7 +1482,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::SOA, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("SOA"));
     }
@@ -1493,7 +1493,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::WKS, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("WKS"));
     }
@@ -1504,7 +1504,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::PTR, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("PTR"));
     }
@@ -1515,7 +1515,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::HINFO, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("HINFO"));
     }
@@ -1526,7 +1526,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::MINFO, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("MINFO"));
     }
@@ -1537,7 +1537,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::MX, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("MX"));
     }
@@ -1548,7 +1548,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::TXT, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("TXT"));
     }

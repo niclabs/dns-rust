@@ -895,8 +895,17 @@ impl DnsMessage {
 
 impl fmt::Display for DnsMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Answer: {:?}\nAuthority: {:?}\nAdditional: {:?}",
-               self.answer, self.authority, self.additional)
+        let mut result = String::new();
+        let answers = self.get_answer().into_iter();
+        let authority = self.get_authority().into_iter();
+        let additional = self.get_additional().into_iter();
+        result.push_str(&format!("Answer\n"));
+        answers.for_each(|answer| result.push_str(&format!("{}\n", answer)));
+        result.push_str(&format!("Authority\n"));
+        authority.for_each(|authority| result.push_str(&format!("{}\n", authority)));
+        result.push_str(&format!("Additional\n"));
+        additional.for_each(|additional| result.push_str(&format!("{}\n", additional)));
+        write!(f, "{}", result)
     }
 }
 
@@ -1320,9 +1329,10 @@ mod message_test {
     //ToDo: Revisar Práctica 1
     #[test]
     fn update_header_counters_test() {
+        let name = DomainName::new_from_string("example.com".to_string());
         let mut dns_query_message =
             DnsMessage::new_query_message(
-                DomainName::new_from_string("example.com".to_string()),
+                name.clone(),
                 Qtype::A,
                 Qclass::IN,
                 0,
@@ -1335,7 +1345,8 @@ mod message_test {
 
         let mut new_answer = Vec::<ResourceRecord>::new();
         let a_rdata = Rdata::A(ARdata::new());
-        let rr = ResourceRecord::new(a_rdata);
+        let mut rr = ResourceRecord::new(a_rdata);
+        rr.set_name(name);
         new_answer.push(rr);
 
         let a_rdata1 = Rdata::A(ARdata::new());
@@ -1364,9 +1375,7 @@ mod message_test {
         dns_query_message.set_additional(new_additional);
 
         dns_query_message.update_header_counters();
-        println!("The message is: ");
         dns_query_message.print_dns_message();
-        println!("end message");
 
         assert_eq!(dns_query_message.get_header().get_ancount(), 3);
         assert_eq!(dns_query_message.get_header().get_nscount(), 2);

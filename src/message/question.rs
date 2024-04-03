@@ -196,7 +196,7 @@ mod question_test {
         let question = Question::new();
 
         assert_eq!(question.qname.get_name(), String::from(""));
-        assert_eq!(Qtype::from_qtype_to_str(question.qtype), String::from("A"));
+        assert_eq!(question.qtype.to_string(), String::from("A"));
         assert_eq!(question.qclass.to_string(), String::from("IN"));
     }
 
@@ -220,11 +220,11 @@ mod question_test {
         let mut question = Question::new();
 
         let mut qtype = question.get_qtype();
-        assert_eq!(Qtype::from_qtype_to_str(qtype), String::from("A"));
+        assert_eq!(qtype.to_string(), String::from("A"));
 
         question.set_qtype(Qtype::CNAME);
         qtype = question.get_qtype();
-        assert_eq!(Qtype::from_qtype_to_str(qtype), String::from("CNAME"));
+        assert_eq!(qtype.to_string(), String::from("CNAME"));
     }
 
     #[test]

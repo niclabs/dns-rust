@@ -20,6 +20,7 @@ use crate::message::type_rtype::Rtype;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
+use crate::message::rdata::opt_rdata::OptRdata;
 use self::lookup_response::LookupResponse;
 
 /// Asynchronous resolver for DNS queries.
@@ -238,6 +239,28 @@ impl AsyncResolver {
                     false,
                     query_id
                 );
+
+                // TODO: add OPT RR
+                let mut opt_rdata = OptRdata::new();
+                opt_rdata.set_option_code(0 as u16);
+                opt_rdata.set_option_length(0 as u16);
+                opt_rdata.set_option_data(vec![]);
+
+                let rdata = Rdata::OPT(opt_rdata);
+
+                let mut opt_rr = ResourceRecord::new(rdata);
+
+                let extended_rcode = 0;
+                let version = 0;
+                let flags = 0;
+
+                let new_opt_ttl = extended_rcode << 24 | version << 16 | flags;
+
+                opt_rr.set_ttl(new_opt_ttl);
+
+                let additionals: Vec<ResourceRecord> = vec![opt_rr];
+
+                new_query.add_additionals(additionals);
 
                 // Get RR from cache
                 for rr_cache_value in cache_lookup.iter() {

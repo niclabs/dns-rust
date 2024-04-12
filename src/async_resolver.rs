@@ -13,6 +13,7 @@ use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::class_qclass::Qclass;
+use crate::message::class_rclass::Rclass;
 use crate::message::resource_record::ResourceRecord;
 use crate::async_resolver::{config::ResolverConfig,lookup::LookupStrategy};
 use crate::message::rdata::Rdata;
@@ -257,6 +258,10 @@ impl AsyncResolver {
                 let new_opt_ttl = extended_rcode << 24 | version << 16 | flags;
 
                 opt_rr.set_ttl(new_opt_ttl);
+
+                let new_opt_rclass = Rclass::UNKNOWN(512);
+
+                opt_rr.set_rclass(new_opt_rclass);
 
                 let additionals: Vec<ResourceRecord> = vec![opt_rr];
 

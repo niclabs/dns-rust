@@ -241,7 +241,6 @@ impl AsyncResolver {
                     query_id
                 );
 
-                // TODO: add OPT RR
                 let mut opt_rdata = OptRdata::new();
                 opt_rdata.set_option_code(0 as u16);
                 opt_rdata.set_option_length(0 as u16);

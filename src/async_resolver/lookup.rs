@@ -15,6 +15,10 @@ use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
+use crate::message::rdata::Rdata;
+use crate::message::rdata::opt_rdata::OptRdata;
+use crate::message::resource_record::ResourceRecord;
+use crate::message::class_rclass::Rclass;
 use tokio::time::timeout;
 
 /// Struct that represents the execution of a lookup.
@@ -157,7 +161,7 @@ pub async fn execute_lookup_strategy(
     let query_id: u16 = rng.gen();
 
     // Create query
-    let new_query = DnsMessage::new_query_message(
+    let mut new_query = DnsMessage::new_query_message(
         name.clone(),
         record_type,
         record_class,
@@ -165,6 +169,32 @@ pub async fn execute_lookup_strategy(
         false,
         query_id
     );
+
+    let mut opt_rdata = OptRdata::new();
+    opt_rdata.set_option_code(0 as u16);
+    opt_rdata.set_option_length(0 as u16);
+    opt_rdata.set_option_data(vec![]);
+
+    let rdata = Rdata::OPT(opt_rdata);
+
+    let mut opt_rr = ResourceRecord::new(rdata);
+
+    let extended_rcode:u8 = 0;
+    let version: u8 = 0;
+    let extended_version: u16 = (extended_rcode as u16) << 8 | (version as u16);
+    let flags: u16 = 0;
+
+    let new_opt_ttl: u32 = (extended_version as u32) << 24 | (flags as u32);
+
+    opt_rr.set_ttl(new_opt_ttl);
+
+    let new_opt_rclass = Rclass::UNKNOWN(512);
+
+    opt_rr.set_rclass(new_opt_rclass);
+
+    let additionals: Vec<ResourceRecord> = vec![opt_rr];
+
+    new_query.add_additionals(additionals);
 
     // Create Server failure query 
     let mut response = new_query.clone(); // le quite el to_owned

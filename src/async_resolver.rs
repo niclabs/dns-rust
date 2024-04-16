@@ -251,11 +251,12 @@ impl AsyncResolver {
 
                 let mut opt_rr = ResourceRecord::new(rdata);
 
-                let extended_rcode = 0;
-                let version = 0;
-                let flags = 0;
+                let extended_rcode:u8 = 0;
+                let version: u8 = 0;
+                let extended_version: u16 = (extended_rcode as u16) << 8 | (version as u16);
+                let flags: u16 = 0;
 
-                let new_opt_ttl = extended_rcode << 24 | version << 16 | flags;
+                let new_opt_ttl: u32 = (extended_version as u32) << 24 | (flags as u32);
 
                 opt_rr.set_ttl(new_opt_ttl);
 

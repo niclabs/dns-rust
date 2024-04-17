@@ -1,5 +1,9 @@
 pub mod cache_by_record_type;
 
+extern crate lru;
+
+use lru::LruCache;
+use std::num::NonZeroUsize;
 
 use crate::dns_cache::cache_by_record_type::CacheByRecordType;
 use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;

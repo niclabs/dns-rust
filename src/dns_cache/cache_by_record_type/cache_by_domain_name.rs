@@ -3,6 +3,9 @@ use crate::{domain_name::DomainName, message::rdata::Rdata};
 use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
 use std::{collections::HashMap, net::IpAddr};
 
+use lru::LruCache;
+use std::num::NonZeroUsize;
+
 /// This struct saves the data associated with a host in the cache.
 /// 
 /// Given a single `DomainName`, it groups all data associated with it 

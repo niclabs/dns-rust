@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use crate::domain_name::DomainName;
 use self::rr_stored_data::RRStoredData;
 
+use lru::LruCache;
+use std::num::NonZeroUsize;
 
 /// Struct that represents the cache data of the DNS cache by record type.
 #[derive(Clone, Debug)]

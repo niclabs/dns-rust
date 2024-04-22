@@ -613,6 +613,7 @@ impl DnsMessage {
         let mut msg_additionals = self.get_additional();
 
         msg_additionals.append(&mut additionals);
+        self.header.set_arcount(self.header.get_arcount() + 1);
         self.set_additional(msg_additionals);
     }
 

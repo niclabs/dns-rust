@@ -156,7 +156,7 @@ impl FromBytes<Result<Self, &'static str>> for TSigRdata{
 
         tsig_rdata.set_mac(mac);
 
-        let bytes_without_mac = &bytes_without_algorithm_name[(12 + mac_size as usize)..];
+        let bytes_without_mac = &bytes_without_algorithm_name[(11 + mac_size as usize)..];
 
         tsig_rdata.set_original_id_from_bytes(&bytes_without_mac[0..2]);
 

@@ -107,18 +107,14 @@ impl AsyncResolver {
             Qclass::from_str_to_qclass(qclass)
         ).await;
 
-        let result_lookup = self.check_error_from_msg(response);
-        if let Ok(lookup_response) = result_lookup {
+        return self.check_error_from_msg(response).and_then(|lookup_response| {
             let rrs_iter = lookup_response
             .to_vec_of_rr()
             .into_iter();
             let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter.map(|rr|
                 {AsyncResolver::from_rr_to_ip(rr)}).collect();
             return ip_addresses;
-        } else {
-            Err(ClientError::TemporaryError("Error parsing response."))?
-            
-        }
+        });
     }
 
     /// Performs a DNS lookup of the given domain name, qtype and qclass.

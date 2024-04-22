@@ -175,17 +175,22 @@ pub async fn execute_lookup_strategy(
 
     let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
     let mut retry_count = 0;
+    // Index to iterate over the name servers
     let mut i = 0;
+    let number_of_servers = name_servers.len();
     
+    // General loop to send the query to each server
     loop {
+        println!("SENDING THE QUERY");
+
         let mut response_guard = response_arc.lock().unwrap();
         let response = response_guard.as_ref();
 
         if response.is_ok() || retry_count >= config.get_retry() {
             break; 
         }
-
-        let connections = name_servers.get(i).unwrap();
+        println!("Retry count: {}", retry_count);
+        let connections = name_servers.get(i).unwrap(); // FIXME: conn error
         result_dns_msg = 
                 timeout(Duration::from_secs(6), 
             send_query_resolver_by_protocol(
@@ -200,8 +205,7 @@ pub async fn execute_lookup_strategy(
         
         *response_guard = result_dns_msg.clone();
         retry_count = retry_count + 1;
-        i = i+1;
-
+        i = (i+1)%number_of_servers;
     }
 
     let response_dns_msg = match result_dns_msg.clone() {

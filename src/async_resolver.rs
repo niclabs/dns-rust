@@ -117,6 +117,7 @@ impl AsyncResolver {
             return ip_addresses;
         } else {
             Err(ClientError::TemporaryError("Error parsing response."))?
+            
         }
     }
 
@@ -463,7 +464,10 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use tokio::io;
+    use crate::client::client_connection::ClientConnection;
     use crate::client::client_error::ClientError;
+    use crate::client::tcp_connection::ClientTCPConnection;
+    use crate::client::udp_connection::ClientUDPConnection;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
     use crate::message::rdata::Rdata;
@@ -475,7 +479,7 @@ mod async_resolver_test {
     use crate::async_resolver::config::ResolverConfig;
     use super::lookup_response::LookupResponse;
     use super::AsyncResolver;
-    use std::net::IpAddr;
+    use std::net::{IpAddr, Ipv4Addr};
     use std::str::FromStr;
     use std::time::Duration;
     use std::vec;
@@ -937,28 +941,26 @@ mod async_resolver_test {
         let mut config = ResolverConfig::default();
         let max_retries = 6;
         config.set_retry(max_retries);
+
+        let bad_server:IpAddr = IpAddr::V4(Ipv4Addr::new(7, 7, 7, 7)); 
+        let timeout = Duration::from_secs(2);
+    
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(bad_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(bad_server, timeout);
+        let name_servers = vec![(conn_udp,conn_tcp)];
+        config.set_name_servers(name_servers);
         let mut resolver = AsyncResolver::new(config);
 
-        // Realiza una resolución de DNS que sabes que fallará
-        //let result = resolver.lookup_ip("nonexisten.comt-domain", "UDP").await;
-
-        let mut retries_attempted = 0;
-
-        // Realiza la resolución de DNS que sabes que fallará
-        while retries_attempted < max_retries {
-            let result = resolver.lookup_ip("nonexistent-domain.com", "UDP", "IN").await;
-             retries_attempted += 1;
-
-            if result.is_ok() {
-                break; // La resolución tuvo éxito, sal del bucle
+        let result = resolver.lookup("dfasdfsda.com", "TCP", "A", "IN").await;
+        
+        match result {
+            Ok(_) => {
+                panic!("Timeout limit exceeded error was expected."); 
+            }
+            Err(_) => {
+                assert!(true);
             }
         }
-        if retries_attempted == max_retries {
-            assert!(retries_attempted == max_retries, "Número incorrecto de reintentos");
-        } else {
-            panic!("La resolución DNS tuvo éxito antes de lo esperado");
-        }
-
     }
 
 

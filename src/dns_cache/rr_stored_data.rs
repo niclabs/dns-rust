@@ -8,8 +8,6 @@ pub struct RRStoredData {
     resource_record: ResourceRecord,
     /// Mean of response time of the ip address
     response_time: u32,
-    /// Last use of the rr
-    last_use: DateTime<Utc>,
     /// Time of creation of the `RRStoredData` in the Resolver's cache.
     creation_time: DateTime<Utc>,
 }
@@ -29,7 +27,6 @@ impl RRStoredData {
         let rr_cache = RRStoredData {
             resource_record: resource_record,
             response_time: 5000,
-            last_use: Utc::now(),
             creation_time: Utc::now(),
         };
 
@@ -56,11 +53,6 @@ impl RRStoredData {
         self.response_time
     }
 
-    // Gets the last use of the domain in cache
-    pub fn get_last_use(&self) -> DateTime<Utc> {
-        self.last_use
-    }
-
     // Gets the creation time of the domain in cache
     pub fn get_creation_time(&self) -> DateTime<Utc> {
         self.creation_time
@@ -78,11 +70,6 @@ impl RRStoredData {
     pub fn set_response_time(&mut self, response_time: u32) {
         self.response_time = response_time;
     }
-
-    // Sets the last use attribute with new value
-    pub fn set_last_use(&mut self, last_use: DateTime<Utc>) {
-        self.last_use = last_use;
-    }
 }
 
 #[cfg(test)]
@@ -91,7 +78,7 @@ mod rr_cache_test {
     use crate::message::rdata::Rdata;
     use crate::message::type_rtype::Rtype;
     use crate::message::resource_record::ResourceRecord;
-    use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
+    use crate::dns_cache::rr_stored_data::RRStoredData;
     use std::net::IpAddr;
     use chrono::prelude::*;
 
@@ -175,11 +162,5 @@ mod rr_cache_test {
         let mut rr_cache = RRStoredData::new(resource_record);
 
         let now = Utc::now();
-
-        assert_ne!(rr_cache.get_last_use(), now);
-
-        rr_cache.set_last_use(now);
-
-        assert_eq!(rr_cache.get_last_use(), now);
     }
 }

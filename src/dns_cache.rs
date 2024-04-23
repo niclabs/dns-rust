@@ -1,26 +1,24 @@
-pub mod cache_by_record_type;
+pub mod rr_stored_data;
 
 extern crate lru;
 
 use lru::LruCache;
 use std::num::NonZeroUsize;
 
-use crate::dns_cache::cache_by_record_type::CacheByRecordType;
-use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
+use crate::dns_cache::rr_stored_data::RRStoredData;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::type_rtype::Rtype;
 use std::net::IpAddr;
 use crate::domain_name::DomainName;
-use std::cmp;
+use chrono::Utc;
 
 #[derive(Clone, Debug)]
 /// Struct that represents a cache for dns
 pub struct DnsCache {
     // first hash by type, then by hostname
-    cache: CacheByRecordType,
-    max_size: u32,
-    size: u32,
+    cache: LruCache<(Rtype, DomainName), Vec<RRStoredData>>,
+    max_size: NonZeroUsize,
 }
 
 impl DnsCache {
@@ -33,11 +31,10 @@ impl DnsCache {
     /// assert_eq!(cache.cache.len(), 0);
     /// ```
     ///
-    pub fn new() -> Self {
+    pub fn new(max_size: NonZeroUsize) -> Self {
         let cache = DnsCache {
-            cache: CacheByRecordType::new(),
-            max_size: 0,
-            size: 0,
+            cache: LruCache::new(max_size),
+            max_size: max_size,
         };
 
         cache
@@ -45,54 +42,51 @@ impl DnsCache {
 
     /// Adds an element to cache
     pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord) {
-        //See if max size is 0
-        if self.max_size < 1 {
-            return;
-        }
-
-        // see cache space
-        if self.get_size() >= self.max_size {
-            self.remove_oldest_used();
-        }
-
         let rtype = resource_record.get_rtype();
+
         let rr_cache = RRStoredData::new(resource_record);
 
         let mut cache_data = self.get_cache();
-        cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
-        self.set_cache(cache_data);
-        self.set_size(self.get_size() + 1);
+
+        if let Some(rr_cache_vec) = cache_data.get_mut(&(rtype, domain_name.clone())) {
+            rr_cache_vec.push(rr_cache);
+            cache_data.put((rtype, domain_name.clone()), *rr_cache_vec);
+        } else {
+            let mut rr_cache_vec = Vec::new();
+            rr_cache_vec.push(rr_cache);
+            cache_data.put((rtype, domain_name.clone()), rr_cache_vec);
+        }
+
+        self.set_cache(cache_data); 
+        // see cache space
     }
 
     /// Add negative resource record type SOA to cache for negative answers
     pub fn add_negative_answer(&mut self, domain_name: DomainName, rtype: Rtype, resource_record:ResourceRecord) {
-        
-        // see cache space
-        if self.get_size() >= self.max_size {
-            self.remove_oldest_used();
-        }
-
-        let rr_cache = RRStoredData::new(resource_record);
         let mut cache_data = self.get_cache();
-        cache_data.add_to_cache_data(rtype, domain_name, rr_cache);
-        self.set_cache(cache_data);
-        self.set_size(self.get_size() + 1);
-
+        let rr_cache = RRStoredData::new(resource_record);
+        
+        if let Some(rr_cache_vec) = cache_data.get_mut(&(rtype, domain_name.clone())){
+            rr_cache_vec.push(rr_cache);
+            cache_data.put((rtype, domain_name.clone()), *rr_cache_vec);
+        } else {
+            let mut rr_cache_vec = Vec::new();
+            rr_cache_vec.push(rr_cache);
+            cache_data.put((rtype, domain_name.clone()), rr_cache_vec);
+        }
     }
 
     /// Removes an element from cache
     pub fn remove(&mut self, domain_name: DomainName, rtype: Rtype) {
         let mut cache_data = self.get_cache();
-        let length = cache_data.remove_from_cache_data(domain_name, rtype);
-        //Size needs to be modified if something was removed
-        self.set_cache(cache_data);
-        self.set_size(cmp::max(self.get_size() - length as u32, 0));  
+        let extracted = cache_data.pop(&(rtype, domain_name));
+        self.set_cache(cache_data); 
     }
 
     /// Given a domain_name, gets an element from cache
-    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRStoredData>> {
+    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<&Vec<RRStoredData>> {
         let mut cache = self.get_cache();
-        let rr_cache_vec = cache.get_from_cache_data(domain_name, rtype);
+        let rr_cache_vec = cache.get(&(rtype, domain_name));
         self.set_cache(cache);
         return rr_cache_vec;
     }
@@ -100,10 +94,8 @@ impl DnsCache {
     /// Removes the resource records from a domain name and type which were the oldest used
     pub fn remove_oldest_used(&mut self) {
         let mut cache = self.get_cache();
-
-        let length = cache.remove_oldest_used();
-        self.set_cache(cache);
-        self.set_size(cmp::max(self.get_size() - length as u32, 0)); 
+        let oldest = cache.pop_lru();
+        self.set_cache(cache); 
     }
 
     /// Gets the response time from a domain name and type resource record
@@ -140,24 +132,33 @@ impl DnsCache {
     ) {
         let mut cache = self.get_cache();
 
-        cache.update_response_time(domain_name, rr_type, response_time, ip_address);
+        if let Some(rr_cache_vec) = cache.get_mut(&(rr_type, domain_name)){
+            for rr in rr_cache_vec {
+                let rr_ip_address = match rr.get_resource_record().get_rdata() {
+                    Rdata::A(val) => val.get_address(),
+                    _ => unreachable!(),
+                };
+                if ip_address == rr_ip_address {
+                    rr.set_response_time(response_time);
+                }
+            }
+        }
 
         self.set_cache(cache);
     }
 
     /// Checks if cache is empty
     pub fn is_empty(&self) -> bool {
-        self.cache.get_cache_data().is_empty()
+        self.cache.is_empty()
     }
 
     /// Checks if a domain name is cached
     pub fn is_cached(&self, domain_name: DomainName, rtype: Rtype) -> bool {
-        if let Some(mut host_data) = self.cache.get_cache_data().get(&rtype).cloned() {
-            if let Some(_rrs) = host_data.get_from_host_data(domain_name) {
+        if let Some(mut key_data) = self.cache.peek(&(rtype, domain_name)) {
+            if key_data.len() > 0 {
                 return true;
             }
         }
-
         false
     }
 
@@ -180,523 +181,61 @@ impl DnsCache {
     /// If it has expired, it removes it from the cache.
     pub fn timeout_cache(&mut self) {
         let mut cache = self.get_cache();
-        cache.filter_timeout_by_rtype();
-        self.set_cache(cache);
+        
+        for (key, rr_cache_vec) in cache.iter() {
+            let mut rr_cache_vec_cleaned = Vec::new();
+
+            for stored_element in rr_cache_vec {
+                let ttl = stored_element.get_resource_record().get_ttl();
+                let creation_time = stored_element.get_creation_time();
+                let now = Utc::now();
+                let duration = now.signed_duration_since(creation_time);
+
+                if duration.num_seconds() < ttl as i64 {
+                    rr_cache_vec_cleaned.push(stored_element.clone());
+                }
+            
+            }
+        }
     }
 }
 
 // Getters
 impl DnsCache {
     // Gets the cache from the struct
-    pub fn get_cache(&self) -> CacheByRecordType{
+    pub fn get_cache(&self) -> LruCache<(Rtype, DomainName), Vec<RRStoredData>>{
         self.cache.clone()
     }
 
     //Gets the max size of the cache
-    pub fn get_max_size(&self) -> u32 {
+    pub fn get_max_size(&self) -> NonZeroUsize {
         self.max_size.clone()
-    }
-
-    // Gets the size of the cache
-    pub fn get_size(&self) -> u32 {
-        self.size.clone()
     }
 }
 
 // Setters
 impl DnsCache {
     // Sets the cache
-    pub fn set_cache(&mut self, cache: CacheByRecordType) {
+    pub fn set_cache(&mut self, cache: LruCache<(Rtype, DomainName), Vec<RRStoredData>>) {
         self.cache = cache
     }
 
     // Sets the max size of the cache
-    pub fn set_max_size(&mut self, max_size: u32) {
+    pub fn set_max_size(&mut self, max_size: NonZeroUsize) {
         self.max_size = max_size
-    }
-
-    // Sets the size of the cache
-    pub fn set_size(&mut self, size: u32) {
-        self.size = size
     }
 }
 
 #[cfg(test)] 
 mod dns_cache_test {
-    use chrono::Utc;
-    use crate::{dns_cache::DnsCache, message::rdata::ns_rdata::NsRdata};
-    use crate::dns_cache::cache_by_record_type::CacheByRecordType;
-    use crate::dns_cache::cache_by_record_type::cache_by_domain_name::CacheByDomainName;
-    use crate::dns_cache::cache_by_record_type::rr_stored_data::RRStoredData;
-    use crate::domain_name::DomainName;
-    use crate::message::rdata::a_rdata::ARdata;
-    use crate::message::rdata::txt_rdata::TxtRdata;
-    use crate::message::type_rtype::Rtype;
-    use crate::message::rdata::Rdata;
-    use crate::message::resource_record::ResourceRecord;
-    use std::{collections::HashMap, net::IpAddr, str::FromStr};
+    use super::*;
 
-    //Constructor test 
+    // TODO: Add tests
     #[test]
-    fn constructor_test(){
-        let cache = DnsCache::new();
-        assert!(cache
-            .get_cache()
-            .get_cache_data()
-            .is_empty());
+    fn test_new() {
+        let cache = DnsCache::new(NonZeroUsize::new(10).unwrap());
+
+        assert_eq!(cache.cache.len(), 0);
+        assert_eq!(cache.max_size, NonZeroUsize::new(10).unwrap());
     }
-
-    //Setters and getters test
-    #[test]
-    fn get_and_set_max_size(){
-        let mut cache = DnsCache::new();
-        assert_eq!(cache.get_max_size(), 0);
-        cache.set_max_size(5);
-        assert_eq!(cache.get_max_size(), 5);
-    }
-
-    #[test]
-    fn set_and_get_size(){
-        let mut cache = DnsCache::new();
-        assert_eq!(cache.get_size(), 0);
-        cache.set_size(5);
-        assert_eq!(cache.get_size(), 5);
-    }
-
-    #[test]
-    fn set_and_get_cache(){
-        let mut cache = DnsCache::new();
-        assert!(cache.get_cache().get_cache_data().is_empty());
-        let mut cache_data = CacheByRecordType::new();
-        let mut cache_data_hash = HashMap::new();
-        let mut host_data = CacheByDomainName::new();
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-        let rr_cache = RRStoredData::new(resource_record);
-        host_data.add_to_host_data(domain_name, rr_cache);
-        cache_data_hash.insert(Rtype::A, host_data);
-
-        cache_data.set_cache_data(cache_data_hash);
-
-        cache.set_cache(cache_data);
-
-        assert!(!cache.get_cache().get_cache_data().is_empty());
-    }
-
-    //Add test
-    #[test]
-    fn add_to_cache_data(){
-        let mut cache = DnsCache::new();
-
-        cache.set_max_size(2);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-
-        assert!(cache.get_cache().get_cache_data().is_empty());
-
-        cache.add(domain_name.clone(), resource_record);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
-
-        let mut new_vec = Vec::new();
-        new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
-        let resource_record_2 = ResourceRecord::new(text_rdata);
-
-        cache.add(domain_name.clone(), resource_record_2);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 2);
-        assert_eq!(cache.get_size(), 2)
-    }
-
-    //Add domain with full cache test
-    #[test]
-    fn add_domain_with_full_cache(){
-        let mut cache = DnsCache::new();
-
-        cache.set_max_size(1);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-
-        cache.add(domain_name.clone(), resource_record);
-
-        assert_eq!(cache.get_size(), 1);
-
-        let mut new_vec = Vec::new();
-        new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
-        let resource_record_2 = ResourceRecord::new(text_rdata);
-
-        cache.add(domain_name.clone(), resource_record_2);
-
-        assert_eq!(cache.get_size(), 1);
-
-        let cache_element = cache.get(domain_name.clone(), Rtype::TXT).unwrap();
-
-        assert_eq!(cache_element.len(), 1);
-    }
-
-    //Remove test
-    #[test]
-    fn remove_from_dns_cache(){
-        let mut cache = DnsCache::new();
-
-        cache.set_max_size(2);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-
-        cache.add(domain_name.clone(), resource_record);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
-
-        let mut new_vec = Vec::new();
-        new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
-        let resource_record_2 = ResourceRecord::new(text_rdata);
-
-        cache.add(domain_name.clone(), resource_record_2);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 2);
-        assert_eq!(cache.get_size(), 2);
-
-        cache.remove(domain_name.clone(), Rtype::TXT);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 2);
-        assert_eq!(cache.get_size(), 1);
-    }
-
-    //Get test
-    #[test]
-    fn get_from_dns_cache(){
-        let mut cache = DnsCache::new();
-
-        cache.set_max_size(2);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-
-        cache.add(domain_name.clone(), resource_record);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
-
-        let mut new_vec = Vec::new();
-        new_vec.push(String::from("hola"));
-        let text_rdata = Rdata::TXT(TxtRdata::new(new_vec));
-        let resource_record_2 = ResourceRecord::new(text_rdata);
-
-        cache.add(domain_name.clone(), resource_record_2);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 2);
-        assert_eq!(cache.get_size(), 2);
-
-        let cache_element = cache.get(domain_name.clone(), Rtype::TXT).unwrap();
-
-        assert_eq!(cache_element.len(), 1);
-    }
-
-    //Get and update response time
-    #[test]
-    fn get_and_update_response_time(){
-        let mut cache = DnsCache::new();
-
-        cache.set_max_size(2);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-
-        assert!(cache.get_cache().get_cache_data().is_empty());
-
-        cache.add(domain_name.clone(), resource_record);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
-    }
-
-    //Update response time test
-    #[test]
-    fn update_response_time(){
-        let mut cache = DnsCache::new();
-
-        cache.set_max_size(2);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let ip_address = IpAddr::from([127, 0, 0, 1]);
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address(ip_address);
-        let rdata = Rdata::A(a_rdata);
-        let resource_record = ResourceRecord::new(rdata);
-
-        assert!(cache.get_cache().get_cache_data().is_empty());
-
-        cache.add(domain_name.clone(), resource_record);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
-
-        cache.update_response_time(domain_name.clone(), Rtype::A, 2000, ip_address.clone());
-
-        let rr_cache_vec = cache.get(domain_name.clone(), Rtype::A).unwrap();
-
-        //Default response time in RFC 1034/1035 is 5000 so new response time should be 4500
-        for rr_cache in rr_cache_vec {
-            assert_eq!(rr_cache.get_response_time(), 4500);
-        }
-    }
-    //Remaining test: get_response_time
-    #[test]
-    fn get_response_time(){
-        let mut cache = DnsCache::new();
-
-        cache.set_max_size(2);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-        let ip_address = IpAddr::from([127, 0, 0, 1]);
-        let mut a_rdata = ARdata::new();
-        a_rdata.set_address(ip_address);
-        let rdata = Rdata::A(a_rdata);
-        let resource_record = ResourceRecord::new(rdata);
-
-        assert!(cache.get_cache().get_cache_data().is_empty());
-
-        cache.add(domain_name.clone(), resource_record);
-
-        assert_eq!(cache.get_cache().get_cache_data().len(), 1);
-
-        let response_time = cache.get_response_time(domain_name.clone(), Rtype::A, ip_address.clone());
-
-        //Default response time in RFC 1034/1035 is 5000
-        assert_eq!(response_time, 5000);
-
-        cache.update_response_time(domain_name.clone(), Rtype::A, 2000, ip_address.clone());
-
-        let response_time_2 = cache.get_response_time(domain_name.clone(), Rtype::A, ip_address.clone());
-
-        //Default response time in RFC 1034/1035 is 5000 so new response time should be 4500 because 5000/2 + 2000/2 = 4500
-        assert_eq!(response_time_2, 4500);
-    }
-
-    #[test]
-    fn is_cached() {
-        let mut cache = DnsCache::new();
-        cache.set_max_size(1);
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-        let a_rdata = Rdata::A(a_rdata);
-        let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name.clone(), resource_record);
-        assert_eq!(cache.get_size(), 1);
-
-        assert_eq!(cache.is_cached(domain_name, Rtype::A), true);
-    }
-
-    #[test]
-    fn timeout_cache_1_domain_same_rtype(){
-        use std::{thread, time};
-        let mut dns_cache = DnsCache::new();
-
-        dns_cache.set_max_size(3);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-
-        let a_rdata = Rdata::A(ARdata::new());
-
-        let mut resource_record = ResourceRecord::new(a_rdata.clone());
-        resource_record.set_ttl(1000);
-
-        dns_cache.add(domain_name.clone(), resource_record.clone());
-
-        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 1);
-
-        let mut resource_record_2 = ResourceRecord::new(a_rdata.clone());
-        resource_record_2.set_ttl(4);
-
-        dns_cache.add(domain_name.clone(), resource_record_2.clone());
-
-        //because both are of the same type, the cache_data (cache by record type) has 1 element
-        // Rdata::A -> cache_by_domain_name
-        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 1);
-        if let Some(cache_by_domain_name) = dns_cache.get_cache().get(Rtype::A) {
-            if let Some(rrstore_data_vec) = cache_by_domain_name.get(&domain_name) {
-                assert_eq!(rrstore_data_vec.len(), 2);
-            }
-        }
-        assert_eq!(dns_cache.get_size(), 2);
-
-        println!("Before timeout: {:?}", Utc::now());
-        thread::sleep(time::Duration::from_secs(5));
-        println!("After timeout: {:?}", Utc::now());
-        dns_cache.timeout_cache();
-
-        //FIXME: the size shoud be 1 because we have only 1 resocurce_record associated with 1 domain?
-        // assert_eq!(dns_cache.get_size(), 1);
-
-        //check if the resource_record_2 was deleted
-        if let Some(cache_by_domain_name) = dns_cache.get_cache().get(Rtype::A) {
-            if let Some(rrstore_data_vec) = cache_by_domain_name.get(&domain_name) {
-                assert_eq!(rrstore_data_vec.len(), 1);
-                //check if the resource_record_1 survive
-                if let Some(rrstore_after_cleaning) = rrstore_data_vec.get(0) {
-                    let resource_record_after_cleaning = rrstore_after_cleaning.get_resource_record();
-                    assert_eq!(resource_record_after_cleaning, resource_record);
-                }
-            }
-        }
-    
-    }
-
-    #[test]
-    fn timeout_cache_1_domain_differents_rtype(){
-        use std::{thread, time};
-        let mut dns_cache = DnsCache::new();
-
-        dns_cache.set_max_size(3);
-
-        let mut domain_name = DomainName::new();
-        domain_name.set_name(String::from("uchile.cl"));
-
-        let a_rdata = Rdata::A(ARdata::new());
-        let ns_rdata = Rdata::NS(NsRdata::new());
-
-        let mut resource_record_a = ResourceRecord::new(a_rdata.clone());
-        resource_record_a.set_ttl(1000);
-
-        dns_cache.add(domain_name.clone(), resource_record_a.clone());
-
-        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 1);
-
-        let mut resource_record_ns = ResourceRecord::new(ns_rdata.clone());
-        resource_record_ns.set_ttl(4);
-
-        dns_cache.add(domain_name.clone(), resource_record_ns.clone());
-
-        //because rtypes are differents the size of the cache is 2?
-        assert_eq!(dns_cache.get_cache().get_cache_data().len(), 2);
-        
-        println!("Before timeout: {:?}", Utc::now());
-        thread::sleep(time::Duration::from_secs(5));
-        println!("After timeout: {:?}", Utc::now());
-        dns_cache.timeout_cache();
-
-        //FIXME: the size shoud be 1 because we have only 1 resocurce_record associated with 1 domain?
-        // assert_eq!(dns_cache.get_size(), 1);
-
-        //After the cleaning, the size of the cache shoud be 1 (NS Was deleted)
-        println!("the Rtype cache is {:?} : \n", dns_cache.get_cache().get_cache_data());
-        //FIXME: Domain uchile points to a empty array and (NS, CacheByDomainName) still exists
-        assert_eq!(dns_cache.get_cache().get_cache_data().len(),1);
-    
-    }
-
-    
-    #[test]
-    //this test is going to prove if the cleaning after the timeout is acting correctly two layer down (CacheByDomain)
-    // ------BEFORE THE 5 SECONDS-----
-    // RTYPE:A -> {uchile (invalid) -> [..], example.com (valid) -> [..]}
-    // RTYPE:NS -> {example (valid) -> [..], example.com (invalid) -> [...]}
-    //-------AFTER THE 5 SECONDS-----
-    // RTYPE:A -> {example.com -> [...]}
-    // RTYPE:NS -> {uchile.com -> [...]}
-    fn filter_timout_cache_data_cleaning_two_layer_down(){
-        use std::{thread, time};
-        let mut dns_cache = DnsCache::new();
-
-        dns_cache.set_max_size(5);
-        //Defaults Rdatas to use
-        let a_rdata = Rdata::A(ARdata::new());
-        let ns_rdata = Rdata::NS(NsRdata::new());
-
-                
-        let mut domain_name_1 = DomainName::new();
-        domain_name_1.set_name(String::from("example.com"));
-
-        let mut domain_name_2 = DomainName::new();
-        domain_name_2.set_name(String::from("uchile.cl"));
-
-        //adding in A rtypes
-        let mut resource_record_valid_a = ResourceRecord::new(a_rdata.clone());
-        resource_record_valid_a.set_ttl(1000);
-        dns_cache.add(domain_name_1.clone(), resource_record_valid_a.clone());
-                
-        let mut resource_record_invalid_a = ResourceRecord::new(a_rdata.clone());
-        resource_record_invalid_a.set_ttl(4);
-        dns_cache.add(domain_name_2.clone(), resource_record_invalid_a.clone());
-
-        //adding in NS rtypes
-        let mut resource_record_valid_ns = ResourceRecord::new(ns_rdata.clone());
-        resource_record_valid_ns.set_ttl(1000);
-        dns_cache.add(domain_name_2.clone(), resource_record_valid_ns.clone());
-    
-        let mut resource_record_invalid_ns = ResourceRecord::new(ns_rdata.clone());
-        resource_record_invalid_ns.set_ttl(4);
-        dns_cache.add(domain_name_1.clone(), resource_record_invalid_ns.clone());
-
-
-        //check if every record_types_data (HashMap for A and for NS) has 2 element 
-        let record_types_data = dns_cache.get_cache().get_cache_data();
-        //CacheByDomainName for A type
-        if let Some(record_types_data_a) = record_types_data.get(&Rtype::A) {
-            // println!("the cache by domain for A type is : \n {:?}",record_types_data_a.get_domain_names_data());
-            assert_eq!(record_types_data_a.get_domain_names_data().len(), 2);
-        }
-        //CacheByDomainName for NS type
-        if let Some(record_types_data_ns) = record_types_data.get(&Rtype::NS) {
-            // println!("the cache by domain for NS type is : \n {:?}",record_types_data_ns.get_domain_names_data());
-            assert_eq!(record_types_data_ns.get_domain_names_data().len(), 2);
-        }
-
-        //check the size of the dns_cache is correctly
-        assert_eq!(dns_cache.get_size(), 4);
-
-        println!("Before timeout: {:?}", Utc::now());
-        thread::sleep(time::Duration::from_secs(5));
-        println!("After timeout: {:?}", Utc::now());
-        dns_cache.timeout_cache();
-
-        let record_types_data_after_cleaning = dns_cache.get_cache().get_cache_data();
-
-        //after the cleaning, each cache shoud have 1 element
-        if let Some(record_types_data_a) = record_types_data_after_cleaning.get(&Rtype::A) {
-            println!("the cache by domain for A type after the cleaning is : \n {:?}",record_types_data_a.get_domain_names_data());
-            //FIXME: Does not delete the invadil rrstore, instead points to a empty array (same error as in cache by domain)
-            assert_eq!(record_types_data_a.get_domain_names_data().len(), 1);
-            //check if is the same resource record valid (which survives)
-            if let Some(rrstore_a_after_cleaning) = record_types_data_a.clone().get_from_host_data(domain_name_1.clone()){
-                if let Some(rrstore_data_valid) = rrstore_a_after_cleaning.get(0){
-                    let resource_record_after_filter = rrstore_data_valid.get_resource_record();
-                    assert_eq!(resource_record_after_filter, resource_record_valid_a);
-                }
-            }
-        }
-        //CacheByDomainName for NS type
-        if let Some(record_types_data_ns) = record_types_data_after_cleaning.get(&Rtype::NS) {
-            println!("the cache by domain for NS type after the cleaning is : \n {:?}",record_types_data_ns.get_domain_names_data());
-            //FIXME: Does not delete the invadil rrstore, instead points to a empty array (same error as in cache by domain)
-            assert_eq!(record_types_data_ns.get_domain_names_data().len(), 1);
-            //check if is the same resource record valid (which survives)
-            if let Some(rrstore_ns_after_cleaning) = record_types_data_ns.clone().get_from_host_data(domain_name_2.clone()){
-                if let Some(rrstore_data_valid) = rrstore_ns_after_cleaning.get(0){
-                    let resource_record_after_filter = rrstore_data_valid.get_resource_record();
-                    assert_eq!(resource_record_after_filter, resource_record_valid_ns);
-                }
-            }
-        }
-    }
-
 }

@@ -31,12 +31,11 @@ impl DnsCache {
     /// assert_eq!(cache.cache.len(), 0);
     /// ```
     ///
-    pub fn new(max_size: NonZeroUsize) -> Self {
+    pub fn new(max_size: Option<NonZeroUsize>) -> Self {
         let cache = DnsCache {
-            cache: LruCache::new(max_size),
-            max_size: max_size,
+            cache: LruCache::new(max_size.unwrap_or_else(|| NonZeroUsize::new(5000).unwrap())),
+            max_size: max_size.unwrap_or_else(|| NonZeroUsize::new(100).unwrap()),
         };
-
         cache
     }
 
@@ -233,7 +232,7 @@ mod dns_cache_test {
     // TODO: Add tests
     #[test]
     fn test_new() {
-        let cache = DnsCache::new(NonZeroUsize::new(10).unwrap());
+        let cache = DnsCache::new(NonZeroUsize::new(10));
 
         assert_eq!(cache.cache.len(), 0);
         assert_eq!(cache.max_size, NonZeroUsize::new(10).unwrap());

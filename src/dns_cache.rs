@@ -230,12 +230,49 @@ impl DnsCache {
 mod dns_cache_test {
     use super::*;
 
-    // TODO: Add tests
     #[test]
     fn test_new() {
         let cache = DnsCache::new(NonZeroUsize::new(10));
 
         assert_eq!(cache.cache.len(), 0);
         assert_eq!(cache.max_size, NonZeroUsize::new(10).unwrap());
+    }
+
+    #[test]
+    fn get_cache() {
+        let cache = DnsCache::new(NonZeroUsize::new(10));
+        let cache_data = cache.get_cache();
+
+        assert_eq!(cache_data.len(), 0);
+        assert!(cache_data.is_empty());
+    }
+
+    #[test]
+    fn get_max_size() {
+        let cache = DnsCache::new(NonZeroUsize::new(10));
+        let max_size = cache.get_max_size();
+
+        assert_eq!(max_size, NonZeroUsize::new(10).unwrap());
+    }
+
+    #[test]
+    fn set_cache() {
+        let mut cache = DnsCache::new(NonZeroUsize::new(10));
+        let mut cache_data = LruCache::new(NonZeroUsize::new(10).unwrap());
+        cache_data.put((Rtype::A, DomainName::new_from_str("example.com")), vec![]);
+
+        cache.set_cache(cache_data.clone());
+
+        assert!(!cache.get_cache().is_empty());
+    }
+
+    #[test]
+    fn set_max_size() {
+        let mut cache = DnsCache::new(NonZeroUsize::new(10));
+        let max_size = NonZeroUsize::new(20).unwrap();
+
+        cache.set_max_size(max_size.clone());
+
+        assert_eq!(cache.get_max_size(), max_size);
     }
 }

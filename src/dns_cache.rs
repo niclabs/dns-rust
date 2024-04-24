@@ -49,7 +49,6 @@ impl DnsCache {
 
         if let Some(rr_cache_vec) = cache_data.get_mut(&(rtype, domain_name.clone())) {
             rr_cache_vec.push(rr_cache);
-            cache_data.put((rtype, domain_name.clone()), *rr_cache_vec);
         } else {
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);
@@ -67,33 +66,37 @@ impl DnsCache {
         
         if let Some(rr_cache_vec) = cache_data.get_mut(&(rtype, domain_name.clone())){
             rr_cache_vec.push(rr_cache);
-            cache_data.put((rtype, domain_name.clone()), *rr_cache_vec);
         } else {
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);
             cache_data.put((rtype, domain_name.clone()), rr_cache_vec);
         }
+
+        self.set_cache(cache_data);
     }
 
     /// Removes an element from cache
     pub fn remove(&mut self, domain_name: DomainName, rtype: Rtype) {
         let mut cache_data = self.get_cache();
-        let extracted = cache_data.pop(&(rtype, domain_name));
+        let _extracted = cache_data.pop(&(rtype, domain_name));
         self.set_cache(cache_data); 
     }
 
     /// Given a domain_name, gets an element from cache
-    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<&Vec<RRStoredData>> {
+    pub fn get(&mut self, domain_name: DomainName, rtype: Rtype) -> Option<Vec<RRStoredData>> {
         let mut cache = self.get_cache();
-        let rr_cache_vec = cache.get(&(rtype, domain_name));
+
+        let rr_cache_vec = cache.get(&(rtype, domain_name)).cloned();
+
         self.set_cache(cache);
-        return rr_cache_vec;
+
+        rr_cache_vec
     }
 
     /// Removes the resource records from a domain name and type which were the oldest used
     pub fn remove_oldest_used(&mut self) {
         let mut cache = self.get_cache();
-        let oldest = cache.pop_lru();
+        let _oldest = cache.pop_lru();
         self.set_cache(cache); 
     }
 
@@ -142,8 +145,6 @@ impl DnsCache {
                 }
             }
         }
-
-        self.set_cache(cache);
     }
 
     /// Checks if cache is empty
@@ -153,7 +154,7 @@ impl DnsCache {
 
     /// Checks if a domain name is cached
     pub fn is_cached(&self, domain_name: DomainName, rtype: Rtype) -> bool {
-        if let Some(mut key_data) = self.cache.peek(&(rtype, domain_name)) {
+        if let Some(key_data) = self.cache.peek(&(rtype, domain_name)) {
             if key_data.len() > 0 {
                 return true;
             }
@@ -179,9 +180,9 @@ impl DnsCache {
     /// For each Resource Record in the cache, it checks if it has expired by its TTL.
     /// If it has expired, it removes it from the cache.
     pub fn timeout_cache(&mut self) {
-        let mut cache = self.get_cache();
+        let cache = self.get_cache();
         
-        for (key, rr_cache_vec) in cache.iter() {
+        for (_key, rr_cache_vec) in cache.iter() {
             let mut rr_cache_vec_cleaned = Vec::new();
 
             for stored_element in rr_cache_vec {

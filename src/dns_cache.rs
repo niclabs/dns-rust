@@ -374,4 +374,33 @@ mod dns_cache_test {
         assert_eq!(rr_cache_vec.len(), 1);
         assert_eq!(rr_cache_vec_2.len(), 1);
     }
+
+    #[test]
+    fn add_duplicate_elements(){
+        let mut cache = DnsCache::new(NonZeroUsize::new(10));
+        let domain_name = DomainName::new_from_str("example.com");
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+
+        cache.add(domain_name.clone(), resource_record.clone());
+
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+
+        cache.add(domain_name.clone(), resource_record.clone());
+
+        let rr_cache_vec = cache.get(domain_name.clone(), Rtype::A).unwrap();
+
+        assert_eq!(rr_cache_vec.len(), 1);
+    }
 }

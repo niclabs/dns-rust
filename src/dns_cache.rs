@@ -424,4 +424,38 @@ mod dns_cache_test {
 
         assert!(rr_cache_vec.is_none());
     }
+
+    #[test]
+    fn get() {
+        let mut cache = DnsCache::new(NonZeroUsize::new(10));
+        let domain_name = DomainName::new_from_str("example.com");
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+
+        cache.add(domain_name.clone(), resource_record.clone());
+
+        let rr_cache_vec = cache.get(domain_name.clone(), Rtype::A).unwrap();
+
+        let first_rr_cache = rr_cache_vec.first().unwrap();
+
+        assert_eq!(rr_cache_vec.len(), 1);
+
+        assert_eq!(first_rr_cache.get_resource_record().get_rtype(), Rtype::A);
+
+        assert_eq!(first_rr_cache.get_resource_record().get_name(), domain_name.clone());
+
+        let rr_rdata = first_rr_cache.get_resource_record().get_rdata();
+
+        match rr_rdata {
+            Rdata::A(val) => {
+                assert_eq!(val.get_address(), ip_address);
+            }
+            _ => unreachable!(),
+        }
+    }
 }

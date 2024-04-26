@@ -48,7 +48,17 @@ impl DnsCache {
         let mut cache_data = self.get_cache();
 
         if let Some(rr_cache_vec) = cache_data.get_mut(&(rtype, domain_name.clone())) {
-            rr_cache_vec.push(rr_cache);
+            let mut val_exist = false;
+            for rr in rr_cache_vec.iter_mut() {
+                if rr.get_resource_record().get_rdata() == rr_cache.get_resource_record().get_rdata() {
+                    val_exist = true;
+                    *rr = rr_cache.clone();
+                    break;
+                }
+            }
+            if !val_exist {
+                rr_cache_vec.push(rr_cache);
+            }
         } else {
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);

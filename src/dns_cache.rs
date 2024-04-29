@@ -107,7 +107,9 @@ impl DnsCache {
     /// Removes the resource records from a domain name and type which were the oldest used
     pub fn remove_oldest_used(&mut self) {
         let mut cache = self.get_cache();
-        let _oldest = cache.pop_lru();
+        let _oldest = cache.peek_lru();
+        let oldest_key = _oldest.unwrap().0.clone(); // Clone the key to release the immutable borrow
+        let _extracted = cache.pop(&oldest_key);
         self.set_cache(cache); 
     }
 
@@ -467,5 +469,58 @@ mod dns_cache_test {
         let rr_cache_vec = cache.get(domain_name.clone(), Rtype::A);
 
         assert!(rr_cache_vec.is_none());
+    }
+
+    #[test]
+    fn remove_oldest_used() {
+        let mut cache = DnsCache::new(NonZeroUsize::new(3));
+        let domain_name = DomainName::new_from_str("example.com");
+        let domain_name_2 = DomainName::new_from_str("example2.com");
+        let domain_name_3 = DomainName::new_from_str("example3.com");
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let ip_address_2 = IpAddr::from([127, 0, 0, 1]);
+        let ip_address_3 = IpAddr::from([127, 0, 0, 2]);
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+
+        let mut a_rdata_2 = ARdata::new();
+        a_rdata_2.set_address(ip_address_2);
+        let rdata_2 = Rdata::A(a_rdata_2);
+        let mut resource_record_2 = ResourceRecord::new(rdata_2);
+        resource_record_2.set_name(domain_name_2.clone());
+        resource_record_2.set_type_code(Rtype::A);
+
+        let mut a_rdata_3 = ARdata::new();
+        a_rdata_3.set_address(ip_address_3);
+        let rdata_3 = Rdata::A(a_rdata_3);
+        let mut resource_record_3 = ResourceRecord::new(rdata_3);
+        resource_record_3.set_name(domain_name_3.clone());
+        resource_record_3.set_type_code(Rtype::A);
+
+        cache.add(domain_name.clone(), resource_record.clone());
+        cache.add(domain_name_2.clone(), resource_record_2.clone());
+        cache.add(domain_name_3.clone(), resource_record_3.clone());
+
+        let _rr_cache_vec = cache.get(domain_name.clone(), Rtype::A);
+
+        let _rr_cache_vec_2 = cache.get(domain_name_2.clone(), Rtype::A);
+
+        cache.remove_oldest_used();
+
+        let rr_cache_vec = cache.get(domain_name_3.clone(), Rtype::A);
+
+        assert!(rr_cache_vec.is_none());
+
+        let rr_cache_vec_2 = cache.get(domain_name_2.clone(), Rtype::A);
+
+        assert!(rr_cache_vec_2.is_some());
+
+        let rr_cache_vec_3 = cache.get(domain_name.clone(), Rtype::A);
+
+        assert!(rr_cache_vec_3.is_some());
     }
 }

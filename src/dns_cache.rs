@@ -127,12 +127,12 @@ impl DnsCache {
                 Rdata::A(val) => val.get_address(),
                 _ => unreachable!(),
             };
-            
-            if ip_address == rr_ip_address {
-                return rr_cache.get_response_time();
+            let boolean = ip_address == rr_ip_address;
+            if boolean {
+                let response_time = rr_cache.get_response_time();
+                return response_time;
             }
         }
-
         // Default response time in RFC 1034/1035
         return 5000;
     }
@@ -522,5 +522,34 @@ mod dns_cache_test {
         let rr_cache_vec_3 = cache.get(domain_name.clone(), Rtype::A);
 
         assert!(rr_cache_vec_3.is_some());
+    }
+
+    #[test]
+    fn get_response_time(){
+        let mut cache = DnsCache::new(NonZeroUsize::new(10));
+        let domain_name = DomainName::new_from_str("example.com");
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let response_time = 1000;
+        let mut a_rdata = ARdata::new();
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+
+        let mut rr_cache = RRStoredData::new(resource_record.clone());
+        rr_cache.set_response_time(response_time);
+
+        let rr_cache_vec = vec![rr_cache];
+
+        let mut lru_cache = cache.get_cache();
+
+        lru_cache.put((Rtype::A, domain_name.clone()), rr_cache_vec);
+
+        cache.set_cache(lru_cache);
+
+        let response_time_obtained = cache.get_response_time(domain_name.clone(), Rtype::A, ip_address);
+
+        assert_eq!(response_time_obtained, response_time);
     }
 }

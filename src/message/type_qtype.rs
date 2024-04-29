@@ -1,4 +1,6 @@
 use super::type_rtype::Rtype;
+use std::fmt;
+
 
 #[derive(Clone, PartialEq, Debug,Copy)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
@@ -20,6 +22,8 @@ pub enum Qtype {
     RRSIG,
     NSEC,
     DNSKEY,
+    NSEC3,
+    NSEC3PARAM,
     ANY,
     TSIG,
     AXFR,
@@ -50,40 +54,14 @@ impl Qtype{
             Qtype::RRSIG => 46,
             Qtype::NSEC => 47,
             Qtype::DNSKEY => 48,
+            Qtype::NSEC3 => 50,
+            Qtype::NSEC3PARAM => 51,
             Qtype::AXFR => 252,
             Qtype::TSIG => 250,
             Qtype::MAILB => 253,
             Qtype::MAILA => 254,
             Qtype::ANY => 255,
             Qtype::UNKNOWN(val) => val
-        }
-    }
-    /// Function to get the String equivalent of a type
-    pub fn from_qtype_to_str(qtype: Qtype) -> String {
-        match qtype {
-            Qtype::A => String::from("A"),
-            Qtype::NS => String::from("NS"),
-            Qtype::CNAME => String::from("CNAME"),
-            Qtype::SOA => String::from("SOA"),
-            Qtype::WKS => String::from("WKS"),
-            Qtype::PTR => String::from("PTR"),
-            Qtype::HINFO => String::from("HINFO"),
-            Qtype::MINFO => String::from("MINFO"),
-            Qtype::MX => String::from("MX"),
-            Qtype::TXT => String::from("TXT"),
-            Qtype::AAAA => String::from("AAAA"),
-            Qtype::DNAME => String::from("DNAME"),
-            Qtype::OPT => String::from("OPT"),
-            Qtype::DS => String::from("DS"),
-            Qtype::RRSIG => String::from("RRSIG"),
-            Qtype::NSEC => String::from("NSEC"),
-            Qtype::DNSKEY => String::from("DNSKEY"),
-            Qtype::TSIG => String::from("TSIG"),
-            Qtype::AXFR => String::from("AXFR"),
-            Qtype::MAILB => String::from("MAILB"),
-            Qtype::MAILA => String::from("MAILA"),
-            Qtype::ANY => String::from("ANY"),
-            Qtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
     }
 
@@ -107,6 +85,8 @@ impl Qtype{
             46 => Qtype::RRSIG,
             47 => Qtype::NSEC,
             48 => Qtype::DNSKEY,
+            50 => Qtype::NSEC3,
+            51 => Qtype::NSEC3PARAM,
             250 => Qtype::TSIG,
             252 => Qtype::AXFR,
             253 => Qtype::MAILB,
@@ -136,6 +116,8 @@ impl Qtype{
             "RRSIG" => Qtype::RRSIG,
             "NSEC" => Qtype::NSEC,
             "DNSKEY" => Qtype::DNSKEY,
+            "NSEC3" => Qtype::NSEC3,
+            "NSEC3PARAM" => Qtype::NSEC3PARAM,
             "TSIG" => Qtype::TSIG,
             "AXFR" => Qtype::AXFR,
             "MAILB" => Qtype::MAILB,
@@ -165,6 +147,8 @@ impl Qtype{
             Qtype::RRSIG => Rtype::RRSIG,
             Qtype::NSEC => Rtype::NSEC,
             Qtype::DNSKEY => Rtype::DNSKEY,
+            Qtype::NSEC3 => Rtype::NSEC3,
+            Qtype::NSEC3PARAM => Rtype::NSEC3PARAM,
             _ => Rtype::UNKNOWN(Self::from_qtype_to_int(qtype))
         }
     } 
@@ -172,4 +156,36 @@ impl Qtype{
 
 impl Default for Qtype {
     fn default() -> Self { Qtype::A }
+}
+
+impl fmt::Display for Qtype {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Qtype::A => "A",
+            Qtype::NS => "NS",
+            Qtype::CNAME => "CNAME",
+            Qtype::SOA => "SOA",
+            Qtype::PTR => "PTR",
+            Qtype::HINFO => "HINFO",
+            Qtype::MINFO => "MINFO",
+            Qtype::WKS => "WKS",
+            Qtype::MX => "MX",
+            Qtype::TXT => "TXT",
+            Qtype::AAAA => "AAAA",
+            Qtype::DNAME => "DNAME",
+            Qtype::OPT => "OPT",
+            Qtype::DS => "DS",
+            Qtype::RRSIG => "RRSIG",
+            Qtype::NSEC => "NSEC",
+            Qtype::DNSKEY => "DNSKEY",
+            Qtype::NSEC3 => "NSEC3",
+            Qtype::NSEC3PARAM => "NSEC3PARAM",
+            Qtype::TSIG => "TSIG",
+            Qtype::AXFR => "AXFR",
+            Qtype::MAILB => "MAILB",
+            Qtype::MAILA => "MAILA",
+            Qtype::ANY => "ANY",
+            Qtype::UNKNOWN(_) => "UNKNOWN",
+        })
+    }
 }

@@ -2,7 +2,6 @@ use crate::message::rdata::Rdata;
 use crate::message::Rclass;
 use crate::message::Rtype;
 use crate::utils;
-
 use crate::domain_name::DomainName;
 use std::fmt;
 use std::vec::Vec;
@@ -89,7 +88,6 @@ impl ResourceRecord {
                 rdlength: 0 as u16,
                 rdata: Rdata::A(val),
             },
-
             Rdata::NS(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rtype::NS,
@@ -145,6 +143,78 @@ impl ResourceRecord {
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::TXT(val),
+            },
+            Rdata::AAAA(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::AAAA,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::AAAA(val),
+            },
+            Rdata::OPT(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::OPT,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::OPT(val),
+            },
+            Rdata::DS(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::DS,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::DS(val),
+            },
+            Rdata::RRSIG(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::RRSIG,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::RRSIG(val),
+            },
+            Rdata::NSEC(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::NSEC,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::NSEC(val),
+            },
+            Rdata::DNSKEY(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::DNSKEY,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::DNSKEY(val),
+            },
+            Rdata::NSEC3(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::NSEC3,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::NSEC3(val),
+            },
+            Rdata::NSEC3PARAM(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::NSEC3PARAM,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::NSEC3PARAM(val),
+            },
+            Rdata::TSIG(val) => ResourceRecord {
+                name: DomainName::new(),
+                rtype: Rtype::TSIG,
+                rclass: Rclass::IN,
+                ttl: 0 as u32,
+                rdlength: 0 as u16,
+                rdata: Rdata::TSIG(val),
             },
             _ => ResourceRecord {
                 name: DomainName::new(),
@@ -392,7 +462,7 @@ impl ResourceRecord {
     }
 
     pub fn get_string_type(&self) -> String {
-        let qtype = Rtype::from_rtype_to_str(self.get_rtype());
+        let qtype = self.get_rtype().to_string();
         qtype
     }
 
@@ -496,14 +566,15 @@ impl ResourceRecord {
 
 impl fmt::Display for ResourceRecord {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        // We need to remove "-" from the number output.
         let name = self.get_name();
-        let type_code = self.get_rtype();
-        let class = self.get_rclass();
-
+        let rtype = self.get_rtype();
+        let rclass = self.get_rclass();
+        let ttl = self.get_ttl();
+        let rdata = self.get_rdata();
+                                                                                                  
         formatter.write_fmt(format_args!(
-            "RR:{} - type:{} - class:{}",
-            name, Rtype::from_rtype_to_int(type_code), Rclass::from_rclass_to_int(class)
+            "{}  {}  {}  {}  {}",
+            name, rclass, rtype, ttl, rdata
         ))
     }
 }

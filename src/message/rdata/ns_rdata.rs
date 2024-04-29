@@ -3,6 +3,7 @@ use crate::message::{Rtype, Rclass};
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.11
@@ -139,6 +140,12 @@ impl NsRdata {
     /// Sets the nsdname attibute with a value
     pub fn set_nsdname(&mut self, nsdname: DomainName) {
         self.nsdname = nsdname;
+    }
+}
+
+impl fmt::Display for NsRdata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.get_nsdname().get_name())
     }
 }
 

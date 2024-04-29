@@ -4,6 +4,7 @@ use crate::message::Rclass;
 use crate::message::Rtype;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.1
@@ -121,6 +122,12 @@ impl CnameRdata {
     /// Sets the cname field with a value
     pub fn set_cname(&mut self, cname: DomainName) {
         self.cname = cname;
+    }
+}
+
+impl fmt::Display for CnameRdata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.cname)
     }
 }
 

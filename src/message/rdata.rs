@@ -13,8 +13,11 @@ pub mod ds_rdata;
 pub mod rrsig_rdata;
 pub mod nsec_rdata;
 pub mod dnskey_rdata;
+pub mod nsec3_rdata;
+pub mod nsec3param_rdata;
 pub mod tsig_rdata;
 
+use core::fmt;
 use crate::message::resource_record::{FromBytes, ToBytes};
 use a_ch_rdata::AChRdata;
 use a_rdata::ARdata;
@@ -31,10 +34,11 @@ use ds_rdata::DsRdata;
 use rrsig_rdata::RRSIGRdata;
 use nsec_rdata::NsecRdata;
 use dnskey_rdata::DnskeyRdata;
+use nsec3_rdata::Nsec3Rdata;
+use nsec3param_rdata::Nsec3ParamRdata;
 use tsig_rdata::TSigRdata;
 
 #[derive(Clone, PartialEq, Debug)]
-
 /// Enumerates the differents types of `Rdata` struct.
 pub enum Rdata {
     A(ARdata),
@@ -46,13 +50,14 @@ pub enum Rdata {
     TXT(TxtRdata),
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
-    ////// Define here more rdata types //////
     AAAA(AAAARdata),
     OPT(OptRdata),
     DS(DsRdata),
     RRSIG(RRSIGRdata),
     NSEC(NsecRdata),
     DNSKEY(DnskeyRdata),
+    NSEC3(Nsec3Rdata),
+    NSEC3PARAM(Nsec3ParamRdata),
     TSIG(TSigRdata),
 }
 
@@ -88,6 +93,8 @@ impl ToBytes for Rdata {
             Rdata::RRSIG(val) => val.to_bytes(),
             Rdata::NSEC(val) => val.to_bytes(),
             Rdata::DNSKEY(val) => val.to_bytes(),
+            Rdata::NSEC3(val) => val.to_bytes(),
+            Rdata::NSEC3PARAM(val) => val.to_bytes(),
             Rdata::TSIG(val) => val.to_bytes(),
         }
     }
@@ -209,7 +216,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::TXT(rdata.unwrap()))
             }
-
             28 => {
                 let rdata = AAAARdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -222,7 +228,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::AAAA(rdata.unwrap()))
             }
-
             39 => {
                 let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -235,7 +240,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::CNAME(rdata.unwrap()))
             }
-
             41 => {
                 println!("OPT");
                 let rdata = OptRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
@@ -248,7 +252,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::OPT(rdata.unwrap()))
             }
-
             43 => {
                 let rdata = DsRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -260,7 +263,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::DS(rdata.unwrap()))
             }
-
             46 => {
                 let rdata = RRSIGRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -272,7 +274,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::RRSIG(rdata.unwrap()))
             }
-
             47 => {
                 let rdata = NsecRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -284,7 +285,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::NSEC(rdata.unwrap()))
             }
-
             48 => {
                 let rdata = DnskeyRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
@@ -296,7 +296,28 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 }
                 Ok(Rdata::DNSKEY(rdata.unwrap()))
             }
-            
+            50 => {
+                let rdata = Nsec3Rdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::NSEC3(rdata.unwrap()))
+            }
+            51 => {
+                let rdata = Nsec3ParamRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                    
+                }
+                Ok(Rdata::NSEC3PARAM(rdata.unwrap()))
+            }
             250 => {
                 let rdata = TSigRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -315,6 +336,32 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
         especific_rdata
     }
 }
+
+impl fmt::Display for Rdata {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Rdata::A(val) => write!(f, "{}", val),
+            Rdata::ACH(val) => write!(f, "{}", val),
+            Rdata::MX(val) => write!(f, "{}", val),
+            Rdata::NS(val) => write!(f, "{}", val),
+            Rdata::PTR(val) => write!(f, "{}", val),
+            Rdata::SOA(val) => write!(f, "{}", val),
+            Rdata::TXT(val) => write!(f, "{}", val),
+            Rdata::AAAA(val) => write!(f, "{}", val),
+            Rdata::CNAME(val) => write!(f, "{}", val),
+            Rdata::HINFO(val) => write!(f, "{}", val),
+            Rdata::OPT(val) => write!(f, "{}", val),
+            Rdata::DS(val) => write!(f, "{}", val),
+            Rdata::RRSIG(val) => write!(f, "{}", val),
+            Rdata::NSEC(val) => write!(f, "{}", val),
+            Rdata::DNSKEY(val) => write!(f, "{}", val),
+            Rdata::NSEC3(val) => write!(f, "{}", val),
+            Rdata::NSEC3PARAM(val) => write!(f, "{}", val),
+            Rdata::TSIG(val) => write!(f, "{}", val),
+        }
+    }
+}
+
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
@@ -335,6 +382,8 @@ mod resolver_query_tests {
     use super::rrsig_rdata::RRSIGRdata;
     use super::nsec_rdata::NsecRdata;
     use super::dnskey_rdata::DnskeyRdata;
+    use super::nsec3_rdata::Nsec3Rdata;
+    use super::nsec3param_rdata::Nsec3ParamRdata;
     use super::tsig_rdata::TSigRdata;
     use super::aaaa_rdata::AAAARdata;
     use std::net::IpAddr;
@@ -660,6 +709,41 @@ mod resolver_query_tests {
         assert_eq!(bytes, bytes_to_test);
     }
 
+    #[test]
+    fn to_bytes_nsec3_rdata(){
+        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
+            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+
+        let rdata = Rdata::NSEC3(nsec3_rdata);
+        let bytes = rdata.to_bytes();
+
+        let first_expected_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116, 22, 110, 101, 120, 116, 95, 104,
+                                                97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+            
+        
+        let expected_bytes = [&first_expected_bytes[..], &bit_map_bytes_to_test[..]].concat();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn to_bytes_nsec3param_rdata(){
+        let nsec3param_rdata = Nsec3ParamRdata::new(1, 2, 3, 
+            4, "salt".to_string());
+
+        let rdata = Rdata::NSEC3PARAM(nsec3param_rdata);
+        let bytes = rdata.to_bytes();
+
+        let expected_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116];
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
     //from bytes tests
     #[test]
     fn from_bytes_a_ch_rdata(){
@@ -955,6 +1039,59 @@ mod resolver_query_tests {
             }
             _ => {}
         }
+    }
+
+    #[test]
+    fn from_bytes_nsec3_rdata(){
+        let first_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116, 22, 110, 101, 120, 116, 95, 104,
+                                                97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
+
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
+                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+        
+        let extra_bytes = vec![0, 50, 0, 1];
+
+        let data_bytes = [&first_bytes[..], &bit_map_bytes_to_test[..], &extra_bytes[..]].concat();
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::NSEC3(val) => {
+                assert_eq!(val.get_hash_algorithm(), 1);
+                assert_eq!(val.get_flags(), 2);
+                assert_eq!(val.get_iterations(), 3);
+                assert_eq!(val.get_salt_length(), 4);
+                assert_eq!(val.get_salt(), "salt");
+                assert_eq!(val.get_hash_length(), 22);
+                assert_eq!(val.get_next_hashed_owner_name(), "next_hashed_owner_name");
+                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            }
+            _ => {}
+        } 
+    }
+
+    #[test]
+    fn from_bytes_nsec3param_rdata(){
+        let first_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116];
+        
+        let extra_bytes = vec![0, 51, 0, 1];
+
+        let data_bytes = [&first_bytes[..], &extra_bytes[..]].concat();
+
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+
+        match rdata {
+            Rdata::NSEC3(val) => {
+                assert_eq!(val.get_hash_algorithm(), 1);
+                assert_eq!(val.get_flags(), 2);
+                assert_eq!(val.get_iterations(), 3);
+                assert_eq!(val.get_salt_length(), 4);
+                assert_eq!(val.get_salt(), "salt");
+            }
+            _ => {}
+        } 
     }
 
     #[test]

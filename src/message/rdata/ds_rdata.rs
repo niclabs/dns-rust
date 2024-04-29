@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::message::resource_record::{FromBytes, ToBytes};
 
 #[derive(Clone, PartialEq, Debug)]
@@ -143,6 +145,22 @@ impl DsRdata{
     /// Setter for the digest field
     pub fn set_digest(&mut self, digest: Vec<u8>) {
         self.digest = digest;
+    }
+}
+
+impl fmt::Display for DsRdata {
+    /// Function to format a DsRdata struct
+    /// # Arguments
+    /// * `&self` - The DsRdata
+    /// # Return
+    /// * `String` - The formatted DsRdata
+    /// # Examples
+    /// ```
+    /// let ds_rdata = DsRdata::new(0, 0, 0, vec![0]);
+    /// println!("{}", ds_rdata);
+    /// ```
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {} {} {}", self.key_tag, self.algorithm, self.digest_type, self.digest.iter().map(|b| format!("{:02x}", b)).collect::<String>())
     }
 }
 

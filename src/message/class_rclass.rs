@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, PartialEq, Debug)]
 /// Enum for the Class of a RR in a DnsMessage
 pub enum Rclass {
@@ -18,17 +20,6 @@ impl Rclass {
             Rclass::CH => 3,
             Rclass::HS => 4,
             Rclass::UNKNOWN(val) => val,
-        }
-    }
-
-    ///Function to get an string representing the class
-    pub fn from_rclass_to_str(class: Rclass) -> String{
-        match class {
-            Rclass::IN => String::from("IN"),
-            Rclass::CS => String::from("CS"),
-            Rclass::CH => String::from("CH"),
-            Rclass::HS => String::from("HS"),
-            Rclass::UNKNOWN(_val) => String::from("UNKNOWN CLASS")
         }
     }
 
@@ -57,4 +48,16 @@ impl Rclass {
 
 impl Default for Rclass {
     fn default() -> Self { Rclass::IN }
+}
+
+impl fmt::Display for Rclass {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Rclass::IN => "IN",
+            Rclass::CS => "CS",
+            Rclass::CH => "CH",
+            Rclass::HS => "HS",
+            Rclass::UNKNOWN(_) => "UNKNOWN",
+        })
+    }
 }

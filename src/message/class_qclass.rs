@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, PartialEq, Debug,Copy)]
 /// Enum for the Class of a RR in a DnsMessage
 pub enum Qclass {
@@ -20,18 +22,6 @@ impl Qclass {
             Qclass::HS => 4,
             Qclass::ANY => 255,
             Qclass::UNKNOWN(val) => val,
-        }
-    }
-
-    ///Function to get an string representing the class
-    pub fn from_qclass_to_str(class: Qclass) -> String{
-        match class {
-            Qclass::IN => String::from("IN"),
-            Qclass::CS => String::from("CS"),
-            Qclass::CH => String::from("CH"),
-            Qclass::HS => String::from("HS"),
-            Qclass::ANY => String::from("ANY"),
-            Qclass::UNKNOWN(_val) => String::from("UNKNOWN CLASS")
         }
     }
 
@@ -62,4 +52,17 @@ impl Qclass {
 
 impl Default for Qclass {
     fn default() -> Self { Qclass::IN }
+}
+
+impl fmt::Display for Qclass {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Qclass::IN => "IN",
+            Qclass::CS => "CS",
+            Qclass::CH => "CH",
+            Qclass::HS => "HS",
+            Qclass::ANY => "ANY",
+            Qclass::UNKNOWN(_) => "UNKNOWN",
+        })
+    }
 }

@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, PartialEq, Debug, Hash, PartialOrd, Ord, Eq, Copy)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
@@ -18,12 +20,14 @@ pub enum Rtype {
     RRSIG,
     NSEC,   
     DNSKEY,
+    NSEC3,
+    NSEC3PARAM,
     TSIG,
     UNKNOWN(u16),
 }
 
 /// Functions for the RType Enum
-impl Rtype{
+impl Rtype {
     /// Function to get the int equivalent of a type
     pub fn from_rtype_to_int(rtype: Rtype) -> u16{
         match rtype {
@@ -44,32 +48,10 @@ impl Rtype{
             Rtype::RRSIG => 46,
             Rtype::NSEC => 47,
             Rtype::DNSKEY => 48,
+            Rtype::NSEC3 => 50,
+            Rtype::NSEC3PARAM => 51,
             Rtype::TSIG => 250,
             Rtype::UNKNOWN(val) => val
-        }
-    }
-    /// Function to get the String equivalent of a type
-    pub fn from_rtype_to_str(rtype: Rtype) -> String {
-        match rtype {
-            Rtype::A => String::from("A"),
-            Rtype::NS => String::from("NS"),
-            Rtype::CNAME => String::from("CNAME"),
-            Rtype::SOA => String::from("SOA"),
-            Rtype::WKS => String::from("WKS"),
-            Rtype::PTR => String::from("PTR"),
-            Rtype::HINFO => String::from("HINFO"),
-            Rtype::MINFO => String::from("MINFO"),
-            Rtype::MX => String::from("MX"),
-            Rtype::TXT => String::from("TXT"),
-            Rtype::AAAA => String::from("AAAA"),
-            Rtype::DNAME => String::from("DNAME"),
-            Rtype::OPT => String::from("OPT"),
-            Rtype::DS => String::from("DS"),
-            Rtype::RRSIG => String::from("RRSIG"),
-            Rtype::NSEC => String::from("NSEC"),
-            Rtype::DNSKEY => String::from("DNSKEY"),
-            Rtype::TSIG => String::from("TSIG"),
-            Rtype::UNKNOWN(_val) => String::from("UNKNOWN TYPE") 
         }
     }
 
@@ -93,6 +75,8 @@ impl Rtype{
             46 => Rtype::RRSIG,
             47 => Rtype::NSEC,
             48 => Rtype::DNSKEY,
+            50 => Rtype::NSEC3,
+            51 => Rtype::NSEC3PARAM,
             250 => Rtype::TSIG,
             _ => Rtype::UNKNOWN(val),
         }
@@ -118,6 +102,8 @@ impl Rtype{
             "RRSIG" => Rtype::RRSIG,
             "NSEC" => Rtype::NSEC,
             "DNSKEY" => Rtype::DNSKEY,
+            "NSEC3" => Rtype::NSEC3,
+            "NSEC3PARAM" => Rtype::NSEC3PARAM,
             "TSIG" => Rtype::TSIG,
             _ => Rtype::UNKNOWN(99),
         }
@@ -126,4 +112,32 @@ impl Rtype{
 
 impl Default for Rtype {
     fn default() -> Self { Rtype::A }
+}
+
+impl fmt::Display for Rtype {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Rtype::A => "A",
+            Rtype::NS => "NS",
+            Rtype::CNAME => "CNAME",
+            Rtype::SOA => "SOA",
+            Rtype::PTR => "PTR",
+            Rtype::HINFO => "HINFO",
+            Rtype::MINFO => "MINFO",
+            Rtype::WKS => "WKS",
+            Rtype::MX => "MX",
+            Rtype::TXT => "TXT",
+            Rtype::AAAA => "AAAA",
+            Rtype::DNAME => "DNAME",
+            Rtype::OPT => "OPT",
+            Rtype::DS => "DS",
+            Rtype::RRSIG => "RRSIG",
+            Rtype::NSEC => "NSEC",
+            Rtype::DNSKEY => "DNSKEY",
+            Rtype::NSEC3 => "NSEC3",
+            Rtype::NSEC3PARAM => "NSEC3PARAM",
+            Rtype::TSIG => "TSIG",
+            Rtype::UNKNOWN(_) => "UNKNOWN",
+        })
+    }
 }

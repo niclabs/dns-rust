@@ -1,17 +1,10 @@
 use std::{time::Duration, net::IpAddr};
 
 use dns_rust::{
-    client::{
-        Client, 
-        tcp_connection::ClientTCPConnection, 
-        client_connection::ClientConnection, 
-        udp_connection::ClientUDPConnection}, 
-        domain_name::DomainName, 
-        async_resolver::{
-            config::ResolverConfig, 
-            AsyncResolver, 
-            resolver_error::ResolverError
-        }, message::resource_record::ResourceRecord};
+    async_resolver::{
+            config::ResolverConfig, resolver_error::ResolverError, AsyncResolver
+        }, client::{
+        client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, message::resource_record::ResourceRecord};
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
@@ -73,10 +66,10 @@ async fn query(
     qtype: String,
     qclass: String,
     protocol: String,
-) -> Result<Vec<ResourceRecord>, ResolverError> {
+) -> Result<Vec<ResourceRecord>, ClientError> {
     let response = resolver.lookup(domain_name.as_str(),protocol.as_str(), qtype.as_str(),qclass.as_str()).await;
 
-    response
+    response.map(|lookup_response| lookup_response.to_vec_of_rr())
 }
 
 fn print_response(response: Result<Vec<ResourceRecord>, ResolverError>) {
@@ -131,7 +124,7 @@ pub async fn main() {
                   resolver_args.qclass.clone(),
                    resolver_args.protocol.clone()).await;
             
-            print_response(response);
+            print_response(response.map_err(Into::into));
         }
     }  
 }

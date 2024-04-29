@@ -2,6 +2,8 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
 use crate::message::type_rtype::Rtype;
 
+use std::fmt;
+
 #[derive(Clone, Debug, PartialEq)]
 /// Struct for NSEC Rdata
 /// [RFC 4034](https://tools.ietf.org/html/rfc4034#section-4.1)
@@ -191,7 +193,7 @@ impl NsecRdata{
 
 impl NsecRdata{
     /// Complementary functions for to_bytes
-    fn add_rtype_to_bitmap(rtype: &Rtype, bitmap: &mut Vec<u8>) {
+    pub fn add_rtype_to_bitmap(rtype: &Rtype, bitmap: &mut Vec<u8>) {
         // Calculate the offset and bit for the specific Qtype
         let rr_type = Rtype::from_rtype_to_int(*rtype);
         let offset = (rr_type % 256) / 8;
@@ -204,6 +206,13 @@ impl NsecRdata{
     
         // Set the bit in the bitmap
         bitmap[offset as usize] |= 1 << bit;
+    }
+}
+
+impl fmt::Display for NsecRdata {
+    /// Formats the NSEC Rdata for display
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {:?}", self.get_next_domain_name().get_name(), self.get_type_bit_maps())
     }
 }
 

@@ -6,6 +6,7 @@ use std::net::IpAddr;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// An struct that represents the `Rdata` for a type.
@@ -185,6 +186,13 @@ impl ARdata {
     }
 }
 
+impl fmt::Display for ARdata {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let ip = self.get_address();
+
+        formatter.write_fmt(format_args!("{}", ip))
+    }
+}
 #[cfg(test)]
 mod a_rdata_test {
     use crate::message::rdata::a_rdata::ARdata;

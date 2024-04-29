@@ -5,6 +5,7 @@ use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// An struct that represents the RDATA for A TYPE in CH class.
@@ -184,6 +185,16 @@ impl AChRdata {
     /// Sets the `ch_address` attibute with a given address.
     pub fn set_ch_address(&mut self, ch_address: u16) {
         self.ch_address = ch_address;
+    }
+}
+
+impl fmt::Display for AChRdata {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let domain_name_str = self.get_domain_name().get_name();
+        let ch_address = self.get_ch_address();
+
+        formatter.write_fmt(format_args!(
+            "{} {}", domain_name_str, ch_address))
     }
 }
 

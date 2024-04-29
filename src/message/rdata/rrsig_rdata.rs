@@ -2,6 +2,8 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
 use crate::message::type_rtype::Rtype;
 
+use std::fmt;
+
 #[derive(Clone, Debug, PartialEq)]
 /// Struct for RRSIG Rdata
 /// [RFC 4034](https://tools.ietf.org/html/rfc4034#section-3.1)
@@ -385,6 +387,22 @@ impl RRSIGRdata{
     /// ```
     pub fn set_signature(&mut self, signature: String) {
         self.signature = signature;
+    }
+}
+
+impl fmt::Display for RRSIGRdata {
+    /// Formats the record data for display
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {} {} {} {} {} {} {}", 
+        Rtype::from_rtype_to_int(self.get_type_covered()), 
+        self.get_algorithm(), 
+        self.get_labels(), 
+        self.get_original_ttl(), 
+        self.get_signature_expiration(), 
+        self.get_signature_inception(), 
+        self.get_key_tag(), 
+        self.get_signer_name().get_name(), 
+        self.get_signature())
     }
 }
 

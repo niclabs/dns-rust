@@ -3,6 +3,7 @@ use crate::message::{Rtype, Rclass};
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
 #[derive(Clone, PartialEq, Debug)]
 /// Struct that represents the `Rdata` for PTR TYPE.
@@ -141,6 +142,13 @@ impl PtrRdata {
     /// Sets the `ptrdname` attibute with the given value.
     pub fn set_ptrdname(&mut self, ptrdname: DomainName) {
         self.ptrdname = ptrdname;
+    }
+}
+
+impl fmt::Display for PtrRdata {
+    /// Formats the record data for display
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.get_ptrdname().get_name())
     }
 }
 

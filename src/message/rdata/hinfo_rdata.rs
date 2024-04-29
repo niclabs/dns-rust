@@ -7,6 +7,8 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::string::String;
 
+use std::fmt;
+
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.2
 /// An struct that represents the `Rdata` for HINFO TYPE.
@@ -184,6 +186,22 @@ impl HinfoRdata {
     /// Sets the `os` field with a value.
     pub fn set_os(&mut self, os: String) {
         self.os = os;
+    }
+}
+
+impl fmt::Display for HinfoRdata {
+    /// Formats the Rdata as a string.
+    /// 
+    /// # Examples
+    /// ```
+    /// use dns_message_parser::message::rdata::hinfo_rdata::HinfoRdata;
+    /// 
+    /// let hinfo_rdata = HinfoRdata::new();
+    /// 
+    /// assert_eq!(hinfo_rdata.to_string(), "CPU: , OS: ");
+    /// ```
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.cpu, self.os)
     }
 }
 

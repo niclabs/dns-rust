@@ -18,6 +18,7 @@ use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use rand::thread_rng;
 use rand::Rng;
+use core::fmt;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -717,13 +718,20 @@ impl DnsMessage {
                         println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())
                     }
                     Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
+                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered().to_string(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
                     Rdata::NSEC(val) => {
                         println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
+                    }
+
+                    Rdata::NSEC3(val) => {
+                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
+                    }
+                    Rdata::NSEC3PARAM(val) => {
+                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
                     }
                 }
             }
@@ -776,7 +784,7 @@ impl DnsMessage {
                         println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                     Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
+                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered().to_string(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
                     Rdata::DS(val) => {
                         println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())
@@ -786,6 +794,12 @@ impl DnsMessage {
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
+                    }
+                    Rdata::NSEC3(val) => {
+                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
+                    }
+                    Rdata::NSEC3PARAM(val) => {
+                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
                     }
                 }
             }
@@ -839,13 +853,19 @@ impl DnsMessage {
                         println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())
                     }
                     Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", Rtype::from_rtype_to_str(val.get_type_covered()), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
+                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered().to_string(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
                     }
                     Rdata::NSEC(val) => {
                         println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
                     }
                     Rdata::DNSKEY(val) => {
                         println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
+                    }
+                    Rdata::NSEC3(val) => {
+                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
+                    }
+                    Rdata::NSEC3PARAM(val) => {
+                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
                     }
                 }
             }
@@ -871,6 +891,22 @@ impl DnsMessage {
         }
     }
 
+}
+
+impl fmt::Display for DnsMessage {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut result = String::new();
+        let answers = self.get_answer().into_iter();
+        let authority = self.get_authority().into_iter();
+        let additional = self.get_additional().into_iter();
+        result.push_str(&format!("Answer\n"));
+        answers.for_each(|answer| result.push_str(&format!("{}\n", answer)));
+        result.push_str(&format!("Authority\n"));
+        authority.for_each(|authority| result.push_str(&format!("{}\n", authority)));
+        result.push_str(&format!("Additional\n"));
+        additional.for_each(|additional| result.push_str(&format!("{}\n", additional)));
+        write!(f, "{}", result)
+    }
 }
 
 // Getters
@@ -1293,9 +1329,10 @@ mod message_test {
     //ToDo: Revisar Práctica 1
     #[test]
     fn update_header_counters_test() {
+        let name = DomainName::new_from_string("example.com".to_string());
         let mut dns_query_message =
             DnsMessage::new_query_message(
-                DomainName::new_from_string("example.com".to_string()),
+                name.clone(),
                 Qtype::A,
                 Qclass::IN,
                 0,
@@ -1308,7 +1345,8 @@ mod message_test {
 
         let mut new_answer = Vec::<ResourceRecord>::new();
         let a_rdata = Rdata::A(ARdata::new());
-        let rr = ResourceRecord::new(a_rdata);
+        let mut rr = ResourceRecord::new(a_rdata);
+        rr.set_name(name);
         new_answer.push(rr);
 
         let a_rdata1 = Rdata::A(ARdata::new());
@@ -1420,7 +1458,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::A, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("A"));
     }
@@ -1431,7 +1469,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::NS, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("NS"));
     }
@@ -1442,7 +1480,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::CNAME, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("CNAME"));
     }
@@ -1453,7 +1491,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::SOA, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("SOA"));
     }
@@ -1464,7 +1502,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::WKS, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("WKS"));
     }
@@ -1475,7 +1513,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::PTR, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("PTR"));
     }
@@ -1486,7 +1524,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::HINFO, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("HINFO"));
     }
@@ -1497,7 +1535,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::MINFO, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("MINFO"));
     }
@@ -1508,7 +1546,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::MX, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("MX"));
     }
@@ -1519,7 +1557,7 @@ mod message_test {
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_message = DnsMessage::new_query_message(name, Qtype::TXT, Qclass::IN, 1, true, 1);
 
-        let qtype = Qtype::from_qtype_to_str(dns_message.get_question().get_qtype());
+        let qtype = dns_message.get_question().get_qtype().to_string();
 
         assert_eq!(qtype, String::from("TXT"));
     }

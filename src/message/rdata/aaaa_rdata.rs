@@ -1,6 +1,7 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
-use core::panic;
+use std::fmt;
 use std::net::IpAddr;
+
 
 
 /// Struct for the AAAA Rdata
@@ -97,6 +98,12 @@ impl AAAARdata{
     /// Function to set the address of the AAAA Rdata
     pub fn set_address(&mut self, address: IpAddr){
         self.address = address;
+    }
+}
+
+impl fmt::Display for AAAARdata {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.get_address_as_string())
     }
 }
 

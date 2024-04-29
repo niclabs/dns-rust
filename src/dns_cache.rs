@@ -458,4 +458,14 @@ mod dns_cache_test {
             _ => unreachable!(),
         }
     }
+
+    #[test]
+    fn get_none() {
+        let mut cache = DnsCache::new(NonZeroUsize::new(10));
+        let domain_name = DomainName::new_from_str("example.com");
+
+        let rr_cache_vec = cache.get(domain_name.clone(), Rtype::A);
+
+        assert!(rr_cache_vec.is_none());
+    }
 }

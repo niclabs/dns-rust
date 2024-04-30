@@ -66,7 +66,8 @@ impl ClientConnection for ClientUDPConnection {
         };
         
         let mut msg: [u8;512] = [0;512];
-        //FIXME: change to timeout
+        //FIXME: not always is timeout error, since it doesn't have to be wait for the timeout return
+        // and error, is just an IO error, the timeout error should come by itself from the timeout function
         let result = match timeout(conn_timeout, socket_udp.recv_from(&mut msg)).await {
             Ok(val) => val,
             Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),

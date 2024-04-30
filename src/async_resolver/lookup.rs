@@ -173,22 +173,21 @@ pub async fn execute_lookup_strategy(
     response.set_header(new_header);
 
     let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
-    let mut retry_count = 0;
+    // let mut retry_count = 0;
     // Index to iterate over the name servers
-    let mut i = 0;
-    let number_of_servers = name_servers.len();
+    let i = 0; // FIME: it should recevie the number of the server
+    // let number_of_servers = name_servers.len();
     
     // General loop to send the query to each server
-    loop {
+    // loop {
         println!("SENDING THE QUERY");
-
+        // Get guard to modify the response
         let mut response_guard = response_arc.lock().unwrap();
-        let response = response_guard.as_ref();
+        // let response = response_guard.as_ref();
 
-        if response.is_ok() || retry_count >= config.get_retry() {
-            break; 
-        }
-        println!("Retry count: {}", retry_count);
+        // if response.is_ok() || retry_count >= config.get_retry() {
+        //     break; 
+        // }
         let connections = name_servers.get(i).unwrap(); // FIXME: conn error
         result_dns_msg = 
                 timeout(Duration::from_secs(6), 
@@ -199,27 +198,29 @@ pub async fn execute_lookup_strategy(
                         connections,
                     )).await
                 .unwrap_or_else(|_| {
+                    println!("I got here: Timeout Error");
                     Err(ResolverError::Message("Timeout Error".into()))
                 });  
         
         *response_guard = result_dns_msg.clone();
-        retry_count = retry_count + 1;
-        i = (i+1)%number_of_servers;
-    }
+        // retry_count = retry_count + 1;
+        // i = (i+1)%number_of_servers;
+    // }
 
-    let response_dns_msg = match result_dns_msg.clone() {
-        Ok(response_message) => response_message,
-        Err(ResolverError::Parse(_)) => {
-            let mut format_error_response = response.clone();
-            let mut header = format_error_response.get_header();
-            header.set_rcode(1);
-            format_error_response.set_header(header);
-            format_error_response
-        }
-        Err(_) => response,
-    };
+    // let response_dns_msg = match result_dns_msg.clone() {
+    //     Ok(response_message) => response_message,
+    //     // Err(ResolverError::Parse(_)) => {  // this point was never reached
+    //     //     let mut format_error_response = response.clone();
+    //     //     let mut header = format_error_response.get_header();
+    //     //     header.set_rcode(1);
+    //     //     format_error_response.set_header(header);
+    //     //     format_error_response
+    //     // }
+    //     Err(_) => response,
+    // };
 
-    Ok(LookupResponse::new(response_dns_msg))  
+    // Ok(LookupResponse::new(response_dns_msg))  
+    result_dns_msg.and_then(|dns_msg| Ok(LookupResponse::new(dns_msg)))
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.
@@ -528,7 +529,8 @@ mod async_resolver_test {
             name_servers,
             config,
             response_arc
-        ).await.unwrap();
+        ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
+        // IO error in ResolverError
         println!("response {:?}",response);
 
        assert!(response

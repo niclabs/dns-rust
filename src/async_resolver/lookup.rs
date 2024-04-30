@@ -166,60 +166,33 @@ pub async fn execute_lookup_strategy(
     );
 
     // Create Server failure query 
-    let mut response = new_query.clone(); // le quite el to_owned
+    let mut response = new_query.clone(); 
     let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2); // FIXME: is this the origin of the bug?
+    new_header.set_rcode(2); 
     new_header.set_qr(true);
     response.set_header(new_header);
 
     let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
-    // let mut retry_count = 0;
-    // Index to iterate over the name servers
-    let i = 0; // FIME: it should recevie the number of the server
-    // let number_of_servers = name_servers.len();
+    let server_in_use = 0; 
+
+    // Get guard to modify the response
+    let mut response_guard = response_arc.lock().unwrap();
+
+    let connections = name_servers.get(server_in_use).unwrap(); // FIXME: conn error
+    result_dns_msg = 
+            timeout(Duration::from_secs(6), 
+        send_query_resolver_by_protocol(
+                    config.get_protocol(),
+                    new_query.clone(),
+                    result_dns_msg.clone(),
+                    connections,
+                )).await
+            .unwrap_or_else(|_| {
+                Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
+            });  
     
-    // General loop to send the query to each server
-    // loop {
-        println!("SENDING THE QUERY");
-        // Get guard to modify the response
-        let mut response_guard = response_arc.lock().unwrap();
-        // let response = response_guard.as_ref();
+    *response_guard = result_dns_msg.clone();
 
-        // if response.is_ok() || retry_count >= config.get_retry() {
-        //     break; 
-        // }
-        let connections = name_servers.get(i).unwrap(); // FIXME: conn error
-        result_dns_msg = 
-                timeout(Duration::from_secs(6), 
-            send_query_resolver_by_protocol(
-                        config.get_protocol(),
-                        new_query.clone(),
-                        result_dns_msg.clone(),
-                        connections,
-                    )).await
-                .unwrap_or_else(|_| {
-                    println!("I got here: Timeout Error");
-                    Err(ResolverError::Message("Timeout Error".into()))
-                });  
-        
-        *response_guard = result_dns_msg.clone();
-        // retry_count = retry_count + 1;
-        // i = (i+1)%number_of_servers;
-    // }
-
-    // let response_dns_msg = match result_dns_msg.clone() {
-    //     Ok(response_message) => response_message,
-    //     // Err(ResolverError::Parse(_)) => {  // this point was never reached
-    //     //     let mut format_error_response = response.clone();
-    //     //     let mut header = format_error_response.get_header();
-    //     //     header.set_rcode(1);
-    //     //     format_error_response.set_header(header);
-    //     //     format_error_response
-    //     // }
-    //     Err(_) => response,
-    // };
-
-    // Ok(LookupResponse::new(response_dns_msg))  
     result_dns_msg.and_then(|dns_msg| Ok(LookupResponse::new(dns_msg)))
 }
 

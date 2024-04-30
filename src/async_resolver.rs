@@ -216,7 +216,8 @@ impl AsyncResolver {
             let lock_result = self.cache.lock();
             let cache = match lock_result {
                 Ok(val) => val,
-                Err(_) => Err(ResolverError::Message("Error getting cache"))?,
+                Err(_) => Err(ClientError::Message("Error getting cache"))?, // FIXME: it shouldn't 
+                // return the error, it shoul go to the next part of the code
             };
             let rtype_saved = Qtype::to_rtype(qtype);
             if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), rtype_saved) {
@@ -258,21 +259,45 @@ impl AsyncResolver {
                 return Ok(new_lookup_response)
             }
         }
+        let max_retry = self.config.get_retry();
+        let mut retry_count = 0;
+        let mut lookup_response: Result<LookupResponse, ResolverError>;
         let mut lookup_strategy = LookupStrategy::new(
             domain_name,
             qtype,
             qclass,
             self.config.clone()
         );
+        loop {
+            lookup_response = lookup_strategy.lookup_run().await;
 
-        let response = lookup_strategy.lookup_run().await;
-
+            match lookup_response.clone() {
+                Ok(msg) => {
+                    match msg.to_dns_msg().get_header().get_rcode() {
+                        0 => break,
+                        3 => break,
+                        _ => {
+                            if retry_count == max_retry {
+                                break;
+                            }
+                            retry_count += 1;
+                            continue;
+                        }}},
+                Err(_) => {
+                    if retry_count == max_retry {
+                        break;
+                    }
+                    retry_count += 1;
+                }
+            }
+        }
+        
         // Cache data
-        if let Ok(ref r) = response {
+        if let Ok(ref r) = lookup_response {
             self.store_data_cache(r.to_dns_msg().clone());
         }
 
-        return response;
+        return lookup_response;
     }
 
     /// Performs the reverse query of the given IP address.

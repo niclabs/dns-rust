@@ -956,7 +956,7 @@ mod async_resolver_test {
         // TODO: Test special cases from RFC
     }
 
-
+    //TODO: test max number of retry
     #[tokio::test]
     async fn max_number_of_retry() {
         let mut config = ResolverConfig::default();

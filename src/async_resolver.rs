@@ -4,6 +4,7 @@ pub mod slist;
 pub mod resolver_error;
 pub mod lookup_response;
 
+use std::cmp::max;
 use std::net::IpAddr;
 use std::vec;
 use rand::{thread_rng, Rng};
@@ -21,6 +22,8 @@ use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
 use self::lookup_response::LookupResponse;
+use tokio_stream::StreamExt;
+
 
 /// Asynchronous resolver for DNS queries.
 ///
@@ -268,6 +271,7 @@ impl AsyncResolver {
             qclass,
             self.config.clone()
         );
+
         loop {
             lookup_response = lookup_strategy.lookup_run().await;
 
@@ -291,6 +295,36 @@ impl AsyncResolver {
                 }
             }
         }
+
+        // implementation with tokio
+        let upper_limit_of_retransmission = self.config.get_retry();
+        let number_of_server_to_query = 3;
+
+        // Start interval used by The Berkeley stub-resolver
+        // The resolver cycles through servers and at the end of a cycle, backs off 
+        // the time out exponentially.
+
+        let start_interval = max(4, 5/number_of_server_to_query);
+        let next_interval = 2 * start_interval;
+        let maximum_interval = 64;  // The Berkeley resolver usses 45 seconds
+
+        let mut stream = tokio_stream::iter(0..upper_limit_of_retransmission);
+        // this way, the interval will be equal to the start_interval*2^i
+
+        // while let Err(_) = lookup_response {
+        //     let retransmission_number = stream.next().await.unwrap();
+        //     let interval = start_interval * 2u64.pow(retransmission_number.into());
+        //     let new_lookup_response = lookup_strategy.lookup_run().await;
+        //     if let Ok(ref r) = new_lookup_response {
+        //         lookup_response = new_lookup_response;
+        //         break;
+        //     }
+        //     if interval == upper_limit_of_retransmission.into() {
+        //         break;
+        //     }
+        //     tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
+        // }
+
         
         // Cache data
         if let Ok(ref r) = lookup_response {
@@ -299,6 +333,8 @@ impl AsyncResolver {
 
         return lookup_response;
     }
+
+
 
     /// Performs the reverse query of the given IP address.
     ///

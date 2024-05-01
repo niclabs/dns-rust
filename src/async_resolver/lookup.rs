@@ -60,6 +60,8 @@ impl LookupStrategy {
     /// 
     /// This function performs the lookup of the requested records asynchronously.
     /// It returns a `LookupResponse` with the response of the query.
+    /// 
+    /// TODO: make lookup_run specific to a single SERVER, it receives the server where it should be quering 
     pub async fn lookup_run(
         &mut self           
     ) -> Result<LookupResponse, ResolverError> {

@@ -111,5 +111,31 @@ mod server_info_tests {
         assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
 
+    #[test]
+    fn get_port() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
+
+        assert_eq!(server_info.get_port(), 53);
+    }
+
+    #[test]
+    fn get_key() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
+
+        assert_eq!(server_info.get_key(), "key");
+    }
+
 }
 

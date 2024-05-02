@@ -1,5 +1,6 @@
+use crate::client::tcp_connection::ClientTCPConnection;
+use crate::client::udp_connection::ClientUDPConnection;
 use crate::message::{resource_record::ResourceRecord, DnsMessage};
-use crate::client::ClientConnection;
 use std::net::IpAddr;
 
 
@@ -72,8 +73,10 @@ impl ServerInfo {
 
 #[cfg(test)]
 mod server_info_tests {
+    use crate::client::client_connection::ClientConnection;
+
     use super::*;
-    use std::net::{IpAddr, Ipv4Addr};
+    use std::{net::{IpAddr, Ipv4Addr}, time::Duration};
 
     #[test]
     fn create_server_info() {
@@ -93,6 +96,19 @@ mod server_info_tests {
         assert_eq!(server_info.get_udp_connection().get_timeout(), Duration::from_secs(100));
         assert_eq!(server_info.get_tcp_connection().get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(server_info.get_tcp_connection().get_timeout(), Duration::from_secs(100));
+    }
+    
+    #[test]
+    fn get_ip_addr() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
+
+        assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
 
 }

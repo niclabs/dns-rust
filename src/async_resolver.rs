@@ -3,6 +3,7 @@ pub mod lookup;
 pub mod slist;
 pub mod resolver_error;
 pub mod lookup_response;
+mod server_info;
 
 use std::cmp::max;
 use std::net::IpAddr;

@@ -1,4 +1,5 @@
 use crate::message::{resource_record::ResourceRecord, DnsMessage};
+use crate::client::ClientConnection;
 use std::net::IpAddr;
 
 

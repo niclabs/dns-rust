@@ -55,6 +55,44 @@ impl ServerInfo {
     pub fn get_algorithm(&self) -> &str {
         &self.algorithm
     }
+
+    /// Get the UDP connection of the server.
+    /// return the UDP connection
+    pub fn get_udp_connection(&self) -> &ClientUDPConnection {
+        &self.udp_connection
+    }
+
+    /// Get the TCP connection of the server.
+    /// return the TCP connection
+    pub fn get_tcp_connection(&self) -> &ClientTCPConnection {
+        &self.tcp_connection
+    }
 }
 
+#[cfg(test)]
+mod server_info_tests {
+    use super::*;
+    use std::net::{IpAddr, Ipv4Addr};
+
+    #[test]
+    fn create_server_info() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
+
+        assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(server_info.get_port(), 53);
+        assert_eq!(server_info.get_key(), "key");
+        assert_eq!(server_info.get_algorithm(), "algorithm");
+        assert_eq!(server_info.get_udp_connection().get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(server_info.get_udp_connection().get_timeout(), Duration::from_secs(100));
+        assert_eq!(server_info.get_tcp_connection().get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(server_info.get_tcp_connection().get_timeout(), Duration::from_secs(100));
+    }
+
+}
 

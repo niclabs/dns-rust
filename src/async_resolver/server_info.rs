@@ -5,7 +5,7 @@ use std::net::IpAddr;
 
 ///This struscture is used to represent the information of a server.
 
-
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ServerInfo {
     //The IP address of the server.
     ip_addr: IpAddr,
@@ -25,6 +25,20 @@ impl ServerInfo {
     /// Create a new `ServerInfo` instance.
     pub fn new(ip_addr: IpAddr, port: u16, key: String, algorithm: String, 
         udp_connection: ClientUDPConnection, tcp_connection: ClientTCPConnection) -> ServerInfo {
+        ServerInfo {
+            ip_addr,
+            port,
+            key,
+            algorithm,
+            udp_connection,
+            tcp_connection,
+        }
+    }
+
+    pub fn new_with_ip(ip_addr: IpAddr, udp_connection: ClientUDPConnection, tcp_connection: ClientTCPConnection) -> ServerInfo {
+        let port = 53;
+        let key = String::from("");
+        let algorithm = String::from("");
         ServerInfo {
             ip_addr,
             port,

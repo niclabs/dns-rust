@@ -14,25 +14,34 @@ pub struct ServerInfo {
     key: String,
     // The algorithm of the server.
     algorithm: String,
+    //UDP connection
+    udp_connection: ClientUDPConnection,
+    //TCP connection
+    tcp_connection: ClientTCPConnection,
 }
 
 impl ServerInfo {
     /// Create a new `ServerInfo` instance.
-    pub fn new(ip_addr: IpAddr, port: u16, key: String, algorithm: String) -> ServerInfo {
+    pub fn new(ip_addr: IpAddr, port: u16, key: String, algorithm: String, 
+        udp_connection: ClientUDPConnection, tcp_connection: ClientTCPConnection) -> ServerInfo {
         ServerInfo {
             ip_addr,
             port,
             key,
             algorithm,
+            udp_connection,
+            tcp_connection,
         }
     }
 
-    /// Get the IP address of the server.
+    /// Implements get_ip_address
+    /// Returns IpAddr.
     pub fn get_ip_addr(&self) -> IpAddr {
         self.ip_addr
     }
 
-    /// Get the port of the server.
+    /// Implements get the port of the server.
+    /// return the port
     pub fn get_port(&self) -> u16 {
         self.port
     }

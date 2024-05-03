@@ -1,4 +1,5 @@
 use crate::client::client_error::ClientError;
+use crate::client::udp_connection;
 use crate::domain_name::DomainName;
 use crate::message::DnsMessage;
 use crate::message::header::Header;
@@ -187,6 +188,7 @@ pub async fn execute_lookup_strategy(
     result_dns_msg = 
             tokio::time::timeout(timeout, 
         send_query_resolver_by_protocol(
+                    timeout,
                     config.get_protocol(),
                     new_query.clone(),
                     result_dns_msg.clone(),
@@ -208,6 +210,7 @@ pub async fn execute_lookup_strategy(
 ///  it sends the query using the corresponding connection and updates the result
 ///  with the parsed response.
 async fn send_query_resolver_by_protocol(
+    timeout: Duration,
     protocol: ConnectionProtocol,
     query:DnsMessage,
     mut result_dns_msg: Result<DnsMessage, ResolverError>, 
@@ -217,11 +220,15 @@ async fn send_query_resolver_by_protocol(
     let query_id = query.get_query_id();
     match protocol{ 
         ConnectionProtocol::UDP => {
-            let result_response = connections.0.send(query.clone()).await;
+            let mut udp_connection = connections.0.clone();
+            udp_connection.set_timeout(timeout);
+            let result_response = udp_connection.send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         ConnectionProtocol::TCP => {
-            let result_response = connections.1.send(query.clone()).await;
+            let mut tcp_connection = connections.1.clone();
+            tcp_connection.set_timeout(timeout);
+            let result_response = tcp_connection.send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         _ => {},

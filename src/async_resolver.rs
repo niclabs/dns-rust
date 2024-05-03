@@ -282,7 +282,7 @@ impl AsyncResolver {
         // The resolver cycles through servers and at the end of a cycle, backs off 
         // the time out exponentially.
         let mut iter = 0..upper_limit_of_retransmission;
-        let mut lookup_response = lookup_strategy.lookup_run().await;
+        let mut lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
         while let Some(_retransmission) = iter.next() {
             if let Ok(ref r) = lookup_response {
                 // When rcode is 0 or 3, the response is valid
@@ -298,7 +298,7 @@ impl AsyncResolver {
             }
             // TODO: Change the timeout parameters in send instead of using sleep
             tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
-            lookup_response = lookup_strategy.lookup_run().await;
+            lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
         }
 
         // Cache data

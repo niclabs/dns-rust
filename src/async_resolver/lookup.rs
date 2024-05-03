@@ -5,7 +5,6 @@ use crate::message::header::Header;
 use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
-use std::time::Duration;
 use rand::{thread_rng, Rng};
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
@@ -14,6 +13,7 @@ use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
+use tokio::time::Duration;
 use tokio::time::timeout;
 
 /// Struct that represents the execution of a lookup.
@@ -63,7 +63,8 @@ impl LookupStrategy {
     /// 
     /// TODO: make lookup_run specific to a single SERVER, it receives the server where it should be quering 
     pub async fn lookup_run(
-        &mut self           
+        &mut self,
+        timeout: tokio::time::Duration,          
     ) -> Result<LookupResponse, ResolverError> {
         let response=  
         self.query_answer.clone();
@@ -79,7 +80,8 @@ impl LookupStrategy {
             record_class,
             config.get_name_servers(), 
             config,
-            response).await;
+            response,
+            timeout).await;
         return result_response;
     }
 }
@@ -150,6 +152,7 @@ pub async fn execute_lookup_strategy(
     name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
     config: ResolverConfig,
     response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+    timeout: tokio::time::Duration,
 ) -> Result<LookupResponse, ResolverError>  {
     // Create random generator
     let mut rng = thread_rng();
@@ -182,7 +185,7 @@ pub async fn execute_lookup_strategy(
 
     let connections = name_servers.get(server_in_use).unwrap(); // FIXME: conn error
     result_dns_msg = 
-            timeout(Duration::from_secs(6), 
+            tokio::time::timeout(timeout, 
         send_query_resolver_by_protocol(
                     config.get_protocol(),
                     new_query.clone(),
@@ -331,7 +334,8 @@ mod async_resolver_test {
             record_class, 
             name_servers, 
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await;
 
         println!("response {:?}", response);
@@ -374,7 +378,8 @@ mod async_resolver_test {
             record_class,
             name_servers, 
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await.unwrap();
 
         assert_eq!(response
@@ -409,7 +414,8 @@ mod async_resolver_test {
             record_class, 
             name_servers,
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await.unwrap();
 
 
@@ -454,7 +460,8 @@ mod async_resolver_test {
             record_class,
             name_servers,
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await;
         println!("response {:?}",response);
             
@@ -503,7 +510,8 @@ mod async_resolver_test {
             record_class,
             name_servers,
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
         // IO error in ResolverError
         println!("response {:?}",response);
@@ -545,7 +553,8 @@ mod async_resolver_test {
             record_class,
             config.get_name_servers(),
             config, 
-            query_sate).await;
+            query_sate,
+            tokio::time::Duration::from_secs(3)).await;
     }  
     
 

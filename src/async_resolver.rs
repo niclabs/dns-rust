@@ -296,6 +296,7 @@ impl AsyncResolver {
             if interval < max_interval {
                 interval = interval*2;
             }
+            // TODO: Change the timeout parameters in send instead of using sleep
             tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
             lookup_response = lookup_strategy.lookup_run().await;
         }

@@ -220,8 +220,7 @@ impl AsyncResolver {
                 Ok(val) => val,
                 Err(_) => Err(ResolverError::Message("Error getting cache"))?,
             };
-            let rtype_saved = Qtype::to_rtype(qtype);
-            if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), rtype_saved) {
+            if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), qtype, qclass) {
                 // Create random generator
                 let mut rng = thread_rng();
 
@@ -243,7 +242,7 @@ impl AsyncResolver {
                     let rr = rr_cache_value.get_resource_record();
 
                     // Get negative answer
-                    if rtype_saved != rr.get_rtype() {
+                    if Qtype::from_qtype_to_int(qtype) != Rtype::from_rtype_to_int(rr.get_rtype()) {
                         let additionals: Vec<ResourceRecord> = vec![rr];
                         new_query.add_additionals(additionals);
                         let mut new_header = new_query.get_header();
@@ -352,7 +351,7 @@ impl AsyncResolver {
             .iter()
             .for_each(|rr| {
                 if rr.get_ttl() > 0 {
-                    cache.add(rr.get_name(), rr.clone());
+                    cache.add(rr.get_name(), rr.clone(), response.get_question().get_qtype(), response.get_question().get_qclass());
                 }
             });
 
@@ -394,6 +393,7 @@ impl AsyncResolver {
     fn save_negative_answers(&self, response: DnsMessage){
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_qtype();
+        let qclass = response.get_question().get_qclass();
         let additionals = response.get_additional();
         let answer = response.get_answer();
         let aa = response.get_header().get_aa();
@@ -404,8 +404,7 @@ impl AsyncResolver {
             additionals.iter()
             .for_each(|rr| {
                 if rr.get_rtype() == Rtype::SOA {
-                    let  rtype =  Qtype::to_rtype(qtype);
-                    cache.add_negative_answer(qname.clone(),rtype ,rr.clone());
+                    cache.add_negative_answer(qname.clone(),qtype , qclass, rr.clone());
                 }
             });
         }
@@ -880,7 +879,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        resolver.cache.lock().unwrap().add(domain_name, resource_record);
+        resolver.cache.lock().unwrap().add(domain_name, resource_record, Qtype::A, Qclass::IN);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
@@ -907,7 +906,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name, resource_record);
+        cache.add(domain_name, resource_record, Qtype::A, Qclass::IN);
         }
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -928,7 +927,7 @@ mod async_resolver_test {
         assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
 
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
-        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rtype::A), true);
+        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Qtype::A, Qclass::IN), true);
         // TODO: Test special cases from RFC
     }
 
@@ -1983,11 +1982,11 @@ mod async_resolver_test {
 
         resolver.save_negative_answers(dns_response.clone());
 
-        let qtype_search = Rtype::A;
+        let qtype_search = Qtype::A;
         assert_eq!(dns_response.get_answer().len(), 0);
         assert_eq!(dns_response.get_additional().len(), 1);
         assert_eq!(resolver.get_cache().get_cache().len(), 1);
-        assert!(resolver.get_cache().get(dns_response.get_question().get_qname().clone(), qtype_search).is_some())
+        assert!(resolver.get_cache().get(dns_response.get_question().get_qname().clone(), qtype_search, Qclass::IN).is_some())
 
     }
 
@@ -2026,8 +2025,7 @@ mod async_resolver_test {
         // Add negative answer to cache
         let mut cache  = resolver.get_cache();
         cache.set_max_size(NonZeroUsize::new(9).unwrap());
-        let  rtype =  Qtype::to_rtype(qtype);
-        cache.add_negative_answer(domain_name.clone(),rtype ,rr.clone());
+        cache.add_negative_answer(domain_name.clone(),qtype ,Qclass::IN, rr.clone());
         let mut cache_guard = resolver.cache.lock().unwrap();
         *cache_guard = cache;
 

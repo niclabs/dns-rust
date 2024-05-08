@@ -3,7 +3,7 @@ pub mod lookup;
 pub mod slist;
 pub mod resolver_error;
 pub mod lookup_response;
-mod server_info;
+pub mod server_info;
 
 use std::cmp::max;
 use std::net::IpAddr;
@@ -522,6 +522,7 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use tokio::io;
+    use crate::async_resolver::server_info::ServerInfo;
     use crate::client::client_connection::ClientConnection;
     use crate::client::client_error::ClientError;
     use crate::client::tcp_connection::ClientTCPConnection;
@@ -1005,7 +1006,8 @@ mod async_resolver_test {
     
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(bad_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(bad_server, timeout);
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let server_info = ServerInfo::new_with_ip(bad_server, conn_udp, conn_tcp);
+        let name_servers = vec![server_info];
         config.set_name_servers(name_servers);
         let mut resolver = AsyncResolver::new(config);
 

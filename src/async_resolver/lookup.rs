@@ -9,6 +9,7 @@ use std::time::Duration;
 use rand::{thread_rng, Rng};
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
+use super::server_info::ServerInfo;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
@@ -147,7 +148,7 @@ pub async fn execute_lookup_strategy(
     name: DomainName,
     record_type: Qtype,
     record_class: Qclass,
-    name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
+    name_servers: Vec<ServerInfo>,
     config: ResolverConfig,
     response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
 ) -> Result<LookupResponse, ResolverError>  {
@@ -208,17 +209,17 @@ async fn send_query_resolver_by_protocol(
     protocol: ConnectionProtocol,
     query:DnsMessage,
     mut result_dns_msg: Result<DnsMessage, ResolverError>, 
-    connections:  &(ClientUDPConnection , ClientTCPConnection)
+    connections:  &ServerInfo,
 )
 ->  Result<DnsMessage, ResolverError>{
     let query_id = query.get_query_id();
     match protocol{ 
         ConnectionProtocol::UDP => {
-            let result_response = connections.0.send(query.clone()).await;
+            let result_response = connections.get_udp_connection().send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         ConnectionProtocol::TCP => {
-            let result_response = connections.1.send(query.clone()).await;
+            let result_response = connections.get_tcp_connection().send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         _ => {},
@@ -271,6 +272,7 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -
 
 #[cfg(test)]
 mod async_resolver_test {
+    use crate::async_resolver::server_info;
     // use tokio::runtime::Runtime;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
@@ -322,7 +324,8 @@ mod async_resolver_test {
         let config = ResolverConfig::default();
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
+        let name_servers = vec![server_info];
         let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let response = execute_lookup_strategy(
@@ -362,10 +365,11 @@ mod async_resolver_test {
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
 
+        let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
         let record_type = Qtype::NS;
         let record_class = Qclass::IN;
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let name_servers = vec![server_info];
         let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
         
         let response = execute_lookup_strategy(
@@ -396,11 +400,11 @@ mod async_resolver_test {
 
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-
+        let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
         let record_type = Qtype::A;
         let record_class = Qclass::CH;
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let name_servers = vec![server_info];
         let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let response = execute_lookup_strategy(
@@ -445,9 +449,13 @@ mod async_resolver_test {
 
         let conn_udp_google:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp_google:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-        config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
+        let server_info_config_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_config_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        let server_info_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
-        let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
+        let name_servers =vec![server_info_1, server_info_2];
         let response = execute_lookup_strategy(
             domain_name, 
             record_type, 
@@ -494,9 +502,13 @@ mod async_resolver_test {
 
         let conn_udp_google:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp_google:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-        config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
+        let server_info_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        let server_info_config_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_config_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
-        let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
+        let name_servers =vec![server_info_2, server_info_1];
         let response = execute_lookup_strategy(
             domain_name, 
             record_type, 

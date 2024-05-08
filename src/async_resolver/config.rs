@@ -223,6 +223,7 @@ impl ResolverConfig{
 
 #[cfg(test)]
 mod tests_resolver_config {
+    use crate::async_resolver::server_info;
     //TODO: FK test config and documentation
     use crate::client::client_connection::ClientConnection;
     use crate::client::tcp_connection::ClientTCPConnection;
@@ -264,8 +265,10 @@ mod tests_resolver_config {
         let addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
         let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
         let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
-        
-        let name_servers = vec![(udp_conn_1, tcp_conn_1), (udp_conn_2, tcp_conn_2)];
+        let server_info_1 = server_info::ServerInfo::new_with_ip(addr_1, udp_conn_1, tcp_conn_1);
+        let server_info_2 = server_info::ServerInfo::new_with_ip(addr_2, udp_conn_2, tcp_conn_2);
+
+        let name_servers = vec![server_info_1, server_info_2];
         resolver_config.set_name_servers(name_servers.clone());
 
         assert_eq!(resolver_config.get_name_servers(), name_servers);

@@ -184,7 +184,7 @@ impl ResolverConfig {
 impl ResolverConfig{
 
     /// Sets the list of Name Servers.
-    pub fn set_name_servers(&mut self, list_name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>) {
+    pub fn set_name_servers(&mut self, list_name_servers: Vec<ServerInfo>) {
         self.name_servers = list_name_servers;
     }
 
@@ -264,7 +264,7 @@ mod tests_resolver_config {
         let addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
         let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
         let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
-
+        
         let name_servers = vec![(udp_conn_1, tcp_conn_1), (udp_conn_2, tcp_conn_2)];
         resolver_config.set_name_servers(name_servers.clone());
 

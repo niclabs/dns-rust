@@ -2,9 +2,10 @@ use std::{time::Duration, net::IpAddr};
 
 use dns_rust::{
     async_resolver::{
-            config::ResolverConfig, resolver_error::ResolverError, AsyncResolver
+            config::ResolverConfig, resolver_error::ResolverError, AsyncResolver, server_info::ServerInfo
         }, client::{
         client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, message::resource_record::ResourceRecord};
+
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
@@ -106,12 +107,13 @@ pub async fn main() {
         Commands::Resolver(resolver_args) => {
             let mut config = ResolverConfig::default();
 
-            let mut nameservers: Vec<(ClientUDPConnection, ClientTCPConnection)> = Vec::new();
+            let mut nameservers: Vec<ServerInfo> = Vec::new();
             let timeout = 2;
             for ip_addr in resolver_args.nameserver.clone() {
                 let udp_conn = ClientUDPConnection::new(ip_addr, Duration::from_secs(timeout));
                 let tcp_conn = ClientTCPConnection::new(ip_addr, Duration::from_secs(timeout));
-                nameservers.push((udp_conn, tcp_conn));
+                let server_info = ServerInfo::new_with_ip(ip_addr, udp_conn, tcp_conn);
+                nameservers.push(server_info);
 
             }
             config.set_name_servers(nameservers);

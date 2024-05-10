@@ -4,6 +4,8 @@ use chrono::prelude::*;
 #[derive(Clone,PartialEq,Debug)]
 /// An structs that represents one element in the dns cache.
 pub struct RRStoredData {
+    // RCODE associated with the answer
+    rcode: u8,
     /// Resource Records of the domain name
     resource_record: ResourceRecord,
     /// Mean of response time of the ip address
@@ -25,6 +27,7 @@ impl RRStoredData {
     //
     pub fn new(resource_record: ResourceRecord) -> Self {
         let rr_cache = RRStoredData {
+            rcode: 0,
             resource_record: resource_record,
             response_time: 5000,
             creation_time: Utc::now(),
@@ -43,6 +46,11 @@ impl RRStoredData {
 
 // Getters
 impl RRStoredData {
+    // Gets the rcode of the stored data
+    pub fn get_rcode(&self) -> u8 {
+        self.rcode
+    }
+
     // Gets the resource record from the domain cache
     pub fn get_resource_record(&self) -> ResourceRecord {
         self.resource_record.clone()
@@ -61,6 +69,11 @@ impl RRStoredData {
 
 // Setters
 impl RRStoredData {
+    // Sets the rcode attribute with new value
+    pub fn set_rcode(&mut self, rcode: u8) {
+        self.rcode = rcode;
+    }
+
     // Sets the resource record attribute with new value
     pub fn set_resource_record(&mut self, resource_record: ResourceRecord) {
         self.resource_record = resource_record;

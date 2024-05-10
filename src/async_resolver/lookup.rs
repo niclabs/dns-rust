@@ -16,6 +16,7 @@ use crate::async_resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
 use tokio::time::timeout;
+use std::num::NonZeroUsize;
 
 /// Struct that represents the execution of a lookup.
 /// 
@@ -281,6 +282,7 @@ mod async_resolver_test {
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;
     use std::time::Duration;
+    use std::num::NonZeroUsize;
     use super::*;
    
     #[test]
@@ -290,15 +292,16 @@ mod async_resolver_test {
         let domain_name_cache = DomainName::new_from_string("test.com".to_string());
         let config: ResolverConfig = ResolverConfig::default();
         
-        let mut cache: DnsCache = DnsCache::new();
-        cache.set_max_size(20);
-
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name_cache, resource_record);
+        let mut cache: DnsCache = DnsCache::new(NonZeroUsize::new(20));
 
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
+
+        let a_rdata = Rdata::A(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        cache.add(domain_name_cache, resource_record, record_type, record_class);
+
+        
 
         let lookup_future = LookupStrategy::new(
             domain_name,
@@ -545,9 +548,9 @@ mod async_resolver_test {
         let rdata = Rdata::A(a_rdata);
         let rr = ResourceRecord::new(rdata);
 
-        let mut cache = DnsCache::new();
-        cache.set_max_size(1);
-        cache.add(domain_name.clone(), rr);
+        let mut cache = DnsCache::new(NonZeroUsize::new(1));
+        
+        cache.add(domain_name.clone(), rr, record_type, record_class);
 
         let query_sate = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 

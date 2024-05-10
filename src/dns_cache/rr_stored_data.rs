@@ -113,6 +113,26 @@ mod rr_cache_test {
     }
 
     #[test]
+    fn set_and_get_rcode() {
+        let ip_address: IpAddr = IpAddr::from([127, 0, 0, 0]);
+        let mut a_rdata = ARdata::new();
+
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+        resource_record.set_type_code(Rtype::A);
+
+        let mut rr_cache = RRStoredData::new(resource_record);
+
+        assert_eq!(rr_cache.get_rcode(), 0);
+
+        rr_cache.set_rcode(1);
+
+        assert_eq!(rr_cache.get_rcode(), 1);
+    }
+
+    #[test]
     fn set_and_get_resource_record() {
         let ip_address: IpAddr = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
@@ -172,8 +192,10 @@ mod rr_cache_test {
         let mut resource_record = ResourceRecord::new(rdata);
         resource_record.set_type_code(Rtype::A);
 
-        let mut rr_cache = RRStoredData::new(resource_record);
+        let rr_cache = RRStoredData::new(resource_record);
 
         let now = Utc::now();
+
+        assert_eq!(rr_cache.get_creation_time().timestamp(), now.timestamp());
     }
 }

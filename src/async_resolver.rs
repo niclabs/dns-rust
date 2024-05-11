@@ -274,7 +274,7 @@ impl AsyncResolver {
         let number_of_server_to_query = 3;
 
         // Start interval used by The Berkeley stub-resolver
-        let mut interval = max(4, 5/number_of_server_to_query);
+        let mut interval = max(2, 5/number_of_server_to_query);
 
         // The Berkeley resolver uses 45 seconds of maximum time out
         let max_interval = 45;  
@@ -309,6 +309,37 @@ impl AsyncResolver {
 
         return lookup_response;
     }
+
+    // /// Performs the query of the given IP address.
+    // async fn query_transmission(upper_limit_of_retransmission: u8, start_interval: u8, max_interval: u8) -> Result<LookupResponse, ResolverError>{
+    //     // Start interval used by The Berkeley stub-resolver
+    //     let mut interval = start_interval;
+
+    //     // Retransmission loop for a single server
+    //     // The resolver cycles through servers and at the end of a cycle, backs off 
+    //     // the time out exponentially.
+    //     let mut iter = 0..upper_limit_of_retransmission;
+    //     let mut lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
+    //     while let Some(_retransmission) = iter.next() {
+    //         if let Ok(ref r) = lookup_response {
+    //             // When rcode is 0 or 3, the response is valid
+    //             match r.to_dns_msg().get_header().get_rcode() {
+    //                 0 => break,
+    //                 3 => break,
+    //                 _ => {}
+    //             }
+    //         }
+    //         // Exponencial backoff
+    //         if interval < max_interval {
+    //             interval = interval*2;
+    //         }
+    //         // TODO: Change the timeout parameters in send instead of using sleep
+    //         tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
+    //         lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
+    //     }
+    // }
+
+
 
 
 

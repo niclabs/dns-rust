@@ -262,9 +262,6 @@ impl AsyncResolver {
                 return Ok(new_lookup_response)
             }
         }
-        let max_retry = self.config.get_retry();
-        let mut retry_count = 0;
-        let mut lookup_response: Result<LookupResponse, ResolverError>;
         let mut lookup_strategy = LookupStrategy::new(
             domain_name,
             qtype,
@@ -272,60 +269,39 @@ impl AsyncResolver {
             self.config.clone()
         );
 
-        loop {
-            lookup_response = lookup_strategy.lookup_run().await;
-
-            match lookup_response.clone() {
-                Ok(msg) => {
-                    match msg.to_dns_msg().get_header().get_rcode() {
-                        0 => break,
-                        3 => break,
-                        _ => {
-                            if retry_count == max_retry {
-                                break;
-                            }
-                            retry_count += 1;
-                            continue;
-                        }}},
-                Err(_) => {
-                    if retry_count == max_retry {
-                        break;
-                    }
-                    retry_count += 1;
-                }
-            }
-        }
-
-        // implementation with tokio
-        let upper_limit_of_retransmission = self.config.get_retry();
+        // TODO: get parameters from config
+        let upper_limit_of_retransmission = 3;
         let number_of_server_to_query = 3;
 
         // Start interval used by The Berkeley stub-resolver
+        let mut interval = max(4, 5/number_of_server_to_query);
+
+        // The Berkeley resolver uses 45 seconds of maximum time out
+        let max_interval = 45;  
+
+        // Retransmission loop for a single server
         // The resolver cycles through servers and at the end of a cycle, backs off 
         // the time out exponentially.
+        let mut iter = 0..upper_limit_of_retransmission;
+        let mut lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
+        while let Some(_retransmission) = iter.next() {
+            if let Ok(ref r) = lookup_response {
+                // When rcode is 0 or 3, the response is valid
+                match r.to_dns_msg().get_header().get_rcode() {
+                    0 => break,
+                    3 => break,
+                    _ => {}
+                }
+            }
+            // Exponencial backoff
+            if interval < max_interval {
+                interval = interval*2;
+            }
+            // TODO: Change the timeout parameters in send instead of using sleep
+            tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
+            lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
+        }
 
-        let start_interval = max(4, 5/number_of_server_to_query);
-        let next_interval = 2 * start_interval;
-        let maximum_interval = 64;  // The Berkeley resolver usses 45 seconds
-
-        let mut stream = tokio_stream::iter(0..upper_limit_of_retransmission);
-        // this way, the interval will be equal to the start_interval*2^i
-
-        // while let Err(_) = lookup_response {
-        //     let retransmission_number = stream.next().await.unwrap();
-        //     let interval = start_interval * 2u64.pow(retransmission_number.into());
-        //     let new_lookup_response = lookup_strategy.lookup_run().await;
-        //     if let Ok(ref r) = new_lookup_response {
-        //         lookup_response = new_lookup_response;
-        //         break;
-        //     }
-        //     if interval == upper_limit_of_retransmission.into() {
-        //         break;
-        //     }
-        //     tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
-        // }
-
-        
         // Cache data
         if let Ok(ref r) = lookup_response {
             self.store_data_cache(r.to_dns_msg().clone());
@@ -333,6 +309,7 @@ impl AsyncResolver {
 
         return lookup_response;
     }
+
 
 
 

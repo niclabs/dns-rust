@@ -47,8 +47,67 @@ fn sign_msg(query_msg:DnsMessage,key:Bytes, alg_name:TsigAlgorithm)->Bytes{
     msg_bytes = format!("{}.\n51921\n1234\n{}\n{}\n1234\n0\n0",alg_name, mac_len, dig_string);
     return msg_bytes;
 }
-                                                            
-fn tsig_proccesing_answer(answer_msg:DnsMessage)->Bool{
-    //procesar los errores 
-    new_answer_msg = answer_msg.clone();
+
+#[doc = r"This function a signed message with the key provided"]
+fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
+    let mut retmsg = msg.clone();
+    let mut addit = retmsg.get_additional();
+    println!("{:#?}",addit);
+    let rr = addit.pop().expect("no data in adittional");
+
+    retmsg.set_additional(vec![]);
+    let mut old_head = retmsg.get_header();
+    old_head.set_arcount(0);
+    retmsg.set_header(old_head); 
+    let digest = keyed_hash(key, &retmsg.to_bytes()[..]);
+    let digest_string = digest.to_string();
+    println!("El dig stirng es: {:#?}" , digest_string);
+    let binding = digest.as_bytes();
+    let rdata = rr.get_rdata();
+    match rdata {
+        Rdata::TSIG(tsigrdata) => {
+            for i in 0..32 {
+                if tsigrdata.get_mac()[i] != binding.clone()[i] {
+                    panic!("Wrong signature!");
+                }
+            }
+        },
+        _ => {panic!("Bad request")}
+    } 
+
+    retmsg
 }
+
+
+fn tsig_proccesing_answer(answer_msg:DnsMessage){
+    //procesar los errores 
+    new_answer_msg = answer_msg.clone()
+}
+
+
+//Sección de tests unitarios
+//ToDo: Revisar
+#[test]
+fn ptsig_test(){
+    let sock: UdpSocket = UdpSocket::bind("127.0.0.1:8001").expect("xd");
+    let mut buf:[u8; 4096] = [0; 4096];
+
+    loop {
+        match sock.recv_from(& mut buf) {
+            Ok((size, addr)) => {
+                println!("Llego una peticion de {:?}", addr);
+                let msg = DnsMessage::from_bytes(&buf[0..size]).expect("Leyo re mal");
+                println!("soy un mensaje {:#?}", msg);
+                let response = process_tsig(msg);
+                let response = response.to_bytes();
+                
+                break;
+                //sock.send_to(&response[0..size], addr).expect("Fallo al enviar");
+            },
+            Err(e) => {
+                println!("{}",e);
+            }
+        }
+    }
+}
+

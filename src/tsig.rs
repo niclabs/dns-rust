@@ -98,24 +98,18 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 //ToDo: Revisar
 #[test]
 fn ptsig_test(){
-    let sock: UdpSocket = UdpSocket::bind("127.0.0.1:8001").expect("xd");
-    let mut buf:[u8; 4096] = [0; 4096];
+    let mut sock;
+    match sock{
+        Ok((size, addr)) => {
+            println!("Llego una peticion de {:?}", addr);
+            let msg = DnsMessage::from_bytes(&buf[0..size]).expect("Leyo  mal");
+            println!("soy un mensaje {:#?}", msg);
+            let response = process_tsig(msg);
+            let response = response.to_bytes();
 
-    loop {
-        match sock.recv_from(& mut buf) {
-            Ok((size, addr)) => {
-                println!("Llego una peticion de {:?}", addr);
-                let msg = DnsMessage::from_bytes(&buf[0..size]).expect("Leyo re mal");
-                println!("soy un mensaje {:#?}", msg);
-                let response = process_tsig(msg);
-                let response = response.to_bytes();
-                
-                break;
-                //sock.send_to(&response[0..size], addr).expect("Fallo al enviar");
-            },
-            Err(e) => {
-                println!("{}",e);
-            }
+        },
+        Err(e) => {
+            println!("{}",e);
         }
     }
 }

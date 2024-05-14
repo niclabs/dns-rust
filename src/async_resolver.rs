@@ -403,7 +403,7 @@ impl AsyncResolver {
             .iter()
             .for_each(|rr| {
                 if rr.get_ttl() > 0 {
-                    cache.add(rr.get_name(), rr.clone(), response.get_question().get_qtype(), response.get_question().get_qclass());
+                    cache.add(rr.get_name(), rr.clone(), response.get_question().get_qtype(), response.get_question().get_qclass(), Some(response.get_header().get_rcode()));
                 }
             });
 
@@ -935,7 +935,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        resolver.cache.lock().unwrap().add(domain_name, resource_record, Qtype::A, Qclass::IN);
+        resolver.cache.lock().unwrap().add(domain_name, resource_record, Qtype::A, Qclass::IN, None);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
@@ -962,7 +962,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name, resource_record, Qtype::A, Qclass::IN);
+        cache.add(domain_name, resource_record, Qtype::A, Qclass::IN, None);
         }
 
         let domain_name = DomainName::new_from_string("example.com".to_string());

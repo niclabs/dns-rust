@@ -3,6 +3,7 @@ use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage};
+use std::time::{SystemTime, UNIX_EPOCH};
 use crate::message::rdata::Rdata;
 use sha2::Sha256;
 use crypto::hmac::Hmac as crypto_hmac;
@@ -57,12 +58,55 @@ fn sign_msg(query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
 }
 
 
-#[doc = r"This function a signed message with the key provided"]
+#[doc = r"This function process a tsig message, checking for errors in the DNS message"]
 fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
     println!("{:#?}",addit);
-    let rr = addit.pop().expect("no data in adittional");
+
+    //sacar el último elemento del vector resource record
+    let rr = addit.pop().expect("No additional data");
+    let time =SystemTime::now().duration_since(UNIX_EPOCH).expect("no time").as_secs();
+    //vector con resource records que son TSIG
+    let filtered_tsig:Vec<_> = addit.iter().filter(|tsig| if let Rdata::TSIG(data) = tsig.get_rdata() {true} else {false}).collect();
+    let x = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {true} else {false};
+    
+    //verificar que exiten los resource records que corresponden a tsig
+    if filtered_tsig.len()>1 || x{
+        let error_msg = DnsMessage::format_error_msg();
+        return error_msg;
+    }
+    
+    println!("{:#?}",addit);
+    //extraer el el último elemento del vector y preguntar su tipo
+    let rdata = rr.get_rdata();
+    let mut time_signed_v = 0;
+    let mut fudge = 0;
+    match rdata {
+        Rdata::TSIG(data) =>{
+            time_signed_v = data.get_time_signed();
+            fudge = data.get_fudge();
+        }
+        _ => {
+            println!("RCODE 9: NOAUTH \n TSIG Error 18: BADTIME");
+        }
+    }
+    if (time_signed_v-(fudge as u64))>time || time>(time_signed_v+(fudge as u64)) {
+        let mut error_msg = DnsMessage::format_error_msg();
+        error_msg.get_header().set_rcode(9);
+        let str_whitespaces = "l\n0\n0\n0\n0\n0\n18\n0";
+        let resource_record = TSigRdata::rr_from_master_file(
+            str_whitespaces.split_whitespace(),
+            56, 
+            "IN",
+            String::from("uchile.cl"),
+            String::from("uchile.cl"),
+            );
+        let mut vec = vec![];
+        vec.push(resource_record);
+        error_msg.add_additionals(vec);
+        return error_msg
+    }
 
     retmsg.set_additional(vec![]);
     let mut old_head = retmsg.get_header();

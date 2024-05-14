@@ -3,6 +3,7 @@ use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage};
+use std::os::unix::process;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::message::rdata::Rdata;
 use sha2::Sha256;
@@ -14,6 +15,7 @@ use bytes::Bytes;
 
 type HmacSha256 = Hmac<Sha256>;
 
+//TODO: usar arreglar el funcionamiento del enum en sign_msg
 enum TsigAlgorithm {
     HmacSha1,
     HmacSha256,
@@ -112,7 +114,10 @@ fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
     let mut old_head = retmsg.get_header();
     old_head.set_arcount(0);
     retmsg.set_header(old_head); 
-    let digest = keyed_hash(key, &retmsg.to_bytes()[..]);
+    //TODO: extraer el algoritmo del mensaje
+    let algoritm = HmacSha256;
+    //se verifica la autenticidad de la firma
+    let digest = sign_msg(&retmsg.to_bytes(), &key, algorithm);
     let digest_string = digest.to_string();
     println!("El dig stirng es: {:#?}" , digest_string);
     let binding = digest.as_bytes();
@@ -134,26 +139,26 @@ fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
                                                             
 fn tsig_proccesing_answer(answer_msg:DnsMessage){
     //procesar los errores 
-    new_answer_msg = answer_msg.clone()
+    //new_answer_msg = answer_msg.clone()
 }
 
 
 //Sección de tests unitarios
-//ToDo: Revisar
+//ToDo: Crear bien un test que funcione
 #[test]
 fn ptsig_test(){
-    let mut sock;
-    match sock{
-        Ok((size, addr)) => {
-            println!("Llego una peticion de {:?}", addr);
-            let msg = DnsMessage::from_bytes(&buf[0..size]).expect("Leyo  mal");
-            println!("soy un mensaje {:#?}", msg);
-            let response = process_tsig(msg);
-            let response = response.to_bytes();
-
-        },
-        Err(e) => {
-            println!("{}",e);
-        }
-    }
+    let my_key = b"1201102391287592dsjshno039U021J";
+    let alg = HmacSha256;
+    let mut dns_example_msg =     
+        DnsMessage::new_query_message(
+        DomainName::new_from_string("uchile.cl".to_string()),
+        Qtype::A,
+        Qclass::IN,
+        0,
+        false,
+        1);
+    //prueba de la firma
+    let signature = sign_msg(dns_example_msg, my_key, alg);
+    //prueba de process_tsig
+    let processed_msg = process_tsig(dns_example_msg, my_key);
 }

@@ -262,7 +262,7 @@ impl AsyncResolver {
                 return Ok(new_lookup_response)
             }
         }
-        let mut lookup_strategy = LookupStrategy::new(
+        let lookup_strategy = LookupStrategy::new(
             domain_name,
             qtype,
             qclass,
@@ -274,10 +274,34 @@ impl AsyncResolver {
         let number_of_server_to_query = 3;
 
         // Start interval used by The Berkeley stub-resolver
-        let mut interval = max(2, 5/number_of_server_to_query);
+        let start_interval = max(2, 5/number_of_server_to_query);
 
         // The Berkeley resolver uses 45 seconds of maximum time out
         let max_interval = 45;  
+
+        let lookup_response = AsyncResolver::query_transmission(
+            lookup_strategy, 
+            upper_limit_of_retransmission, 
+            start_interval, 
+            max_interval).await;
+
+        // Cache data
+        if let Ok(ref r) = lookup_response {
+            self.store_data_cache(r.to_dns_msg().clone());
+        }
+
+        return lookup_response;
+    }
+
+    /// Performs the query of the given IP address.
+    async fn query_transmission(
+        mut lookup_strategy: LookupStrategy,
+        upper_limit_of_retransmission: i32, 
+        start_interval: u64, 
+        max_interval: u64
+    ) -> Result<LookupResponse, ResolverError> {
+        // Start interval used by The Berkeley stub-resolver
+        let mut interval = start_interval;
 
         // Retransmission loop for a single server
         // The resolver cycles through servers and at the end of a cycle, backs off 
@@ -301,48 +325,8 @@ impl AsyncResolver {
             tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
             lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
         }
-
-        // Cache data
-        if let Ok(ref r) = lookup_response {
-            self.store_data_cache(r.to_dns_msg().clone());
-        }
-
         return lookup_response;
     }
-
-    // /// Performs the query of the given IP address.
-    // async fn query_transmission(upper_limit_of_retransmission: u8, start_interval: u8, max_interval: u8) -> Result<LookupResponse, ResolverError>{
-    //     // Start interval used by The Berkeley stub-resolver
-    //     let mut interval = start_interval;
-
-    //     // Retransmission loop for a single server
-    //     // The resolver cycles through servers and at the end of a cycle, backs off 
-    //     // the time out exponentially.
-    //     let mut iter = 0..upper_limit_of_retransmission;
-    //     let mut lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
-    //     while let Some(_retransmission) = iter.next() {
-    //         if let Ok(ref r) = lookup_response {
-    //             // When rcode is 0 or 3, the response is valid
-    //             match r.to_dns_msg().get_header().get_rcode() {
-    //                 0 => break,
-    //                 3 => break,
-    //                 _ => {}
-    //             }
-    //         }
-    //         // Exponencial backoff
-    //         if interval < max_interval {
-    //             interval = interval*2;
-    //         }
-    //         // TODO: Change the timeout parameters in send instead of using sleep
-    //         tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
-    //         lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
-    //     }
-    // }
-
-
-
-
-
 
     /// Performs the reverse query of the given IP address.
     ///

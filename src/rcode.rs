@@ -55,3 +55,6 @@ impl Rcode {
     }
 }
 
+impl Default for Rcode {
+    fn default() -> Rcode { Rcode::NOERROR }
+}

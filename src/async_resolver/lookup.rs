@@ -310,7 +310,7 @@ mod async_resolver_test {
 
         let a_rdata = Rdata::A(ARdata::new());
         let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name_cache, resource_record, record_type, record_class);
+        cache.add(domain_name_cache, resource_record, record_type, record_class, None);
 
         
 
@@ -566,7 +566,7 @@ mod async_resolver_test {
 
         let mut cache = DnsCache::new(NonZeroUsize::new(1));
         
-        cache.add(domain_name.clone(), rr, record_type, record_class);
+        cache.add(domain_name.clone(), rr, record_type, record_class, None);
 
         let query_sate = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 

@@ -41,9 +41,15 @@ impl DnsCache {
     }
 
     /// Adds an element to cache
-    pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass) {
+    pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<u8>) {
 
-        let rr_cache = RRStoredData::new(resource_record);
+        let mut rr_cache = RRStoredData::new(resource_record);
+
+        let rcode = rcode.unwrap_or_else(|| 0);
+
+        if rcode != 0 {
+            rr_cache.set_rcode(rcode);
+        }
 
         let mut cache_data = self.get_cache();
 
@@ -319,7 +325,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -344,7 +350,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let ip_address = IpAddr::from([127, 0, 0, 1]);
         let mut a_rdata = ARdata::new();
@@ -354,7 +360,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -373,7 +379,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let ip_address_v6 = IpAddr::from([0, 0, 0, 0, 0, 0, 0, 1]);
         let mut aaaa_rdata = AAAARdata::new();
@@ -383,7 +389,7 @@ mod dns_cache_test {
         resource_record_2.set_name(domain_name.clone());
         resource_record_2.set_type_code(Rtype::AAAA);
 
-        cache.add(domain_name.clone(), resource_record_2.clone(), Qtype::AAAA, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record_2.clone(), Qtype::AAAA, Qclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -405,7 +411,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let ip_address = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
@@ -415,7 +421,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -434,7 +440,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         cache.remove(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -455,7 +461,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -517,9 +523,9 @@ mod dns_cache_test {
         resource_record_3.set_name(domain_name_3.clone());
         resource_record_3.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
-        cache.add(domain_name_2.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN);
-        cache.add(domain_name_3.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+        cache.add(domain_name_2.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
+        cache.add(domain_name_3.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
 
         let _rr_cache_vec = cache.get(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -581,7 +587,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         let new_response_time = 2000;
 
@@ -607,7 +613,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
         
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         assert!(!cache.is_empty());
     }
@@ -628,7 +634,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rtype::A);
         
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         assert!(cache.is_cached(domain_name.clone(), Qtype::A, Qclass::IN));
 
@@ -651,7 +657,7 @@ mod dns_cache_test {
         resource_record.set_type_code(Rtype::A);
         resource_record.set_ttl(ttl);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
         cache.timeout_cache();
 
@@ -685,8 +691,8 @@ mod dns_cache_test {
         resource_record_2.set_type_code(Rtype::A);
         resource_record_2.set_ttl(ttl_2);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN);
-        cache.add(domain_name_2.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN);
+        cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+        cache.add(domain_name_2.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
 
         cache.timeout_cache();
 

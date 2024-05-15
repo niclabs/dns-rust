@@ -28,6 +28,7 @@ fn sign_msg(query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
     let mut mac_len:&str;
     let mut a_name: &str;
     let placeholder_hex: String; 
+    //TODO: cambiar el match pattern
     match alg_name {
         TsigAlgorithm::HmacSha1 => {
             let mut hasher = crypto_hmac::new(Sha1::new(), key);
@@ -72,27 +73,38 @@ fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
     //vector con resource records que son TSIG
     let filtered_tsig:Vec<_> = addit.iter().filter(|tsig| if let Rdata::TSIG(data) = tsig.get_rdata() {true} else {false}).collect();
     let x = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {true} else {false};
-    
-    //verificar que exiten los resource records que corresponden a tsig
+    let rdata = rr.get_rdata();
+    let mut time_signed_v = 0;
+    let mut fudge = 0;
+    let mut rcode =0;
+    let mut key = String::from("");
+    //Verificar rdata
+    match rdata {
+        Rdata::TSIG(data) =>{
+            time_signed_v = data.get_time_signed();
+            fudge = data.get_fudge();
+            rcode = data.get_error();
+            for elem in data.get_mac(){
+                key+=&elem.to_string();
+            }
+        }
+        _ => {
+            println!("Bad resource record");
+            //TODO: ver/añadir el error del print anterior, especificado en el RFC 8945
+            let error_msg = DnsMessage::format_error_msg();
+            return error_msg;
+        }
+        
+    }
+    //verificar que existen los resource records que corresponden a tsig
     if filtered_tsig.len()>1 || x{
         let error_msg = DnsMessage::format_error_msg();
         return error_msg;
     }
     
-    println!("{:#?}",addit);
-    //extraer el el último elemento del vector y preguntar su tipo
-    let rdata = rr.get_rdata();
-    let mut time_signed_v = 0;
-    let mut fudge = 0;
-    match rdata {
-        Rdata::TSIG(data) =>{
-            time_signed_v = data.get_time_signed();
-            fudge = data.get_fudge();
-        }
-        _ => {
-            println!("RCODE 9: NOAUTH \n TSIG Error 18: BADTIME");
-        }
-    }
+
+    //Verificación de los tiempos de emisión y recepción + fudge del mensaje
+    // Según lo especificado en el RFC 8945 5.2.3 time Check and Error Handling
     if (time_signed_v-(fudge as u64))>time || time>(time_signed_v+(fudge as u64)) {
         let mut error_msg = DnsMessage::format_error_msg();
         error_msg.get_header().set_rcode(9);
@@ -104,9 +116,12 @@ fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
             String::from("uchile.cl"),
             String::from("uchile.cl"),
             );
+        //TODO: agregar un 6 al campo Other Data de TSig Rdata
         let mut vec = vec![];
         vec.push(resource_record);
         error_msg.add_additionals(vec);
+        //TODO: agregar log y añadir el error TSIG 18: BADTIME
+        println!("RCODE 9: NOAUTH\n TSIG ERROR 18: BADTIME");
         return error_msg
     }
 
@@ -114,10 +129,9 @@ fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
     let mut old_head = retmsg.get_header();
     old_head.set_arcount(0);
     retmsg.set_header(old_head); 
-    //TODO: extraer el algoritmo del mensaje
-    let algoritm = HmacSha256;
+    let algorithm = TsigAlgorithm::HmacSha256;
     //se verifica la autenticidad de la firma
-    let digest = sign_msg(&retmsg.to_bytes(), &key, algorithm);
+    let digest = sign_msg(retmsg, key, algorithm);
     let digest_string = digest.to_string();
     println!("El dig stirng es: {:#?}" , digest_string);
     let binding = digest.as_bytes();
@@ -148,7 +162,7 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 #[test]
 fn ptsig_test(){
     let my_key = b"1201102391287592dsjshno039U021J";
-    let alg = HmacSha256;
+    let alg: TsigAlgorithm = HmacSha256;
     let mut dns_example_msg =     
         DnsMessage::new_query_message(
         DomainName::new_from_string("uchile.cl".to_string()),

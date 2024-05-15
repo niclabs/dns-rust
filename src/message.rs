@@ -6,11 +6,13 @@ pub mod type_rtype;
 pub mod type_qtype;
 pub mod class_rclass;
 pub mod class_qclass;
+pub mod rcode;
 
 use crate::message::class_qclass::Qclass;
 use crate::message::class_rclass::Rclass;
 use crate::message::type_qtype::Qtype;
 use crate::message::type_rtype::Rtype;
+use crate::message::rcode::Rcode;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
@@ -613,7 +615,6 @@ impl DnsMessage {
         let mut msg_additionals = self.get_additional();
 
         msg_additionals.append(&mut additionals);
-        self.header.set_arcount(self.header.get_arcount() + 1);
         self.set_additional(msg_additionals);
     }
 

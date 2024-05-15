@@ -1,4 +1,4 @@
-
+use std::fmt;
 
 
 
@@ -57,4 +57,18 @@ impl Rcode {
 
 impl Default for Rcode {
     fn default() -> Rcode { Rcode::NOERROR }
+}
+
+impl fmt::Display for Rcode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Rcode::NOERROR => "NOERROR",
+            Rcode::FORMERR => "FORMERR",
+            Rcode::SERVFAIL => "SERVFAIL",
+            Rcode::NXDOMAIN => "NXDOMAIN",
+            Rcode::NOTIMP => "NOTIMP",
+            Rcode::REFUSED => "REFUSED",
+            Rcode::UNKNOWN(u8) => "UNKNOWN",
+        }
+    }
 }

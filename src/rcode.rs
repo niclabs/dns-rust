@@ -4,7 +4,7 @@ use std::fmt;
 
 #[derive(Clone, PartialEq, Debug, Hash, PartialOrd, Ord, Eq, Copy)]
 // Enum for the RCODE of a DnsMessage
-pub enum Rcode {
+enum Rcode {
     NOERROR,
     FORMERR,
     SERVFAIL,
@@ -61,14 +61,14 @@ impl Default for Rcode {
 
 impl fmt::Display for Rcode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match *self  {
+        match *self {
             Rcode::NOERROR => "NOERROR",
             Rcode::FORMERR => "FORMERR",
             Rcode::SERVFAIL => "SERVFAIL",
             Rcode::NXDOMAIN => "NXDOMAIN",
             Rcode::NOTIMP => "NOTIMP",
             Rcode::REFUSED => "REFUSED",
-            Rcode::UNKNOWN(_) => "UNKNOWN",
-        })
+            Rcode::UNKNOWN(u8) => "UNKNOWN",
+        }
     }
 }

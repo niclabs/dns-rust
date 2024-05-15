@@ -5,17 +5,19 @@ use crate::message::header::Header;
 use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
 use crate::message::type_qtype::Qtype;
-use std::net::IpAddr;
-use std::time::Duration;
 use rand::{thread_rng, Rng};
+use tokio::net::tcp;
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
+use super::server_info::ServerInfo;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
 use crate::client::udp_connection::ClientUDPConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
 use tokio::time::timeout;
+use std::num::NonZeroUsize;
+use crate::client::udp_connection;
 
 /// Struct that represents the execution of a lookup.
 /// 
@@ -61,8 +63,11 @@ impl LookupStrategy {
     /// 
     /// This function performs the lookup of the requested records asynchronously.
     /// It returns a `LookupResponse` with the response of the query.
+    /// 
+    /// TODO: make lookup_run specific to a single SERVER, it receives the server where it should be quering 
     pub async fn lookup_run(
-        &mut self           
+        &mut self,
+        timeout: tokio::time::Duration,           
     ) -> Result<LookupResponse, ResolverError> {
         let response=  
         self.query_answer.clone();
@@ -78,7 +83,8 @@ impl LookupStrategy {
             record_class,
             config.get_name_servers(), 
             config,
-            response).await;
+            response,
+            timeout).await;
         return result_response;
     }
 }
@@ -146,9 +152,10 @@ pub async fn execute_lookup_strategy(
     name: DomainName,
     record_type: Qtype,
     record_class: Qclass,
-    name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
+    name_servers: Vec<ServerInfo>,
     config: ResolverConfig,
     response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+    timeout: tokio::time::Duration,
 ) -> Result<LookupResponse, ResolverError>  {
     // Create random generator
     let mut rng = thread_rng();
@@ -167,56 +174,35 @@ pub async fn execute_lookup_strategy(
     );
 
     // Create Server failure query 
-    let mut response = new_query.clone(); // le quite el to_owned
+    let mut response = new_query.clone(); 
     let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2); // FIXME: is this the origin of the bug?
+    new_header.set_rcode(2); 
     new_header.set_qr(true);
     response.set_header(new_header);
 
     let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
-    let mut retry_count = 0;
-    let mut i = 0;
+    let server_in_use = 0; 
+
+    // Get guard to modify the response
+    let mut response_guard = response_arc.lock().unwrap();
+
+    let connections = name_servers.get(server_in_use).unwrap(); // FIXME: conn error
+    result_dns_msg = 
+    tokio::time::timeout(timeout, 
+        send_query_resolver_by_protocol(
+            timeout,
+            config.get_protocol(),
+            new_query.clone(),
+            result_dns_msg.clone(),
+            connections,
+            )).await
+            .unwrap_or_else(|_| {
+                Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
+            });  
     
-    loop {
-        let mut response_guard = response_arc.lock().unwrap();
-        let response = response_guard.as_ref();
+    *response_guard = result_dns_msg.clone();
 
-        if response.is_ok() || retry_count >= config.get_retry() {
-            break; 
-        }
-
-        let connections = name_servers.get(i).unwrap();
-        result_dns_msg = 
-                timeout(Duration::from_secs(6), 
-            send_query_resolver_by_protocol(
-                        config.get_protocol(),
-                        new_query.clone(),
-                        result_dns_msg.clone(),
-                        connections,
-                    )).await
-                .unwrap_or_else(|_| {
-                    Err(ResolverError::Message("Timeout Error".into()))
-                });  
-        
-        *response_guard = result_dns_msg.clone();
-        retry_count = retry_count + 1;
-        i = i+1;
-
-    }
-
-    let response_dns_msg = match result_dns_msg.clone() {
-        Ok(response_message) => response_message,
-        Err(ResolverError::Parse(_)) => {
-            let mut format_error_response = response.clone();
-            let mut header = format_error_response.get_header();
-            header.set_rcode(1);
-            format_error_response.set_header(header);
-            format_error_response
-        }
-        Err(_) => response,
-    };
-
-    Ok(LookupResponse::new(response_dns_msg))  
+    result_dns_msg.and_then(|dns_msg| Ok(LookupResponse::new(dns_msg)))
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.
@@ -226,20 +212,26 @@ pub async fn execute_lookup_strategy(
 ///  it sends the query using the corresponding connection and updates the result
 ///  with the parsed response.
 async fn send_query_resolver_by_protocol(
+    timeout: tokio::time::Duration,
     protocol: ConnectionProtocol,
     query:DnsMessage,
     mut result_dns_msg: Result<DnsMessage, ResolverError>, 
-    connections:  &(ClientUDPConnection , ClientTCPConnection)
+    connections:  &ServerInfo,
 )
 ->  Result<DnsMessage, ResolverError>{
     let query_id = query.get_query_id();
+
     match protocol{ 
         ConnectionProtocol::UDP => {
-            let result_response = connections.0.send(query.clone()).await;
+            let mut udp_connection = connections.get_udp_connection().clone();
+            udp_connection.set_timeout(timeout);
+            let result_response = udp_connection.send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         ConnectionProtocol::TCP => {
-            let result_response = connections.1.send(query.clone()).await;
+            let mut tcp_connection = connections.get_tcp_connection().clone();
+            tcp_connection.set_timeout(timeout);
+            let result_response = tcp_connection.send(query.clone()).await;
             result_dns_msg = parse_response(result_response,query_id);
         }
         _ => {},
@@ -267,9 +259,9 @@ async fn send_query_resolver_by_protocol(
 ///      excessively long TTL, say greater than 1 week, either discard
 ///      the whole response, or limit all TTLs in the response to 1
 ///      week.
-fn parse_response(response_result: Result<(Vec<u8>, IpAddr), ClientError>, query_id:u16) -> Result<DnsMessage, ResolverError> {
+fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -> Result<DnsMessage, ResolverError> {
     let dns_msg = response_result.map_err(Into::into)
-        .and_then(|(response_message , _ip)| {
+        .and_then(|response_message| {
             DnsMessage::from_bytes(&response_message)
                 .map_err(|_| ResolverError::Parse("The name server was unable to interpret the query.".to_string()))
         })?;
@@ -292,6 +284,7 @@ fn parse_response(response_result: Result<(Vec<u8>, IpAddr), ClientError>, query
 
 #[cfg(test)]
 mod async_resolver_test {
+    use crate::async_resolver::server_info;
     // use tokio::runtime::Runtime;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
@@ -300,6 +293,7 @@ mod async_resolver_test {
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;
     use std::time::Duration;
+    use std::num::NonZeroUsize;
     use super::*;
    
     #[test]
@@ -309,15 +303,16 @@ mod async_resolver_test {
         let domain_name_cache = DomainName::new_from_string("test.com".to_string());
         let config: ResolverConfig = ResolverConfig::default();
         
-        let mut cache: DnsCache = DnsCache::new();
-        cache.set_max_size(20);
-
-        let a_rdata = Rdata::A(ARdata::new());
-        let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name_cache, resource_record);
+        let mut cache: DnsCache = DnsCache::new(NonZeroUsize::new(20));
 
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
+
+        let a_rdata = Rdata::A(ARdata::new());
+        let resource_record = ResourceRecord::new(a_rdata);
+        cache.add(domain_name_cache, resource_record, record_type, record_class);
+
+        
 
         let lookup_future = LookupStrategy::new(
             domain_name,
@@ -343,7 +338,8 @@ mod async_resolver_test {
         let config = ResolverConfig::default();
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
+        let name_servers = vec![server_info];
         let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let response = execute_lookup_strategy(
@@ -352,7 +348,8 @@ mod async_resolver_test {
             record_class, 
             name_servers, 
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await;
 
         println!("response {:?}", response);
@@ -383,10 +380,11 @@ mod async_resolver_test {
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
 
+        let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
         let record_type = Qtype::NS;
         let record_class = Qclass::IN;
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let name_servers = vec![server_info];
         let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
         
         let response = execute_lookup_strategy(
@@ -395,7 +393,8 @@ mod async_resolver_test {
             record_class,
             name_servers, 
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await.unwrap();
 
         assert_eq!(response
@@ -417,11 +416,11 @@ mod async_resolver_test {
 
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-
+        let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
         let record_type = Qtype::A;
         let record_class = Qclass::CH;
-        let name_servers = vec![(conn_udp,conn_tcp)];
+        let name_servers = vec![server_info];
         let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let response = execute_lookup_strategy(
@@ -430,7 +429,8 @@ mod async_resolver_test {
             record_class, 
             name_servers,
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await.unwrap();
 
 
@@ -466,16 +466,21 @@ mod async_resolver_test {
 
         let conn_udp_google:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp_google:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-        config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
+        let server_info_config_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_config_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        let server_info_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
-        let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
+        let name_servers =vec![server_info_1, server_info_2];
         let response = execute_lookup_strategy(
             domain_name, 
             record_type, 
             record_class,
             name_servers,
             config,
-            response_arc
+            response_arc,
+            timeout
         ).await;
         println!("response {:?}",response);
             
@@ -515,17 +520,23 @@ mod async_resolver_test {
 
         let conn_udp_google:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp_google:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-        config.set_name_servers(vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)]);
+        let server_info_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        let server_info_config_1 = server_info::ServerInfo::new_with_ip(google_server,conn_udp_google, conn_tcp_google);
+        let server_info_config_2 = server_info::ServerInfo::new_with_ip(non_existent_server,conn_udp_non, conn_tcp_non);
+        config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
-        let name_servers =vec![(conn_udp_non,conn_tcp_non), (conn_udp_google,conn_tcp_google)];
+        let name_servers =vec![server_info_2, server_info_1];
         let response = execute_lookup_strategy(
             domain_name, 
             record_type, 
             record_class,
             name_servers,
             config,
-            response_arc
-        ).await.unwrap();
+            response_arc,
+            timeout
+        ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
+        // IO error in ResolverError
         println!("response {:?}",response);
 
        assert!(response
@@ -553,9 +564,9 @@ mod async_resolver_test {
         let rdata = Rdata::A(a_rdata);
         let rr = ResourceRecord::new(rdata);
 
-        let mut cache = DnsCache::new();
-        cache.set_max_size(1);
-        cache.add(domain_name.clone(), rr);
+        let mut cache = DnsCache::new(NonZeroUsize::new(1));
+        
+        cache.add(domain_name.clone(), rr, record_type, record_class);
 
         let query_sate = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
@@ -565,7 +576,8 @@ mod async_resolver_test {
             record_class,
             config.get_name_servers(),
             config, 
-            query_sate).await;
+            query_sate,
+            tokio::time::Duration::from_secs(3)).await;
     }  
     
 
@@ -580,8 +592,7 @@ mod async_resolver_test {
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
         let query_id = 0b00100100;
-        let ip = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-        let response_result: Result<(Vec<u8>, IpAddr), ClientError> = Ok((bytes.to_vec(), ip));
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
         let response_dns_msg = parse_response(response_result,query_id);
         println!("[###############] {:?}",response_dns_msg);
         assert!(response_dns_msg.is_ok());
@@ -603,8 +614,7 @@ mod async_resolver_test {
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
         let query_id = 0b10100101;
-        let ip = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-        let response_result: Result<(Vec<u8>, IpAddr), ClientError> = Ok((bytes.to_vec(), ip));
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
         let response_dns_msg = parse_response(response_result,query_id);
         let err_msg = "Message is a query. A response was expected.".to_string();
         if let Err(ResolverError::Parse(err)) = response_dns_msg {
@@ -623,8 +633,7 @@ mod async_resolver_test {
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
         let query_id = 0b10100101;
-        let ip= IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
-        let response_result: Result<(Vec<u8>, IpAddr), ClientError> = Ok((bytes.to_vec(), ip));
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
         let response_dns_msg = parse_response(response_result,query_id);
         let err_msg = "The name server was unable to interpret the query.".to_string();
         if let Err(ResolverError::Parse(err)) = response_dns_msg {
@@ -643,8 +652,7 @@ mod async_resolver_test {
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
         let query_id = 0b10100101;
-        let ip = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-        let response_result: Result<(Vec<u8>, IpAddr), ClientError> = Ok((bytes.to_vec(), ip));
+        let response_result: Result<Vec<u8>, ClientError> = Ok(bytes.to_vec());
         let response_dns_msg = parse_response(response_result,query_id);
         let err_msg = "The name server was unable to interpret the query.".to_string();
 

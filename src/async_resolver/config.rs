@@ -2,6 +2,8 @@ use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientT
 use crate::client::client_connection::ConnectionProtocol;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
 
+use super::server_info::ServerInfo;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 
 /// Configuration for the resolver.
@@ -13,7 +15,7 @@ use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
 /// the chosen transport protocol and the timeout for the connections.
 pub struct ResolverConfig {
     /// Vector of tuples with the UDP and TCP connections to a Name Server.
-    name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
+    name_servers: Vec<ServerInfo>,
     /// Socket address of the resolver.
     bind_addr: SocketAddr,
     /// Maximum quantity of queries for each sent query. 
@@ -79,7 +81,7 @@ impl ResolverConfig {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
 
         let resolver_config: ResolverConfig = ResolverConfig {
-            name_servers: vec![(conn_udp,conn_tcp)],
+            name_servers: vec![ServerInfo::new_with_ip(google_server, conn_udp, conn_tcp)],
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
             retry: 30,
             cache_enabled: true,
@@ -111,8 +113,9 @@ impl ResolverConfig {
     pub fn add_servers(&mut self, addr: IpAddr) {
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout);
-        
-        self.name_servers.push((conn_udp,conn_tcp));
+
+        let server_info = ServerInfo::new_with_ip(addr, conn_udp, conn_tcp);
+        self.name_servers.push(server_info);
     }
 
     /// Remove all servers from the list of Name Servers.
@@ -141,7 +144,7 @@ impl ResolverConfig {
 impl ResolverConfig {
 
     /// Returns the list of Name Servers.
-    pub fn get_name_servers(&self) -> Vec<(ClientUDPConnection,ClientTCPConnection)> {
+    pub fn get_name_servers(&self) -> Vec<ServerInfo> {
         self.name_servers.clone()
     }
 
@@ -181,7 +184,7 @@ impl ResolverConfig {
 impl ResolverConfig{
 
     /// Sets the list of Name Servers.
-    pub fn set_name_servers(&mut self, list_name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>) {
+    pub fn set_name_servers(&mut self, list_name_servers: Vec<ServerInfo>) {
         self.name_servers = list_name_servers;
     }
 
@@ -220,6 +223,7 @@ impl ResolverConfig{
 
 #[cfg(test)]
 mod tests_resolver_config {
+    use crate::async_resolver::server_info;
     //TODO: FK test config and documentation
     use crate::client::client_connection::ClientConnection;
     use crate::client::tcp_connection::ClientTCPConnection;
@@ -261,8 +265,10 @@ mod tests_resolver_config {
         let addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
         let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
         let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
+        let server_info_1 = server_info::ServerInfo::new_with_ip(addr_1, udp_conn_1, tcp_conn_1);
+        let server_info_2 = server_info::ServerInfo::new_with_ip(addr_2, udp_conn_2, tcp_conn_2);
 
-        let name_servers = vec![(udp_conn_1, tcp_conn_1), (udp_conn_2, tcp_conn_2)];
+        let name_servers = vec![server_info_1, server_info_2];
         resolver_config.set_name_servers(name_servers.clone());
 
         assert_eq!(resolver_config.get_name_servers(), name_servers);

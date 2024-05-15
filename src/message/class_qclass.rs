@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Clone, PartialEq, Debug,Copy)]
+#[derive(Clone, PartialEq, Debug, Hash, PartialOrd, Ord, Eq, Copy)]
 /// Enum for the Class of a RR in a DnsMessage
 pub enum Qclass {
     IN,

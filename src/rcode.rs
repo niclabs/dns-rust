@@ -27,4 +27,31 @@ impl Rcode {
             Rcode::UNKNOWN(u8) => u8,
         }
     }
+
+    // Function to get the Rcode equivalent of an int
+    pub fn from_int_to_rcode(int: u8) -> Rcode {
+        match int {
+            0 => Rcode::NOERROR,
+            1 => Rcode::FORMERR,
+            2 => Rcode::SERVFAIL,
+            3 => Rcode::NXDOMAIN,
+            4 => Rcode::NOTIMP,
+            5 => Rcode::REFUSED,
+            _ => Rcode::UNKNOWN(int),
+        }
+    }
+
+    // Function to get the Rcode equivalent of a string
+    pub fn from_string_to_rcode(string: &str) -> Rcode {
+        match string {
+            "NOERROR" => Rcode::NOERROR,
+            "FORMERR" => Rcode::FORMERR,
+            "SERVFAIL" => Rcode::SERVFAIL,
+            "NXDOMAIN" => Rcode::NXDOMAIN,
+            "NOTIMP" => Rcode::NOTIMP,
+            "REFUSED" => Rcode::REFUSED,
+            _ => Rcode::UNKNOWN(0),
+        }
+    }
 }
+

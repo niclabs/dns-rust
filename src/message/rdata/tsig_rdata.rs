@@ -67,6 +67,10 @@ impl ToBytes for TSigRdata{
         
         let time_signed = self.get_time_signed();
 
+        bytes.push((time_signed >> 56) as u8);
+
+        bytes.push((time_signed >> 48) as u8);
+
         bytes.push((time_signed >> 40) as u8);
 
         bytes.push((time_signed >> 32) as u8);
@@ -144,19 +148,19 @@ impl FromBytes<Result<Self, &'static str>> for TSigRdata{
 
         tsig_rdata.set_algorithm_name(algorithm_name);
 
-        tsig_rdata.set_time_signed_from_bytes(&bytes_without_algorithm_name[1..7]);
+        tsig_rdata.set_time_signed_from_bytes(&bytes_without_algorithm_name[0..8]);
 
-        tsig_rdata.set_fudge_from_bytes(&bytes_without_algorithm_name[7..9]);
+        tsig_rdata.set_fudge_from_bytes(&bytes_without_algorithm_name[8..10]);
 
-        tsig_rdata.set_mac_size_from_bytes(&bytes_without_algorithm_name[9..11]);
+        tsig_rdata.set_mac_size_from_bytes(&bytes_without_algorithm_name[10..12]);
 
         let mac_size = tsig_rdata.get_mac_size();
 
-        let mac = bytes_without_algorithm_name[11..(11 + mac_size as usize)].to_vec();
+        let mac = bytes_without_algorithm_name[12..(12 + mac_size as usize)].to_vec();
 
         tsig_rdata.set_mac(mac);
 
-        let bytes_without_mac = &bytes_without_algorithm_name[(11 + mac_size as usize)..];
+        let bytes_without_mac = &bytes_without_algorithm_name[(12 + mac_size as usize)..];
 
         tsig_rdata.set_original_id_from_bytes(&bytes_without_mac[0..2]);
 
@@ -255,12 +259,14 @@ impl TSigRdata {
 
     /// Set the time signed attribute from an array of bytes.
     fn set_time_signed_from_bytes(&mut self, bytes: &[u8]){
-        let time_signed = (bytes[0] as u64) << 40
-                                | (bytes[1] as u64) << 32 
-                                | (bytes[2] as u64) << 24 
-                                | (bytes[3] as u64) << 16 
-                                | (bytes[4] as u64) << 8 
-                                | (bytes[5] as u64) << 0;
+        let time_signed = (bytes[0] as u64) << 56 
+                                | (bytes[1] as u64) << 48 
+                                | (bytes[2] as u64) << 40 
+                                | (bytes[3] as u64) << 32 
+                                | (bytes[4] as u64) << 24 
+                                | (bytes[5] as u64) << 16 
+                                | (bytes[6] as u64) << 8 
+                                | bytes[7] as u64;
         self.set_time_signed(time_signed);
     }
 

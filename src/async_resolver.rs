@@ -290,13 +290,13 @@ impl AsyncResolver {
             return lookup_response;
         }
         
-        /// Performs the query of the given IP address.
-        async fn query_transmission(
-            mut lookup_strategy: LookupStrategy,
-            upper_limit_of_retransmission: u16, 
-            number_of_server_to_query: u64, 
-            max_timeout: u64
-        ) -> Result<LookupResponse, ResolverError> {
+    /// Performs the query of the given IP address.
+    async fn query_transmission(
+        mut lookup_strategy: LookupStrategy,
+        upper_limit_of_retransmission: u16, 
+        number_of_server_to_query: u64, 
+        max_timeout: u64
+    ) -> Result<LookupResponse, ResolverError> {
         // Start interval used by The Berkeley stub-resolver
         let start_interval = max(4, 5/number_of_server_to_query).into();
         let mut interval = start_interval;

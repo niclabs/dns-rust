@@ -1,6 +1,7 @@
 //aquí debe ir todo lo relacionado a la implementación de tsig como módulo
 use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
+use crate::message::resource_record::{self, ToBytes};
 use crate::message::type_qtype::Qtype;
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage};
 use std::os::unix::process;
@@ -21,13 +22,14 @@ enum TsigAlgorithm {
     HmacSha256,
 }
 
-#[doc = r"This functions signs a DnsMessage with a key in bytes, and the algName will be used to select the algorithm to encrypt the key."]
-fn sign_msg(query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
-    let mut new_query_message = query_msg.clone();
+#[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
+fn sign_msg(mut query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
     let mut dig_string:&str;
+    let mut new_query_message = query_msg.clone();
     let mut mac_len:&str;
     let mut a_name: &str;
     let placeholder_hex: String; 
+    let mut additional = query_msg.get_additional();
     //TODO: cambiar el match pattern
     match alg_name {
         TsigAlgorithm::HmacSha1 => {
@@ -55,9 +57,27 @@ fn sign_msg(query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
         },
         _ => {panic!("Error: Invalid algorithm")},
     }
-    //TODO: agregar los demas valores al msg_bytes !! Yo creo que deben llegar como argumentos
-    let mut msg_bytes: String = format!("{}.\n51921\n1234\n{}\n{}\n1234\n0\n0",a_name, mac_len, dig_string);
-    return msg_bytes.as_bytes();
+
+    //TODO: agregar los demas valores al dig_string !! Yo creo que deben llegar como argumentos
+    let mut dig_string: String = format!("{}.\n51921\n1234\n{}\n{}\n1234\n0\n0",a_name, mac_len, dig_string);
+    
+    //se modifica el resource record para añadir el hmac
+    let mut rr = additional.pop().expect("Empty Resource Record!");
+    let mut rdata:Rdata= rr.get_rdata();
+    match rdata {
+        Rdata::TSIG(mut data) =>{
+            let mut mac: Vec<u8> =data.to_bytes();
+            data.set_mac(mac);
+        }
+        _ => {
+            println!("Error: no valid rdata found!");
+        }
+    }
+    // RFC 8945 4.2: Se añade el digest resource record, en la zona "additionals".
+    let mut vec = vec![];
+    vec.push(rr);
+    query_msg.add_additionals(vec);
+    return dig_string.as_bytes();
 }
 
 
@@ -161,8 +181,8 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 //ToDo: Crear bien un test que funcione
 #[test]
 fn ptsig_test(){
-    let my_key = b"1201102391287592dsjshno039U021J";
-    let alg: TsigAlgorithm = HmacSha256;
+    let my_key = b"1201102391287592dsjshno039U021Jg";
+    let alg: TsigAlgorithm = TsigAlgorithm::HmacSha256;
     let mut dns_example_msg =     
         DnsMessage::new_query_message(
         DomainName::new_from_string("uchile.cl".to_string()),
@@ -171,8 +191,9 @@ fn ptsig_test(){
         0,
         false,
         1);
-    //prueba de la firma
+    //prueba de la firma. sign_msg calcula la firma, la añade al resource record del mensaje y retorna una copia
     let signature = sign_msg(dns_example_msg, my_key, alg);
-    //prueba de process_tsig
+
+    //prueba de process_tsig (la idea es usar la firma anterior, añadirla a dns_example_msg y verificarla con my_key)
     let processed_msg = process_tsig(dns_example_msg, my_key);
 }

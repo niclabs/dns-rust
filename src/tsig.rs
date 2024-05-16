@@ -131,22 +131,30 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
 fn process_tsig(msg: DnsMessage, key: &[u8;32]) -> DnsMessage {
     let mut retmsg = msg.clone();
-    let mut addit = retmsg.get_additional();
+    let mut addit = retmsg.getadditional();
     println!("{:#?}",addit);
 
     //sacar el último elemento del vector resource record
     let rr = addit.pop().expect("No additional data");
     let time =SystemTime::now().duration_since(UNIX_EPOCH).expect("no time").as_secs();
-    //vector con resource records que son TSIG
-    let filtered_tsig:Vec<_> = addit.iter().filter(|tsig| if let Rdata::TSIG(data) = tsig.get_rdata() {true} else {false}).collect();
-    //RF
+    //RFC 8945 5.2
     //verificar que existen los resource records que corresponden a tsig
-    if filtered_tsig.len()>1 || x{
+    //vector con resource records que son TSIG
+    let filtered_tsig:Vec<> = addit.iter().filter(|tsig| if let Rdata::TSIG(data) = tsig.get_rdata() {true} else {false}).collect();
+    //RFC 8945 5.4
+    //Verifica si hay algún tsig rr
+    let islast = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {true} else {false};
+    if filtered_tsig.len()==0 {
+        //este debe ser un error de formato
         let error_msg = DnsMessage::format_error_msg();
         return error_msg;
     }
-        
-    let x = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {true} else {false};
+    //Debe haber un único tsig
+    //Tsig RR debe ser el último en la sección adicional
+    if filtered_tsig.len()>1 || islast {
+        let error_msg = DnsMessage::format_error_msg();
+        return error_msg;
+    }
     let rdata = rr.get_rdata();
     let mut time_signed_v = 0;
     let mut fudge = 0;

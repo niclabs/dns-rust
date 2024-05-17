@@ -263,31 +263,8 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
         println!("RCODE 9: NOAUTH\n TSIG ERROR 16: BADSIG");
     }
     //let cond3 = check_time_values();
-    //let rdata = rr.get_rdata();
-    let mut time_signed_v = 0;
-    let mut fudge = 0;
-    //let mut rcode =0;
-    //let mut n_key = String::from("");
-    ////Verificar rdata
-    //match rdata {
-    //    Rdata::TSIG(data) =>{
-    //        time_signed_v = data.get_time_signed();
-    //        fudge = data.get_fudge();
-    //        rcode = data.get_error();
-    //        for elem in data.get_mac(){
-    //            n_key+=&elem.to_string();
-    //        }
-    //    }
-    //    _ => {
-    //        println!("Bad resource record");
-    //        //TODO: ver/añadir el error del print anterior, especificado en el RFC 8945
-    //        let error_msg = DnsMessage::format_error_msg();
-    //        return error_msg;
-    //    }
-    //    
-    //}
-
-
+    let time_signed_v = 0;
+    let fudge = 0;
     //Verificación de los tiempos de emisión y recepción + fudge del mensaje
     // Según lo especificado en el RFC 8945 5.2.3 time Check and Error Handling
     if (time_signed_v-(fudge as u64))>time || time>(time_signed_v+(fudge as u64)) {
@@ -309,22 +286,6 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
         println!("RCODE 9: NOAUTH\n TSIG ERROR 18: BADTIME");
         return false
     }
-    let algorithm = TsigAlgorithm::HmacSha256;
-    //TODO: extraer los siguientes valores del rdata del mensaje a verificar
-    let msg_time=  SystemTime::now().duration_since(UNIX_EPOCH).expect("no existo").as_secs();
-    let msg_fudge = 1000;
-    //let rdata = rr.get_rdata();
-    //match rdata {
-    //    Rdata::TSIG(tsigrdata) => {
-    //        for i in 0..32 {
-    //            if tsigrdata.get_mac()[i] != binding.clone()[i] {
-    //                panic!("Wrong signature!");
-    //            }
-    //        }
-    //    },
-    //    _ => {panic!("Bad request")}
-    //} 
-
     true
 }
 

@@ -1,4 +1,3 @@
-use crate::message::type_rtype::Rtype;
 use crate::domain_name::DomainName;
 
 pub fn check_label_name(name: String) -> bool {

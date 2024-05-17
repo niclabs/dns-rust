@@ -25,6 +25,7 @@ enum TsigErrorCode{
     BADTIME = 18,
 
 }
+
 /*
 #[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
 fn sign_msg_old(mut query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
@@ -137,8 +138,8 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
     return signature;
 }
 
-//TODO: terminar función keycheck
-fn check_key(alg_name: String,key_in_rr:String,key_name:String,flag_check_alg:bool)-> bool {
+//Revisa si el nombre de la llave es correcto
+fn check_key(alg_name: &String,key_in_rr:String,key_name:String,flag_check_alg:bool)-> bool {
     let mut answer = true; 
     if !key_in_rr.eq(&key_name) || flag_check_alg {
         answer=false;
@@ -147,14 +148,24 @@ fn check_key(alg_name: String,key_in_rr:String,key_name:String,flag_check_alg:bo
 }
 
 //Verifica que el algoritmo esté disponible, y además esté implementado
-fn check_alg_name(alg_name:String, alg_list: Vec<(String,bool)>) -> bool{
+fn check_alg_name(alg_name:&String, alg_list: Vec<(String,bool)>) -> bool{
     let mut answer: bool = false;
     for (name,available) in alg_list {
-        if name.eq(&alg_name){
+        if name.eq(alg_name){
             if available {
                 answer = true;
             }
         }
+    }
+    return answer
+}
+
+//Solo ve los largos por ahora
+fn check_mac(mut new_mac: Vec<u8>, key: &[u8], mac: Vec<u8>) -> bool{
+    let mut answer: bool = false;
+    let contador = 0;
+    if mac.len()!=new_mac.len(){
+        return answer
     }
     return answer
 }
@@ -168,7 +179,7 @@ fn check_exists_tsig_rr(add_rec: &Vec<ResourceRecord>) -> bool {
                                 if let Rdata::TSIG(data) = tsig.get_rdata() {true}
                                 else {false}).collect();
 
-    (filtered_tsig.len()==0)
+    filtered_tsig.len()==0
 }
 
 
@@ -182,16 +193,14 @@ fn check_last_one_is_tsig(add_rec: &Vec<ResourceRecord>) -> bool {
     
     let islast = if let Rdata::TSIG(data) = add_rec[add_rec.len()-1].get_rdata() {false} else {true};
 
-    (filtered_tsig.len()>1 || islast)
+    filtered_tsig.len()>1 || islast
 }
 
 
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
-fn process_tsig(msg: DnsMessage, key_name: String, time: u64,  available_algorithm: Vec<(String, bool)>) -> bool {
+fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  available_algorithm: Vec<(String, bool)>) -> bool {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
-    
-    
     //RFC 8945 5.2 y 5.4
     //verificar que existen los resource records que corresponden a tsig
     //vector con resource records que son TSIG. Luego se Verifica si hay algún tsig rr
@@ -219,23 +228,36 @@ fn process_tsig(msg: DnsMessage, key_name: String, time: u64,  available_algorit
         }
     }
     let nuevo_len_arcount = addit.len() as u16;
-    let new_header = msg.get_header();
+    let mut new_header = retmsg.get_header();
     new_header.set_arcount(nuevo_len_arcount);
-    msg.set_header(new_header);
+    retmsg.set_header(new_header);
     //RFC 8945 5.2.1
     let name_alg = tsig_rr_copy.get_algorithm_name().get_name();
     let key_in_rr = rr_copy.get_name().get_name();
-    let flag = check_alg_name(name_alg,available_algorithm);
-    let cond1 = check_key(name_alg,key_in_rr,key_name,flag);
-    if cond1 {
+    let flag = check_alg_name(&name_alg,available_algorithm);
+    let cond1 = check_key(&name_alg,key_in_rr,key_name,flag);
+    if !cond1 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
         return false;
     }
-    //TODO: hacer los demas checkeos
-    //let cond2 = check_mac();
+    //RFC 8945 5.2.2
+    retmsg.set_additional(addit);
+    let fudge = tsig_rr_copy.get_fudge();
+    let time_signed = tsig_rr_copy.get_time_signed();
+    let mac_received = tsig_rr_copy.get_mac();
+    let mut new_alg_name: TsigAlgorithm = TsigAlgorithm::HmacSha1;
+    match name_alg.as_str() {
+        "HMACSHA1" => new_alg_name = TsigAlgorithm::HmacSha1,
+        "HMACSHA256" => new_alg_name = TsigAlgorithm::HmacSha256,
+        &_ => println!("not supported algorithm")
+    }
+    let new_mac = sign_tsig(retmsg, key, new_alg_name, fudge, time_signed);
+    
+    let cond2 = check_mac(new_mac, key, mac_received);
+    if !cond2 {
+        println!("RCODE 9: NOAUTH\n TSIG ERROR 16: BADSIG");
+    }
     //let cond3 = check_time_values();
-    //let cond4 = check_truncation_policy();
-
     //let rdata = rr.get_rdata();
     let mut time_signed_v = 0;
     let mut fudge = 0;
@@ -280,35 +302,25 @@ fn process_tsig(msg: DnsMessage, key_name: String, time: u64,  available_algorit
         error_msg.add_additionals(vec);
         //TODO: agregar log y añadir el error TSIG 18: BADTIME
         println!("RCODE 9: NOAUTH\n TSIG ERROR 18: BADTIME");
-        return error_msg
+        return false
     }
-
-    retmsg.set_additional(vec![]);
-    let mut old_head = retmsg.get_header();
-    old_head.set_arcount(0);
-    retmsg.set_header(old_head); 
     let algorithm = TsigAlgorithm::HmacSha256;
     //TODO: extraer los siguientes valores del rdata del mensaje a verificar
     let msg_time=  SystemTime::now().duration_since(UNIX_EPOCH).expect("no existo").as_secs();
     let msg_fudge = 1000;
-    //se verifica la autenticidad de la firma
-    let digest = sign_tsig(retmsg.clone(), key, algorithm,msg_time as u16,msg_fudge);
-    let digest_string = &digest;
-    println!("El dig stirng es: {:#?}" , digest_string);
-    let binding = &digest;
-    let rdata = rr.get_rdata();
-    match rdata {
-        Rdata::TSIG(tsigrdata) => {
-            for i in 0..32 {
-                if tsigrdata.get_mac()[i] != binding.clone()[i] {
-                    panic!("Wrong signature!");
-                }
-            }
-        },
-        _ => {panic!("Bad request")}
-    } 
+    //let rdata = rr.get_rdata();
+    //match rdata {
+    //    Rdata::TSIG(tsigrdata) => {
+    //        for i in 0..32 {
+    //            if tsigrdata.get_mac()[i] != binding.clone()[i] {
+    //                panic!("Wrong signature!");
+    //            }
+    //        }
+    //    },
+    //    _ => {panic!("Bad request")}
+    //} 
 
-    retmsg
+    true
 }
 
                                                             

@@ -25,41 +25,32 @@ use crate::client::udp_connection;
 /// The principal purpose of this struct is to transmit a single query
 /// until a proper response is received. 
 /// 
-/// The result of the lookup is stored in the `query_answer` field.
+/// The result of the lookup is stored in the `response_msg` field.
 /// First it is initialized with an empty `DnsMessage` and then it is updated
 /// with the response of the query.
 /// 
 /// The lookup is done asynchronously after calling the asynchronoyus 
 /// `lookup_run` method.
 pub struct LookupStrategy {
-    /// Domain Name associated with the query.
-    name: DomainName,
-    /// Qtype of search query
-    record_type: Qtype,
-    /// Qclass of the search query
-    record_class: Qclass,
+    query: DnsMessage,
     /// Resolver configuration.
     config: ResolverConfig,
     /// Reference to the response of the query.
-    pub query_answer: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+    pub response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
 }
     
 impl LookupStrategy {
 
     /// Creates a new `LookupStrategy` with the given configuration.
     pub fn new(
-        name: DomainName,
-        qtype: Qtype,
-        qclass: Qclass,
+        query: DnsMessage,
         config: ResolverConfig,
         
     ) -> Self {
         Self { 
-            name: name,
-            record_type: qtype,
-            record_class: qclass,
+            query: query,
             config: config,
-            query_answer: Arc::new(Mutex::new(Err(ResolverError::EmptyQuery))), 
+            response_msg: Arc::new(Mutex::new(Err(ResolverError::EmptyQuery))), 
         }
     }
 
@@ -125,7 +116,7 @@ impl LookupStrategy {
     //  RCODE other than SERVFAIL or NOTIMP, then the requestor returns an
     //  appropriate response to its caller.
     pub fn received_appropriate_response(&self) -> bool {
-        let response_arc = self.query_answer.lock().unwrap();
+        let response_arc = self.response_msg.lock().unwrap();
 
         if let Ok(dns_msg) = response_arc.as_ref() {
             match dns_msg.get_header().get_rcode() {
@@ -203,15 +194,11 @@ impl LookupStrategy {
         name_server: &ServerInfo,
         timeout: tokio::time::Duration,
     ) -> Result<LookupResponse, ResolverError>  {
-        let response_arc=  self.query_answer.clone();
-        let name = self.name.clone();
-        let record_type = self.record_type;
-        let record_class = self.record_class;
+        let response_arc=  self.response_msg.clone();
+        
+        let response = create_response_from_query(&self.query);
+        
         let protocol = self.config.get_protocol();
-
-        let query = create_lookup_query(name, record_type, record_class);
-        let response = create_response_from_query(&query);
-
         let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
 
         // Get guard to modify the response
@@ -222,7 +209,7 @@ impl LookupStrategy {
             send_query_by_protocol(
                 timeout,
                 protocol,
-                query.clone(),
+                self.query.clone(),
                 result_dns_msg.clone(),
                 name_server,
             )).await
@@ -239,7 +226,7 @@ impl LookupStrategy {
                     send_query_by_protocol(
                         timeout,
                         protocol,
-                        query.clone(),
+                        self.query.clone(),
                         result_dns_msg.clone(),
                         name_server,
                     )).await
@@ -331,34 +318,9 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -
     Err(ResolverError::Parse("Message is a query. A response was expected.".to_string()))
 }
 
-fn create_lookup_query(
-    name: DomainName,
-    record_type: Qtype,
-    record_class: Qclass,
-) -> DnsMessage {
-    // Create random generator
-    let mut rng = thread_rng();
-
-    // Create query id
-    let query_id: u16 = rng.gen();
-
-    // Create query
-    let query = DnsMessage::new_query_message(
-        name.clone(),
-        record_type,
-        record_class,
-        0,
-        true,
-        query_id
-    );
-
-    return query;
-}
-
 fn create_response_from_query(
     query: &DnsMessage,
 ) -> DnsMessage {
-
     // Create Server failure query
     let mut response = query.clone();
     let mut new_header: Header = response.get_header();
@@ -371,7 +333,7 @@ fn create_response_from_query(
 
 #[cfg(test)]
 mod async_resolver_test {
-    use crate::async_resolver::server_info;
+    use crate::async_resolver::{server_info, AsyncResolver};
     // use tokio::runtime::Runtime;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
@@ -399,16 +361,14 @@ mod async_resolver_test {
         let resource_record = ResourceRecord::new(a_rdata);
         cache.add(domain_name_cache, resource_record, record_type, record_class, None);
 
-        
+        let query = AsyncResolver::create_lookup_query(domain_name, record_type, record_class);
 
         let lookup_future = LookupStrategy::new(
-            domain_name,
-            record_type,
-            record_class,
+            query,
             config,
         );
 
-        assert_eq!(lookup_future.name, DomainName::new_from_string("example.com".to_string()));
+        assert_eq!(lookup_future.query.get_question().get_qname(), DomainName::new_from_string("example.com".to_string()));
         assert_eq!(lookup_future.config.get_addr(),SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333));
     }
      
@@ -430,9 +390,7 @@ mod async_resolver_test {
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = LookupStrategy::new(
-            domain_name,
-            record_type,
-            record_class,
+            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -487,9 +445,7 @@ mod async_resolver_test {
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = LookupStrategy::new(
-            domain_name,
-            record_type,
-            record_class,
+            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -535,9 +491,7 @@ mod async_resolver_test {
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = LookupStrategy::new(
-            domain_name,
-            record_type,
-            record_class,
+            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -607,9 +561,7 @@ mod async_resolver_test {
         // ).await;
 
         let lookup_strategy = LookupStrategy::new(
-            domain_name,
-            record_type,
-            record_class,
+            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -674,9 +626,7 @@ mod async_resolver_test {
         // ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
 
         let lookup_strategy = LookupStrategy::new(
-            domain_name,
-            record_type,
-            record_class,
+            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -729,9 +679,7 @@ mod async_resolver_test {
         //     tokio::time::Duration::from_secs(3)).await;
 
         let mut lookup_strategy = LookupStrategy::new(
-            domain_name,
-            record_type,
-            record_class,
+            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
             config,
         );
 

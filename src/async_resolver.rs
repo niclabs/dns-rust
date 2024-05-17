@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
-use crate::message::DnsMessage;
+use crate::message::{self, DnsMessage};
 use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::ResourceRecord;
 use crate::async_resolver::{config::ResolverConfig,lookup::LookupStrategy};
@@ -214,7 +214,7 @@ impl AsyncResolver {
         qtype: Qtype,
         qclass: Qclass
     ) -> Result<LookupResponse, ResolverError> {
-        let query = AsyncResolver::create_lookup_query(domain_name.clone(), qtype, qclass);
+        let query = message::create_recursive_query(domain_name.clone(), qtype, qclass);
 
         // Cache lookup
         // Search in cache only if its available
@@ -256,7 +256,6 @@ impl AsyncResolver {
         // TODO: add general timeout
         let lookup_response = lookup_strategy.run().await;
 
-        // Cache data
         if let Ok(ref r) = lookup_response {
             self.store_data_cache(r.to_dns_msg().clone());
         }
@@ -397,24 +396,6 @@ impl AsyncResolver {
             });
         }
 
-    }
-
-    fn create_lookup_query(
-        name: DomainName,
-        record_type: Qtype,
-        record_class: Qclass,
-    ) -> DnsMessage {
-        let mut random_generator = thread_rng();
-        let query_id: u16 = random_generator.gen();
-        let query = DnsMessage::new_query_message(
-            name.clone(),
-            record_type,
-            record_class,
-            0,
-            true,
-            query_id
-        );
-        return query;
     }
 
     /// Checks the received `LookupResponse` for errors to return to the Client.

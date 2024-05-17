@@ -979,6 +979,37 @@ impl DnsMessage {
     }
 }
 
+/// Constructs and returns a new `DnsMessage` that represents a recursive query message.
+///
+/// This function is primarily used by the `AsyncResolver` to generate a query message
+/// with default parameters that are suitable for a Stub Resolver. A Stub Resolver is a type of DNS resolver
+/// that is designed to query DNS servers directly, without any caching or additional logic.
+///
+/// Given a `name`, `record_type`, and `record_class`, this function will create a new `DnsMessage`.
+/// The resulting `DnsMessage` will have a randomly generated `query_id`. This is a unique identifier for the query
+/// that allows the response to be matched up with the query. The `rd` (Recursion Desired) field is set to `true`,
+/// indicating to the DNS server that it should perform a recursive query if necessary to fulfill the request.
+///
+/// This function does not perform the DNS query itself; it merely constructs the `DnsMessage` that 
+/// represents the query.
+pub fn create_recursive_query(
+    name: DomainName,
+    record_type: Qtype,
+    record_class: Qclass,
+) -> DnsMessage {
+    let mut random_generator = thread_rng();
+    let query_id: u16 = random_generator.gen();
+    let query = DnsMessage::new_query_message(
+        name.clone(),
+        record_type,
+        record_class,
+        0,
+        true,
+        query_id
+    );
+    return query;
+}
+
 #[cfg(test)]
 mod message_test {
     use crate::domain_name::DomainName;

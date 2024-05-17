@@ -5,10 +5,8 @@ pub mod resolver_error;
 pub mod lookup_response;
 pub mod server_info;
 
-use std::cmp::max;
 use std::net::IpAddr;
 use std::vec;
-use rand::{thread_rng, Rng};
 use std::sync::{Arc, Mutex};
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
@@ -23,7 +21,6 @@ use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate:: message::type_qtype::Qtype;
 use self::lookup_response::LookupResponse;
-use tokio_stream::StreamExt;
 
 
 /// Asynchronous resolver for DNS queries.
@@ -460,7 +457,6 @@ mod async_resolver_test {
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::ResourceRecord;
     use crate:: message::type_qtype::Qtype;
-    use crate::message::type_rtype::Rtype;
     use crate::async_resolver::config::ResolverConfig;
     use super::lookup_response::LookupResponse;
     use super::AsyncResolver;

@@ -71,7 +71,6 @@ impl LookupStrategy {
     /// TODO: make lookup_run specific to a single SERVER, it receives the server where it should be quering 
     pub async fn lookup_run(
         &mut self,
-        timeout: tokio::time::Duration,           
     ) -> Result<LookupResponse, ResolverError> {
         let config = self.config.clone();
         
@@ -210,8 +209,8 @@ impl LookupStrategy {
         let record_class = self.record_class;
         let protocol = self.config.get_protocol();
 
-        let new_query = create_lookup_query(name, record_type, record_class);
-        let response = create_response_from_query(&new_query);
+        let query = create_lookup_query(name, record_type, record_class);
+        let response = create_response_from_query(&query);
 
         let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
 
@@ -223,7 +222,7 @@ impl LookupStrategy {
             send_query_by_protocol(
                 timeout,
                 protocol,
-                new_query.clone(),
+                query.clone(),
                 result_dns_msg.clone(),
                 name_server,
             )).await
@@ -240,7 +239,7 @@ impl LookupStrategy {
                     send_query_by_protocol(
                         timeout,
                         protocol,
-                        new_query.clone(),
+                        query.clone(),
                         result_dns_msg.clone(),
                         name_server,
                     )).await
@@ -736,7 +735,7 @@ mod async_resolver_test {
             config,
         );
 
-        let _response_future = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(3)).await;
+        let _response_future = lookup_strategy.lookup_run().await;
     }  
     
 

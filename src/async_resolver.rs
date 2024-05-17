@@ -270,12 +270,8 @@ impl AsyncResolver {
             self.config.clone()
         );
 
-        // // The Berkeley resolver uses 45 seconds of maximum time out
-        let max_timeout = 30;  
+        let lookup_response = lookup_strategy.lookup_run().await;
 
-        let lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(max_timeout)).await;
-
-            
         // Cache data
         if let Ok(ref r) = lookup_response {
             self.store_data_cache(r.to_dns_msg().clone());

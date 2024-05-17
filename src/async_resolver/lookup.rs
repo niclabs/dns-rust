@@ -10,6 +10,7 @@ use tokio::net::tcp;
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
 use super::server_info::ServerInfo;
+use core::time;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
@@ -80,15 +81,71 @@ impl LookupStrategy {
         let record_class = self.record_class;
         let config = self.config.clone();
         
-        let result_response = execute_lookup_strategy(
-            name, 
+        // TODO: get parameters from config
+        // let upper_limit_of_retransmission = self.config.get_retry();
+        let upper_limit_of_retransmission = 4;
+        // let number_of_server_to_query = self.config.get_name_servers().len() as u64;
+        let max_timeout = 30;  
+
+            // Start interval used by The Berkeley stub-resolver
+        // let start_interval = max(4, 5/number_of_server_to_query).into();
+        let start_interval = 1;
+        let mut interval = start_interval;
+            
+        // Retransmission loop for a single server
+        // The resolver cycles through servers and at the end of a cycle, backs off 
+        // the time out exponentially.
+        let mut iter = 0..upper_limit_of_retransmission;
+
+        let mut timeout_interval = tokio::time::Duration::from_secs(interval);
+        let servers = config.get_name_servers();
+        
+        let mut lookup_result = execute_lookup_strategy(
+            name.clone(), 
             record_type,
             record_class,
-            config.get_name_servers(), 
-            config,
-            response,
-            timeout).await;
-        return result_response;
+            &servers, 
+            &config,
+            response.clone(),
+            timeout_interval).await;
+
+        while let Some(_retransmission) = iter.next() {
+            if let Ok(ref r) = lookup_result {
+                // 4.5. If the requestor receives a response, and the response has an
+                // RCODE other than SERVFAIL or NOTIMP, then the requestor returns an
+                // appropriate response to its caller.
+                match r.to_dns_msg().get_header().get_rcode() {
+                    // SERVFAIL
+                    2 => {
+                        println!("Server failure response received")
+                    },
+                    // NOTIMP
+                    4 => {
+                        println!("Not implemented response received")
+                    },
+                    _ => {
+                        println!("Good response received");
+                        break;}
+                }
+            }
+            // Exponencial backoff
+            if interval < max_timeout {
+                interval = interval*2;
+            }
+            timeout_interval = tokio::time::Duration::from_secs(interval);
+            tokio::time::sleep(timeout_interval).await;
+            println!("Retransmission: {}", interval);
+            lookup_result = execute_lookup_strategy(
+                name.clone(), 
+                record_type,
+                record_class,
+                &servers, 
+                &config,
+                response.clone(),
+                timeout_interval).await;
+        }
+
+        return lookup_result;
     }
 
     /// Checks if an appropiate answer was received.
@@ -178,8 +235,8 @@ pub async fn execute_lookup_strategy(
     name: DomainName,
     record_type: Qtype,
     record_class: Qclass,
-    name_servers: Vec<ServerInfo>,
-    config: ResolverConfig,
+    name_servers: &Vec<ServerInfo>,
+    config: &ResolverConfig,
     response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
     timeout: tokio::time::Duration,
 ) -> Result<LookupResponse, ResolverError>  {
@@ -240,7 +297,7 @@ pub async fn execute_lookup_strategy(
 async fn send_query_resolver_by_protocol(
     timeout: tokio::time::Duration,
     protocol: ConnectionProtocol,
-    query:DnsMessage,
+    query: DnsMessage,
     mut result_dns_msg: Result<DnsMessage, ResolverError>, 
     connections:  &ServerInfo,
 )
@@ -372,8 +429,8 @@ mod async_resolver_test {
             domain_name,
             record_type,
             record_class, 
-            name_servers, 
-            config,
+            &name_servers, 
+            &config,
             response_arc,
             timeout
         ).await;
@@ -417,8 +474,8 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            name_servers, 
-            config,
+            &name_servers, 
+            &config,
             response_arc,
             timeout
         ).await.unwrap();
@@ -453,8 +510,8 @@ mod async_resolver_test {
             domain_name,
             record_type,
             record_class, 
-            name_servers,
-            config,
+            &name_servers,
+            &config,
             response_arc,
             timeout
         ).await.unwrap();
@@ -503,8 +560,8 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            name_servers,
-            config,
+            &name_servers,
+            &config,
             response_arc,
             timeout
         ).await;
@@ -557,8 +614,8 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            name_servers,
-            config,
+            &name_servers,
+            &config,
             response_arc,
             timeout
         ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
@@ -600,8 +657,8 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            config.get_name_servers(),
-            config, 
+            &config.get_name_servers(),
+            &config, 
             query_sate,
             tokio::time::Duration::from_secs(3)).await;
     }  

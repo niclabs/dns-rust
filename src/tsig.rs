@@ -297,37 +297,49 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 
 
 //Sección de tests unitarios
-//ToDo: Crear bien un test que funcione
 #[test]
-fn ptsig_test(){
-    let my_key = b"1201102391287592dsjshno039U021Jg";
-    let my_short_key = b"1201102391287592dsjs";
-    let alg: TsigAlgorithm = TsigAlgorithm::HmacSha256;
-    let mut dns_example_msg =     
-        DnsMessage::new_query_message(
-        DomainName::new_from_string("uchile.cl".to_string()),
+fn check_signed_tsig() {
+    let key = b"1234567890";
+    let alg_name = TsigAlgorithm::HmacSha1;
+    let fudge = 0;
+    let time_signed = 0;
+    let id = 6502; 
+    let mut q = DnsMessage::new_query_message(
+        DomainName::new_from_str("uchile.cl"),
         Qtype::A,
-        Qclass::IN,
-        0,
+        Qclass::ANY, 
+        0, 
         false,
-        1);
-    let time = SystemTime::now().duration_since(UNIX_EPOCH).expect("no existo").as_secs();
-    //prueba de la firma. sign_msg calcula la firma, la añade al resource record del mensaje y retorna una copia
-    let _signature = sign_tsig(dns_example_msg.clone(), my_key, alg,1000,time );
-    let _sha1signature = sign_tsig(dns_example_msg.clone(),my_short_key, TsigAlgorithm::HmacSha1,1000, time);
-    let signature = match str::from_utf8(&_signature){
-        Ok(v) =>v,
-        Err(e) =>panic!("Invalid  UTF-( sequence: {}",e)
-    };
-    let sha1signature = match str::from_utf8(&_sha1signature){
-        Ok(v) =>v,
-        Err(e) =>panic!("Invalid  UTF-( sequence: {}",e)
-    };
-    println!("SHA-256: {}",signature);
-    println!("SHA-1: {}",sha1signature);
-
+        id
+    );
+    let q_for_mac = q.clone();
     
-    //prueba de process_tsig (la idea es usar la firma anterior, añadirla a dns_example_msg y verificarla con my_key)
-    //let _processed_msg = process_tsig(dns_example_msg, my_key);
+    let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed);
 
+    let mut hasher = crypto_hmac::new(Sha1::new(), key);
+    hasher.input(&q_for_mac.to_bytes()[..]);
+    
+    let result = hasher.result();
+    let mac_to_cmp = result.code();
+
+    let rr = q.get_additional().pop().expect("Should be a tsig");
+    match rr.get_rdata() {
+        Rdata::TSIG(data) => {
+            assert_eq!(data.get_algorithm_name(), DomainName::new_from_str("hmac-sha1"));
+            assert_eq!(data.get_time_signed(), time_signed);
+            assert_eq!(data.get_fudge() , fudge);
+            assert_eq!(data.get_mac_size(), 20);
+            assert_eq!(data.get_original_id(), id);
+            assert_eq!(data.get_error(), 0);
+            assert_eq!(data.get_other_len(), 0);
+            assert!(data.get_other_data().is_empty());
+        },
+        _ =>{
+            assert!(false);
+        }
+    }
+    println!("Comparando el mac");
+    for i in 0..mac_to_cmp.len() {
+        assert_eq!(mac_to_cmp[i], firma_a_comparar[i]);
+    }
 }

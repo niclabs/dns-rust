@@ -63,7 +63,7 @@ impl ResolverConfig {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),
             bind_addr: SocketAddr::new(resolver_addr, 53),
-            retry: 30,
+            retry: 3,
             cache_enabled: true,
             recursive_available: false,
             protocol: protocol,
@@ -83,7 +83,7 @@ impl ResolverConfig {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: vec![ServerInfo::new_with_ip(google_server, conn_udp, conn_tcp)],
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
-            retry: 30,
+            retry: 3,
             cache_enabled: true,
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,

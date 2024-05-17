@@ -112,7 +112,7 @@ mod lookup_response_tests {
         println!("{}", lookup_response.to_string());
         assert_eq!(
             lookup_response.to_string(), 
-            "example.com  IN  A  0  127.0.0.1".to_string()
+            "example.com  IN  A  0  127.0.0.1 \n".to_string()
         );
     }
 

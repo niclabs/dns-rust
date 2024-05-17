@@ -1,25 +1,13 @@
 use crate::client::client_error::ClientError;
-use crate::domain_name::DomainName;
 use crate::message::{self, DnsMessage};
-use crate::message::header::Header;
 use crate::client::client_connection::ClientConnection;
-use crate::message::class_qclass::Qclass;
-use crate::message::type_qtype::Qtype;
-use rand::{thread_rng, Rng};
-use tokio::net::tcp;
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
 use super::server_info::ServerInfo;
-use core::time;
 use std::cmp::max;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
-use crate::client::udp_connection::ClientUDPConnection;
-use crate::client::tcp_connection::ClientTCPConnection;
-use tokio::time::timeout;
-use std::num::NonZeroUsize;
-use crate::client::udp_connection;
 
 /// Struct that represents the execution of a lookup.
 /// 
@@ -310,11 +298,15 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -
 
 #[cfg(test)]
 mod async_resolver_test {
-    use crate::async_resolver::{server_info, AsyncResolver};
+    use crate::async_resolver::server_info;
+    use crate::client::tcp_connection::ClientTCPConnection;
+    use crate::client::udp_connection::ClientUDPConnection;
     use crate::message;
+    use crate::message::class_qclass::Qclass;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::message::type_qtype::Qtype;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;

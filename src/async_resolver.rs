@@ -191,7 +191,7 @@ impl AsyncResolver {
     /// response of the query which can translate the response to different formats.
     /// 
     /// This lookup is done asynchronously using the `tokio` runtime. It calls the 
-    /// asynchronous method `lookup_run()` of the `LookupStrategy` struct. This method
+    /// asynchronous method `run()` of the `LookupStrategy` struct. This method
     /// is used to perform the DNS lookup and return the response of the query.
     /// 
     /// If the response has an error, the method returns the corresponding `ResolverError`
@@ -253,7 +253,8 @@ impl AsyncResolver {
 
         let mut lookup_strategy = LookupStrategy::new(query, self.config.clone());
 
-        let lookup_response = lookup_strategy.lookup_run().await;
+        // TODO: add general timeout
+        let lookup_response = lookup_strategy.run().await;
 
         // Cache data
         if let Ok(ref r) = lookup_response {

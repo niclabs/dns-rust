@@ -11,6 +11,7 @@ use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
 use super::server_info::ServerInfo;
 use core::time;
+use std::cmp::max;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
@@ -30,13 +31,13 @@ use crate::client::udp_connection;
 /// with the response of the query.
 /// 
 /// The lookup is done asynchronously after calling the asynchronoyus 
-/// `lookup_run` method.
+/// `run` method.
 pub struct LookupStrategy {
     query: DnsMessage,
     /// Resolver configuration.
     config: ResolverConfig,
     /// Reference to the response of the query.
-    pub response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+    response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
 }
     
 impl LookupStrategy {
@@ -58,28 +59,22 @@ impl LookupStrategy {
     /// 
     /// This function performs the lookup of the requested records asynchronously.
     /// It returns a `LookupResponse` with the response of the query.
-    /// 
-    /// TODO: make lookup_run specific to a single SERVER, it receives the server where it should be quering 
-    pub async fn lookup_run(
+    pub async fn run(
         &mut self,
     ) -> Result<LookupResponse, ResolverError> {
-        let config = self.config.clone();
-        
-        // let upper_limit_of_retransmission = self.config.get_retry();
-        let upper_limit_of_retransmission = 4;
-        // let number_of_server_to_query = self.config.get_name_servers().len() as u64;
-        let max_timeout = 30;  
+        let config = &self.config;
+        let upper_limit_of_retransmission = config.get_retry();
+        let number_of_server_to_query = config.get_name_servers().len() as u64;
+        let max_timeout = config.get_timeout();  
 
-        // Start interval used by The Berkeley stub-resolver
-        // let start_interval = max(4, 5/number_of_server_to_query).into();
-        let start_interval = 1;
+        // Recommended by RFC 1536
+        let start_interval = max(1, 5/number_of_server_to_query).into();
         let mut interval = start_interval;
-            
-        // Retransmission loop for a single server
+        let mut timeout_interval = tokio::time::Duration::from_secs(interval);
+
+        // Retransmission loop
         let mut iter = 0..upper_limit_of_retransmission;
 
-        let mut timeout_interval = tokio::time::Duration::from_secs(interval);
-        
         let mut lookup_result = Err(ResolverError::EmptyQuery);
 
         // The resolver cycles through servers and at the end of a cycle, backs off 
@@ -99,7 +94,7 @@ impl LookupStrategy {
             }
 
             // Exponencial backoff
-            if interval < max_timeout {
+            if timeout_interval < max_timeout {
                 interval = interval*2;
             }
             timeout_interval = tokio::time::Duration::from_secs(interval);
@@ -195,9 +190,7 @@ impl LookupStrategy {
         timeout: tokio::time::Duration,
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.response_msg.clone();
-        
         let response = create_response_from_query(&self.query);
-        
         let protocol = self.config.get_protocol();
         let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
 
@@ -262,13 +255,13 @@ async fn send_query_by_protocol(
             let mut udp_connection = connections.get_udp_connection().clone();
             udp_connection.set_timeout(timeout);
             let result_response = udp_connection.send(query.clone()).await;
-            result_dns_msg = parse_response(result_response,query_id);
+            result_dns_msg = parse_response(result_response, query_id);
         }
         ConnectionProtocol::TCP => {
             let mut tcp_connection = connections.get_tcp_connection().clone();
             tcp_connection.set_timeout(timeout);
             let result_response = tcp_connection.send(query.clone()).await;
-            result_dns_msg = parse_response(result_response,query_id);
+            result_dns_msg = parse_response(result_response, query_id);
         }
         _ => {},
     }; 
@@ -683,7 +676,7 @@ mod async_resolver_test {
             config,
         );
 
-        let _response_future = lookup_strategy.lookup_run().await;
+        let _response_future = lookup_strategy.run().await;
     }  
     
 
@@ -769,9 +762,9 @@ mod async_resolver_test {
         }
     }
   
-    // TODO: test empty response lookup_run
+    // TODO: test empty response run
    
-    // TODO: test lookup_run max rieswith max of 0 
+    // TODO: test run max rieswith max of 0 
 
 }
 

@@ -90,6 +90,29 @@ impl LookupStrategy {
             timeout).await;
         return result_response;
     }
+
+    /// Checks if an appropiate answer was received.
+    /// 
+    /// [RFC 2136]: https://datatracker.ietf.org/doc/html/rfc2136#section-4.5
+    /// 
+    /// 4.5. If the requestor receives a response, and the response has an
+    //  RCODE other than SERVFAIL or NOTIMP, then the requestor returns an
+    //  appropriate response to its caller.
+    pub fn appropriate_response_received(&self) -> bool {
+        let response_arc = self.query_answer.lock().unwrap();
+
+        if let Ok(dns_msg) = response_arc.as_ref() {
+            match dns_msg.get_header().get_rcode() {
+                // SERVFAIL
+                2 => return false,
+                // NOTIMP
+                4 => return false,
+                _ => return true,
+            }
+        }
+        false
+    }
+    
 }
 
 /// Perfoms the lookup of a Domain Name acting as a Stub Resolver.

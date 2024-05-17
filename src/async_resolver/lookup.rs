@@ -110,24 +110,8 @@ impl LookupStrategy {
             timeout_interval).await;
 
         while let Some(_retransmission) = iter.next() {
-            if let Ok(ref r) = lookup_result {
-                // 4.5. If the requestor receives a response, and the response has an
-                // RCODE other than SERVFAIL or NOTIMP, then the requestor returns an
-                // appropriate response to its caller.
-                match r.to_dns_msg().get_header().get_rcode() {
-                    // SERVFAIL
-                    2 => {
-                        println!("Server failure response received")
-                    },
-                    // NOTIMP
-                    4 => {
-                        println!("Not implemented response received")
-                    },
-                    _ => {
-                        println!("Good response received");
-                        break;}
-                }
-            }
+            if self.received_appropriate_response() {break}
+
             // Exponencial backoff
             if interval < max_timeout {
                 interval = interval*2;
@@ -155,7 +139,7 @@ impl LookupStrategy {
     /// 4.5. If the requestor receives a response, and the response has an
     //  RCODE other than SERVFAIL or NOTIMP, then the requestor returns an
     //  appropriate response to its caller.
-    pub fn appropriate_response_received(&self) -> bool {
+    pub fn received_appropriate_response(&self) -> bool {
         let response_arc = self.query_answer.lock().unwrap();
 
         if let Ok(dns_msg) = response_arc.as_ref() {
@@ -169,7 +153,6 @@ impl LookupStrategy {
         }
         false
     }
-    
 }
 
 /// Perfoms the lookup of a Domain Name acting as a Stub Resolver.

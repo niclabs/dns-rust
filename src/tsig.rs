@@ -160,7 +160,7 @@ fn check_alg_name(alg_name:&String, alg_list: Vec<(String,bool)>) -> bool{
     return answer
 }
 
-//Solo ve los largos por ahora
+//Verifica que los mac sean iguales
 fn check_mac(mut new_mac: Vec<u8>, key: &[u8], mac: Vec<u8>) -> bool{
     let mut answer: bool = false;
     let contador = 0;
@@ -172,6 +172,12 @@ fn check_mac(mut new_mac: Vec<u8>, key: &[u8], mac: Vec<u8>) -> bool{
             return answer
         }
     }
+    return answer
+}
+
+//Verifica el error de la sección 5.2.3 
+fn check_time_values() -> bool {
+    let mut answer = false;
     return answer
 }
 
@@ -262,7 +268,10 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
     if !cond2 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 16: BADSIG");
     }
-    //let cond3 = check_time_values();
+    let cond3 = check_time_values();
+    if !cond3 {
+        println!("RCODE 9: NOAUTH\n TSIG ERROR 18: BADTIME");
+    }
     let time_signed_v = 0;
     let fudge = 0;
     //Verificación de los tiempos de emisión y recepción + fudge del mensaje

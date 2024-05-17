@@ -188,7 +188,7 @@ fn check_last_one_is_tsig(add_rec: &Vec<ResourceRecord>) -> bool {
 
 
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
-fn process_tsig(msg: DnsMessage, key_name: String, time: u64,  avalaible_algorihtm: Vec<(String, bool)>) -> bool {
+fn process_tsig(msg: DnsMessage, key_name: String, time: u64,  available_algorithm: Vec<(String, bool)>) -> bool {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
     

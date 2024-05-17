@@ -210,28 +210,8 @@ impl LookupStrategy {
         let record_class = self.record_class;
         let protocol = self.config.get_protocol();
 
-        // Create random generator
-        let mut rng = thread_rng();
-
-        // Create query id
-        let query_id: u16 = rng.gen();
-
-        // Create query
-        let new_query = DnsMessage::new_query_message(
-            name.clone(),
-            record_type,
-            record_class,
-            0,
-            false,
-            query_id
-        );
-
-        // Create Server failure query 
-        let mut response = new_query.clone(); 
-        let mut new_header: Header = response.get_header();
-        new_header.set_rcode(2); 
-        new_header.set_qr(true);
-        response.set_header(new_header);
+        let new_query = create_lookup_query(name, record_type, record_class);
+        let response = create_response_from_query(&new_query);
 
         let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
 
@@ -350,6 +330,44 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -
         return Ok(dns_msg);
     }
     Err(ResolverError::Parse("Message is a query. A response was expected.".to_string()))
+}
+
+fn create_lookup_query(
+    name: DomainName,
+    record_type: Qtype,
+    record_class: Qclass,
+) -> DnsMessage {
+    // Create random generator
+    let mut rng = thread_rng();
+
+    // Create query id
+    let query_id: u16 = rng.gen();
+
+    // Create query
+    let query = DnsMessage::new_query_message(
+        name.clone(),
+        record_type,
+        record_class,
+        0,
+        true,
+        query_id
+    );
+
+    return query;
+}
+
+fn create_response_from_query(
+    query: &DnsMessage,
+) -> DnsMessage {
+
+    // Create Server failure query
+    let mut response = query.clone();
+    let mut new_header: Header = response.get_header();
+    new_header.set_rcode(2);
+    new_header.set_qr(true);
+    response.set_header(new_header);
+
+    return response;
 }
 
 #[cfg(test)]

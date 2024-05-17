@@ -140,8 +140,7 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
 //TODO: terminar función keycheck
 fn check_key(alg_name: String,key_in_rr:String,key_name:String,flag_check_alg:bool)-> bool {
     let mut answer = true; 
-
-    if !key_in_rr.eq(&key_name) {
+    if !key_in_rr.eq(&key_name) || flag_check_alg {
         answer=false;
     }
     return answer

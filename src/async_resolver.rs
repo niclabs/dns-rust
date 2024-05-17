@@ -270,11 +270,12 @@ impl AsyncResolver {
         );
 
         // TODO: get parameters from config
-        let upper_limit_of_retransmission = self.config.get_retry();
+        // let upper_limit_of_retransmission = self.config.get_retry();
+        let upper_limit_of_retransmission = 3;
         let number_of_server_to_query = self.config.get_name_servers().len() as u64;
 
         // The Berkeley resolver uses 45 seconds of maximum time out
-        let max_timeout = 45;  
+        let max_timeout = 30;  
         
         let lookup_response = AsyncResolver::query_transmission(
             lookup_strategy, 
@@ -298,7 +299,8 @@ impl AsyncResolver {
         max_timeout: u64
     ) -> Result<LookupResponse, ResolverError> {
         // Start interval used by The Berkeley stub-resolver
-        let start_interval = max(4, 5/number_of_server_to_query).into();
+        // let start_interval = max(4, 5/number_of_server_to_query).into();
+        let start_interval = 1;
         let mut interval = start_interval;
             
         // Retransmission loop for a single server

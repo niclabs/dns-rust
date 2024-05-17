@@ -49,7 +49,13 @@ impl fmt::Display for LookupResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::new();
         for address in &self.dns_msg_response.get_answer() {
-            result.push_str(&format!("{}", address));
+            result.push_str(&format!("{} \n", address));
+        }
+        for address in &self.dns_msg_response.get_authority() {
+            result.push_str(&format!("{} \n", address));
+        }
+        for address in &self.dns_msg_response.get_additional() {
+            result.push_str(&format!("{} \n", address));
         }
         write!(f, "{}", result)
     }

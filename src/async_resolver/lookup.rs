@@ -324,7 +324,7 @@ fn create_response_from_query(
 #[cfg(test)]
 mod async_resolver_test {
     use crate::async_resolver::{server_info, AsyncResolver};
-    // use tokio::runtime::Runtime;
+    use crate::message;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
@@ -351,7 +351,7 @@ mod async_resolver_test {
         let resource_record = ResourceRecord::new(a_rdata);
         cache.add(domain_name_cache, resource_record, record_type, record_class, None);
 
-        let query = AsyncResolver::create_lookup_query(domain_name, record_type, record_class);
+        let query = message::create_recursive_query(domain_name, record_type, record_class);
 
         let lookup_future = LookupStrategy::new(
             query,
@@ -380,7 +380,7 @@ mod async_resolver_test {
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = LookupStrategy::new(
-            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
+            message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -435,7 +435,7 @@ mod async_resolver_test {
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = LookupStrategy::new(
-            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
+            message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -481,7 +481,7 @@ mod async_resolver_test {
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = LookupStrategy::new(
-            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
+            message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -551,7 +551,7 @@ mod async_resolver_test {
         // ).await;
 
         let lookup_strategy = LookupStrategy::new(
-            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
+            message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -616,7 +616,7 @@ mod async_resolver_test {
         // ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
 
         let lookup_strategy = LookupStrategy::new(
-            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
+            message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
 
@@ -669,7 +669,7 @@ mod async_resolver_test {
         //     tokio::time::Duration::from_secs(3)).await;
 
         let mut lookup_strategy = LookupStrategy::new(
-            AsyncResolver::create_lookup_query(domain_name, record_type, record_class),
+            message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
 

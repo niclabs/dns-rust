@@ -404,13 +404,8 @@ impl AsyncResolver {
         record_type: Qtype,
         record_class: Qclass,
     ) -> DnsMessage {
-        // Create random generator
-        let mut rng = thread_rng();
-    
-        // Create query id
-        let query_id: u16 = rng.gen();
-    
-        // Create query
+        let mut random_generator = thread_rng();
+        let query_id: u16 = random_generator.gen();
         let query = DnsMessage::new_query_message(
             name.clone(),
             record_type,

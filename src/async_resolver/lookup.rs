@@ -71,21 +71,18 @@ impl LookupStrategy {
         let start_interval = max(1, 5/number_of_server_to_query).into();
         let mut interval = start_interval;
         let mut timeout_interval = tokio::time::Duration::from_secs(interval);
-
-        // Retransmission loop
-        let mut iter = 0..upper_limit_of_retransmission;
-
-        let mut lookup_result = Err(ResolverError::EmptyQuery);
+        let mut lookup_response_result = Err(ResolverError::EmptyQuery);
 
         // The resolver cycles through servers and at the end of a cycle, backs off 
         // the time out exponentially.
+        let mut iter = 0..upper_limit_of_retransmission;
         'cycle: while let Some(_retransmission) = iter.next() {
 
             // Loop between servers
             let servers_to_query = config.get_name_servers();  
             let mut server_iter = servers_to_query.iter();
             while let Some(server) = server_iter.next() {
-                lookup_result = self.transmit_query_to_server(
+                lookup_response_result = self.transmit_query_to_server(
                     server, 
                     timeout_interval
                 ).await;
@@ -100,7 +97,7 @@ impl LookupStrategy {
             timeout_interval = tokio::time::Duration::from_secs(interval);
             tokio::time::sleep(timeout_interval).await;
         }
-        return lookup_result;
+        return lookup_response_result;
     }
 
     /// Checks if an appropiate answer was received.
@@ -194,21 +191,21 @@ impl LookupStrategy {
         let protocol = self.config.get_protocol();
         let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
 
-        // Get guard to modify the response
         {
-        let mut response_guard = response_arc.lock().unwrap();
-        result_dns_msg = tokio::time::timeout(
-            timeout, 
-            send_query_by_protocol(
-                timeout,
-                protocol,
-                self.query.clone(),
-                result_dns_msg.clone(),
-                name_server,
-            )).await
-            .unwrap_or_else(|_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
-        });  
-        *response_guard = result_dns_msg.clone();
+            // Get guard to modify the response
+            let mut response_guard = response_arc.lock().unwrap();
+            result_dns_msg = tokio::time::timeout(
+                timeout, 
+                send_query_by_protocol(
+                    timeout,
+                    protocol,
+                    self.query.clone(),
+                    result_dns_msg.clone(),
+                    name_server,
+                )).await
+                .unwrap_or_else(|_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
+            });  
+            *response_guard = result_dns_msg.clone();
         }
 
         if !self.received_appropriate_response() {

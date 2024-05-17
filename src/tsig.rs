@@ -19,6 +19,7 @@ enum TsigAlgorithm {
     HmacSha1,
     HmacSha256,
 }
+
 /*
 #[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
 fn sign_msg_old(mut query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
@@ -132,9 +133,26 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
 }
 
 //TODO: terminar función keycheck
-fn check_key(alg_name: String,key_in_rr:String,key: &[u8])-> bool {
-    let mut answer = true;  
-    answer
+fn check_key(alg_name: String,key_in_rr:String,key_name:String,flag_check_alg:bool)-> bool {
+    let mut answer = true; 
+
+    if !key_in_rr.eq(&key_name) {
+        answer=false;
+    }
+    return answer
+}
+
+//Verifica que el algoritmo esté disponible, y además esté implementado
+fn check_alg_name(alg_name:String, alg_list: Vec<(String,bool)>) -> bool{
+    let mut answer: bool = false;
+    for (name,available) in alg_list {
+        if name.eq(&alg_name){
+            if available {
+                answer = true;
+            }
+        }
+    }
+    return answer
 }
 
 //RFC 8945 5.2 y 5.4
@@ -146,7 +164,7 @@ fn check_exists_tsig_rr(add_rec: &Vec<ResourceRecord>) -> bool {
                                 if let Rdata::TSIG(data) = tsig.get_rdata() {true}
                                 else {false}).collect();
 
-    !(filtered_tsig.len()==0)
+    (filtered_tsig.len()==0)
 }
 
 
@@ -160,12 +178,12 @@ fn check_last_one_is_tsig(add_rec: &Vec<ResourceRecord>) -> bool {
     
     let islast = if let Rdata::TSIG(data) = add_rec[add_rec.len()-1].get_rdata() {false} else {true};
 
-    !(filtered_tsig.len()>1 || islast)
+    (filtered_tsig.len()>1 || islast)
 }
 
 
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
-fn process_tsig(msg: DnsMessage, key: &[u8], time: u64) -> bool {
+fn process_tsig(msg: DnsMessage, key_name: String, time: u64,  avalaible_algorihtm: Vec<(String, bool)>) -> bool {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
     
@@ -174,14 +192,14 @@ fn process_tsig(msg: DnsMessage, key: &[u8], time: u64) -> bool {
     //verificar que existen los resource records que corresponden a tsig
     //vector con resource records que son TSIG. Luego se Verifica si hay algún tsig rr
     if check_exists_tsig_rr(&addit) {
-        println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
+        println!("RCODE 1: FORMERR");
         return false;
     }
     
     //Debe haber un único tsig
     //Tsig RR debe ser el último en la sección adicional, y debe ser único
     if check_last_one_is_tsig(&addit) {
-        println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
+        println!("RCODE 1: FORMERR");
         return false;
     }
 
@@ -203,7 +221,8 @@ fn process_tsig(msg: DnsMessage, key: &[u8], time: u64) -> bool {
     //RFC 8945 5.2.1
     let name_alg = tsig_rr_copy.get_algorithm_name().get_name();
     let key_in_rr = rr_copy.get_name().get_name();
-    let cond1 = check_key(name_alg,key_in_rr,key);
+    let flag = check_alg_name(name_alg,available_algorithm);
+    let cond1 = check_key(name_alg,key_in_rr,key_name,flag);
     if cond1 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
         return false;

@@ -370,3 +370,49 @@ fn check_signed_tsig() {
         assert_eq!(mac_to_cmp[i], firma_a_comparar[i]);
     }
 }
+#[test]
+fn check_signed_tsig() {
+    let key = b"1234567890";
+    let alg_name = TsigAlgorithm::HmacSha1;
+    let fudge = 0;
+    let time_signed = 0;
+    let id = 6502; 
+    let mut q = DnsMessage::new_query_message(
+        DomainName::new_from_str("uchile.cl"),
+        Qtype::A,
+        Qclass::ANY, 
+        0, 
+        false,
+        id
+    );
+    let q_for_mac = q.clone();
+    
+    let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed);
+
+    let mut hasher = crypto_hmac::new(Sha1::new(), key);
+    hasher.input(&q_for_mac.to_bytes()[..]);
+    
+    let result = hasher.result();
+    let mac_to_cmp = result.code();
+
+    let rr = q.get_additional().pop().expect("Should be a tsig");
+    match rr.get_rdata() {
+        Rdata::TSIG(data) => {
+            assert_eq!(data.get_algorithm_name(), DomainName::new_from_str("hmac-sha1"));
+            assert_eq!(data.get_time_signed(), time_signed);
+            assert_eq!(data.get_fudge() , fudge);
+            assert_eq!(data.get_mac_size(), 20);
+            assert_eq!(data.get_original_id(), id);
+            assert_eq!(data.get_error(), 0);
+            assert_eq!(data.get_other_len(), 0);
+            assert!(data.get_other_data().is_empty());
+        },
+        _ =>{
+            assert!(false);
+        }
+    }
+    println!("Comparando el mac");
+    for i in 0..mac_to_cmp.len() {
+        assert_eq!(mac_to_cmp[i], firma_a_comparar[i]);
+    }
+}

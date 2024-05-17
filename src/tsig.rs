@@ -19,7 +19,12 @@ enum TsigAlgorithm {
     HmacSha1,
     HmacSha256,
 }
+enum TsigErrorCode{
+    BADSIG = 16,
+    BADDKEY = 17,
+    BADTIME = 18,
 
+}
 /*
 #[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
 fn sign_msg_old(mut query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{

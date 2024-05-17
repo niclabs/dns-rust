@@ -211,9 +211,11 @@ impl AsyncResolver {
     async fn inner_lookup(
         &self,
         domain_name: DomainName,
-        qtype:Qtype,
-        qclass:Qclass
+        qtype: Qtype,
+        qclass: Qclass
     ) -> Result<LookupResponse, ResolverError> {
+        let query = AsyncResolver::create_lookup_query(domain_name.clone(), qtype, qclass);
+
         // Cache lookup
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
@@ -263,12 +265,7 @@ impl AsyncResolver {
             }
         }
 
-        let mut lookup_strategy = LookupStrategy::new(
-            domain_name,
-            qtype,
-            qclass,
-            self.config.clone()
-        );
+        let mut lookup_strategy = LookupStrategy::new(query, self.config.clone());
 
         let lookup_response = lookup_strategy.lookup_run().await;
 
@@ -413,6 +410,29 @@ impl AsyncResolver {
             });
         }
 
+    }
+
+    fn create_lookup_query(
+        name: DomainName,
+        record_type: Qtype,
+        record_class: Qclass,
+    ) -> DnsMessage {
+        // Create random generator
+        let mut rng = thread_rng();
+    
+        // Create query id
+        let query_id: u16 = rng.gen();
+    
+        // Create query
+        let query = DnsMessage::new_query_message(
+            name.clone(),
+            record_type,
+            record_class,
+            0,
+            true,
+            query_id
+        );
+        return query;
     }
 
     /// Checks the received `LookupResponse` for errors to return to the Client.

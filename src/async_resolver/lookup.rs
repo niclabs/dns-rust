@@ -1,6 +1,6 @@
 use crate::client::client_error::ClientError;
 use crate::domain_name::DomainName;
-use crate::message::DnsMessage;
+use crate::message::{self, DnsMessage};
 use crate::message::header::Header;
 use crate::client::client_connection::ClientConnection;
 use crate::message::class_qclass::Qclass;
@@ -187,7 +187,7 @@ impl LookupStrategy {
         timeout: tokio::time::Duration,
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.response_msg.clone();
-        let response = create_response_from_query(&self.query);
+        let response = message::create_server_failure_response_from_query(&self.query);
         let protocol = self.config.get_protocol();
         let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
 
@@ -306,19 +306,6 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -
         return Ok(dns_msg);
     }
     Err(ResolverError::Parse("Message is a query. A response was expected.".to_string()))
-}
-
-fn create_response_from_query(
-    query: &DnsMessage,
-) -> DnsMessage {
-    // Create Server failure query
-    let mut response = query.clone();
-    let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2);
-    new_header.set_qr(true);
-    response.set_header(new_header);
-
-    return response;
 }
 
 #[cfg(test)]

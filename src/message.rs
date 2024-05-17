@@ -1010,6 +1010,39 @@ pub fn create_recursive_query(
     return query;
 }
 
+/// Constructs a `DnsMessage` that represents a server failure response.
+///
+/// This function is primarily used by the `LookupStrategy` to generate a server failure response message
+/// based on a given query message. This can be useful in scenarios where a default response is needed before
+/// an actual response is received from the DNS server.
+///
+/// The `query` parameter is a reference to a `DnsMessage` that represents the original query.
+/// The resulting `DnsMessage` will have the same fields as the original query, except for the header. The header
+/// is modified as follows:
+/// - The `rcode` (Response Code) field is set to 2, which represents a server failure. This indicates to the client
+///   that the DNS server was unable to process the query due to a problem with the server.
+/// - The `qr` (Query/Response) field is set to `true`, indicating that this `DnsMessage` is a response, not a query.
+///
+/// This function returns the modified `DnsMessage`. Note that this function does not send the response; it merely
+/// constructs the `DnsMessage` that represents the response.
+///
+/// # Example
+///
+/// ```rust
+/// let query = DnsMessage::new();
+/// let response = create_server_failure_response_from_query(&query);
+/// ```
+pub fn create_server_failure_response_from_query(
+    query: &DnsMessage,
+) -> DnsMessage {
+    let mut response = query.clone();
+    let mut new_header: Header = response.get_header();
+    new_header.set_rcode(2);
+    new_header.set_qr(true);
+    response.set_header(new_header);
+    return response;
+}
+
 #[cfg(test)]
 mod message_test {
     use crate::domain_name::DomainName;

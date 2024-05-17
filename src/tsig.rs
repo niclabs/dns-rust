@@ -84,7 +84,9 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
     let mut new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
     match alg_name {
+        
         TsigAlgorithm::HmacSha1 => {
+            
             let mut hasher = crypto_hmac::new(Sha1::new(), key);
             hasher.input(&new_query_message.to_bytes()[..]);
             let result = hasher.result();
@@ -130,27 +132,43 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
 }
 
 //TODO: terminar función keycheck
-fn check_key(alg_name: String,key_in_rr:String,key: &[u8])->Bool{
+fn check_key(alg_name: String,key_in_rr:String,key: &[u8])-> bool {
     let mut answer = true;  
     
-    return answer
+    answer
+}
+
+fn check_exists_tsig_rr(add_rec: &Vec<ResourceRecord>) -> bool {
+    let filtered_tsig:Vec<_> = add_rec.iter()
+                                .filter(|tsig| 
+                                if let Rdata::TSIG(data) = tsig.get_rdata() {true}
+                                else {false}).collect();
+
+    let islast = if let Rdata::TSIG(data) = add_rec[add_rec.len()-1].get_rdata() {false} else {true};
+    ! filtered_tsig.len()==0
 }
 
 
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
-fn process_tsig(msg: DnsMessage, key: &[u8]) -> DnsMessage {
+fn process_tsig(msg: DnsMessage, key: &[u8], time: u64) -> DnsMessage {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
-    let time =SystemTime::now().duration_since(UNIX_EPOCH).expect("no time").as_secs();
+    
+    
     //RFC 8945 5.2 y 5.4
     //verificar que existen los resource records que corresponden a tsig
     //vector con resource records que son TSIG. Luego se Verifica si hay algún tsig rr
-    let filtered_tsig:Vec<_> = addit.iter().filter(|tsig| if let Rdata::TSIG(data) = tsig.get_rdata() {true} else {false}).collect();
-    let islast = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {false} else {true};
-    if filtered_tsig.len()==0 {
+    // let filtered_tsig:Vec<_> = addit.iter().filter(|tsig| if let Rdata::TSIG(data) = tsig.get_rdata() {true} else {false}).collect();
+    // let islast = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {false} else {true};
+    // if filtered_tsig.len()==0 {
+    //     let error_msg = DnsMessage::format_error_msg();
+    //     return error_msg;
+    // }
+    if !check_exists_tsig_rr(&addit) {
         let error_msg = DnsMessage::format_error_msg();
         return error_msg;
     }
+    
     //Debe haber un único tsig
     //Tsig RR debe ser el último en la sección adicional, y debe ser único
     if filtered_tsig.len()>1 || islast {

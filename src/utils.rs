@@ -42,12 +42,6 @@ pub fn domain_validity_syntax(domain_name: DomainName) -> Result<DomainName, &'s
     return Ok(domain_name);
 }
 
-/// Given the value of the STYPE, obtains its corresponding string.
-pub fn get_string_stype(stype: Rtype) -> String {
-    let s_type = stype.to_string();
-    s_type
-}
-
 #[cfg(test)]
 mod utils_test {
     use crate::domain_name::DomainName;

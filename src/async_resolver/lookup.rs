@@ -240,7 +240,7 @@ impl LookupStrategy {
         let mut response_guard = response_arc.lock().unwrap();
         result_dns_msg = tokio::time::timeout(
             timeout, 
-            send_query_resolver_by_protocol(
+            send_query_by_protocol(
                 timeout,
                 protocol,
                 new_query.clone(),
@@ -257,7 +257,7 @@ impl LookupStrategy {
                 tokio::time::sleep(timeout).await;
                 result_dns_msg = tokio::time::timeout(
                     timeout, 
-                    send_query_resolver_by_protocol(
+                    send_query_by_protocol(
                         timeout,
                         protocol,
                         new_query.clone(),
@@ -281,7 +281,7 @@ impl LookupStrategy {
 ///  and connection information. Depending on the specified protocol (UDP or TCP),
 ///  it sends the query using the corresponding connection and updates the result
 ///  with the parsed response.
-async fn send_query_resolver_by_protocol(
+async fn send_query_by_protocol(
     timeout: tokio::time::Duration,
     protocol: ConnectionProtocol,
     query: DnsMessage,

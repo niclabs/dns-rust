@@ -100,7 +100,7 @@ impl LookupStrategy {
             let servers_to_query = config.get_name_servers();  
             let mut server_iter = servers_to_query.iter();
             while let Some(server) = server_iter.next() {
-                lookup_result = self.execute_lookup_strategy(
+                lookup_result = self.transmit_query_to_server(
                     server, 
                     timeout_interval
                 ).await;
@@ -197,16 +197,11 @@ impl LookupStrategy {
     /// let record_type = Qtype::A;
     /// 
     /// let name_servers = vec![(conn_udp,conn_tcp)];
-    /// let response = execute_lookup_strategy(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
+    /// let response = transmit_query_to_server(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
     /// ```
-    pub async fn execute_lookup_strategy(
+    pub async fn transmit_query_to_server(
         &self,
-        // name: DomainName,
-        // record_type: Qtype,
-        // record_class: Qclass,
         name_server: &ServerInfo,
-        // protocol: ConnectionProtocol,
-        // response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
         timeout: tokio::time::Duration,
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.query_answer.clone();
@@ -243,34 +238,34 @@ impl LookupStrategy {
         // Get guard to modify the response
         {
         let mut response_guard = response_arc.lock().unwrap();
-
-        result_dns_msg = tokio::time::timeout(timeout, 
+        result_dns_msg = tokio::time::timeout(
+            timeout, 
             send_query_resolver_by_protocol(
                 timeout,
                 protocol,
                 new_query.clone(),
                 result_dns_msg.clone(),
                 name_server,
-                )).await
-                .unwrap_or_else(|_| {
-                    Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
-                });  
+            )).await
+            .unwrap_or_else(|_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
+        });  
         *response_guard = result_dns_msg.clone();
         }
 
         if !self.received_appropriate_response() {
             if let ConnectionProtocol::UDP = protocol {
-                result_dns_msg = tokio::time::timeout(timeout, 
+                tokio::time::sleep(timeout).await;
+                result_dns_msg = tokio::time::timeout(
+                    timeout, 
                     send_query_resolver_by_protocol(
                         timeout,
-                        ConnectionProtocol::TCP,
+                        protocol,
                         new_query.clone(),
                         result_dns_msg.clone(),
                         name_server,
                     )).await
-                    .unwrap_or_else(|_| {
-                        Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
-                    });
+                    .unwrap_or_else(|_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
+                }); 
                 let mut response_guard = response_arc.lock().unwrap();
                 *response_guard = result_dns_msg.clone();
             }
@@ -401,7 +396,7 @@ mod async_resolver_test {
     }
      
     #[tokio::test]
-    async fn execute_lookup_strategy_a_response() {
+    async fn transmit_query_to_server_a_response() {
         let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
@@ -424,12 +419,12 @@ mod async_resolver_test {
             config,
         );
 
-        let response = lookup_strategy.execute_lookup_strategy(
+        let response = lookup_strategy.transmit_query_to_server(
             name_servers.get(0).unwrap(),
             timeout
         ).await;
 
-        // let response = execute_lookup_strategy(
+        // let response = transmit_query_to_server(
         //     domain_name,
         //     record_type,
         //     record_class, 
@@ -457,7 +452,7 @@ mod async_resolver_test {
     }   
 
     #[tokio::test]
-    async fn execute_lookup_strategy_ns_response() {
+    async fn transmit_query_to_server_ns_response() {
         let domain_name = DomainName::new_from_string("example.com".to_string());
     
         // Create vect of name servers
@@ -481,12 +476,12 @@ mod async_resolver_test {
             config,
         );
 
-        let response = lookup_strategy.execute_lookup_strategy(
+        let response = lookup_strategy.transmit_query_to_server(
             name_servers.get(0).unwrap(),
             timeout
         ).await.unwrap();
 
-        // let response = execute_lookup_strategy(
+        // let response = transmit_query_to_server(
         //     domain_name, 
         //     record_type, 
         //     record_class,
@@ -507,7 +502,7 @@ mod async_resolver_test {
     } 
 
     #[tokio::test]
-    async fn execute_lookup_strategy_ch_response() {
+    async fn transmit_query_to_server_ch_response() {
         let domain_name = DomainName::new_from_string("example.com".to_string());
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
@@ -529,12 +524,12 @@ mod async_resolver_test {
             config,
         );
 
-        let response = lookup_strategy.execute_lookup_strategy(
+        let response = lookup_strategy.transmit_query_to_server(
             name_servers.get(0).unwrap(),
             timeout
         ).await.unwrap();
 
-        // let response = execute_lookup_strategy(
+        // let response = transmit_query_to_server(
         //     domain_name,
         //     record_type,
         //     record_class, 
@@ -555,7 +550,7 @@ mod async_resolver_test {
             .len(),0);
     } 
     #[tokio::test] 
-    async fn execute_lookup_strategy_max_tries_0() {
+    async fn transmit_query_to_server_max_tries_0() {
        
         let max_retries = 0;
 
@@ -584,7 +579,7 @@ mod async_resolver_test {
         config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
         let name_servers =vec![server_info_1, server_info_2];
-        // let response = execute_lookup_strategy(
+        // let response = transmit_query_to_server(
         //     domain_name, 
         //     record_type, 
         //     record_class,
@@ -601,7 +596,7 @@ mod async_resolver_test {
             config,
         );
 
-        let response = lookup_strategy.execute_lookup_strategy(
+        let response = lookup_strategy.transmit_query_to_server(
             name_servers.get(0).unwrap(),
             timeout
         ).await;
@@ -624,7 +619,7 @@ mod async_resolver_test {
            
 
     #[tokio::test] 
-    async fn execute_lookup_strategy_max_tries_1() {
+    async fn transmit_query_to_server_max_tries_1() {
         let max_retries = 1;
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let timeout = Duration::from_secs(2);
@@ -651,7 +646,7 @@ mod async_resolver_test {
         config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
         let name_servers =vec![server_info_2, server_info_1];
-        // let response = execute_lookup_strategy(
+        // let response = transmit_query_to_server(
         //     domain_name, 
         //     record_type, 
         //     record_class,
@@ -668,7 +663,7 @@ mod async_resolver_test {
             config,
         );
 
-        let response = lookup_strategy.execute_lookup_strategy(
+        let response = lookup_strategy.transmit_query_to_server(
             name_servers.get(0).unwrap(),
             timeout
         ).await.unwrap();
@@ -707,7 +702,7 @@ mod async_resolver_test {
 
         // let query_sate: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        // let _response_future = execute_lookup_strategy(
+        // let _response_future = transmit_query_to_server(
         //     domain_name, 
         //     record_type, 
         //     record_class,

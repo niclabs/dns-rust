@@ -21,6 +21,9 @@ use crate::client::udp_connection;
 
 /// Struct that represents the execution of a lookup.
 /// 
+/// The principal purpose of this struct is to transmit a single query
+/// until a proper response is received. 
+/// 
 /// The result of the lookup is stored in the `query_answer` field.
 /// First it is initialized with an empty `DnsMessage` and then it is updated
 /// with the response of the query.

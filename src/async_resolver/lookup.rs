@@ -98,19 +98,44 @@ impl LookupStrategy {
         let mut iter = 0..upper_limit_of_retransmission;
 
         let mut timeout_interval = tokio::time::Duration::from_secs(interval);
-        let servers = config.get_name_servers();
+        // let servers = config.get_name_servers();
         
-        let mut lookup_result = execute_lookup_strategy(
-            name.clone(), 
-            record_type,
-            record_class,
-            &servers, 
-            &config,
-            response.clone(),
-            timeout_interval).await;
+        let mut lookup_result = Err(ResolverError::EmptyQuery);
 
-        while let Some(_retransmission) = iter.next() {
-            if self.received_appropriate_response() {break}
+        'cycle: while let Some(_retransmission) = iter.next() {
+
+            // Loop between servers
+            let servers_to_query = config.get_name_servers();  
+            let mut server_iter = servers_to_query.iter();
+            while let Some(server) = server_iter.next() {
+                let default_protocol = config.get_protocol();
+                lookup_result = execute_lookup_strategy(
+                    name.clone(), 
+                    record_type,
+                    record_class,
+                    server, 
+                    &config,
+                    response.clone(),
+                    timeout_interval
+                ).await;
+
+                if self.received_appropriate_response() {break 'cycle}
+
+                if let ConnectionProtocol::UDP = default_protocol {
+                    tokio::time::sleep(timeout_interval).await;     
+                    lookup_result = execute_lookup_strategy(
+                        name.clone(), 
+                        record_type,
+                        record_class,
+                        server, 
+                        &config,
+                        response.clone(),
+                        timeout_interval
+                    ).await;
+
+                    if self.received_appropriate_response() {break 'cycle}
+                }
+            }
 
             // Exponencial backoff
             if interval < max_timeout {
@@ -118,17 +143,7 @@ impl LookupStrategy {
             }
             timeout_interval = tokio::time::Duration::from_secs(interval);
             tokio::time::sleep(timeout_interval).await;
-            println!("Retransmission: {}", interval);
-            lookup_result = execute_lookup_strategy(
-                name.clone(), 
-                record_type,
-                record_class,
-                &servers, 
-                &config,
-                response.clone(),
-                timeout_interval).await;
         }
-
         return lookup_result;
     }
 
@@ -218,7 +233,7 @@ pub async fn execute_lookup_strategy(
     name: DomainName,
     record_type: Qtype,
     record_class: Qclass,
-    name_servers: &Vec<ServerInfo>,
+    name_server: &ServerInfo,
     config: &ResolverConfig,
     response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
     timeout: tokio::time::Duration,
@@ -247,12 +262,10 @@ pub async fn execute_lookup_strategy(
     response.set_header(new_header);
 
     let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
-    let server_in_use = 0; 
 
     // Get guard to modify the response
     let mut response_guard = response_arc.lock().unwrap();
 
-    let connections = name_servers.get(server_in_use).unwrap(); // FIXME: conn error
     result_dns_msg = 
     tokio::time::timeout(timeout, 
         send_query_resolver_by_protocol(
@@ -260,7 +273,7 @@ pub async fn execute_lookup_strategy(
             config.get_protocol(),
             new_query.clone(),
             result_dns_msg.clone(),
-            connections,
+            name_server,
             )).await
             .unwrap_or_else(|_| {
                 Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
@@ -412,7 +425,7 @@ mod async_resolver_test {
             domain_name,
             record_type,
             record_class, 
-            &name_servers, 
+            name_servers.get(0).unwrap(), 
             &config,
             response_arc,
             timeout
@@ -457,7 +470,7 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            &name_servers, 
+            name_servers.get(0).unwrap(), 
             &config,
             response_arc,
             timeout
@@ -493,7 +506,7 @@ mod async_resolver_test {
             domain_name,
             record_type,
             record_class, 
-            &name_servers,
+            name_servers.get(0).unwrap(),
             &config,
             response_arc,
             timeout
@@ -543,7 +556,7 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            &name_servers,
+            name_servers.get(0).unwrap(),
             &config,
             response_arc,
             timeout
@@ -597,7 +610,7 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            &name_servers,
+            name_servers.get(0).unwrap(),
             &config,
             response_arc,
             timeout
@@ -640,7 +653,7 @@ mod async_resolver_test {
             domain_name, 
             record_type, 
             record_class,
-            &config.get_name_servers(),
+            config.get_name_servers().get(0).unwrap(),
             &config, 
             query_sate,
             tokio::time::Duration::from_secs(3)).await;

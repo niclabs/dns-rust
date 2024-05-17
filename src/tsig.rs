@@ -167,6 +167,11 @@ fn check_mac(mut new_mac: Vec<u8>, key: &[u8], mac: Vec<u8>) -> bool{
     if mac.len()!=new_mac.len(){
         return answer
     }
+    for elem in mac{
+        if new_mac[contador]!=elem{
+            return answer
+        }
+    }
     return answer
 }
 

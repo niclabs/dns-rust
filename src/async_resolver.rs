@@ -262,72 +262,25 @@ impl AsyncResolver {
                 return Ok(new_lookup_response)
             }
         }
-        let lookup_strategy = LookupStrategy::new(
+
+        let mut lookup_strategy = LookupStrategy::new(
             domain_name,
             qtype,
             qclass,
             self.config.clone()
         );
 
-        // TODO: get parameters from config
-        // let upper_limit_of_retransmission = self.config.get_retry();
-        let upper_limit_of_retransmission = 3;
-        let number_of_server_to_query = self.config.get_name_servers().len() as u64;
-
-        // The Berkeley resolver uses 45 seconds of maximum time out
+        // // The Berkeley resolver uses 45 seconds of maximum time out
         let max_timeout = 30;  
-        
-        let lookup_response = AsyncResolver::query_transmission(
-            lookup_strategy, 
-            upper_limit_of_retransmission, 
-            number_of_server_to_query, 
-            max_timeout).await;
+
+        let lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(max_timeout)).await;
+
             
-            // Cache data
-            if let Ok(ref r) = lookup_response {
-                self.store_data_cache(r.to_dns_msg().clone());
-            }
-            
-            return lookup_response;
+        // Cache data
+        if let Ok(ref r) = lookup_response {
+            self.store_data_cache(r.to_dns_msg().clone());
         }
-        
-    /// Performs the query of the given IP address.
-    async fn query_transmission(
-        mut lookup_strategy: LookupStrategy,
-        upper_limit_of_retransmission: u16, 
-        number_of_server_to_query: u64, 
-        max_timeout: u64
-    ) -> Result<LookupResponse, ResolverError> {
-        // Start interval used by The Berkeley stub-resolver
-        // let start_interval = max(4, 5/number_of_server_to_query).into();
-        let start_interval = 1;
-        let mut interval = start_interval;
-            
-        // Retransmission loop for a single server
-        // The resolver cycles through servers and at the end of a cycle, backs off 
-        // the time out exponentially.
-        let mut iter = 0..upper_limit_of_retransmission;
-        let mut lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
-        while let Some(_retransmission) = iter.next() {
-            if let Ok(ref r) = lookup_response {
-                // 4.5. If the requestor receives a response, and the response has an
-                // RCODE other than SERVFAIL or NOTIMP, then the requestor returns an
-                // appropriate response to its caller.
-                match r.to_dns_msg().get_header().get_rcode() {
-                    // SERVFAIL
-                    2 => {},
-                    // NOTIMP
-                    4 => {},
-                    _ => {break;}
-                }
-            }
-            // Exponencial backoff
-            if interval < max_timeout {
-                interval = interval*2;
-            }
-            tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
-            lookup_response = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(interval)).await;
-        }
+    
         return lookup_response;
     }
 

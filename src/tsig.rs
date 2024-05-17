@@ -10,7 +10,7 @@ use crypto::hmac::Hmac as crypto_hmac;
 use crypto::mac::Mac as crypto_mac;
 use hmac::{Hmac, Mac};
 use crypto::{sha1::Sha1,sha2::Sha256};
-
+use std::str;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -243,6 +243,7 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 #[test]
 fn ptsig_test(){
     let my_key = b"1201102391287592dsjshno039U021Jg";
+    let my_short_key = b"1201102391287592dsjs";
     let alg: TsigAlgorithm = TsigAlgorithm::HmacSha256;
     let mut dns_example_msg =     
         DnsMessage::new_query_message(
@@ -255,7 +256,19 @@ fn ptsig_test(){
     let time = SystemTime::now().duration_since(UNIX_EPOCH).expect("no existo").as_secs();
     //prueba de la firma. sign_msg calcula la firma, la añade al resource record del mensaje y retorna una copia
     let _signature = sign_tsig(dns_example_msg.clone(), my_key, alg,1000,time );
+    let _sha1signature = sign_tsig(dns_example_msg.clone(),my_short_key, TsigAlgorithm::HmacSha1,1000, time);
+    let signature = match str::from_utf8(&_signature){
+        Ok(v) =>v,
+        Err(e) =>panic!("Invalid  UTF-( sequence: {}",e)
+    };
+    let sha1signature = match str::from_utf8(&_sha1signature){
+        Ok(v) =>v,
+        Err(e) =>panic!("Invalid  UTF-( sequence: {}",e)
+    };
+    println!("SHA-256: {}",signature);
+    println!("SHA-1: {}",sha1signature);
 
+    
     //prueba de process_tsig (la idea es usar la firma anterior, añadirla a dns_example_msg y verificarla con my_key)
     //let _processed_msg = process_tsig(dns_example_msg, my_key);
 

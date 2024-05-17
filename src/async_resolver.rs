@@ -758,7 +758,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn lookup_ns() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.config.set_retry(10);
+        resolver.config.set_retransmission_loop_attempts(10);
         let domain_name = "example.com";
         let transport_protocol = "UDP";
         match resolver.lookup(
@@ -923,7 +923,7 @@ mod async_resolver_test {
     async fn max_number_of_retry() {
         let mut config = ResolverConfig::default();
         let max_retries = 6;
-        config.set_retry(max_retries);
+        config.set_retransmission_loop_attempts(max_retries);
 
         let bad_server:IpAddr = IpAddr::V4(Ipv4Addr::new(7, 7, 7, 7)); 
         let timeout = Duration::from_secs(2);

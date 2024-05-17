@@ -1,5 +1,6 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
+use std::cmp::max;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
 
 use super::server_info::ServerInfo;
@@ -22,7 +23,7 @@ pub struct ResolverConfig {
     /// 
     /// If this number is surpassed, the resolver is expected to panic in 
     /// a Temporary Error.
-    retry: u16,
+    retransmission_loop_attempts: u16,
     /// Activation of cache in this resolver.
     /// 
     /// This is whether the resolver uses cache or not.
@@ -40,6 +41,17 @@ pub struct ResolverConfig {
     /// 
     /// This corresponds a `Duration` type.
     timeout: Duration,
+    retransmission_max_interval_seconds: u64,
+    retransmission_min_interval_seconds: u64,
+    // While local limits on the number of times a resolver will retransmit
+    // a particular query to a particular name server address are
+    // essential, the resolver should have a global per-request
+    // counter to limit work on a single request.  The counter should
+    // be set to some initial value and decremented whenever the
+    // resolver performs any action (retransmission timeout,
+    // retransmission, etc.)  If the counter passes zero, the request
+    // is terminated with a temporary error.
+    global_retransmission_limit: u16,
 }
 
 impl ResolverConfig {
@@ -63,31 +75,48 @@ impl ResolverConfig {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),
             bind_addr: SocketAddr::new(resolver_addr, 53),
-            retry: 3,
+            retransmission_loop_attempts: 3,
             cache_enabled: true,
             recursive_available: false,
             protocol: protocol,
             timeout: timeout,
+            retransmission_max_interval_seconds: 10,
+            retransmission_min_interval_seconds: 1,
+            global_retransmission_limit: 30,
         };
         resolver_config
     }
     
     pub fn default()-> Self {
         // FIXME: these are examples values
+        let retransmission_loop_attempts = 3;
+        let global_retransmission_limit = 30;
+        let timeout = Duration::from_secs(45);
+        let retransmission_max_interval_seconds = 10;
+
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
-        let timeout = Duration::from_secs(10);
     
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+        let name_servers = vec![ServerInfo::new_with_ip(google_server, conn_udp, conn_tcp)];
+
+        // Recommended by RFC 1536
+        let number_of_server_to_query = name_servers.len() as u64;
+        let start_interval: u64 = max(1, 5/number_of_server_to_query).into();
+
+        let retransmission_min_interval_seconds = start_interval;
 
         let resolver_config: ResolverConfig = ResolverConfig {
-            name_servers: vec![ServerInfo::new_with_ip(google_server, conn_udp, conn_tcp)],
+            name_servers: name_servers,
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
-            retry: 3,
+            retransmission_loop_attempts: retransmission_loop_attempts,
             cache_enabled: true,
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,
             timeout: timeout,
+            retransmission_max_interval_seconds: retransmission_max_interval_seconds,
+            retransmission_min_interval_seconds: retransmission_min_interval_seconds,
+            global_retransmission_limit: global_retransmission_limit,
         };
         resolver_config
     }
@@ -155,8 +184,8 @@ impl ResolverConfig {
 
     /// Returns the quantity of retries before the resolver panic in a
     /// Temporary Error.
-    pub fn get_retry(&self) -> u16 {
-        self.retry
+    pub fn get_retransmission_loop_attempts(&self) -> u16 {
+        self.retransmission_loop_attempts
     }
 
     /// Returns whether the cache is enabled or not.
@@ -195,8 +224,8 @@ impl ResolverConfig{
 
     /// Sets the quantity of retries before the resolver panic in a
     /// Temporary Error.
-    pub fn set_retry(&mut self, retry:u16) {
-        self.retry = retry;
+    pub fn set_retransmission_loop_attempts(&mut self, retransmission_loop_attempts:u16) {
+        self.retransmission_loop_attempts = retransmission_loop_attempts;
     }
 
     /// Sets whether the cache is enabled or not.
@@ -287,14 +316,14 @@ mod tests_resolver_config {
     }
 
     #[test]
-    fn get_and_set_retry() {
+    fn get_and_set_retransmission_loop_attempts() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_retry(), 30);
+        assert_eq!(resolver_config.get_retransmission_loop_attempts(), 30);
 
-        resolver_config.set_retry(10);
+        resolver_config.set_retransmission_loop_attempts(10);
 
-        assert_eq!(resolver_config.get_retry(), 10);
+        assert_eq!(resolver_config.get_retransmission_loop_attempts(), 10);
     }
 
     #[test]

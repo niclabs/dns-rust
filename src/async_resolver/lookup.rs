@@ -51,7 +51,7 @@ impl LookupStrategy {
         &mut self,
     ) -> Result<LookupResponse, ResolverError> {
         let config = &self.config;
-        let upper_limit_of_retransmission = config.get_retry();
+        let upper_limit_of_retransmission = config.get_retransmission_loop_attempts();
         let number_of_server_to_query = config.get_name_servers().len() as u64;
         let max_timeout = config.get_timeout();  
 
@@ -505,7 +505,7 @@ mod async_resolver_test {
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)); 
             
-        config.set_retry(max_retries);
+        config.set_retransmission_loop_attempts(max_retries);
     
         let conn_udp_non:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
         let conn_tcp_non:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);
@@ -570,7 +570,7 @@ mod async_resolver_test {
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)); 
             
-        config.set_retry(max_retries);
+        config.set_retransmission_loop_attempts(max_retries);
     
         let conn_udp_non:ClientUDPConnection = ClientUDPConnection::new(non_existent_server, timeout);
         let conn_tcp_non:ClientTCPConnection = ClientTCPConnection::new(non_existent_server, timeout);

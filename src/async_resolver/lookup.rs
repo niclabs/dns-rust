@@ -73,68 +73,39 @@ impl LookupStrategy {
         &mut self,
         timeout: tokio::time::Duration,           
     ) -> Result<LookupResponse, ResolverError> {
-        let response=  
-        self.query_answer.clone();
-
-        let name = self.name.clone();
-        let record_type = self.record_type;
-        let record_class = self.record_class;
         let config = self.config.clone();
         
-        // TODO: get parameters from config
         // let upper_limit_of_retransmission = self.config.get_retry();
         let upper_limit_of_retransmission = 4;
         // let number_of_server_to_query = self.config.get_name_servers().len() as u64;
         let max_timeout = 30;  
 
-            // Start interval used by The Berkeley stub-resolver
+        // Start interval used by The Berkeley stub-resolver
         // let start_interval = max(4, 5/number_of_server_to_query).into();
         let start_interval = 1;
         let mut interval = start_interval;
             
         // Retransmission loop for a single server
-        // The resolver cycles through servers and at the end of a cycle, backs off 
-        // the time out exponentially.
         let mut iter = 0..upper_limit_of_retransmission;
 
         let mut timeout_interval = tokio::time::Duration::from_secs(interval);
-        // let servers = config.get_name_servers();
         
         let mut lookup_result = Err(ResolverError::EmptyQuery);
 
+        // The resolver cycles through servers and at the end of a cycle, backs off 
+        // the time out exponentially.
         'cycle: while let Some(_retransmission) = iter.next() {
 
             // Loop between servers
             let servers_to_query = config.get_name_servers();  
             let mut server_iter = servers_to_query.iter();
             while let Some(server) = server_iter.next() {
-                let default_protocol = config.get_protocol();
-                lookup_result = execute_lookup_strategy(
-                    name.clone(), 
-                    record_type,
-                    record_class,
+                lookup_result = self.execute_lookup_strategy(
                     server, 
-                    &config,
-                    response.clone(),
                     timeout_interval
                 ).await;
 
                 if self.received_appropriate_response() {break 'cycle}
-
-                if let ConnectionProtocol::UDP = default_protocol {
-                    tokio::time::sleep(timeout_interval).await;     
-                    lookup_result = execute_lookup_strategy(
-                        name.clone(), 
-                        record_type,
-                        record_class,
-                        server, 
-                        &config,
-                        response.clone(),
-                        timeout_interval
-                    ).await;
-
-                    if self.received_appropriate_response() {break 'cycle}
-                }
             }
 
             // Exponencial backoff
@@ -168,120 +139,145 @@ impl LookupStrategy {
         }
         false
     }
-}
 
-/// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
-/// 
-/// This function performs the lookup of the requested records asynchronously. 
-/// After creating the query with the given parameters, the function sends it to 
-/// the name servers specified in the configuration. 
-/// 
-/// When a response is received, the function performs the parsing of the response 
-/// to a `DnsMessage`. After the response is checked, the function updates the 
-/// value of the reference in `response_arc` with the parsed response.
-/// 
-/// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
-/// 
-/// 5.3.1. Stub resolvers
-/// 
-/// One option for implementing a resolver is to move the resolution
-/// function out of the local machine and into a name server which supports
-/// recursive queries.  This can provide an easy method of providing domain
-/// service in a PC which lacks the resources to perform the resolver
-/// function, or can centralize the cache for a whole local network or
-/// organization.
-/// 
-/// All that the remaining stub needs is a list of name server addresses
-/// that will perform the recursive requests.  This type of resolver
-/// presumably needs the information in a configuration file, since it
-/// probably lacks the sophistication to locate it in the domain database.
-/// The user also needs to verify that the listed servers will perform the
-/// recursive service; a name server is free to refuse to perform recursive
-/// services for any or all clients.  The user should consult the local
-/// system administrator to find name servers willing to perform the
-/// service.
-///
-/// This type of service suffers from some drawbacks.  Since the recursive
-/// requests may take an arbitrary amount of time to perform, the stub may
-/// have difficulty optimizing retransmission intervals to deal with both
-/// lost UDP packets and dead servers; the name server can be easily
-/// overloaded by too zealous a stub if it interprets retransmissions as new
-/// requests.  Use of TCP may be an answer, but TCP may well place burdens
-/// on the host's capabilities which are similar to those of a real
-/// resolver.
-/// 
-/// # Example
-/// ```
-/// let domain_name = DomainName::new_from_string("example.com".to_string());
-/// let cache = DnsCache::new();
-/// let waker = None;
-/// let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
-///
-/// let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-/// let timeout: Duration = Duration::from_secs(20);
-///
-/// let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-/// let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-/// 
-/// let config = ResolverConfig::default();
-/// let record_type = Qtype::A;
-/// 
-/// let name_servers = vec![(conn_udp,conn_tcp)];
-/// let response = execute_lookup_strategy(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
-/// ```
-pub async fn execute_lookup_strategy(
-    name: DomainName,
-    record_type: Qtype,
-    record_class: Qclass,
-    name_server: &ServerInfo,
-    config: &ResolverConfig,
-    response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
-    timeout: tokio::time::Duration,
-) -> Result<LookupResponse, ResolverError>  {
-    // Create random generator
-    let mut rng = thread_rng();
+    /// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
+    /// 
+    /// This function performs the lookup of the requested records asynchronously. 
+    /// After creating the query with the given parameters, the function sends it to 
+    /// the name servers specified in the configuration. 
+    /// 
+    /// When a response is received, the function performs the parsing of the response 
+    /// to a `DnsMessage`. After the response is checked, the function updates the 
+    /// value of the reference in `response_arc` with the parsed response.
+    /// 
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
+    /// 
+    /// 5.3.1. Stub resolvers
+    /// 
+    /// One option for implementing a resolver is to move the resolution
+    /// function out of the local machine and into a name server which supports
+    /// recursive queries.  This can provide an easy method of providing domain
+    /// service in a PC which lacks the resources to perform the resolver
+    /// function, or can centralize the cache for a whole local network or
+    /// organization.
+    /// 
+    /// All that the remaining stub needs is a list of name server addresses
+    /// that will perform the recursive requests.  This type of resolver
+    /// presumably needs the information in a configuration file, since it
+    /// probably lacks the sophistication to locate it in the domain database.
+    /// The user also needs to verify that the listed servers will perform the
+    /// recursive service; a name server is free to refuse to perform recursive
+    /// services for any or all clients.  The user should consult the local
+    /// system administrator to find name servers willing to perform the
+    /// service.
+    ///
+    /// This type of service suffers from some drawbacks.  Since the recursive
+    /// requests may take an arbitrary amount of time to perform, the stub may
+    /// have difficulty optimizing retransmission intervals to deal with both
+    /// lost UDP packets and dead servers; the name server can be easily
+    /// overloaded by too zealous a stub if it interprets retransmissions as new
+    /// requests.  Use of TCP may be an answer, but TCP may well place burdens
+    /// on the host's capabilities which are similar to those of a real
+    /// resolver.
+    /// 
+    /// # Example
+    /// ```
+    /// let domain_name = DomainName::new_from_string("example.com".to_string());
+    /// let cache = DnsCache::new();
+    /// let waker = None;
+    /// let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+    ///
+    /// let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+    /// let timeout: Duration = Duration::from_secs(20);
+    ///
+    /// let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+    /// let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+    /// 
+    /// let config = ResolverConfig::default();
+    /// let record_type = Qtype::A;
+    /// 
+    /// let name_servers = vec![(conn_udp,conn_tcp)];
+    /// let response = execute_lookup_strategy(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
+    /// ```
+    pub async fn execute_lookup_strategy(
+        &self,
+        // name: DomainName,
+        // record_type: Qtype,
+        // record_class: Qclass,
+        name_server: &ServerInfo,
+        // protocol: ConnectionProtocol,
+        // response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+        timeout: tokio::time::Duration,
+    ) -> Result<LookupResponse, ResolverError>  {
+        let response_arc=  self.query_answer.clone();
+        let name = self.name.clone();
+        let record_type = self.record_type;
+        let record_class = self.record_class;
+        let protocol = self.config.get_protocol();
 
-    // Create query id
-    let query_id: u16 = rng.gen();
+        // Create random generator
+        let mut rng = thread_rng();
 
-    // Create query
-    let new_query = DnsMessage::new_query_message(
-        name.clone(),
-        record_type,
-        record_class,
-        0,
-        false,
-        query_id
-    );
+        // Create query id
+        let query_id: u16 = rng.gen();
 
-    // Create Server failure query 
-    let mut response = new_query.clone(); 
-    let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2); 
-    new_header.set_qr(true);
-    response.set_header(new_header);
+        // Create query
+        let new_query = DnsMessage::new_query_message(
+            name.clone(),
+            record_type,
+            record_class,
+            0,
+            false,
+            query_id
+        );
 
-    let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
+        // Create Server failure query 
+        let mut response = new_query.clone(); 
+        let mut new_header: Header = response.get_header();
+        new_header.set_rcode(2); 
+        new_header.set_qr(true);
+        response.set_header(new_header);
 
-    // Get guard to modify the response
-    let mut response_guard = response_arc.lock().unwrap();
+        let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
 
-    result_dns_msg = 
-    tokio::time::timeout(timeout, 
-        send_query_resolver_by_protocol(
-            timeout,
-            config.get_protocol(),
-            new_query.clone(),
-            result_dns_msg.clone(),
-            name_server,
-            )).await
-            .unwrap_or_else(|_| {
-                Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
-            });  
-    
-    *response_guard = result_dns_msg.clone();
+        // Get guard to modify the response
+        {
+        let mut response_guard = response_arc.lock().unwrap();
 
-    result_dns_msg.and_then(|dns_msg| Ok(LookupResponse::new(dns_msg)))
+        result_dns_msg = tokio::time::timeout(timeout, 
+            send_query_resolver_by_protocol(
+                timeout,
+                protocol,
+                new_query.clone(),
+                result_dns_msg.clone(),
+                name_server,
+                )).await
+                .unwrap_or_else(|_| {
+                    Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
+                });  
+        *response_guard = result_dns_msg.clone();
+        }
+
+        if !self.received_appropriate_response() {
+            if let ConnectionProtocol::UDP = protocol {
+                result_dns_msg = tokio::time::timeout(timeout, 
+                    send_query_resolver_by_protocol(
+                        timeout,
+                        ConnectionProtocol::TCP,
+                        new_query.clone(),
+                        result_dns_msg.clone(),
+                        name_server,
+                    )).await
+                    .unwrap_or_else(|_| {
+                        Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
+                    });
+                let mut response_guard = response_arc.lock().unwrap();
+                *response_guard = result_dns_msg.clone();
+            }
+        }
+
+        result_dns_msg.and_then(|dns_msg| Ok(LookupResponse::new(dns_msg)))
+    }
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.
@@ -419,17 +415,29 @@ mod async_resolver_test {
         let record_class = Qclass::IN;
         let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let name_servers = vec![server_info];
-        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+        // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        let response = execute_lookup_strategy(
+        let lookup_strategy = LookupStrategy::new(
             domain_name,
             record_type,
-            record_class, 
-            name_servers.get(0).unwrap(), 
-            &config,
-            response_arc,
+            record_class,
+            config,
+        );
+
+        let response = lookup_strategy.execute_lookup_strategy(
+            name_servers.get(0).unwrap(),
             timeout
         ).await;
+
+        // let response = execute_lookup_strategy(
+        //     domain_name,
+        //     record_type,
+        //     record_class, 
+        //     name_servers.get(0).unwrap(), 
+        //     &config,
+        //     response_arc,
+        //     timeout
+        // ).await;
 
         println!("response {:?}", response);
 
@@ -464,17 +472,29 @@ mod async_resolver_test {
         let record_type = Qtype::NS;
         let record_class = Qclass::IN;
         let name_servers = vec![server_info];
-        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
-        
-        let response = execute_lookup_strategy(
-            domain_name, 
-            record_type, 
+        // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+
+        let lookup_strategy = LookupStrategy::new(
+            domain_name,
+            record_type,
             record_class,
-            name_servers.get(0).unwrap(), 
-            &config,
-            response_arc,
+            config,
+        );
+
+        let response = lookup_strategy.execute_lookup_strategy(
+            name_servers.get(0).unwrap(),
             timeout
         ).await.unwrap();
+
+        // let response = execute_lookup_strategy(
+        //     domain_name, 
+        //     record_type, 
+        //     record_class,
+        //     name_servers.get(0).unwrap(), 
+        //     &config,
+        //     response_arc,
+        //     timeout
+        // ).await.unwrap();
 
         assert_eq!(response
             .to_dns_msg()
@@ -500,17 +520,29 @@ mod async_resolver_test {
         let record_type = Qtype::A;
         let record_class = Qclass::CH;
         let name_servers = vec![server_info];
-        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+        // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        let response = execute_lookup_strategy(
+        let lookup_strategy = LookupStrategy::new(
             domain_name,
             record_type,
-            record_class, 
+            record_class,
+            config,
+        );
+
+        let response = lookup_strategy.execute_lookup_strategy(
             name_servers.get(0).unwrap(),
-            &config,
-            response_arc,
             timeout
         ).await.unwrap();
+
+        // let response = execute_lookup_strategy(
+        //     domain_name,
+        //     record_type,
+        //     record_class, 
+        //     name_servers.get(0).unwrap(),
+        //     &config,
+        //     response_arc,
+        //     timeout
+        // ).await.unwrap();
 
 
         assert_eq!(response
@@ -531,7 +563,7 @@ mod async_resolver_test {
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
-        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+        // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
     
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -552,15 +584,28 @@ mod async_resolver_test {
         config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
         let name_servers =vec![server_info_1, server_info_2];
-        let response = execute_lookup_strategy(
-            domain_name, 
-            record_type, 
+        // let response = execute_lookup_strategy(
+        //     domain_name, 
+        //     record_type, 
+        //     record_class,
+        //     name_servers.get(0).unwrap(),
+        //     &config,
+        //     response_arc,
+        //     timeout
+        // ).await;
+
+        let lookup_strategy = LookupStrategy::new(
+            domain_name,
+            record_type,
             record_class,
+            config,
+        );
+
+        let response = lookup_strategy.execute_lookup_strategy(
             name_servers.get(0).unwrap(),
-            &config,
-            response_arc,
             timeout
         ).await;
+
         println!("response {:?}",response);
             
         assert!(response.is_ok());
@@ -585,7 +630,7 @@ mod async_resolver_test {
         let timeout = Duration::from_secs(2);
         let record_type = Qtype::A;
         let record_class = Qclass::IN;
-        let response_arc = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+        // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
     
         let mut config: ResolverConfig = ResolverConfig::default();
         let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
@@ -606,15 +651,28 @@ mod async_resolver_test {
         config.set_name_servers(vec![server_info_config_1, server_info_config_2]);
             
         let name_servers =vec![server_info_2, server_info_1];
-        let response = execute_lookup_strategy(
-            domain_name, 
-            record_type, 
+        // let response = execute_lookup_strategy(
+        //     domain_name, 
+        //     record_type, 
+        //     record_class,
+        //     name_servers.get(0).unwrap(),
+        //     &config,
+        //     response_arc,
+        //     timeout
+        // ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
+
+        let lookup_strategy = LookupStrategy::new(
+            domain_name,
+            record_type,
             record_class,
+            config,
+        );
+
+        let response = lookup_strategy.execute_lookup_strategy(
             name_servers.get(0).unwrap(),
-            &config,
-            response_arc,
             timeout
-        ).await.unwrap(); // FIXME: add match instead of unwrap, the timeout error corresponds to
+        ).await.unwrap();
+
         // IO error in ResolverError
         println!("response {:?}",response);
 
@@ -647,16 +705,25 @@ mod async_resolver_test {
         
         cache.add(domain_name.clone(), rr, record_type, record_class, None);
 
-        let query_sate = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
+        // let query_sate: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        let _response_future = execute_lookup_strategy(
-            domain_name, 
-            record_type, 
+        // let _response_future = execute_lookup_strategy(
+        //     domain_name, 
+        //     record_type, 
+        //     record_class,
+        //     config.get_name_servers().get(0).unwrap(),
+        //     &config, 
+        //     query_sate,
+        //     tokio::time::Duration::from_secs(3)).await;
+
+        let mut lookup_strategy = LookupStrategy::new(
+            domain_name,
+            record_type,
             record_class,
-            config.get_name_servers().get(0).unwrap(),
-            &config, 
-            query_sate,
-            tokio::time::Duration::from_secs(3)).await;
+            config,
+        );
+
+        let _response_future = lookup_strategy.lookup_run(tokio::time::Duration::from_secs(3)).await;
     }  
     
 

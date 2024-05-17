@@ -12,7 +12,6 @@ use crate::message::class_qclass::Qclass;
 use crate::message::class_rclass::Rclass;
 use crate::message::type_qtype::Qtype;
 use crate::message::type_rtype::Rtype;
-use crate::message::rcode::Rcode;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;

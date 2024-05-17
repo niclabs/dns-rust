@@ -129,56 +129,87 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
     return signature;
 }
 
+//TODO: terminar función keycheck
+fn check_key(alg_name: String,key_in_rr:String,key: &[u8])->Bool{
+    let mut answer = true;  
+    
+    return answer
+}
+
+
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
 fn process_tsig(msg: DnsMessage, key: &[u8]) -> DnsMessage {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
-    println!("{:#?}",addit);
-
-    //sacar el último elemento del vector resource record
-    let rr = addit.pop().expect("No additional data");
     let time =SystemTime::now().duration_since(UNIX_EPOCH).expect("no time").as_secs();
-    //RFC 8945 5.2
+    //RFC 8945 5.2 y 5.4
     //verificar que existen los resource records que corresponden a tsig
-    //vector con resource records que son TSIG
+    //vector con resource records que son TSIG. Luego se Verifica si hay algún tsig rr
     let filtered_tsig:Vec<_> = addit.iter().filter(|tsig| if let Rdata::TSIG(data) = tsig.get_rdata() {true} else {false}).collect();
-    //RFC 8945 5.4
-    //Verifica si hay algún tsig rr
-    let islast = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {true} else {false};
+    let islast = if let Rdata::TSIG(data) = addit[addit.len()-1].get_rdata() {false} else {true};
     if filtered_tsig.len()==0 {
-        //este debe ser un error de formato
         let error_msg = DnsMessage::format_error_msg();
         return error_msg;
     }
     //Debe haber un único tsig
-    //Tsig RR debe ser el último en la sección adicional
+    //Tsig RR debe ser el último en la sección adicional, y debe ser único
     if filtered_tsig.len()>1 || islast {
         let error_msg = DnsMessage::format_error_msg();
         return error_msg;
     }
-    let rdata = rr.get_rdata();
-    let mut time_signed_v = 0;
-    let mut fudge = 0;
-    let mut rcode =0;
-    let mut n_key = String::from("");
-    //Verificar rdata
-    match rdata {
+
+    //sacar el último elemento del vector resource record, y disminuir elvalor de ARCOUNT
+    let rr_copy = addit.pop().expect("No tsig rr");
+    let mut tsig_rr_copy = TSigRdata::new();
+    match rr_copy.get_rdata() {
         Rdata::TSIG(data) =>{
-            time_signed_v = data.get_time_signed();
-            fudge = data.get_fudge();
-            rcode = data.get_error();
-            for elem in data.get_mac(){
-                n_key+=&elem.to_string();
-            }
+            tsig_rr_copy = data;
         }
         _ => {
-            println!("Bad resource record");
-            //TODO: ver/añadir el error del print anterior, especificado en el RFC 8945
-            let error_msg = DnsMessage::format_error_msg();
-            return error_msg;
+            println!("error")
         }
-        
     }
+    let nuevo_len_arcount = addit.len() as u16;
+    let new_header = msg.get_header();
+    new_header.set_arcount(nuevo_len_arcount);
+    msg.set_header(new_header);
+    //RFC 8945 5.2.1
+    let name_alg = tsig_rr_copy.get_algorithm_name().get_name();
+    let key_in_rr = rr_copy.get_name().get_name();
+    let cond1 = check_key(name_alg,key_in_rr,key);
+    if cond1 {
+        println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
+        let error_msg = DnsMessage::format_error_msg();
+        return error_msg;
+    }
+    //TODO: hacer los demas checkeos
+    //let cond2 = check_mac();
+    //let cond3 = check_time_values();
+    //let cond4 = check_truncation_policy();
+
+    //let rdata = rr.get_rdata();
+    let mut time_signed_v = 0;
+    let mut fudge = 0;
+    //let mut rcode =0;
+    //let mut n_key = String::from("");
+    ////Verificar rdata
+    //match rdata {
+    //    Rdata::TSIG(data) =>{
+    //        time_signed_v = data.get_time_signed();
+    //        fudge = data.get_fudge();
+    //        rcode = data.get_error();
+    //        for elem in data.get_mac(){
+    //            n_key+=&elem.to_string();
+    //        }
+    //    }
+    //    _ => {
+    //        println!("Bad resource record");
+    //        //TODO: ver/añadir el error del print anterior, especificado en el RFC 8945
+    //        let error_msg = DnsMessage::format_error_msg();
+    //        return error_msg;
+    //    }
+    //    
+    //}
 
 
     //Verificación de los tiempos de emisión y recepción + fudge del mensaje

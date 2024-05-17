@@ -297,6 +297,33 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 
 
 //Sección de tests unitarios
+//ToDo: Crear bien un test que funcione
+#[test]
+fn sign_test(){
+    let my_key = b"1201102391287592dsjshno039U021Jg";
+    let my_short_key = b"1201102391287592dsjs";
+    let alg: TsigAlgorithm = TsigAlgorithm::HmacSha256;
+    let mut dns_example_msg =     
+        DnsMessage::new_query_message(
+        DomainName::new_from_string("uchile.cl".to_string()),
+        Qtype::A,
+        Qclass::IN,
+        0,
+        false,
+        1);
+    let time = SystemTime::now().duration_since(UNIX_EPOCH).expect("no existo").as_secs();
+    //prueba de la firma. sign_msg calcula la firma, la añade al resource record del mensaje y retorna una copia
+    let _signature = sign_tsig(dns_example_msg.clone(), my_key, alg,1000,time );
+    let _sha1signature = sign_tsig(dns_example_msg.clone(),my_short_key, TsigAlgorithm::HmacSha1,1000, time);
+    println!("SHA-256: {:?}",_signature);
+    println!("SHA-1: {:?}",_sha1signature);
+
+    
+    //prueba de process_tsig (la idea es usar la firma anterior, añadirla a dns_example_msg y verificarla con my_key)
+    //let _processed_msg = process_tsig(dns_example_msg, my_key);
+
+}
+
 #[test]
 fn check_signed_tsig() {
     let key = b"1234567890";

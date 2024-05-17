@@ -226,21 +226,7 @@ impl AsyncResolver {
                 // return the error, it shoul go to the next part of the code
             };
             if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), qtype, qclass) {
-                // Create random generator
-                let mut rng = thread_rng();
-
-                // Create query id
-                let query_id: u16 = rng.gen();
-
-                // Create query
-                let mut new_query = DnsMessage::new_query_message(
-                    domain_name.clone(),
-                    qtype,
-                    qclass,
-                    0,
-                    false,
-                    query_id
-                );
+                let mut new_query = query.clone();
 
                 // Get RR from cache
                 for rr_cache_value in cache_lookup.iter() {

@@ -166,7 +166,7 @@ impl DnsMessage {
         domain_name.set_name(qname);
 
         question.set_qname(domain_name);
-        let qtype_qtype = Qtype::from_str_to_qtype(qtype);
+        let qtype_qtype = Qtype::from(qtype);
         question.set_qtype(qtype_qtype);
         let qclass_qclass = Qclass::from(qclass);
         question.set_qclass(qclass_qclass);

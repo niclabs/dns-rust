@@ -164,7 +164,7 @@ impl AsyncResolver {
 
         let response = self.inner_lookup(
             domain_name_struct,
-            Qtype::from_str_to_qtype(qtype),
+            Qtype::from(qtype),
             qclass.into()
         ).await;
 

@@ -96,10 +96,8 @@ impl From<u16> for Qtype {
     }
 }
 
-/// Functions for the Qtype Enum
-impl Qtype{
-    /// Function to get the Qtype from a String
-    pub fn from_str_to_qtype(qtype: &str) -> Qtype {
+impl From<&str> for Qtype {
+    fn from(qtype: &str) -> Qtype {
         match qtype {
             "A" => Qtype::A,
             "NS" => Qtype::NS,
@@ -128,8 +126,10 @@ impl Qtype{
             _ => Qtype::UNKNOWN(99),
         }
     }
+}
 
-    /// Parse Qtype to Rtype
+/// Functions for the Qtype Enum
+impl Qtype {
     pub fn to_rtype(qtype: Qtype) -> Rtype {
         match qtype {
             Qtype::A => Rtype::A,

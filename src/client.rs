@@ -77,7 +77,7 @@ impl <T: ClientConnection> Client<T> {
         // Create query msg
         let client_query: DnsMessage = DnsMessage::new_query_message(
             domain_name,
-            Qtype::from_str_to_qtype(qtype),
+            Qtype::from(qtype),
             qclass.into(),
             0,
             false,

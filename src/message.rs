@@ -1668,6 +1668,24 @@ mod message_test {
         assert_eq!(query.get_question().get_qtype(), record_type);
         assert_eq!(query.get_question().get_qclass(), record_class);
         assert!(query.get_header().get_rd());
+        assert_eq!(query.get_header().get_qr(), false);
+    }
+
+    #[test]
+    fn server_failure_response_from_query_construction() {
+        let name = DomainName::new_from_str("www.example.com.");
+        let record_type = Qtype::A;
+        let record_class = Qclass::IN;
+
+        let query = create_recursive_query(name.clone(), record_type, record_class);
+
+        let response = create_server_failure_response_from_query(&query);
+
+        assert_eq!(response.get_question().get_qname(), name);
+        assert_eq!(response.get_question().get_qtype(), record_type);
+        assert_eq!(response.get_question().get_qclass(), record_class);    
+        assert_eq!(response.get_header().get_rcode(), 2);
+        assert!(response.get_header().get_qr());
     }
 
 }

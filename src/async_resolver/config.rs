@@ -41,8 +41,8 @@ pub struct ResolverConfig {
     /// 
     /// This corresponds a `Duration` type.
     timeout: Duration,
-    retransmission_max_interval_seconds: u64,
-    retransmission_min_interval_seconds: u64,
+    max_retry_interval_seconds: u64,
+    min_retry_interval_seconds: u64,
     // While local limits on the number of times a resolver will retransmit
     // a particular query to a particular name server address are
     // essential, the resolver should have a global per-request
@@ -71,7 +71,11 @@ impl ResolverConfig {
     /// let resolver_config = ResolverConfig::new(addr, protocol, timeout);
     /// assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 53));
     /// ```
-    pub fn new(resolver_addr: IpAddr, protocol: ConnectionProtocol, timeout: Duration) -> Self {
+    pub fn new(
+        resolver_addr: IpAddr, 
+        protocol: ConnectionProtocol, 
+        timeout: Duration,
+        ) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),
             bind_addr: SocketAddr::new(resolver_addr, 53),
@@ -80,8 +84,8 @@ impl ResolverConfig {
             recursive_available: false,
             protocol: protocol,
             timeout: timeout,
-            retransmission_max_interval_seconds: 10,
-            retransmission_min_interval_seconds: 1,
+            max_retry_interval_seconds: 10,
+            min_retry_interval_seconds: 1,
             global_retransmission_limit: 30,
         };
         resolver_config
@@ -92,7 +96,7 @@ impl ResolverConfig {
         let retransmission_loop_attempts = 3;
         let global_retransmission_limit = 30;
         let timeout = Duration::from_secs(45);
-        let retransmission_max_interval_seconds = 10;
+        let max_retry_interval_seconds = 10;
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
     
@@ -100,11 +104,9 @@ impl ResolverConfig {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
         let name_servers = vec![ServerInfo::new_with_ip(google_server, conn_udp, conn_tcp)];
 
-        // Recommended by RFC 1536
+        // Recommended by RFC 1536: max(4, 5/number_of_server_to_query)
         let number_of_server_to_query = name_servers.len() as u64;
-        let start_interval: u64 = max(1, 5/number_of_server_to_query).into();
-
-        let retransmission_min_interval_seconds = start_interval;
+        let min_retry_interval_seconds: u64 = max(1, 5/number_of_server_to_query).into();
 
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: name_servers,
@@ -114,8 +116,8 @@ impl ResolverConfig {
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,
             timeout: timeout,
-            retransmission_max_interval_seconds: retransmission_max_interval_seconds,
-            retransmission_min_interval_seconds: retransmission_min_interval_seconds,
+            max_retry_interval_seconds: max_retry_interval_seconds,
+            min_retry_interval_seconds: min_retry_interval_seconds,
             global_retransmission_limit: global_retransmission_limit,
         };
         resolver_config
@@ -206,6 +208,18 @@ impl ResolverConfig {
     /// Returns the timeout for connections.
     pub fn get_timeout(&self) -> Duration {
         self.timeout
+    }
+
+    pub fn get_max_retry_interval_seconds(&self) -> u64 {
+        self.max_retry_interval_seconds
+    }
+
+    pub fn get_min_retry_interval_seconds(&self) -> u64 {
+        self.min_retry_interval_seconds
+    }
+
+    pub fn get_global_retransmission_limit(&self) -> u16 {
+        self.global_retransmission_limit
     }
 }
 

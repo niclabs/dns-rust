@@ -1,9 +1,18 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
 use std::cmp::max;
-use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
+use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 use super::server_info::ServerInfo;
+
+const GOOGLE_PRIMARY_DNS_SERVER: [u8; 4] = [8, 8, 8, 8];
+const GOOGLE_SECONDARY_DNS_SERVER: [u8; 4] = [8, 8, 4, 4];
+const CLOUDFLARE_PRIMARY_DNS_SERVER: [u8; 4] = [1, 1, 1, 1];
+const CLOUDFLARE_SECONDARY_DNS_SERVER: [u8; 4] = [1, 0, 0, 1];
+const OPEN_DNS_PRIMARY_DNS_SERVER: [u8; 4] = [208, 67, 222, 222];
+const OPEN_DNS_SECONDARY_DNS_SERVER: [u8; 4] = [208, 67, 220, 220];
+const QUAD9_PRIMARY_DNS_SERVER: [u8; 4] = [9, 9, 9, 9];
+const QUAD9_SECONDARY_DNS_SERVER: [u8; 4] = [149, 112, 112, 112];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 
@@ -98,18 +107,22 @@ impl ResolverConfig {
         let timeout = Duration::from_secs(45);
         let max_retry_interval_seconds = 10;
 
-        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
-    
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-        let name_servers = vec![ServerInfo::new_with_ip(google_server, conn_udp, conn_tcp)];
+        let mut servers_info = Vec::new();
+        servers_info.push(ServerInfo::new_from_addr(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
 
         // Recommended by RFC 1536: max(4, 5/number_of_server_to_query)
-        let number_of_server_to_query = name_servers.len() as u64;
+        let number_of_server_to_query = servers_info.len() as u64;
         let min_retry_interval_seconds: u64 = max(1, 5/number_of_server_to_query).into();
 
         let resolver_config: ResolverConfig = ResolverConfig {
-            name_servers: name_servers,
+            name_servers: servers_info,
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
             retransmission_loop_attempts: retransmission_loop_attempts,
             cache_enabled: true,

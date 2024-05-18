@@ -81,7 +81,7 @@ impl Question {
         }
 
         let qtype_int = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
-        let qtype = Qtype::from_int_to_qtype(qtype_int);
+        let qtype = Qtype::from(qtype_int);
         let qclass_int = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
         let qclass = Qclass::from(qclass_int);
 

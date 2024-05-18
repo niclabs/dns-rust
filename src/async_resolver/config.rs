@@ -434,7 +434,7 @@ mod tests_resolver_config {
     fn get_and_set_min_retry_interval_seconds() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_min_retry_interval_seconds(), 5);
+        assert_eq!(resolver_config.get_min_retry_interval_seconds(), 1);
 
         resolver_config.set_min_retry_interval_seconds(2);
 

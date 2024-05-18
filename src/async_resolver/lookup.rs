@@ -497,7 +497,7 @@ mod async_resolver_test {
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
     
         let mut config: ResolverConfig = ResolverConfig::default();
-        let non_existent_server:IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
+        let non_existent_server: IpAddr = IpAddr::V4(Ipv4Addr::new(44, 44, 1, 81)); 
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)); 
             

@@ -3,7 +3,6 @@ pub mod tcp_connection;
 pub mod udp_connection;
 pub mod client_error;
 
-use crate::message::class_qclass::Qclass;
 use crate::message::rdata::Rdata;
 use crate::{client::client_connection::ClientConnection, message::type_qtype::Qtype};
 use crate::message::DnsMessage;

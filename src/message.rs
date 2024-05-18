@@ -1044,6 +1044,7 @@ pub fn create_server_failure_response_from_query(
 
 #[cfg(test)]
 mod message_test {
+    use super::*;
     use crate::domain_name::DomainName;
     use crate::message::header::Header;
     use crate::message::question::Question;
@@ -1653,6 +1654,20 @@ mod message_test {
                 1);
         let result = dns_query_message.check_op_code().unwrap_err();
         assert_eq!(result, "IQuery not Implemented");
+    }
+
+    #[test]
+    fn create_recursive_query_with_rd() {
+        let name = DomainName::new_from_str("www.example.com.");
+        let record_type = Qtype::A;
+        let record_class = Qclass::IN;
+
+        let query = create_recursive_query(name.clone(), record_type, record_class);
+
+        assert_eq!(query.get_question().get_qname(), name);
+        assert_eq!(query.get_question().get_qtype(), record_type);
+        assert_eq!(query.get_question().get_qclass(), record_class);
+        assert!(query.get_header().get_rd());
     }
 
 }

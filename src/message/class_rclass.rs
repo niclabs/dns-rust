@@ -10,10 +10,8 @@ pub enum Rclass {
     UNKNOWN(u16),
 }
 
-///Functions for the Rclass Enum
-impl Rclass {
-    ///Function to get the int equivalent of a class
-    pub fn from_rclass_to_int(class: Rclass) -> u16{
+impl From<Rclass> for u16 {
+    fn from(class: Rclass) -> u16 {
         match class {
             Rclass::IN => 1,
             Rclass::CS => 2,
@@ -22,9 +20,10 @@ impl Rclass {
             Rclass::UNKNOWN(val) => val,
         }
     }
+}
 
-    ///Function to get the Rclass from a value
-    pub fn from_int_to_rclass(val:u16) -> Rclass{
+impl From<u16> for Rclass {
+    fn from(val: u16) -> Rclass {
         match val {
             1 => Rclass::IN,
             2 => Rclass::CS,
@@ -33,7 +32,10 @@ impl Rclass {
             _ => Rclass::UNKNOWN(val)
         }
     }
+}
 
+///Functions for the Rclass Enum
+impl Rclass {
     ///Function to get the Rclass from a String
     pub fn from_str_to_rclass(rclass: &str) -> Rclass{
         match rclass {

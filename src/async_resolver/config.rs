@@ -366,7 +366,7 @@ mod tests_resolver_config {
     fn get_and_set_timeout() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_timeout(), Duration::from_secs(TIMEOUT));
+        assert_eq!(resolver_config.get_timeout(), Duration::from_secs(45));
 
         resolver_config.set_timeout(Duration::from_secs(10));
 

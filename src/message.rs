@@ -140,7 +140,7 @@ impl DnsMessage {
     /// assert!(rd);
     /// assert_eq!(qname, String::from("test.com"));
     /// assert_eq!(Rtype::from_rtype_to_int(qtype), 2);
-    /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+    /// assert_eq!(u16::from(qclass), 1);
     /// ```
     pub fn new_response_message(
         qname: String,
@@ -272,7 +272,7 @@ impl DnsMessage {
     /// assert_eq!(qdcount, 1);
     /// assert_eq!(qname, String::from("test.com"));
     /// assert_eq!(Rtype::from_rtype_to_int(qtype), 252);
-    /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+    /// assert_eq!(u16::from(qclass), 1);
     /// ```
     pub fn axfr_query_message(qname: DomainName) -> Self {
         let mut rng = thread_rng();
@@ -1231,7 +1231,7 @@ mod message_test {
 
         assert_eq!(answer[0].get_name().get_name(), String::from("dcc.cl"));
         assert_eq!(Rtype::from_rtype_to_int(answer[0].get_rtype()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(answer[0].get_rclass()), 1);
+        assert_eq!(u16::from(answer[0].get_rclass()), 1);
         assert_eq!(answer[0].get_ttl(), 5642);
         assert_eq!(answer[0].get_rdlength(), 6);
         assert_eq!(

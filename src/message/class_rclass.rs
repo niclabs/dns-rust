@@ -34,10 +34,8 @@ impl From<u16> for Rclass {
     }
 }
 
-///Functions for the Rclass Enum
-impl Rclass {
-    ///Function to get the Rclass from a String
-    pub fn from_str_to_rclass(rclass: &str) -> Rclass{
+impl From<&str> for Rclass {
+    fn from(rclass: &str) -> Rclass{
         match rclass {
             "IN" => Rclass::IN,
             "CS" => Rclass::CS,

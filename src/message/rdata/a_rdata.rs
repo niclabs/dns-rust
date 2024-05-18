@@ -141,7 +141,7 @@ impl ARdata {
 
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::A);
-        let rclass = Rclass::from_str_to_rclass(class);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(4);

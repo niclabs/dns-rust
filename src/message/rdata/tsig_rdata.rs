@@ -248,7 +248,7 @@ impl TSigRdata {
         resource_record.set_name(domain_name);
         resource_record.set_type_code(Rtype::TSIG);
 
-        let rclass = Rclass::from_str_to_rclass(class);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         let rdlength = algorithm_name_str.len() as u16 + 18 + mac_size + other_len;

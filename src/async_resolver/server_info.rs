@@ -1,3 +1,4 @@
+use crate::client::client_connection::ClientConnection;
 use crate::client::tcp_connection::ClientTCPConnection;
 use crate::client::udp_connection::ClientUDPConnection;
 use std::net::IpAddr;
@@ -39,6 +40,22 @@ impl ServerInfo {
         let port = 53;
         let key = String::from("");
         let algorithm = String::from("");
+        ServerInfo {
+            ip_addr,
+            port,
+            key,
+            algorithm,
+            udp_connection,
+            tcp_connection,
+        }
+    }
+
+    pub fn new_from_addr(ip_addr: IpAddr, timeout: tokio::time::Duration) -> ServerInfo {
+        let port = 53;
+        let key = String::from("");
+        let algorithm = String::from("");
+        let udp_connection = ClientUDPConnection::new(ip_addr, timeout);
+        let tcp_connection = ClientTCPConnection::new(ip_addr, timeout);
         ServerInfo {
             ip_addr,
             port,
@@ -322,7 +339,20 @@ mod server_info_tests {
 
         assert_eq!(server_info.get_tcp_connection().get_server_addr(), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
     }
-    
 
+    #[test]
+    fn new_from_addr_constructor() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let server_info = ServerInfo::new_from_addr(ip_addr, Duration::from_secs(100));
+
+        assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(server_info.get_port(), 53);
+        assert_eq!(server_info.get_key(), "");
+        assert_eq!(server_info.get_algorithm(), "");
+        assert_eq!(server_info.get_udp_connection().get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(server_info.get_udp_connection().get_timeout(), Duration::from_secs(100));
+        assert_eq!(server_info.get_tcp_connection().get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(server_info.get_tcp_connection().get_timeout(), Duration::from_secs(100));
+    }
 }
 

@@ -1070,7 +1070,7 @@ mod message_test {
                 1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
-        assert_eq!(Qtype::from_qtype_to_int(dns_query_message.question.get_qtype()), 1);
+        assert_eq!(u16::from(dns_query_message.question.get_qtype()), 1);
         assert_eq!(u16::from(dns_query_message.question.get_qclass()), 1);
         assert_eq!(
             dns_query_message.question.get_qname().get_name(),
@@ -1223,7 +1223,7 @@ mod message_test {
 
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(Qtype::from_qtype_to_int(question.get_qtype()), 16);
+        assert_eq!(u16::from(question.get_qtype()), 16);
         assert_eq!(u16::from(question.get_qclass()), 1);
 
         // Answer
@@ -1364,7 +1364,7 @@ mod message_test {
             dns_message.get_question().get_qname().get_name(),
             String::from("example.com")
         );
-        assert_eq!(Qtype::from_qtype_to_int(dns_message.get_question().get_qtype()), 252);
+        assert_eq!(u16::from(dns_message.get_question().get_qtype()), 252);
         assert_eq!(u16::from(dns_message.get_question().get_qclass()), 1);
         assert_eq!(dns_message.get_header().get_op_code(), 0);
         assert_eq!(dns_message.get_header().get_rd(), false);
@@ -1514,7 +1514,7 @@ mod message_test {
         assert_eq!(op_code, 1);
         assert!(rd);
         assert_eq!(qname, String::from("test.com"));
-        assert_eq!(Qtype::from_qtype_to_int(qtype), 2);
+        assert_eq!(u16::from(qtype), 2);
         assert_eq!(u16::from(qclass), 1);
     }
 

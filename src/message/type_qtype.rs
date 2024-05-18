@@ -32,10 +32,8 @@ pub enum Qtype {
     UNKNOWN(u16),
 }
 
-/// Functions for the Qtype Enum
-impl Qtype{
-    /// Function to get the int equivalent of a type
-    pub fn from_qtype_to_int(qtype: Qtype) -> u16{
+impl From<Qtype> for u16 {
+    fn from(qtype: Qtype) -> u16 {
         match qtype {
             Qtype::A => 1,
             Qtype::NS => 2,
@@ -64,8 +62,11 @@ impl Qtype{
             Qtype::UNKNOWN(val) => val
         }
     }
+}
 
-    /// Function to get the int equivalent of a type
+/// Functions for the Qtype Enum
+impl Qtype{
+/// Function to get the int equivalent of a type
     pub fn from_int_to_qtype(val: u16) -> Qtype{
         match val {
             1 => Qtype::A,
@@ -149,7 +150,7 @@ impl Qtype{
             Qtype::DNSKEY => Rtype::DNSKEY,
             Qtype::NSEC3 => Rtype::NSEC3,
             Qtype::NSEC3PARAM => Rtype::NSEC3PARAM,
-            _ => Rtype::UNKNOWN(Self::from_qtype_to_int(qtype))
+            _ => Rtype::UNKNOWN(u16::from(qtype))
         }
     } 
 }

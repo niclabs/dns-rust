@@ -103,7 +103,7 @@ impl Question {
     /// ```
     fn get_first_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
-        let first_byte = (Qtype::from_qtype_to_int(qtype) >> 8) as u8;
+        let first_byte = (u16::from(qtype) >> 8) as u8;
 
         first_byte
     }
@@ -111,7 +111,7 @@ impl Question {
     // Returns a byte that represents the second byte from qtype.
     fn get_second_qtype_byte(&self) -> u8 {
         let qtype = self.get_qtype();
-        let second_byte = Qtype::from_qtype_to_int(qtype) as u8;
+        let second_byte = u16::from(qtype) as u8;
 
         second_byte
     }
@@ -275,7 +275,7 @@ mod question_test {
         let qname = question.get_qname().get_name();
         assert_eq!(qname, String::from("test.com"));
         let qtype = question.get_qtype();
-        assert_eq!(Qtype::from_qtype_to_int(qtype), 5);
+        assert_eq!(u16::from(qtype), 5);
         let qclass = question.get_qclass();
         assert_eq!(u16::from(qclass), 1);
     }

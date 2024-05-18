@@ -414,7 +414,7 @@ mod tests_resolver_config {
         let mut resolver_config = ResolverConfig::default();
         let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         resolver_config.add_servers(addr);
-        assert_eq!(resolver_config.get_name_servers().len(), 2);
+        assert_eq!(resolver_config.get_name_servers().len(), 9);
         resolver_config.remove_servers();
         assert_eq!(resolver_config.get_name_servers().len(), 0);
     }

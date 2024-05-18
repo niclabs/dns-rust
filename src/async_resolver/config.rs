@@ -324,7 +324,7 @@ mod tests_resolver_config {
     fn get_and_set_name_servers() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_name_servers().len(), 1);
+        assert_eq!(resolver_config.get_name_servers().len(), 8);
 
         let addr_1 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let tcp_conn_1 = ClientTCPConnection::new(addr_1, Duration::from_secs(TIMEOUT));

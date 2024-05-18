@@ -405,4 +405,37 @@ mod tests_resolver_config {
         resolver_config.remove_servers();
         assert_eq!(resolver_config.get_name_servers().len(), 0);
     }
+
+    #[test]
+    fn get_and_set_max_retry_interval_seconds() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 10);
+
+        resolver_config.set_max_retry_interval_seconds(20);
+
+        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 20);
+    }
+
+    #[test]
+    fn get_and_set_min_retry_interval_seconds() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_min_retry_interval_seconds(), 5);
+
+        resolver_config.set_min_retry_interval_seconds(2);
+
+        assert_eq!(resolver_config.get_min_retry_interval_seconds(), 2);
+    }
+
+    #[test]
+    fn get_and_set_global_retransmission_limit() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_global_retransmission_limit(), 30);
+
+        resolver_config.set_global_retransmission_limit(40);
+
+        assert_eq!(resolver_config.get_global_retransmission_limit(), 40);
+    }
 }

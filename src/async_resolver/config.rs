@@ -261,6 +261,18 @@ impl ResolverConfig{
     pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = timeout;
     }
+
+    pub fn set_max_retry_interval_seconds(&mut self, max_retry_interval_seconds: u64) {
+        self.max_retry_interval_seconds = max_retry_interval_seconds;
+    }
+
+    pub fn set_min_retry_interval_seconds(&mut self, min_retry_interval_seconds: u64) {
+        self.min_retry_interval_seconds = min_retry_interval_seconds;
+    }
+
+    pub fn set_global_retransmission_limit(&mut self, global_retransmission_limit: u16) {
+        self.global_retransmission_limit = global_retransmission_limit;
+    }
 }
 
 

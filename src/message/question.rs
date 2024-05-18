@@ -57,7 +57,7 @@ impl Question {
     /// let qname = question.get_qname().get_name();
     /// assert_eq!(qname, String::from("test.com"));
     /// let qtype = question.get_qtype();
-    /// assert_eq!(Rtype::from_rtype_to_int(qtype), 5);
+    /// assert_eq!(u16::from(qtype), 5);
     /// let qclass = question.get_qclass();
     /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
     /// ```

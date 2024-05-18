@@ -40,7 +40,7 @@ impl ToBytes for NsecRdata{
         for rtype in bitmap {
             let window = match rtype {
                 Rtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
-                _ => (Rtype::from_rtype_to_int(rtype) / 256) as u8,
+                _ => (u16::from(rtype) / 256) as u8,
             };
 
             if let Some(current_window_value) = current_window {
@@ -195,7 +195,7 @@ impl NsecRdata{
     /// Complementary functions for to_bytes
     pub fn add_rtype_to_bitmap(rtype: &Rtype, bitmap: &mut Vec<u8>) {
         // Calculate the offset and bit for the specific Qtype
-        let rr_type = Rtype::from_rtype_to_int(*rtype);
+        let rr_type = u16::from(*rtype);
         let offset = (rr_type % 256) / 8;
         let bit = 7 - (rr_type % 8);
     

@@ -63,7 +63,7 @@ impl ToBytes for Nsec3Rdata {
         for rtype in type_bit_maps {
             let window = match rtype {
                 Rtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
-                _ => (Rtype::from_rtype_to_int(rtype) / 256) as u8,
+                _ => (u16::from(rtype) / 256) as u8,
             };
 
             if let Some(current_window_value) = current_window {

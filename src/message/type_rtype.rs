@@ -28,10 +28,8 @@ pub enum Rtype {
     UNKNOWN(u16),
 }
 
-/// Functions for the RType Enum
-impl Rtype {
-    /// Function to get the int equivalent of a type
-    pub fn from_rtype_to_int(rtype: Rtype) -> u16{
+impl From<Rtype> for u16 {
+    fn from(rtype: Rtype) -> u16 {
         match rtype {
             Rtype::A => 1,
             Rtype::NS => 2,
@@ -56,7 +54,10 @@ impl Rtype {
             Rtype::UNKNOWN(val) => val
         }
     }
+}
 
+/// Functions for the RType Enum
+impl Rtype {
     /// Function to get the int equivalent of a type
     pub fn from_int_to_rtype(val: u16) -> Rtype{
         match val {

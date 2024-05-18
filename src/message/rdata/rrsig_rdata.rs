@@ -44,7 +44,7 @@ impl ToBytes for RRSIGRdata {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
-        let type_covered = Rtype::from_rtype_to_int(self.type_covered.clone());
+        let type_covered = u16::from(self.type_covered.clone());
         bytes.extend_from_slice(&type_covered.to_be_bytes());
 
         bytes.push(self.algorithm);
@@ -394,7 +394,7 @@ impl fmt::Display for RRSIGRdata {
     /// Formats the record data for display
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {} {} {} {} {} {} {} {}", 
-        Rtype::from_rtype_to_int(self.get_type_covered()), 
+        u16::from(self.get_type_covered()), 
         self.get_algorithm(), 
         self.get_labels(), 
         self.get_original_ttl(), 

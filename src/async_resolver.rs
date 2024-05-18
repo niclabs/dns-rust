@@ -230,7 +230,7 @@ impl AsyncResolver {
                     let rr = rr_cache_value.get_resource_record();
 
                     // Get negative answer
-                    if u16::from(qtype) != Rtype::from_rtype_to_int(rr.get_rtype()) {
+                    if u16::from(qtype) != u16::from(rr.get_rtype()) {
                         let additionals: Vec<ResourceRecord> = vec![rr];
                         new_query.add_additionals(additionals);
                         let mut new_header = new_query.get_header();

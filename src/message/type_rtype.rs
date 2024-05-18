@@ -1,5 +1,7 @@
 use std::fmt;
 
+use super::type_qtype::Qtype;
+
 #[derive(Clone, PartialEq, Debug, Hash, PartialOrd, Ord, Eq, Copy)]
 /// Enum For the Type of a RR in a DnsMessage with an Rdata implementation
 pub enum Rtype {
@@ -109,6 +111,34 @@ impl Rtype {
         }
     }
 }
+
+impl From<Qtype> for Rtype {
+    fn from(qtype: Qtype) -> Rtype {
+        match qtype {
+            Qtype::A => Rtype::A,
+            Qtype::NS => Rtype::NS,
+            Qtype::CNAME => Rtype::CNAME,
+            Qtype::SOA => Rtype::SOA,
+            Qtype::WKS => Rtype::WKS,
+            Qtype::PTR => Rtype::PTR,
+            Qtype::HINFO => Rtype::HINFO,
+            Qtype::MINFO => Rtype::MINFO,
+            Qtype::MX => Rtype::MX,
+            Qtype::TXT => Rtype::TXT,
+            Qtype::AAAA => Rtype::AAAA,
+            Qtype::DNAME => Rtype::DNAME,
+            Qtype::OPT => Rtype::OPT,
+            Qtype::DS => Rtype::DS,
+            Qtype::RRSIG => Rtype::RRSIG,
+            Qtype::NSEC => Rtype::NSEC,
+            Qtype::DNSKEY => Rtype::DNSKEY,
+            Qtype::NSEC3 => Rtype::NSEC3,
+            Qtype::NSEC3PARAM => Rtype::NSEC3PARAM,
+            _ => Rtype::UNKNOWN(u16::from(qtype))
+        }
+    } 
+}
+
 
 impl Default for Rtype {
     fn default() -> Self { Rtype::A }

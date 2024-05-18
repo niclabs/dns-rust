@@ -128,34 +128,6 @@ impl From<&str> for Qtype {
     }
 }
 
-/// Functions for the Qtype Enum
-impl Qtype {
-    pub fn to_rtype(qtype: Qtype) -> Rtype {
-        match qtype {
-            Qtype::A => Rtype::A,
-            Qtype::NS => Rtype::NS,
-            Qtype::CNAME => Rtype::CNAME,
-            Qtype::SOA => Rtype::SOA,
-            Qtype::WKS => Rtype::WKS,
-            Qtype::PTR => Rtype::PTR,
-            Qtype::HINFO => Rtype::HINFO,
-            Qtype::MINFO => Rtype::MINFO,
-            Qtype::MX => Rtype::MX,
-            Qtype::TXT => Rtype::TXT,
-            Qtype::AAAA => Rtype::AAAA,
-            Qtype::DNAME => Rtype::DNAME,
-            Qtype::OPT => Rtype::OPT,
-            Qtype::DS => Rtype::DS,
-            Qtype::RRSIG => Rtype::RRSIG,
-            Qtype::NSEC => Rtype::NSEC,
-            Qtype::DNSKEY => Rtype::DNSKEY,
-            Qtype::NSEC3 => Rtype::NSEC3,
-            Qtype::NSEC3PARAM => Rtype::NSEC3PARAM,
-            _ => Rtype::UNKNOWN(u16::from(qtype))
-        }
-    } 
-}
-
 impl Default for Qtype {
     fn default() -> Self { Qtype::A }
 }

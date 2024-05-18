@@ -270,7 +270,7 @@ impl ResourceRecord {
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let rtype = Rtype::from_int_to_rtype(type_code);
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
-        let rclass = Rclass::from_int_to_rclass(class);
+        let rclass = Rclass::from(class);
         let ttl = ((bytes_without_name[4] as u32) << 24)
             | ((bytes_without_name[5] as u32) << 16)
             | ((bytes_without_name[6] as u32) << 8)
@@ -330,7 +330,7 @@ impl ResourceRecord {
 
     /// Returns a byte that represents the first byte from class in the dns message.
     fn get_first_class_byte(&self) -> u8 {
-        let class = Rclass::from_rclass_to_int(self.get_rclass());
+        let class = u16::from(self.get_rclass());
         let first_byte = (class >> 8) as u8;
 
         first_byte
@@ -338,7 +338,7 @@ impl ResourceRecord {
 
     /// Returns a byte that represents the second byte from class in the dns message.
     fn get_second_class_byte(&self) -> u8 {
-        let class = Rclass::from_rclass_to_int(self.get_rclass());
+        let class = u16::from(self.get_rclass());
         let second_byte = class as u8;
 
         second_byte
@@ -508,8 +508,8 @@ impl ResourceRecord {
     pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool {
         let a: u16 = Rtype::from_rtype_to_int(self.get_rtype());
         let aa: u16 = Rtype::from_rtype_to_int(rr.get_rtype());
-        let b: u16 = Rclass::from_rclass_to_int(self.get_rclass());
-        let bb: u16 = Rclass::from_rclass_to_int(rr.get_rclass());
+        let b: u16 = u16::from(self.get_rclass());
+        let bb: u16 = u16::from(rr.get_rclass());
         let c: u16 = self.get_rdlength();
         let cc: u16 = rr.get_rdlength();
         let d: u32 = self.get_ttl();
@@ -609,7 +609,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 1);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -637,7 +637,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 2);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -665,7 +665,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 5);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -700,7 +700,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 6);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -742,7 +742,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 12);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -773,7 +773,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 13);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -812,7 +812,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 15);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -840,7 +840,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -872,7 +872,7 @@ mod resource_record_test {
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
         assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 0);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -921,11 +921,11 @@ mod resource_record_test {
     fn set_and_get_class_test() {
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.get_rclass()), 1);
+        assert_eq!(u16::from(resource_record.get_rclass()), 1);
 
         resource_record.set_rclass(Rclass::CS);
 
-        let class = Rclass::from_rclass_to_int(resource_record.get_rclass());
+        let class = u16::from(resource_record.get_rclass());
         assert_eq!(class, 2 as u16);
     }
 
@@ -1021,7 +1021,7 @@ mod resource_record_test {
             String::from("dcc.cl")
         );
         assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_rtype()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record_test.get_rclass()), 1);
+        assert_eq!(u16::from(resource_record_test.get_rclass()), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
         assert_eq!(resource_record_test.get_rdlength(), 4);
 
@@ -1046,7 +1046,7 @@ mod resource_record_test {
             String::from("dcc.cl")
         );
         assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_rtype()), 1);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record_test.get_rclass()), 1);
+        assert_eq!(u16::from(resource_record_test.get_rclass()), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
         assert_eq!(resource_record_test.get_rdlength(), 4);
 

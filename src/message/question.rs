@@ -83,7 +83,7 @@ impl Question {
         let qtype_int = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let qtype = Qtype::from_int_to_qtype(qtype_int);
         let qclass_int = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
-        let qclass = Qclass::from_int_to_qclass(qclass_int);
+        let qclass = Qclass::from(qclass_int);
 
         let mut question = Question::new();
         question.set_qname(qname);
@@ -118,8 +118,8 @@ impl Question {
 
     // Returns a byte that represents the first byte from qclass.
     fn get_first_qclass_byte(&self) -> u8 {
-        let qclass = self.get_qclass();
-        let first_byte = (Qclass::from_qclass_to_int(qclass) >> 8) as u8;
+        let qclass: Qclass = self.get_qclass();
+        let first_byte = (u16::from(qclass) >> 8) as u8;
 
         first_byte
     }
@@ -127,7 +127,7 @@ impl Question {
     // Returns a byte that represents the second byte from qclass.
     fn get_second_qclass_byte(&self) -> u8 {
         let qclass = self.get_qclass();
-        let second_byte = Qclass::from_qclass_to_int(qclass) as u8;
+        let second_byte = u16::from(qclass) as u8;
 
         second_byte
     }
@@ -277,7 +277,7 @@ mod question_test {
         let qtype = question.get_qtype();
         assert_eq!(Qtype::from_qtype_to_int(qtype), 5);
         let qclass = question.get_qclass();
-        assert_eq!(Qclass::from_qclass_to_int(qclass), 1);
+        assert_eq!(u16::from(qclass), 1);
     }
 
     #[test]

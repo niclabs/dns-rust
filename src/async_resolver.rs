@@ -105,7 +105,7 @@ impl AsyncResolver {
         let response = self.inner_lookup(
             domain_name_struct,
             Qtype::A,
-            Qclass::from_str_to_qclass(qclass)
+            qclass.into()
         ).await;
 
         return self.check_error_from_msg(response).and_then(|lookup_response| {
@@ -165,7 +165,7 @@ impl AsyncResolver {
         let response = self.inner_lookup(
             domain_name_struct,
             Qtype::from_str_to_qtype(qtype),
-            Qclass::from_str_to_qclass(qclass)
+            qclass.into()
         ).await;
 
         return self.check_error_from_msg(response);

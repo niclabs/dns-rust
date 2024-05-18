@@ -11,22 +11,21 @@ pub enum Qclass {
     UNKNOWN(u16),
 }
 
-///Functions for the Rclass Enum
-impl Qclass {
-    ///Function to get the int equivalent of a class
-    pub fn from_qclass_to_int(class: Qclass) -> u16{
-        match class {
-            Qclass::IN => 1,
-            Qclass::CS => 2,
-            Qclass::CH => 3,
-            Qclass::HS => 4,
-            Qclass::ANY => 255,
-            Qclass::UNKNOWN(val) => val,
+impl From<&str> for Qclass {
+    fn from(qclass: &str) -> Self {
+        match qclass {
+            "IN" => Qclass::IN,
+            "CS" => Qclass::CS,
+            "CH" => Qclass::CH,
+            "HS" => Qclass::HS,
+            "ANY" => Qclass::ANY,
+            _ => Qclass::UNKNOWN(99)
         }
     }
+}
 
-    ///Function to get the Qclass from a value
-    pub fn from_int_to_qclass(val:u16) -> Qclass{
+impl From<u16> for Qclass {
+    fn from(val: u16) -> Self {
         match val {
             1 => Qclass::IN,
             2 => Qclass::CS,
@@ -36,18 +35,19 @@ impl Qclass {
             _ => Qclass::UNKNOWN(val)
         }
     }
+}
 
-    ///Function to get the Qclass from a String
-    pub fn from_str_to_qclass(qclass: &str) -> Qclass{
-        match qclass {
-            "IN" => Qclass::IN,
-            "CS" => Qclass::CS,
-            "CH" => Qclass::CH,
-            "HS" => Qclass::HS,
-            "ANY" => Qclass::ANY,
-            _ => Qclass::UNKNOWN(99)
+impl From<Qclass> for u16 {
+    fn from(class: Qclass) -> Self {
+        match class {
+            Qclass::IN => 1,
+            Qclass::CS => 2,
+            Qclass::CH => 3,
+            Qclass::HS => 4,
+            Qclass::ANY => 255,
+            Qclass::UNKNOWN(val) => val,
         }
-    }  
+    }
 }
 
 impl Default for Qclass {

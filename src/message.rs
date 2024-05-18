@@ -168,7 +168,7 @@ impl DnsMessage {
         question.set_qname(domain_name);
         let qtype_qtype = Qtype::from_str_to_qtype(qtype);
         question.set_qtype(qtype_qtype);
-        let qclass_qclass = Qclass::from_str_to_qclass(qclass);
+        let qclass_qclass = Qclass::from(qclass);
         question.set_qclass(qclass_qclass);
 
         let dns_message = DnsMessage {
@@ -1071,7 +1071,7 @@ mod message_test {
 
         assert_eq!(dns_query_message.header.get_rd(), false);
         assert_eq!(Qtype::from_qtype_to_int(dns_query_message.question.get_qtype()), 1);
-        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.question.get_qclass()), 1);
+        assert_eq!(u16::from(dns_query_message.question.get_qclass()), 1);
         assert_eq!(
             dns_query_message.question.get_qname().get_name(),
             "example.com".to_string()
@@ -1113,11 +1113,11 @@ mod message_test {
                 false,
                 1);
 
-        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.get_question().get_qclass()), 1);
+        assert_eq!(u16::from(dns_query_message.get_question().get_qclass()), 1);
 
         dns_query_message.set_question(question);
 
-        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.get_question().get_qclass()), 2);
+        assert_eq!(u16::from(dns_query_message.get_question().get_qclass()), 2);
     }
 
     #[test]
@@ -1224,7 +1224,7 @@ mod message_test {
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
         assert_eq!(Qtype::from_qtype_to_int(question.get_qtype()), 16);
-        assert_eq!(Qclass::from_qclass_to_int(question.get_qclass()), 1);
+        assert_eq!(u16::from(question.get_qclass()), 1);
 
         // Answer
         assert_eq!(answer.len(), 1);
@@ -1365,7 +1365,7 @@ mod message_test {
             String::from("example.com")
         );
         assert_eq!(Qtype::from_qtype_to_int(dns_message.get_question().get_qtype()), 252);
-        assert_eq!(Qclass::from_qclass_to_int(dns_message.get_question().get_qclass()), 1);
+        assert_eq!(u16::from(dns_message.get_question().get_qclass()), 1);
         assert_eq!(dns_message.get_header().get_op_code(), 0);
         assert_eq!(dns_message.get_header().get_rd(), false);
     }
@@ -1515,7 +1515,7 @@ mod message_test {
         assert!(rd);
         assert_eq!(qname, String::from("test.com"));
         assert_eq!(Qtype::from_qtype_to_int(qtype), 2);
-        assert_eq!(Qclass::from_qclass_to_int(qclass), 1);
+        assert_eq!(u16::from(qclass), 1);
     }
 
     //TODO: Revisar

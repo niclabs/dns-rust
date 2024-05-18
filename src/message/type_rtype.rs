@@ -84,9 +84,8 @@ impl From<u16> for Rtype {
     }
 }
 
-/// Functions for the RType Enum
-impl Rtype {
-    pub fn from_str_to_rtype(rtype: &str) -> Rtype {
+impl From<&str> for Rtype {
+    fn from(rtype: &str) -> Rtype {
         match rtype {
             "A" => Rtype::A,
             "NS" => Rtype::NS,

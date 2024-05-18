@@ -333,7 +333,7 @@ mod tests_resolver_config {
     fn get_and_set_retransmission_loop_attempts() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_retransmission_loop_attempts(), 30);
+        assert_eq!(resolver_config.get_retransmission_loop_attempts(), 3);
 
         resolver_config.set_retransmission_loop_attempts(10);
 

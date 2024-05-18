@@ -118,7 +118,7 @@ impl FromBytes<Result<Self, &'static str>> for NsecRdata {
                     let rr_type = window_number as u16 * 256 + i as u16 * 8 + j as u16;
                     let bit_mask = 1 << (7 - j);
                     if byte & bit_mask != 0 {
-                        decoded_types.push(Rtype::from_int_to_rtype(rr_type));
+                        decoded_types.push(Rtype::from(rr_type));
                     }
                 }
             }

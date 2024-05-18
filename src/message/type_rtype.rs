@@ -56,10 +56,8 @@ impl From<Rtype> for u16 {
     }
 }
 
-/// Functions for the RType Enum
-impl Rtype {
-    /// Function to get the int equivalent of a type
-    pub fn from_int_to_rtype(val: u16) -> Rtype{
+impl From<u16> for Rtype {
+    fn from(val: u16) -> Rtype {
         match val {
             1 => Rtype::A,
             2 => Rtype::NS,
@@ -84,8 +82,10 @@ impl Rtype {
             _ => Rtype::UNKNOWN(val),
         }
     }
+}
 
-    /// Function to get the Rtype from a String
+/// Functions for the RType Enum
+impl Rtype {
     pub fn from_str_to_rtype(rtype: &str) -> Rtype {
         match rtype {
             "A" => Rtype::A,

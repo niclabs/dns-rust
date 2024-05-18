@@ -77,7 +77,7 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
 
         let array_bytes = [bytes[0], bytes[1]];
         let type_covered_int = u16::from_be_bytes(array_bytes);
-        let type_covered = Rtype::from_int_to_rtype(type_covered_int);
+        let type_covered = Rtype::from(type_covered_int);
         rrsig_rdata.set_type_covered(type_covered);
 
         let algorithm = bytes[2];

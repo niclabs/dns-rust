@@ -268,7 +268,7 @@ impl ResourceRecord {
         }
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
-        let rtype = Rtype::from_int_to_rtype(type_code);
+        let rtype = Rtype::from(type_code);
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
         let rclass = Rclass::from(class);
         let ttl = ((bytes_without_name[4] as u32) << 24)

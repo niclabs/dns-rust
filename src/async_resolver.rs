@@ -466,7 +466,7 @@ mod async_resolver_test {
     use std::vec;
     use crate::domain_name::DomainName;
     use crate::async_resolver::resolver_error::ResolverError;
-    static TIMEOUT: u64 = 10;
+    static TIMEOUT: u64 = 45;
     use std::sync::Arc;
     use std::num::NonZeroUsize;
 

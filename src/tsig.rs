@@ -20,6 +20,7 @@ enum TsigAlgorithm {
     HmacSha256,
 }
 #[derive(PartialEq)]
+#[derive(Debug)]
 enum TsigErrorCode{
     NOERR = 0,
     BADSIG = 16,

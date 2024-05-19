@@ -86,7 +86,7 @@ fn sign_msg_old(mut query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u
 
 // experimental
 #[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
-fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fudge: u16, time_signed: u64) -> Vec<u8> {
+fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fudge: u16, time_signed: u64) -> Vec<u8> {
     let mut tsig_rd: TSigRdata = TSigRdata::new();
     let mut new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
@@ -100,7 +100,7 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
             let mac = result.code();
             //Convertir los bytes brutos a una cadena hexadecimal
             let mac_size = 20;
-            let a_name = "Hmac-Sha1".to_uppercase();
+            let a_name = "Hmac-Sha1".to_lowercase();
             let a_name = DomainName::new_from_string(a_name);
             tsig_rd.set_algorithm_name(a_name);
             tsig_rd.set_mac_size(mac_size);
@@ -116,7 +116,7 @@ fn sign_tsig(mut query_msg: DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fud
             let mac = result.code();
             //Convertir los bytes brutos a una cadena hexadecimal
             let mac_size = 32;
-            let a_name = "Hmac-Sha256".to_uppercase();
+            let a_name = "Hmac-Sha256".to_lowercase();
             let a_name = DomainName::new_from_string(a_name);
             tsig_rd.set_algorithm_name(a_name);
             tsig_rd.set_mac_size(mac_size);
@@ -176,9 +176,8 @@ fn check_mac(mut new_mac: Vec<u8>, key: &[u8], mac: Vec<u8>) -> bool{
 }
 
 //Verifica el error de la sección 5.2.3 
-fn check_time_values() -> bool {
-    let mut answer = false;
-    return answer
+fn check_time_values(mytime: u64,fudge: u16, time: u64) -> bool {
+    time - (fudge as u64) > mytime || mytime > (time+(fudge as u64))
 }
 
 //RFC 8945 5.2 y 5.4
@@ -258,17 +257,18 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
     let mac_received = tsig_rr_copy.get_mac();
     let mut new_alg_name: TsigAlgorithm = TsigAlgorithm::HmacSha1;
     match name_alg.as_str() {
-        "HMACSHA1" => new_alg_name = TsigAlgorithm::HmacSha1,
-        "HMACSHA256" => new_alg_name = TsigAlgorithm::HmacSha256,
+        "hmacsha1" => new_alg_name = TsigAlgorithm::HmacSha1,
+        "hmacsha256" => new_alg_name = TsigAlgorithm::HmacSha256,
         &_ => println!("not supported algorithm")
     }
-    let new_mac = sign_tsig(retmsg, key, new_alg_name, fudge, time_signed);
+    let new_mac = sign_tsig(&mut retmsg, key, new_alg_name, fudge, time_signed);
     
     let cond2 = check_mac(new_mac, key, mac_received);
     if !cond2 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 16: BADSIG");
     }
-    let cond3 = check_time_values();
+    let mytime = SystemTime::now().duration_since(UNIX_EPOCH).expect("no debería fallar el tiempo");
+    let cond3 = check_time_values(mytime.as_secs() as u64,fudge,time_signed);
     if !cond3 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 18: BADTIME");
     }
@@ -276,7 +276,7 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
     let fudge = 0;
     //Verificación de los tiempos de emisión y recepción + fudge del mensaje
     // Según lo especificado en el RFC 8945 5.2.3 time Check and Error Handling
-    if (time_signed_v-(fudge as u64))>time || time>(time_signed_v+(fudge as u64)) {
+    {
         let mut error_msg = DnsMessage::format_error_msg();
         error_msg.get_header().set_rcode(9);
         let str_whitespaces = "l\n0\n0\n0\n0\n0\n18\n0";
@@ -307,31 +307,6 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 
 //Sección de tests unitarios
 //ToDo: Crear bien un test que funcione
-#[test]
-fn sign_test(){
-    let my_key = b"1201102391287592dsjshno039U021Jg";
-    let my_short_key = b"1201102391287592dsjs";
-    let alg: TsigAlgorithm = TsigAlgorithm::HmacSha256;
-    let mut dns_example_msg =     
-        DnsMessage::new_query_message(
-        DomainName::new_from_string("uchile.cl".to_string()),
-        Qtype::A,
-        Qclass::IN,
-        0,
-        false,
-        1);
-    let time = SystemTime::now().duration_since(UNIX_EPOCH).expect("no existo").as_secs();
-    //prueba de la firma. sign_msg calcula la firma, la añade al resource record del mensaje y retorna una copia
-    let _signature = sign_tsig(dns_example_msg.clone(), my_key, alg,1000,time );
-    let _sha1signature = sign_tsig(dns_example_msg.clone(),my_short_key, TsigAlgorithm::HmacSha1,1000, time);
-    println!("SHA-256: {:?}",_signature);
-    println!("SHA-1: {:?}",_sha1signature);
-
-    
-    //prueba de process_tsig (la idea es usar la firma anterior, añadirla a dns_example_msg y verificarla con my_key)
-    //let _processed_msg = process_tsig(dns_example_msg, my_key);
-
-}
 
 #[test]
 fn check_signed_tsig() {

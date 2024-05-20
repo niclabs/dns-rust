@@ -411,6 +411,25 @@ fn check_process_tsig_key(){
 }
 
 #[test]
+fn check_proces_tsig_badtime(){
+ //Server process
+ let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+ let server_key = b"1234567890";
+ let alg_name = TsigAlgorithm::HmacSha256;
+ let fudge = 300;
+ let time_signed = 21000;
+ sign_tsig(&mut response, server_key, alg_name, fudge, time_signed);
+ let mut response_capture = response.clone();
+ //Client process
+ let key_name:String = "".to_string();
+ let mut lista :Vec<(String, bool)>  = vec![];
+ //suponemos que reconocemos hmac-sha256, pero no está implementado
+ lista.push((String::from("hmac-sha256"),true));
+ let (answer, error) = process_tsig(& response_capture, server_key, key_name, 22010, lista);
+ assert!(!answer);
+ assert_eq!(error,TsigErrorCode::BADTIME);
+}
+#[test]
 fn check_process_tsig() {
     //Server process
     let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);

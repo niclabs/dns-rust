@@ -143,12 +143,8 @@ fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fu
 }
 
 //Revisa si el nombre de la llave es correcto
-fn check_key(alg_name: &String,key_in_rr:String,key_name:String,flag_check_alg:bool)-> bool {
-    let mut answer = true; 
-    if !key_in_rr.eq(&key_name) || flag_check_alg {
-        answer=false;
-    }
-    return answer
+fn check_key(alg_name: &String,key_in_rr:String, key_name:String)-> bool {
+    !key_in_rr.eq(&key_name)
 }
 
 //Verifica que el algoritmo esté disponible, y además esté implementado
@@ -249,7 +245,11 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
     let name_alg = tsig_rr_copy.get_algorithm_name().get_name();
     let key_in_rr = rr_copy.get_name().get_name();
     let flag = check_alg_name(&name_alg,available_algorithm);
-    let cond1 = check_key(&name_alg,key_in_rr,key_name,flag);
+    if !flag {
+        println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
+        return (false, TsigErrorCode::BADKEY);
+    }
+    let cond1 = check_key(&name_alg,key_in_rr,key_name);
     if !cond1 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
         return (false, TsigErrorCode::BADKEY);
@@ -261,8 +261,8 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
     let mac_received = tsig_rr_copy.get_mac();
     let mut new_alg_name: TsigAlgorithm = TsigAlgorithm::HmacSha1;
     match name_alg.as_str() {
-        "hmacsha1" => new_alg_name = TsigAlgorithm::HmacSha1,
-        "hmacsha256" => new_alg_name = TsigAlgorithm::HmacSha256,
+        "hmac-sha1" => new_alg_name = TsigAlgorithm::HmacSha1,
+        "hmac-sha256" => new_alg_name = TsigAlgorithm::HmacSha256,
         &_ => println!("not supported algorithm")
     }
     let new_mac = sign_tsig(&mut retmsg, key, new_alg_name, fudge, time_signed);
@@ -304,8 +304,10 @@ fn check_process_tsig() {
     //Client process
     let key_name:String = "".to_string();
     let mut lista :Vec<(String, bool)>  = vec![];
-    lista.push((String::from("hmacsha256"),true));
+    lista.push((String::from("hmac-sha256"),true));
+    assert!(check_alg_name(&"hmac-sha256".to_string(), lista.clone()));
     let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
+    println!("{} y {:?}",answer, error);
     assert!(answer);
     assert_eq!(error,TsigErrorCode::NOERR);
 }

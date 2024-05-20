@@ -1,5 +1,5 @@
 use std::{net::IpAddr, str::FromStr};
-use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rdata::Rdata, resource_record::ResourceRecord}};
+use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rdata::Rdata, resource_record::ResourceRecord},tsig};
 
 
 
@@ -108,6 +108,61 @@ async fn no_resource_available() {
     println!("{:?}", response);
     assert!(response.is_err());
 }
+/* 
+///RFC 8945 TSIG tests
+#[tokio::test]
+async fn tsig_signature() {
+    let sock = UdpSocket::bind("127.0.0.1:8001").expect("Puerto ocupado");
 
+    let mut dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("uchile.cl".to_string()),
+                Qtype::A,
+                Qclass::IN,
+                0,
+                false,
+                1);
+    let signature = dns_rust::tsig::sign_tsig();
+    let digest = keyed_hash(b"alalalalalalalalalalalalalalalal", &dns_query_message.to_bytes()[..]);
+    let digstr = digest.to_string();
+    let x = format!("hmac-md5.sig-alg.reg.int.\n51921\n1234\n32\n{}\n1234\n0\n0", digstr);
+    
+    println!("El dig stirng es: {:#?}" , digstr);
+    let resource_record = TSigRdata::rr_from_master_file(
+        x.split_whitespace(),
+        56, 
+        "IN", 
+        String::from("uchile.cl"),
+        String::from("uchile.cl"));
+    
+    let mut vec = vec![];
 
+    vec.push(resource_record);
 
+    dns_query_message.add_additionals(vec);
+    
+    println!("{:#?}", dns_query_message);
+    
+    let buf = dns_query_message.to_bytes();
+
+    let s = sock.send_to(&buf, "127.0.0.1:8001").unwrap();
+    let response = query_response("example.com", "UDP", "MX").await;
+    
+    if let Ok(rrs) = response {
+        assert_eq!(rrs.len(), 1);
+
+        if let Rdata::MX(mxdata) = rrs[0].get_rdata() {
+            assert_eq!(
+                mxdata.get_exchange(),
+                DomainName::new_from_str(""));
+
+            assert_eq!(
+                mxdata.get_preference(),
+                0
+            )
+        } else { 
+            panic!("Record is not MX type");
+        }
+    }
+}
+*/

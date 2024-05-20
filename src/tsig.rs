@@ -353,7 +353,7 @@ fn check_process_tsig_exists3(){
     assert_eq!(error, TsigErrorCode::FORMERR);
 }
 #[test]
-fn check_process_tsig_alg_name(){
+fn check_process_tsig_alg_name() {
     //Server process
     let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
     let server_key = b"1234567890";
@@ -365,14 +365,69 @@ fn check_process_tsig_alg_name(){
     //Client process
     let key_name:String = "".to_string();
     let mut lista :Vec<(String, bool)>  = vec![];
-    //supongamos que para este test, no está hmac-sha256 en la lista de algoritmos disponibles
+    //suponemos que hmacsha256 no está disponible
     lista.push((String::from("hmac-sha1"),true));
     let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
     assert!(!answer);
     assert_eq!(error,TsigErrorCode::BADKEY);
 }
+#[test]
+fn check_process_tsig_alg_name2() {
+    //Server process
+    let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+    let server_key = b"1234567890";
+    let alg_name = TsigAlgorithm::HmacSha256;
+    let fudge = 300;
+    let time_signed = 21000;
+    sign_tsig(&mut response, server_key, alg_name, fudge, time_signed);
+    let mut response_capture = response.clone();
+    //Client process
+    let key_name:String = "".to_string();
+    let mut lista :Vec<(String, bool)>  = vec![];
+    //suponemos que reconocemos hmac-sha256, pero no está implementado
+    lista.push((String::from("hmac-sha256"),false));
+    let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
+    assert!(!answer);
+    assert_eq!(error,TsigErrorCode::BADKEY);
+}
+#[test]
+fn check_process_tsig_key(){
+    //Server process
+    let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+    let server_key = b"1234567890";
+    let alg_name = TsigAlgorithm::HmacSha256;
+    let fudge = 300;
+    let time_signed = 21000;
+    sign_tsig(&mut response, server_key, alg_name, fudge, time_signed);
+    let mut response_capture = response.clone();
+    //Client process
+    let key_name:String = "different".to_string();
+    let mut lista :Vec<(String, bool)>  = vec![];
+    //suponemos que reconocemos hmac-sha256, pero no está implementado
+    lista.push((String::from("hmac-sha256"),false));
+    let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
+    assert!(!answer);
+    assert_eq!(error,TsigErrorCode::BADKEY);
+}
 
-
+#[test]
+fn check_process_tsig_badsign(){
+    // Se establece un DnsMessage de prueba. Lo firmaremos, alteraremos la firma generada y esperamos recibir un error BADSIGN
+    let mut msg1 = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+    let key = b"1234567890";
+    let key_name:String = "".to_string();
+    let alg_name = TsigAlgorithm::HmacSha1;
+    let fudge = 1000;
+    let time_signed = 210000000;
+    let mut lista :Vec<(String, bool)>  = vec![];
+    lista.push((String::from("hmac-sha1"),false));
+    let (answer,error) = process_tsig(&mut msg1, key, key_name, time_signed,lista);
+    assert_eq!(error,TsigErrorCode::BADSIG)
+}
+#[test]
+fn check_proces_tsig_badtime(){
+    
+}
 #[test]
 fn check_process_tsig() {
     //Server process

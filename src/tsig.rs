@@ -143,8 +143,8 @@ fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fu
 }
 
 //Revisa si el nombre de la llave es correcto
-fn check_key(alg_name: &String,key_in_rr:String, key_name:String)-> bool {
-    !key_in_rr.eq(&key_name)
+fn check_key(key_in_rr:String, key_name:String)-> bool {
+    key_in_rr.eq(&key_name)
 }
 
 //Verifica que el algoritmo esté disponible, y además esté implementado
@@ -161,23 +161,23 @@ fn check_alg_name(alg_name:&String, alg_list: Vec<(String,bool)>) -> bool{
 }
 
 //Verifica que los mac sean iguales
-fn check_mac(mut new_mac: Vec<u8>, key: &[u8], mac: Vec<u8>) -> bool{
-    let mut answer: bool = false;
-    let contador = 0;
+fn check_mac(new_mac: Vec<u8>, mac: Vec<u8>) -> bool{
     if mac.len()!=new_mac.len(){
-        return answer
+        return false
     }
-    for elem in mac{
-        if new_mac[contador]!=elem{
-            return answer
+    for i in 0..mac.len(){
+        if new_mac[i]!=mac[i]{
+            return false
         }
     }
-    return answer
+    true
 }
 
 //Verifica el error de la sección 5.2.3 
 fn check_time_values(mytime: u64,fudge: u16, time: u64) -> bool {
-    time - (fudge as u64) > mytime || mytime > (time+(fudge as u64))
+    let part1 = (time - (fudge as u64)) < mytime;
+    let part2 = mytime < (time+(fudge as u64));
+    part1 && part2
 }
 
 //RFC 8945 5.2 y 5.4
@@ -249,7 +249,7 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
         return (false, TsigErrorCode::BADKEY);
     }
-    let cond1 = check_key(&name_alg,key_in_rr,key_name);
+    let cond1 = check_key(key_in_rr,key_name);
     if !cond1 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
         return (false, TsigErrorCode::BADKEY);
@@ -267,7 +267,7 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
     }
     let new_mac = sign_tsig(&mut retmsg, key, new_alg_name, fudge, time_signed);
     
-    let cond2 = check_mac(new_mac, key, mac_received);
+    let cond2 = check_mac(new_mac, mac_received);
     if !cond2 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 16: BADSIG");
         return (false, TsigErrorCode::BADSIG)
@@ -307,7 +307,6 @@ fn check_process_tsig() {
     lista.push((String::from("hmac-sha256"),true));
     assert!(check_alg_name(&"hmac-sha256".to_string(), lista.clone()));
     let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
-    println!("{} y {:?}",answer, error);
     assert!(answer);
     assert_eq!(error,TsigErrorCode::NOERR);
 }

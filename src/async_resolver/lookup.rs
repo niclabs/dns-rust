@@ -1,11 +1,10 @@
 use crate::client::client_error::ClientError;
 use crate::message::rcode::Rcode;
-use crate::message::{self, DnsMessage};
+use crate::message::DnsMessage;
 use crate::client::client_connection::ClientConnection;
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
 use super::server_info::ServerInfo;
-use std::result;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;

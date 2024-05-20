@@ -166,50 +166,59 @@ impl LookupStrategy {
     pub async fn transmit_query_to_server(
         &self,
         server_info: &ServerInfo,
-        timeout: tokio::time::Duration,
+        timeout_duration: tokio::time::Duration
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.response_msg.clone();
         let response = message::create_server_failure_response_from_query(&self.query);
         let protocol = self.config.get_protocol();
         let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
-
         {
-            // Get guard to modify the response
-            let mut response_guard = response_arc.lock().unwrap();
-            result_dns_msg = tokio::time::timeout(
-                timeout, 
-                send_query_by_protocol(
-                    timeout,
-                    protocol,
-                    self.query.clone(),
-                    result_dns_msg.clone(),
-                    server_info,
-                )).await
-                .unwrap_or_else(|_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
-            });  
+            // Guard reference to modify the response
+            let mut response_guard = response_arc.lock().unwrap(); // TODO: add error handling
+            let query_clone = self.query.clone();
+            let result_dns_msg_clone = result_dns_msg.clone();
+            let send_future = send_query_by_protocol(
+                timeout_duration,
+                protocol,
+                query_clone,
+                result_dns_msg_clone,
+                server_info
+            );
+            result_dns_msg = tokio::time::timeout(timeout_duration, send_future)
+                .await
+                .unwrap_or_else(
+                    |_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))}
+                );  
             *response_guard = result_dns_msg.clone();
         }
-
-        if !self.received_appropriate_response() {
-            if let ConnectionProtocol::UDP = protocol {
-                tokio::time::sleep(timeout).await;
-                result_dns_msg = tokio::time::timeout(
-                    timeout, 
-                    send_query_by_protocol(
-                        timeout,
-                        protocol,
-                        self.query.clone(),
-                        result_dns_msg.clone(),
-                        server_info,
-                    )).await
-                    .unwrap_or_else(|_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))
-                }); 
-                let mut response_guard = response_arc.lock().unwrap();
-                *response_guard = result_dns_msg.clone();
-            }
+        if self.received_appropriate_response() {
+            return result_dns_msg.and_then(
+                |dns_msg| Ok(LookupResponse::new(dns_msg))
+            )
         }
-
-        result_dns_msg.and_then(|dns_msg| Ok(LookupResponse::new(dns_msg)))
+        if let ConnectionProtocol::UDP = protocol {
+            let tcp_protocol = ConnectionProtocol::TCP;
+            let query_clone = self.query.clone();
+            let result_dns_msg_clone = result_dns_msg.clone();
+            let send_future = send_query_by_protocol(
+                timeout_duration,
+                tcp_protocol,
+                query_clone,
+                result_dns_msg_clone,
+                server_info
+            );
+            tokio::time::sleep(timeout_duration).await;
+            result_dns_msg = tokio::time::timeout(timeout_duration, send_future)
+                .await
+                .unwrap_or_else(
+                    |_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))}
+                ); 
+            let mut response_guard = response_arc.lock().unwrap();
+            *response_guard = result_dns_msg.clone();
+        }
+        result_dns_msg.and_then(
+            |dns_msg| Ok(LookupResponse::new(dns_msg))
+        )
     }
 }
 

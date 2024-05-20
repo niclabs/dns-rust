@@ -11,7 +11,7 @@ use crypto::mac::Mac as crypto_mac;
 use hmac::{Hmac, Mac};
 use crypto::{sha1::Sha1,sha2::Sha256};
 use std::str;
-
+use crate::message::rdata::a_rdata::ARdata;
 type HmacSha256 = Hmac<Sha256>;
 
 //TODO: usar arreglar el funcionamiento del enum en sign_msg
@@ -279,6 +279,7 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
         return (false, TsigErrorCode::BADTIME)
     }
     (true, TsigErrorCode::NOERR)
+
 }
 
                                                             
@@ -324,8 +325,34 @@ fn check_process_tsig_exists2() {
     lista.push((String::from("hmac-sha256"),true));
     let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
     assert!(!answer);
-    assert_eq!(error,TsigErrorCode::FORMERR);
+    assert_eq!(error, TsigErrorCode::FORMERR);
 }
+
+#[test]
+fn check_process_tsig_exists3(){
+    //Server process
+    let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+    let server_key = b"1234567890";
+    let alg_name = TsigAlgorithm::HmacSha256;
+    let fudge = 300;
+    let time_signed = 21000;
+    sign_tsig(&mut response, server_key, alg_name, fudge, time_signed);
+    //necesito agregar algo más en el additional
+    let mut new_additional = Vec::<ResourceRecord>::new();
+    let a_rdata5 = Rdata::A(ARdata::new());
+    let rr5 = ResourceRecord::new(a_rdata5);
+    new_additional.push(rr5);
+    response.add_additionals(new_additional);
+    let mut response_capture = response.clone();
+    //Client process
+    let key_name:String = "".to_string();
+    let mut lista :Vec<(String, bool)>  = vec![];
+    lista.push((String::from("hmac-sha256"),true));
+    let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
+    assert!(!answer);
+    assert_eq!(error, TsigErrorCode::FORMERR);
+}
+
 
 #[test]
 fn check_process_tsig() {

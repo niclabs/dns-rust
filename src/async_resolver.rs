@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex};
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
+use crate::message::rcode::Rcode;
 use crate::message::{self, DnsMessage};
 use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::ResourceRecord;
@@ -412,8 +413,8 @@ impl AsyncResolver {
         };
 
         let header = lookup_response.to_dns_msg().get_header();
-        let rcode = header.get_rcode();
-        if rcode == 0 {
+        let rcode = Rcode::from(header.get_rcode());
+        if let Rcode::NOERROR = rcode {
             let answer = lookup_response.to_dns_msg().get_answer();
             if answer.len() == 0 {
                 Err(ClientError::TemporaryError("no answer found"))?;
@@ -421,12 +422,12 @@ impl AsyncResolver {
             return Ok(lookup_response);
         }
         match rcode {
-            1 => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
-            2 => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
-            3 => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
-            4 => Err(ClientError::NotImplemented("The name server does not support the requested kind of query."))?,
-            5 => Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons."))?,
-            _ => Err(ClientError::ResponseError(rcode))?,
+            Rcode::FORMERR => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
+            Rcode::SERVFAIL => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
+            Rcode::NXDOMAIN => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
+            Rcode::NOTIMP => Err(ClientError::NotImplemented("The name server does not support the requested kind of query."))?,
+            Rcode::REFUSED => Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons."))?,
+            _ => Err(ClientError::ResponseError(rcode.into()))?,
         }
     }
 }

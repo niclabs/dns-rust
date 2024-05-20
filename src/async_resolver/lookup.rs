@@ -51,28 +51,27 @@ impl LookupStrategy {
     pub async fn run(
         &mut self,
     ) -> Result<LookupResponse, ResolverError> {
-        let config = &self.config;
-        let upper_limit_of_retransmission_loops = config.get_retransmission_loop_attempts();
-        let max_interval = config.get_max_retry_interval_seconds(); 
-        let start_interval = config.get_min_retry_interval_seconds();
+        let config: &ResolverConfig = &self.config;
+        let upper_limit_of_retransmission_loops: u16 = config.get_retransmission_loop_attempts();
+        let max_interval: u64 = config.get_max_retry_interval_seconds(); 
+        let start_interval: u64 = config.get_min_retry_interval_seconds();
 
-        let mut interval = start_interval;
-        let mut timeout_interval = tokio::time::Duration::from_secs(interval);
-        let mut lookup_response_result = Err(ResolverError::EmptyQuery);
+        let mut interval: u64 = start_interval;
+        let mut timeout_duration = tokio::time::Duration::from_secs(interval);
+        let mut lookup_response_result: Result<LookupResponse, ResolverError> = Err(ResolverError::EmptyQuery);
 
         // The resolver cycles through servers and at the end of a cycle, backs off 
-        // the time out exponentially.
+        // the timeout exponentially.
         let mut iter = 0..upper_limit_of_retransmission_loops;
         'global_cycle: while let Some(_retransmission) = iter.next() {
             let servers_to_query = config.get_name_servers();  
             let mut servers_iter = servers_to_query.iter();
 
-            while let Some(server) = servers_iter.next() {
+            while let Some(server_info) = servers_iter.next() {
                 lookup_response_result = self.transmit_query_to_server(
-                    server, 
-                    timeout_interval
+                    server_info, 
+                    timeout_duration
                 ).await;
-
                 if self.received_appropriate_response() {break 'global_cycle}
             }
 
@@ -80,8 +79,8 @@ impl LookupStrategy {
             if interval < max_interval {
                 interval = interval*2;
             }
-            timeout_interval = tokio::time::Duration::from_secs(interval);
-            tokio::time::sleep(timeout_interval).await;
+            timeout_duration = tokio::time::Duration::from_secs(interval);
+            tokio::time::sleep(timeout_duration).await;
         }
         return lookup_response_result;
     }
@@ -171,48 +170,46 @@ impl LookupStrategy {
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.response_msg.clone();
         let protocol = self.config.get_protocol();
-        let mut result_dns_msg: Result<DnsMessage, ResolverError>;
+        let mut dns_msg_result: Result<DnsMessage, ResolverError>;
         {
             // Guard reference to modify the response
             let mut response_guard = response_arc.lock().unwrap(); // TODO: add error handling
-            let query_clone = self.query.clone();
             let send_future = send_query_by_protocol(
                 timeout_duration,
+                &self.query,
                 protocol,
-                query_clone,
                 server_info
             );
-            result_dns_msg = tokio::time::timeout(timeout_duration, send_future)
+            dns_msg_result = tokio::time::timeout(timeout_duration, send_future)
                 .await
                 .unwrap_or_else(
                     |_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))}
                 );  
-            *response_guard = result_dns_msg.clone();
+            *response_guard = dns_msg_result.clone();
         }
         if self.received_appropriate_response() {
-            return result_dns_msg.and_then(
+            return dns_msg_result.and_then(
                 |dns_msg| Ok(LookupResponse::new(dns_msg))
             )
         }
         if let ConnectionProtocol::UDP = protocol {
             let tcp_protocol = ConnectionProtocol::TCP;
-            let query_clone = self.query.clone();
             let send_future = send_query_by_protocol(
                 timeout_duration,
+                &self.query,
                 tcp_protocol,
-                query_clone,
                 server_info
             );
             tokio::time::sleep(timeout_duration).await;
-            result_dns_msg = tokio::time::timeout(timeout_duration, send_future)
+            dns_msg_result = tokio::time::timeout(timeout_duration, send_future)
                 .await
                 .unwrap_or_else(
                     |_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))}
                 ); 
             let mut response_guard = response_arc.lock().unwrap();
-            *response_guard = result_dns_msg.clone();
+            *response_guard = dns_msg_result.clone();
         }
-        result_dns_msg.and_then(
+        dns_msg_result.and_then(
             |dns_msg| Ok(LookupResponse::new(dns_msg))
         )
     }
@@ -226,29 +223,29 @@ impl LookupStrategy {
 ///  with the parsed response.
 async fn send_query_by_protocol(
     timeout: tokio::time::Duration,
+    query: &DnsMessage,
     protocol: ConnectionProtocol,
-    query: DnsMessage,
     server_info:  &ServerInfo,
-)
-->  Result<DnsMessage, ResolverError> {
+) ->  Result<DnsMessage, ResolverError> {
     let query_id = query.get_query_id();
-    let result_dns_msg;
+    let dns_query = query.clone();
+    let dns_msg_result;
     match protocol{ 
         ConnectionProtocol::UDP => {
             let mut udp_connection = server_info.get_udp_connection().clone();
             udp_connection.set_timeout(timeout);
-            let result_response = udp_connection.send(query.clone()).await;
-            result_dns_msg = parse_response(result_response, query_id);
+            let response_result = udp_connection.send(dns_query).await;
+            dns_msg_result = parse_response(response_result, query_id);
         }
         ConnectionProtocol::TCP => {
             let mut tcp_connection = server_info.get_tcp_connection().clone();
             tcp_connection.set_timeout(timeout);
-            let result_response = tcp_connection.send(query.clone()).await;
-            result_dns_msg = parse_response(result_response, query_id);
+            let response_result = tcp_connection.send(dns_query).await;
+            dns_msg_result = parse_response(response_result, query_id);
         }
-        _ => {result_dns_msg = Err(ResolverError::Message("Invalid Protocol".into()))}, // TODO: specific add error handling
+        _ => {dns_msg_result = Err(ResolverError::Message("Invalid Protocol".into()))}, // TODO: specific add error handling
     }; 
-    result_dns_msg
+    dns_msg_result
 }
 
 /// Parse the received response datagram to a `DnsMessage`.

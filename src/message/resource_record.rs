@@ -487,6 +487,9 @@ impl ResourceRecord {
 
     /// Sets the ttl attribute with a value.
     pub fn set_ttl(&mut self, ttl: u32) {
+        if ttl > 2147483647 {
+            panic!("TTL must be less than 0xFFFFFFFF");
+        }
         self.ttl = ttl;
     }
 
@@ -1077,5 +1080,24 @@ mod resource_record_test {
         assert!(resource_record.rr_equal(resource_record1.clone()));
         resource_record.set_rdlength(16);
         assert_ne!(resource_record.rr_equal(resource_record1.clone()), true);
+    }
+
+    #[test]
+    fn ttl_max() {
+        let soa_rdata = Rdata::SOA(SoaRdata::new());
+        let mut resource_record = ResourceRecord::new(soa_rdata);
+        assert_eq!(resource_record.get_ttl(), 0);
+        resource_record.set_ttl(2147483647);
+        assert_eq!(resource_record.get_ttl(), 2147483647);
+    }
+
+    #[test]
+    #[should_panic]
+    fn ttl_fail() {
+        let soa_rdata = Rdata::SOA(SoaRdata::new());
+        let mut resource_record = ResourceRecord::new(soa_rdata);
+        assert_eq!(resource_record.get_ttl(), 0);
+        resource_record.set_ttl(2147483648);
+        assert_eq!(resource_record.get_ttl(), 2147483648);
     }
 }

@@ -12,9 +12,15 @@ chrono = "0.4"
 hex = "0.4.3"
 clap = { version = "4.0", features = ["derive"] }
 tokio = { version = "1.35.1", features = ["full"]}
+tokio-stream = "0.1"
 thiserror = "1.0.20"
 futures-util = "0.3.28"
 async-trait = "0.1.77"
+sha2 = "0.10.2"
+hmac = "0.12.1"
+rust-crypto = "0.2"
+
+lru = "0.12.3"
 
 [lib]
 doctest = false

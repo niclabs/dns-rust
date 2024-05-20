@@ -1,5 +1,8 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
+use crate::message::rdata::Rdata;
+use crate::message::rdata::a_rdata::ARdata;
+use crate::message::resource_record::ResourceRecord;
 use super::client_error::ClientError;
 use async_trait::async_trait;
 use std::io::Error as IoError;
@@ -38,7 +41,8 @@ impl ClientConnection for ClientTCPConnection {
     }
 
     /// creates socket tcp, sends query and receive response
-    async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>{
+    async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError> {
+    // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> {
         
         let conn_timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
@@ -69,6 +73,13 @@ impl ClientConnection for ClientTCPConnection {
         let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
         let mut vec_msg: Vec<u8> = Vec::new();
         let ip = self.get_server_addr();
+        let mut additionals = dns_query.get_additional();
+        let mut ar = ARdata::new();
+        ar.set_address(ip);
+        let a_rdata = Rdata::A(ar);
+        let rr = ResourceRecord::new(a_rdata);
+        additionals.push(rr);
+        
     
         while vec_msg.len() < tcp_msg_len as usize {
             let mut msg = [0; 512];
@@ -87,7 +98,7 @@ impl ClientConnection for ClientTCPConnection {
             vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
 
-        return Ok((vec_msg, ip));
+        return Ok(vec_msg);
     }
 }
 
@@ -221,7 +232,8 @@ mod tcp_connection_test{
             0,
             false,
             1);
-        let (response, _ip) = conn_new.send(dns_query).await.unwrap();
+        let response = conn_new.send(dns_query).await.unwrap();
+        // let (response, _ip) = conn_new.send(dns_query).await.unwrap();
         
         assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
         // FIXME:

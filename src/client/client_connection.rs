@@ -12,7 +12,8 @@ pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin
         timeout:Duration) -> Self;
 
     //Sends query 
-    async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>;
+    async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>;
+    // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>;
     fn get_ip(&self) -> IpAddr;
 }
 

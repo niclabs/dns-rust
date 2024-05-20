@@ -5,6 +5,7 @@ use crate::client::client_connection::ClientConnection;
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
 use super::server_info::ServerInfo;
+use std::result;
 use std::sync::{Mutex,Arc};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
@@ -169,19 +170,16 @@ impl LookupStrategy {
         timeout_duration: tokio::time::Duration
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.response_msg.clone();
-        let response = message::create_server_failure_response_from_query(&self.query);
         let protocol = self.config.get_protocol();
-        let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
+        let mut result_dns_msg: Result<DnsMessage, ResolverError>;
         {
             // Guard reference to modify the response
             let mut response_guard = response_arc.lock().unwrap(); // TODO: add error handling
             let query_clone = self.query.clone();
-            let result_dns_msg_clone = result_dns_msg.clone();
             let send_future = send_query_by_protocol(
                 timeout_duration,
                 protocol,
                 query_clone,
-                result_dns_msg_clone,
                 server_info
             );
             result_dns_msg = tokio::time::timeout(timeout_duration, send_future)
@@ -199,12 +197,10 @@ impl LookupStrategy {
         if let ConnectionProtocol::UDP = protocol {
             let tcp_protocol = ConnectionProtocol::TCP;
             let query_clone = self.query.clone();
-            let result_dns_msg_clone = result_dns_msg.clone();
             let send_future = send_query_by_protocol(
                 timeout_duration,
                 tcp_protocol,
                 query_clone,
-                result_dns_msg_clone,
                 server_info
             );
             tokio::time::sleep(timeout_duration).await;
@@ -232,12 +228,11 @@ async fn send_query_by_protocol(
     timeout: tokio::time::Duration,
     protocol: ConnectionProtocol,
     query: DnsMessage,
-    mut result_dns_msg: Result<DnsMessage, ResolverError>, 
     server_info:  &ServerInfo,
 )
-->  Result<DnsMessage, ResolverError>{
+->  Result<DnsMessage, ResolverError> {
     let query_id = query.get_query_id();
-
+    let result_dns_msg;
     match protocol{ 
         ConnectionProtocol::UDP => {
             let mut udp_connection = server_info.get_udp_connection().clone();
@@ -251,9 +246,8 @@ async fn send_query_by_protocol(
             let result_response = tcp_connection.send(query.clone()).await;
             result_dns_msg = parse_response(result_response, query_id);
         }
-        _ => {},
+        _ => {result_dns_msg = Err(ResolverError::Message("Invalid Protocol".into()))}, // TODO: specific add error handling
     }; 
-    
     result_dns_msg
 }
 

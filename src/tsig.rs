@@ -292,6 +292,42 @@ fn tsig_proccesing_answer(answer_msg:DnsMessage){
 //ToDo: Crear bien un test que funcione
 
 #[test]
+
+fn check_process_tsig_exists() {
+    //Server process
+    let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+    //Client process
+    let key_name:String = "".to_string();
+    let mut lista :Vec<(String, bool)>  = vec![];
+    let server_key = b"1234567890";
+    lista.push((String::from("hmac-sha256"),true));
+    let (answer, error) = process_tsig(& response, server_key, key_name, 21010, lista);
+    assert!(!answer);
+    assert_eq!(error,TsigErrorCode::FORMERR);
+}
+
+#[test]
+fn check_process_tsig_exists2() {
+    //Server process
+    let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+    let server_key = b"1234567890";
+    let alg_name = TsigAlgorithm::HmacSha256;
+    let alg_name2 = TsigAlgorithm::HmacSha256;
+    let fudge = 300;
+    let time_signed = 21000;
+    sign_tsig(&mut response, server_key, alg_name, fudge, time_signed);
+    sign_tsig(&mut response, server_key, alg_name2, fudge, time_signed);
+    let mut response_capture = response.clone();
+    //Client process
+    let key_name:String = "".to_string();
+    let mut lista :Vec<(String, bool)>  = vec![];
+    lista.push((String::from("hmac-sha256"),true));
+    let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
+    assert!(!answer);
+    assert_eq!(error,TsigErrorCode::FORMERR);
+}
+
+#[test]
 fn check_process_tsig() {
     //Server process
     let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
@@ -305,7 +341,6 @@ fn check_process_tsig() {
     let key_name:String = "".to_string();
     let mut lista :Vec<(String, bool)>  = vec![];
     lista.push((String::from("hmac-sha256"),true));
-    assert!(check_alg_name(&"hmac-sha256".to_string(), lista.clone()));
     let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
     assert!(answer);
     assert_eq!(error,TsigErrorCode::NOERR);

@@ -409,7 +409,26 @@ fn check_process_tsig_key(){
     assert!(!answer);
     assert_eq!(error,TsigErrorCode::BADKEY);
 }
-
+//TODO: completar este test, hay cosas que faltan por implementar
+#[test]
+fn check_process_tsig_badsign(){
+    // Se establece un DnsMessage de prueba. Lo firmaremos, alteraremos la firma generada y esperamos recibir un error BADSIGN
+    let mut msg1 = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
+    let key = b"1234567890";
+    let key_name:String = "".to_string();
+    let alg_name = TsigAlgorithm::HmacSha1;
+    let fudge = 1000;
+    let time_signed = 210000000;
+    // se firma el mensaje con algoritmo SHA-1
+    sign_tsig(& mut msg1, key, alg_name, fudge, time_signed);
+    let mut lista :Vec<(String, bool)>  = vec![];
+    lista.push((String::from("hmac-sha1"),true));
+    lista.push((String::from("hmac-sha256"),true));
+    // se verifica que el mensaje está firmado, pero se usa otra key
+    let key2 = b"12345678909";
+    let (answer,error) = process_tsig(&mut msg1, key2, key_name, time_signed,lista);
+    assert_eq!(error,TsigErrorCode::BADSIG);
+}
 #[test]
 fn check_proces_tsig_badtime(){
  //Server process

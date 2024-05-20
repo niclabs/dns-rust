@@ -1,4 +1,5 @@
 use crate::client::client_error::ClientError;
+use crate::message::rcode::Rcode;
 use crate::message::{self, DnsMessage};
 use crate::client::client_connection::ClientConnection;
 use super::lookup_response::LookupResponse;
@@ -93,13 +94,10 @@ impl LookupStrategy {
     //  appropriate response to its caller.
     pub fn received_appropriate_response(&self) -> bool {
         let response_arc = self.response_msg.lock().unwrap();
-
         if let Ok(dns_msg) = response_arc.as_ref() {
-            match dns_msg.get_header().get_rcode() {
-                // SERVFAIL
-                2 => return false,
-                // NOTIMP
-                4 => return false,
+            match dns_msg.get_header().get_rcode().into() {
+                Rcode::SERVFAIL => return false,
+                Rcode::NOTIMP => return false,
                 _ => return true,
             }
         }

@@ -47,3 +47,15 @@ fn read_opt_rr(opt_rr: ResourceRecord) -> String {
     let do_bit = (z & 0x8000) > 0;
     format!("OPT PSEUDO-RR\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
 }
+
+/*
+   A security-aware resolver MUST include an EDNS ([RFC2671]) OPT
+   pseudo-RR with the DO ([RFC3225]) bit set when sending queries.
+*/
+fn create_dns_message_with_dnssec(mut msg: DnsMessage) -> DnsMessage {
+    // We create a opt rr with the do bit set to 1
+    let rr = create_opt_rr(34, 2, false);
+    let vec = vec![rr];
+    msg.add_additionals(vec);
+    msg
+}

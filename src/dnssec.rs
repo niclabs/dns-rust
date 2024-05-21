@@ -59,3 +59,18 @@ fn create_dns_message_with_dnssec(mut msg: DnsMessage) -> DnsMessage {
     msg.add_additionals(vec);
     msg
 }
+
+#[test]
+fn see_dnssec_message() {
+    let mut query = DnsMessage::new_query_message(
+        DomainName::new_from_str("example.com"),
+        Qtype::A,
+        Qclass::ANY,
+        1,
+        true,
+        2000
+    );
+    let query= create_dns_message_with_dnssec(query);
+    println!("{:#?}", query);
+    println!("{}", read_opt_rr(query.get_additional().pop().unwrap()));
+}

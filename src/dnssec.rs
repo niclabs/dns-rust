@@ -38,3 +38,12 @@ fn create_opt_rr(e_rcode :u8, version: u8, do_bit: bool) -> ResourceRecord {
     println!("EL ttl es: {:#05x?}", ttl);
     rr
 }
+
+fn read_opt_rr(opt_rr: ResourceRecord) -> String {
+    let data = opt_rr.get_ttl().to_be_bytes();
+    let (e_rcode, version) = (data[0], data[1]);
+    let z = u16::from_be_bytes([data[2], data[3]]);
+
+    let do_bit = (z & 0x8000) > 0;
+    format!("OPT PSEUDO-RR\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
+}

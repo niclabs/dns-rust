@@ -30,65 +30,6 @@ enum TsigErrorCode{
 
 }
 
-/*
-#[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
-fn sign_msg_old(mut query_msg:DnsMessage,key:&[u8], alg_name:TsigAlgorithm)->&[u8]{
-    let mut dig_string:&str;
-    let mut new_query_message = query_msg.clone();
-    let mut mac_len:&str;
-    let mut a_name: &str;
-    let placeholder_hex: String; 
-    let mut additional = query_msg.get_additional();
-    //TODO: cambiar el match pattern
-    match alg_name {
-        TsigAlgorithm::HmacSha1 => {
-            let mut hasher = crypto_hmac::new(Sha1::new(), key);
-            hasher.input(&new_query_message.to_bytes()[..]);
-            let result = hasher.result();
-            let placeholder = result.code();
-            //Convertir los bytes brutos a una cadena hexadecimal
-            placeholder_hex = placeholder.iter().map(|b| format!("{:02x}", b)).collect();
-            dig_string = &placeholder_hex;
-            mac_len = "20";
-            a_name = "Hmac-Sha1";
-        },
-        TsigAlgorithm::HmacSha256 => {
-            let mut hasher = HmacSha256::new_from_slice(key).expect("HMAC algoritms can take keys of any size");
-            hasher.update(&new_query_message.to_bytes()[..]);
-            let result = hasher.finalize();
-
-            let code_bytes = result.into_bytes();
-            placeholder_hex = hex::encode(code_bytes);
-            dig_string = &placeholder_hex;
-            mac_len = "32";
-            a_name = "Hmac-Sha256";
-            
-        },
-        _ => {panic!("Error: Invalid algorithm")},
-    }
-
-    //TODO: agregar los demas valores al dig_string !! Yo creo que deben llegar como argumentos
-    let mut dig_string: String = format!("{}.\n51921\n1234\n{}\n{}\n1234\n0\n0",a_name, mac_len, dig_string);
-    
-    //se modifica el resource record para añadir el hmac
-    let mut rr = additional.pop().expect("Empty Resource Record!");
-    let mut rdata:Rdata= rr.get_rdata();
-    match rdata {
-        Rdata::TSIG(mut data) =>{
-            let mut mac: Vec<u8> =data.to_bytes();
-            data.set_mac(mac);
-        }
-        _ => {
-            println!("Error: no valid rdata found!");
-        }
-    }
-    let mut vec = vec![];
-    vec.push(rr);
-    query_msg.add_additionals(vec);
-    return dig_string.as_bytes();
-} */
-
-// experimental
 #[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
 fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fudge: u16, time_signed: u64) -> Vec<u8> {
     let mut tsig_rd: TSigRdata = TSigRdata::new();

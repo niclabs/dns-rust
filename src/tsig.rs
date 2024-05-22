@@ -1,4 +1,5 @@
 //aquí debe ir todo lo relacionado a la implementación de tsig como módulo
+use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::{self, ResourceRecord, ToBytes};
@@ -15,13 +16,13 @@ use crate::message::rdata::a_rdata::ARdata;
 type HmacSha256 = Hmac<Sha256>;
 
 //TODO: usar arreglar el funcionamiento del enum en sign_msg
-enum TsigAlgorithm {
+pub enum TsigAlgorithm {
     HmacSha1,
     HmacSha256,
 }
 #[derive(PartialEq)]
 #[derive(Debug)]
-enum TsigErrorCode{
+pub enum TsigErrorCode{
     NOERR = 0,
     BADSIG = 16,
     BADKEY = 17,
@@ -29,46 +30,59 @@ enum TsigErrorCode{
     FORMERR = 1,
 
 }
+//TODO: Encontrar alguna manera de pasar una referencia Digest u Hmac de un algoritmo no especificado
+// función auxiliar para evitar la redundancia de código en sign_tsig
+fn set_tsig_rd(query_msg: &DnsMessage, name: String, original_id: u16, result: MacResult, fudge: u16, time_signed: u64, mac_size: u16) -> TSigRdata{
+    let mut tsig_rd: TSigRdata = TSigRdata::new();
+    let mac = result.code();
+    /*
+    hasher.input(&new_query_message.to_bytes()[..]);
+    let result = hasher.result(); */
+    //Convertir los bytes brutos a una cadena hexadecimal
+    let a_name = name.to_lowercase();
+    let a_name = DomainName::new_from_string(a_name);
+    //añadir los valores correspondientes al tsig_rd
+    tsig_rd.set_algorithm_name(a_name);
+    tsig_rd.set_mac_size(mac_size);
+    tsig_rd.set_mac(mac.to_vec());
+    tsig_rd.set_fudge(fudge);
+    tsig_rd.set_original_id(original_id);
+    tsig_rd.set_time_signed(time_signed);
 
-#[doc = r"This functions signs creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
-fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fudge: u16, time_signed: u64) -> Vec<u8> {
+    return tsig_rd;
+}
+
+#[doc = r"This function creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
+pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm, fudge: u16, time_signed: u64) -> Vec<u8> {
     let mut tsig_rd: TSigRdata = TSigRdata::new();
     let mut new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
     match alg_name {
         
         TsigAlgorithm::HmacSha1 => {
-            
             let mut hasher = crypto_hmac::new(Sha1::new(), key);
             hasher.input(&new_query_message.to_bytes()[..]);
             let result = hasher.result();
-            let mac = result.code();
-            //Convertir los bytes brutos a una cadena hexadecimal
-            let mac_size = 20;
-            let a_name = "Hmac-Sha1".to_lowercase();
-            let a_name = DomainName::new_from_string(a_name);
-            tsig_rd.set_algorithm_name(a_name);
-            tsig_rd.set_mac_size(mac_size);
-            tsig_rd.set_mac(mac.to_vec());
-            tsig_rd.set_fudge(fudge);
-            tsig_rd.set_original_id(original_id);
-            tsig_rd.set_time_signed(time_signed);
+            tsig_rd = set_tsig_rd(&new_query_message,  
+                "Hmac-Sha1".to_lowercase(), 
+                original_id,
+                result,
+                fudge, 
+                time_signed,
+                 20);
+            
         },
         TsigAlgorithm::HmacSha256 => {
             let mut hasher = crypto_hmac::new(Sha256::new(), key);
             hasher.input(&new_query_message.to_bytes()[..]);
             let result = hasher.result();
-            let mac = result.code();
-            //Convertir los bytes brutos a una cadena hexadecimal
-            let mac_size = 32;
-            let a_name = "Hmac-Sha256".to_lowercase();
-            let a_name = DomainName::new_from_string(a_name);
-            tsig_rd.set_algorithm_name(a_name);
-            tsig_rd.set_mac_size(mac_size);
-            tsig_rd.set_mac(mac.to_vec());
-            tsig_rd.set_fudge(fudge);
-            tsig_rd.set_original_id(original_id);
-            tsig_rd.set_time_signed(time_signed);
+            tsig_rd = set_tsig_rd(&new_query_message, 
+                "Hmac-Sha256".to_lowercase(),
+                original_id,
+                result,
+                fudge, 
+                time_signed,
+                32);
             
         },
         _ => {panic!("Error: Invalid algorithm")},
@@ -149,7 +163,7 @@ fn check_last_one_is_tsig(add_rec: &Vec<ResourceRecord>) -> bool {
 
 
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
-fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  available_algorithm: Vec<(String, bool)>) -> (bool, TsigErrorCode) {
+pub fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  available_algorithm: Vec<(String, bool)>) -> (bool, TsigErrorCode) {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
     //RFC 8945 5.2 y 5.4
@@ -224,17 +238,10 @@ fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  availa
 }
 
                                                             
-fn tsig_proccesing_answer(answer_msg:DnsMessage){
-    //procesar los errores 
-    //new_answer_msg = answer_msg.clone()
-}
-
 
 //Sección de tests unitarios
-//ToDo: Crear bien un test que funcione
 
 #[test]
-
 fn check_process_tsig_exists() {
     //Server process
     let mut response = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);

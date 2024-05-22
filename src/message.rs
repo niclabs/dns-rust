@@ -574,6 +574,7 @@ impl DnsMessage {
         let mut msg_answers = self.get_answer();
 
         msg_answers.append(&mut answers);
+        self.header.set_ancount(msg_answers.len() as u16);
         self.set_answer(msg_answers);
     }
 
@@ -599,6 +600,7 @@ impl DnsMessage {
         let mut msg_authorities = self.get_authority();
 
         msg_authorities.append(&mut authorities);
+        self.header.set_nscount(msg_authorities.len() as u16);
         self.set_answer(msg_authorities);
     }
 

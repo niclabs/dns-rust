@@ -1,6 +1,7 @@
 pub mod dnssec_encryption;
 
 
+use std::str::FromStr;
 use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
 use crate::message::DnsMessage;
@@ -8,8 +9,10 @@ use crate::message::rdata::opt_rdata::OptRdata;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use crate::message::type_qtype::Qtype;
+use crate::message::rcode;
+use crate::message::rcode::Rcode;
 
-
+const EDNS_VERSION: u8 = 0;
 /*
 The mechanism chosen for the explicit notification of the ability of
 the client to accept (if not understand) DNSSEC security RRs is using
@@ -44,7 +47,7 @@ fn read_opt_rr(opt_rr: ResourceRecord) -> String {
     let (e_rcode, version) = (data[0], data[1]);
     let z = u16::from_be_bytes([data[2], data[3]]);
 
-    let do_bit = (z & 0x8000) > 0;
+    let do_bit = ((z & 0x8000) > 0) as u8 ;
     format!("OPT PSEUDO-RR\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
 }
 
@@ -54,7 +57,12 @@ fn read_opt_rr(opt_rr: ResourceRecord) -> String {
 */
 fn create_dns_message_with_dnssec(mut msg: DnsMessage) -> DnsMessage {
     // We create a opt rr with the do bit set to 1
-    let rr = create_opt_rr(34, 2, false);
+    // with NOERR as rcode and EDNS0
+    let rr = create_opt_rr(
+                            rcode::Rcode::from_rcode_to_int(Rcode::NOERROR),
+                            EDNS_VERSION,
+                            true);
+
     let vec = vec![rr];
     msg.add_additionals(vec);
     msg
@@ -62,7 +70,7 @@ fn create_dns_message_with_dnssec(mut msg: DnsMessage) -> DnsMessage {
 
 #[test]
 fn see_dnssec_message() {
-    let mut query = DnsMessage::new_query_message(
+    let query = DnsMessage::new_query_message(
         DomainName::new_from_str("example.com"),
         Qtype::A,
         Qclass::ANY,
@@ -71,6 +79,9 @@ fn see_dnssec_message() {
         2000
     );
     let query= create_dns_message_with_dnssec(query);
-    println!("{:#?}", query);
-    println!("{}", read_opt_rr(query.get_additional().pop().unwrap()));
+    assert_eq!(String::from_str
+                   ("OPT PSEUDO-RR\n\terror code: 0\n\tversion: EDNS0\n\tuse dnssec: 1")
+                   .expect("Not a utf8 str"),
+               read_opt_rr(query.get_additional().pop().expect("No OPT Record!"))
+    )
 }

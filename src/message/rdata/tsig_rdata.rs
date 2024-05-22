@@ -144,19 +144,19 @@ impl FromBytes<Result<Self, &'static str>> for TSigRdata{
 
         tsig_rdata.set_algorithm_name(algorithm_name);
 
-        tsig_rdata.set_time_signed_from_bytes(&bytes_without_algorithm_name[1..7]);
+        tsig_rdata.set_time_signed_from_bytes(&bytes_without_algorithm_name[0..6]);
 
-        tsig_rdata.set_fudge_from_bytes(&bytes_without_algorithm_name[7..9]);
+        tsig_rdata.set_fudge_from_bytes(&bytes_without_algorithm_name[6..8]);
 
-        tsig_rdata.set_mac_size_from_bytes(&bytes_without_algorithm_name[9..11]);
+        tsig_rdata.set_mac_size_from_bytes(&bytes_without_algorithm_name[8..10]);
 
         let mac_size = tsig_rdata.get_mac_size();
 
-        let mac = bytes_without_algorithm_name[11..(11 + mac_size as usize)].to_vec();
+        let mac = bytes_without_algorithm_name[10..(10 + mac_size as usize)].to_vec();
 
         tsig_rdata.set_mac(mac);
 
-        let bytes_without_mac = &bytes_without_algorithm_name[(11 + mac_size as usize)..];
+        let bytes_without_mac = &bytes_without_algorithm_name[(10 + mac_size as usize)..];
 
         tsig_rdata.set_original_id_from_bytes(&bytes_without_mac[0..2]);
 

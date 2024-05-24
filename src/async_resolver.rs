@@ -336,7 +336,11 @@ impl AsyncResolver {
             .iter()
             .for_each(|rr| {
                 if rr.get_ttl() > 0 {
-                    cache.add(rr.get_name(), rr.clone(), response.get_question().get_qtype(), response.get_question().get_qclass(), Some(response.get_header().get_rcode()));
+                    cache.add(rr.get_name(), 
+                             rr.clone(),
+                             response.get_question().get_qtype(),
+                             response.get_question().get_qclass(),
+                             Some(response.get_header().get_rcode()));
                 }
             });
 

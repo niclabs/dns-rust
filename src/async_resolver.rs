@@ -333,16 +333,16 @@ impl AsyncResolver {
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
         {
-        let mut cache = self.cache_answer.lock().unwrap();
-        // FIXME: maybe add corresponding type of erro
-        cache.timeout_cache();
+        let mut cache_answer = self.cache_answer.lock().unwrap();
+        // FIXME: maybe add corresponding type of error
+        cache_answer.timeout_cache();
         if !truncated {
             // TODO: RFC 1035: 7.4. Using the cache
             response.get_answer()
             .iter()
             .for_each(|rr| {
                 if rr.get_ttl() > 0 {
-                    cache.add(rr.get_name(), 
+                    cache_answer.add(rr.get_name(), 
                              rr.clone(),
                              response.get_question().get_qtype(),
                              response.get_question().get_qclass(),
@@ -350,6 +350,36 @@ impl AsyncResolver {
                 }
             });
 
+        }
+        let mut cache_additional = self.cache_additional.lock().unwrap();
+        cache_additional.timeout_cache();
+        if !truncated {
+            response.get_additional()
+            .iter()
+            .for_each(|rr| {
+                if rr.get_ttl() > 0 {
+                    cache_additional.add(rr.get_name(), 
+                             rr.clone(),
+                             response.get_question().get_qtype(),
+                             response.get_question().get_qclass(),
+                             Some(response.get_header().get_rcode()));
+                }
+            });
+        }
+        let mut cache_authority = self.cache_authority.lock().unwrap();
+        cache_authority.timeout_cache();
+        if !truncated {
+            response.get_authority()
+            .iter()
+            .for_each(|rr| {
+                if rr.get_ttl() > 0 {
+                    cache_authority.add(rr.get_name(), 
+                             rr.clone(),
+                             response.get_question().get_qtype(),
+                             response.get_question().get_qclass(),
+                             Some(response.get_header().get_rcode()));
+                }
+            });
         }
         }
         self.save_negative_answers(response);

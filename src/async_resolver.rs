@@ -39,8 +39,12 @@ use self::lookup_response::LookupResponse;
 /// `lookup_ip` method.
 #[derive(Clone)]
 pub struct AsyncResolver {
-    /// Cache for the resolver.
-    cache: Arc<Mutex<DnsCache>>,
+    /// Cache for the answer section of the DNS messages.
+    cache_answer: Arc<Mutex<DnsCache>>,
+    /// Cache for the additional section of the DNS messages.
+    cache_additional: Arc<Mutex<DnsCache>>,
+    /// Cache for the authority section of the DNS messages.
+    cache_authority: Arc<Mutex<DnsCache>>,
     /// Configuration for the resolver.
     config: ResolverConfig ,
 }
@@ -61,7 +65,9 @@ impl AsyncResolver {
     /// ```
     pub fn new(config: ResolverConfig)-> Self {
         let async_resolver = AsyncResolver {
-            cache: Arc::new(Mutex::new(DnsCache::new(None))),
+            cache_answer: Arc::new(Mutex::new(DnsCache::new(None))),
+            cache_additional: Arc::new(Mutex::new(DnsCache::new(None))),
+            cache_authority: Arc::new(Mutex::new(DnsCache::new(None))),
             config: config,
         };
         async_resolver
@@ -217,7 +223,7 @@ impl AsyncResolver {
         // Cache lookup
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
-            let lock_result = self.cache.lock();
+            let lock_result = self.cache_answer.lock();
             let cache = match lock_result {
                 Ok(val) => val,
                 Err(_) => Err(ClientError::Message("Error getting cache"))?, // FIXME: it shouldn't 
@@ -327,7 +333,7 @@ impl AsyncResolver {
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
         {
-        let mut cache = self.cache.lock().unwrap();
+        let mut cache = self.cache_answer.lock().unwrap();
         // FIXME: maybe add corresponding type of erro
         cache.timeout_cache();
         if !truncated {
@@ -388,7 +394,7 @@ impl AsyncResolver {
         let aa = response.get_header().get_aa();
 
         // If not existence RR for query, add SOA to cache
-        let mut cache = self.cache.lock().unwrap(); // FIXME: que la función entregue result
+        let mut cache = self.cache_answer.lock().unwrap(); // FIXME: que la función entregue result
         if additionals.len() > 0 && answer.len() == 0 && aa == true{
             additionals.iter()
             .for_each(|rr| {
@@ -440,7 +446,7 @@ impl AsyncResolver {
 impl AsyncResolver {
     // Gets the cache from the struct
     pub fn get_cache(&self) -> DnsCache {
-        let cache = self.cache.lock().unwrap(); // FIXME: ver que hacer ocn el error
+        let cache = self.cache_answer.lock().unwrap(); // FIXME: ver que hacer ocn el error
         return cache.clone();
     }
 }
@@ -865,13 +871,13 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_cache_available() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.lock().unwrap().set_max_size(NonZeroUsize::new(1).unwrap());
+        resolver.cache_answer.lock().unwrap().set_max_size(NonZeroUsize::new(1).unwrap());
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        resolver.cache.lock().unwrap().add(domain_name, resource_record, Qtype::A, Qclass::IN, None);
+        resolver.cache_answer.lock().unwrap().add(domain_name, resource_record, Qtype::A, Qclass::IN, None);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
@@ -891,7 +897,7 @@ mod async_resolver_test {
 
         let resolver = AsyncResolver::new(config);
         {
-        let mut cache = resolver.cache.lock().unwrap();
+        let mut cache = resolver.cache_answer.lock().unwrap();
         cache.set_max_size(NonZeroUsize::new(1).unwrap());
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -915,11 +921,11 @@ mod async_resolver_test {
     #[tokio::test]
     async fn cache_data() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.lock().unwrap().set_max_size(NonZeroUsize::new(1).unwrap());
-        assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
+        resolver.cache_answer.lock().unwrap().set_max_size(NonZeroUsize::new(1).unwrap());
+        assert_eq!(resolver.cache_answer.lock().unwrap().is_empty(), true);
 
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
-        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Qtype::A, Qclass::IN), true);
+        assert_eq!(resolver.cache_answer.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Qtype::A, Qclass::IN), true);
         // TODO: Test special cases from RFC
     }
 
@@ -1858,7 +1864,7 @@ mod async_resolver_test {
     fn not_store_data_in_cache_if_truncated() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
 
-        resolver.cache.lock().unwrap().set_max_size(NonZeroUsize::new(10).unwrap());
+        resolver.cache_answer.lock().unwrap().set_max_size(NonZeroUsize::new(10).unwrap());
 
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -1884,7 +1890,7 @@ mod async_resolver_test {
     #[test]
     fn not_store_cero_ttl_data_in_cache() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.lock().unwrap().set_max_size(NonZeroUsize::new(10).unwrap());
+        resolver.cache_answer.lock().unwrap().set_max_size(NonZeroUsize::new(10).unwrap());
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
 
@@ -1929,7 +1935,7 @@ mod async_resolver_test {
     #[test]
     fn save_cache_negative_answer(){
         let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver.cache.lock().unwrap().set_max_size(NonZeroUsize::new(1).unwrap());
+        resolver.cache_answer.lock().unwrap().set_max_size(NonZeroUsize::new(1).unwrap());
 
         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
         let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
@@ -2017,7 +2023,7 @@ mod async_resolver_test {
         let mut cache  = resolver.get_cache();
         cache.set_max_size(NonZeroUsize::new(9).unwrap());
         cache.add_negative_answer(domain_name.clone(),qtype ,Qclass::IN, rr.clone());
-        let mut cache_guard = resolver.cache.lock().unwrap();
+        let mut cache_guard = resolver.cache_answer.lock().unwrap();
         *cache_guard = cache;
 
         assert_eq!(resolver.get_cache().get_cache().len(), 1);

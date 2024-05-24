@@ -445,8 +445,20 @@ impl AsyncResolver {
 // Getters
 impl AsyncResolver {
     // Gets the cache from the struct
-    pub fn get_cache(&self) -> DnsCache {
-        let cache = self.cache_answer.lock().unwrap(); // FIXME: ver que hacer ocn el error
+    pub fn get_cache_answer(&self) -> DnsCache {
+        let cache = self.cache_answer.lock().unwrap(); // FIXME: ver que hacer con el error
+        return cache.clone();
+    }
+
+    // Gets the cache_additional from the struct
+    pub fn get_cache_additional(&self) -> DnsCache {
+        let cache = self.cache_additional.lock().unwrap();
+        return cache.clone();
+    }
+
+    // Gets the cache_authority from the struct
+    pub fn get_cache_authority(&self) -> DnsCache {
+        let cache = self.cache_authority.lock().unwrap(); 
         return cache.clone();
     }
 }
@@ -1884,7 +1896,7 @@ mod async_resolver_test {
 
         resolver.store_data_cache(dns_response);
 
-        assert_eq!(resolver.get_cache().get_cache().len(), 0);
+        assert_eq!(resolver.get_cache_answer().get_cache().len(), 0);
     }
 
     #[test]
@@ -1926,10 +1938,10 @@ mod async_resolver_test {
 
         dns_response.set_answer(answer);
         assert_eq!(dns_response.get_answer().len(), 3);
-        assert_eq!(resolver.get_cache().get_cache().len(), 0);
+        assert_eq!(resolver.get_cache_answer().get_cache().len(), 0);
 
         resolver.store_data_cache(dns_response);
-        assert_eq!(resolver.get_cache().get_cache().len(), 2);
+        assert_eq!(resolver.get_cache_answer().get_cache().len(), 2);
     }
 
     #[test]
@@ -1982,8 +1994,8 @@ mod async_resolver_test {
         let qtype_search = Qtype::A;
         assert_eq!(dns_response.get_answer().len(), 0);
         assert_eq!(dns_response.get_additional().len(), 1);
-        assert_eq!(resolver.get_cache().get_cache().len(), 1);
-        assert!(resolver.get_cache().get(dns_response.get_question().get_qname().clone(), qtype_search, Qclass::IN).is_some())
+        assert_eq!(resolver.get_cache_answer().get_cache().len(), 1);
+        assert!(resolver.get_cache_answer().get(dns_response.get_question().get_qname().clone(), qtype_search, Qclass::IN).is_some())
 
     }
 
@@ -1991,7 +2003,7 @@ mod async_resolver_test {
     #[tokio::test]
     async fn inner_lookup_negative_answer_in_cache(){
         let resolver = AsyncResolver::new(ResolverConfig::default());
-        let mut cache = resolver.get_cache();
+        let mut cache = resolver.get_cache_answer();
         let qtype = Qtype::A;
         cache.set_max_size(NonZeroUsize::new(9).unwrap());
 
@@ -2020,18 +2032,18 @@ mod async_resolver_test {
         rr.set_name(domain_name.clone());
 
         // Add negative answer to cache
-        let mut cache  = resolver.get_cache();
+        let mut cache  = resolver.get_cache_answer();
         cache.set_max_size(NonZeroUsize::new(9).unwrap());
         cache.add_negative_answer(domain_name.clone(),qtype ,Qclass::IN, rr.clone());
         let mut cache_guard = resolver.cache_answer.lock().unwrap();
         *cache_guard = cache;
 
-        assert_eq!(resolver.get_cache().get_cache().len(), 1);
+        assert_eq!(resolver.get_cache_answer().get_cache().len(), 1);
 
         let qclass = Qclass::IN;
         let response = resolver.inner_lookup(domain_name,qtype,qclass).await.unwrap();
 
-        assert_eq!(resolver.get_cache().get_cache().len(), 1);
+        assert_eq!(resolver.get_cache_answer().get_cache().len(), 1);
         assert_eq!(response.to_dns_msg().get_answer().len(), 0);
         assert_eq!(response
             .to_dns_msg()

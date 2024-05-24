@@ -358,11 +358,15 @@ impl AsyncResolver {
             .iter()
             .for_each(|rr| {
                 if rr.get_ttl() > 0 {
-                    cache_additional.add(rr.get_name(), 
-                             rr.clone(),
-                             response.get_question().get_qtype(),
-                             response.get_question().get_qclass(),
-                             Some(response.get_header().get_rcode()));
+                    let rtype = rr.get_rtype();
+                    // Do not cache OPT records
+                    if rtype != Rtype::OPT{
+                        cache_additional.add(rr.get_name(), 
+                                rr.clone(),
+                                response.get_question().get_qtype(),
+                                response.get_question().get_qclass(),
+                                Some(response.get_header().get_rcode()));
+                    }
                 }
             });
         }

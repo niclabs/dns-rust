@@ -59,4 +59,9 @@ impl RRset {
     pub fn get_records(&self) -> &HashSet<ResourceRecord> {
         &self.records
     }
+
+    // Gets the labels of the domain associated with this RRset.
+    pub fn get_labels(&self) -> usize {
+        self.name.split('.').count()
+    }
 }

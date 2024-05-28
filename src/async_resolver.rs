@@ -6,7 +6,7 @@ pub mod lookup_response;
 pub mod server_info;
 
 use std::net::IpAddr;
-use std::vec;
+use std::{rc, vec};
 use std::sync::{Arc, Mutex};
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;
@@ -332,9 +332,9 @@ impl AsyncResolver {
     /// answer section, it is always preferred.
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
+        let rcode = response.get_header().get_rcode();
         {
         let mut cache_answer = self.cache_answer.lock().unwrap();
-        // FIXME: maybe add corresponding type of error
         cache_answer.timeout_cache();
         if !truncated {
             // TODO: RFC 1035: 7.4. Using the cache
@@ -346,7 +346,7 @@ impl AsyncResolver {
                              rr.clone(),
                              response.get_question().get_qtype(),
                              response.get_question().get_qclass(),
-                             Some(response.get_header().get_rcode()));
+                             Some(rcode));
                 }
             });
 
@@ -365,7 +365,7 @@ impl AsyncResolver {
                                 rr.clone(),
                                 response.get_question().get_qtype(),
                                 response.get_question().get_qclass(),
-                                Some(response.get_header().get_rcode()));
+                                Some(rcode));
                     }
                 }
             });
@@ -381,7 +381,7 @@ impl AsyncResolver {
                              rr.clone(),
                              response.get_question().get_qtype(),
                              response.get_question().get_qclass(),
-                             Some(response.get_header().get_rcode()));
+                             Some(rcode));
                 }
             });
         }

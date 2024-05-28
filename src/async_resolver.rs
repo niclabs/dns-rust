@@ -6,7 +6,7 @@ pub mod lookup_response;
 pub mod server_info;
 
 use std::net::IpAddr;
-use std::{rc, vec};
+use std::vec;
 use std::sync::{Arc, Mutex};
 use crate::client::client_error::ClientError;
 use crate::dns_cache::DnsCache;

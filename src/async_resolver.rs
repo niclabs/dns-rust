@@ -212,6 +212,7 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
+    /// TODO: Refactor to use the three caches
     async fn inner_lookup(
         &self,
         domain_name: DomainName,

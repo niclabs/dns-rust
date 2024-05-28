@@ -302,7 +302,6 @@ mod async_resolver_test {
     use crate::message::type_qtype::Qtype;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-    use std::rc::Rc;
     use std::str::FromStr;
     use std::time::Duration;
     use std::num::NonZeroUsize;

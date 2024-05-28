@@ -8,6 +8,7 @@ use std::num::NonZeroUsize;
 use crate::dns_cache::rr_stored_data::RRStoredData;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
+use crate::message::rcode::Rcode;
 use crate::message::type_qtype::Qtype;
 use crate::message::class_qclass::Qclass;
 use std::net::IpAddr;
@@ -41,13 +42,13 @@ impl DnsCache {
     }
 
     /// Adds an element to cache
-    pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<u8>) {
+    pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
 
         let mut rr_cache = RRStoredData::new(resource_record);
 
-        let rcode = rcode.unwrap_or_else(|| 0);
+        let rcode = rcode.unwrap_or_else(|| Rcode::NOERROR);
 
-        if rcode != 0 {
+        if rcode != Rcode::NOERROR {
             rr_cache.set_rcode(rcode);
         }
 

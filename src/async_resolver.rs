@@ -241,7 +241,7 @@ impl AsyncResolver {
                         let additionals: Vec<ResourceRecord> = vec![rr];
                         new_query.add_additionals(additionals);
                         let mut new_header = new_query.get_header();
-                        new_header.set_rcode(3);  // TODO: is here where the other problem originates?
+                        new_header.set_rcode(Rcode::NXDOMAIN);  // TODO: is here where the other problem originates?
                         new_query.set_header(new_header);
                     }
                     else { //FIXME: change to alg RFC 1034-1035
@@ -513,6 +513,7 @@ mod async_resolver_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::ResourceRecord;
+    use crate::message::rcode::Rcode;
     use crate:: message::type_qtype::Qtype;
     use crate::async_resolver::config::ResolverConfig;
     use super::lookup_response::LookupResponse;
@@ -1101,7 +1102,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(1);
+        header.set_rcode(Rcode::FORMERR);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1146,7 +1147,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(2);
+        header.set_rcode(Rcode::SERVFAIL);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1192,7 +1193,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(3);
+        header.set_rcode(Rcode::NXDOMAIN);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1237,7 +1238,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(4);
+        header.set_rcode(Rcode::NOTIMP);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1282,7 +1283,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(5);
+        header.set_rcode(Rcode::REFUSED);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -2086,7 +2087,7 @@ mod async_resolver_test {
         assert_eq!(response
             .to_dns_msg()
             .get_header()
-            .get_rcode(), 3);
+            .get_rcode(), Rcode::NXDOMAIN);
     }
 
     // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently

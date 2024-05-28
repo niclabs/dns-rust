@@ -64,6 +64,7 @@ impl fmt::Display for LookupResponse {
 #[cfg(test)]
 mod lookup_response_tests {
     use std::net::IpAddr;
+    use crate::message::rcode::Rcode;
     use crate::{
         domain_name::DomainName,  
         message::{
@@ -124,7 +125,7 @@ mod lookup_response_tests {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -175,7 +176,7 @@ mod lookup_response_tests {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -214,7 +215,7 @@ mod lookup_response_tests {
         assert_eq!(dns_from_lookup.get_header().get_qr(), true);
         assert_eq!(dns_from_lookup.get_header().get_op_code(), 2);
         assert_eq!(dns_from_lookup.get_header().get_tc(), true);
-        assert_eq!(dns_from_lookup.get_header().get_rcode(), 8);
+        assert_eq!(dns_from_lookup.get_header().get_rcode(), Rcode::UNKNOWN(8));
         assert_eq!(dns_from_lookup.get_header().get_ancount(), 0b0000000000000001);
         assert_eq!(dns_from_lookup.get_header().get_qdcount(), 1);
         assert_eq!(dns_from_lookup.get_question().get_qname().get_name(), "test.com");
@@ -231,7 +232,7 @@ mod lookup_response_tests {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 

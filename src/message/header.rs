@@ -1,3 +1,5 @@
+use crate::message::rcode::Rcode;
+
 #[derive(Default, Clone)]
 
 ///  An struct that represents a Header secction from a DNS message.
@@ -72,7 +74,7 @@ pub struct Header {
     ///                 information to the particular requester,
     ///                 or a name server may not wish to perform
     ///                 a particular operation.
-    rcode: u8,
+    rcode: Rcode,
 
     /// Counters
     qdcount: u16,
@@ -135,7 +137,7 @@ impl Header {
         let tc = (bytes[2] & 0b00000010) >> 1;
         let rd = bytes[2] & 0b00000001;
         let ra = bytes[3] >> 7;
-        let rcode = bytes[3] & 0b00001111;
+        let rcode = Rcode::from(bytes[3] & 0b00001111);
         let qdcount = ((bytes[4] as u16) << 8) | bytes[5] as u16;
         let ancount = ((bytes[6] as u16) << 8) | bytes[7] as u16;
         let nscount = ((bytes[8] as u16) << 8) | bytes[9] as u16;
@@ -329,7 +331,7 @@ impl Header {
     /// Gets a byte that represents the second byte of flags section.
     fn get_second_flags_byte(&self) -> u8 {
         let ra_byte = self.ra_to_byte();
-        let rcode_byte = self.get_rcode();
+        let rcode_byte = u8::from(self.get_rcode());
 
         let second_byte = ra_byte | rcode_byte;
 
@@ -394,7 +396,7 @@ impl Header {
         }
 
         // RCODE: A 4 bit field between 0-15
-        if self.rcode > 15 {
+        if u8::from(self.rcode) > 15 {
             return Err("Format Error: RCODE");
         }
         
@@ -440,7 +442,7 @@ impl Header {
     }
 
     /// Sets the rcode attribute with a value.
-    pub fn set_rcode(&mut self, rcode: u8) {
+    pub fn set_rcode(&mut self, rcode: Rcode) {
         self.rcode = rcode;
     }
 
@@ -503,7 +505,7 @@ impl Header {
     }
 
     /// Gets the `rcode` attribute value.
-    pub fn get_rcode(&self) -> u8 {
+    pub fn get_rcode(&self) -> Rcode {
         self.rcode
     }
 
@@ -530,6 +532,8 @@ impl Header {
 
 #[cfg(test)]
 mod header_test {
+    use crate::message::rcode::Rcode;
+
     use super::Header;
 
     #[test]
@@ -542,7 +546,7 @@ mod header_test {
         assert_eq!(header.tc, false);
         assert_eq!(header.rd, false);
         assert_eq!(header.ra, false);
-        assert_eq!(header.rcode, 0);
+        assert_eq!(header.rcode, Rcode::NOERROR);
         assert_eq!(header.qdcount, 0);
         assert_eq!(header.ancount, 0);
         assert_eq!(header.nscount, 0);
@@ -638,11 +642,11 @@ mod header_test {
         let mut header = Header::new();
 
         let mut rcode = header.get_rcode();
-        assert_eq!(rcode, 0);
+        assert_eq!(rcode, Rcode::NOERROR);
 
-        header.set_rcode(2);
+        header.set_rcode(Rcode::SERVFAIL);
         rcode = header.get_rcode();
-        assert_eq!(rcode, 2);
+        assert_eq!(rcode, Rcode::SERVFAIL);
     }
 
     #[test]
@@ -704,7 +708,7 @@ mod header_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(5);
+        header.set_rcode(Rcode::REFUSED);
         header.set_ancount(0b0000101010100101);
 
         bytes[0] = 0b00100100;
@@ -734,7 +738,7 @@ mod header_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(5);
+        header.set_rcode(Rcode::REFUSED);
         header.set_ancount(0b0000101010100101);
 
         let header_from_bytes = Header::from_bytes(&bytes);
@@ -787,7 +791,7 @@ mod header_test {
 
         let mut header = Header::from_bytes(&bytes_header);
         header.z = 3;
-        header.set_rcode(16);
+        header.set_rcode(Rcode::UNKNOWN(16));
         header.set_op_code(22);
 
         let result_check = header.format_check();

@@ -302,6 +302,7 @@ mod async_resolver_test {
     use crate::message::type_qtype::Qtype;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+    use std::rc::Rc;
     use std::str::FromStr;
     use std::time::Duration;
     use std::num::NonZeroUsize;
@@ -536,7 +537,7 @@ mod async_resolver_test {
         if let Ok(dns_msg) = response_dns_msg {
             assert_eq!(dns_msg.get_header().get_qr(), true); // response (1)
             assert_eq!(dns_msg.get_header().get_ancount(), 1);
-            assert_eq!(dns_msg.get_header().get_rcode(), 0);
+            assert_eq!(dns_msg.get_header().get_rcode(), Rcode::NOERROR);
             println!("The message is: {:?}", dns_msg);
         }
     }

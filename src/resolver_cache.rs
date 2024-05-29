@@ -276,3 +276,10 @@ impl ResolverCache {
         self.cache_additional = cache;
     }
 }
+
+#[cfg(test)]
+mod resolver_cache_test{
+    use super::*;
+
+    //TODO: Add tests for ResolverCache
+}

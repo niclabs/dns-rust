@@ -61,6 +61,16 @@ impl LookupStrategy {
 
         let mut timeout_duration = tokio::time::Duration::from_secs_f64(rto);
         let mut lookup_response_result: Result<LookupResponse, ResolverError> = Err(ResolverError::EmptyQuery);
+        let start = Instant::now();
+        let mut end = start;
+
+        // Incrementar end hasta que cambie
+        while end == start {
+            end = Instant::now();
+        }
+
+        let granularity = end.duration_since(start).as_secs_f64() + end.duration_since(start).subsec_nanos() as f64 * 1e-9;
+
 
         // The resolver cycles through servers and at the end of a cycle, backs off 
         // the timeout exponentially.
@@ -81,10 +91,10 @@ impl LookupStrategy {
 
                 let rtt = end.duration_since(start);
                 rttvar = (1.0 - 0.25) * rttvar + 0.25 * (rtt.as_secs_f64() - srtt).abs();
-                srtt= (1.0 - 0.125) * srtt+ 0.125 * rtt.as_secs_f64();
-                rto= srtt+ 4.0 * rttvar;
+                srtt = (1.0 - 0.125) * srtt + 0.125 * rtt.as_secs_f64();
+                rto = srtt + granularity.max(4.0 * rttvar) ;
                 timeout_duration = tokio::time::Duration::from_secs_f64(rto);
-                if self.received_appropriate_response() {break 'global_cycle}
+                if self.received_appropriate_response() { break 'global_cycle }
             }
 
             // Exponencial backoff

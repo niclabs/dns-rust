@@ -15,7 +15,6 @@ use crate::message::type_rtype::Rtype;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
-use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use rand::thread_rng;
 use rand::Rng;

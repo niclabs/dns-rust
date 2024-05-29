@@ -1,4 +1,9 @@
 use crate::dns_cache::DnsCache;
+use crate::domain_name::DomainName;
+use crate::message::resource_record::ResourceRecord;
+use crate::message::type_qtype::Qtype;
+use crate::message::class_qclass::Qclass;
+use crate::message::rcode::Rcode;
 
 use std::num::NonZeroUsize;
 
@@ -33,6 +38,22 @@ impl ResolverCache {
             cache_additional: DnsCache::new(size_additional),
         }
     }
+
+    /// Add an element to the answer cache.
+    pub fn add_answer(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
+        self.cache_answer.add(domain_name, resource_record, qtype, qclass, rcode);
+    }
+
+    /// Add an element to the authority cache.
+    pub fn add_authority(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
+        self.cache_authority.add(domain_name, resource_record, qtype, qclass, rcode);
+    }
+
+    /// Add an element to the additional cache.
+    pub fn add_additional(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
+        self.cache_additional.add(domain_name, resource_record, qtype, qclass, rcode);
+    }
+
 }
 
 impl ResolverCache {

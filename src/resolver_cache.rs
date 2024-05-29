@@ -136,6 +136,83 @@ impl ResolverCache {
             None
         }
     }
+
+    pub fn get_rcode(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) -> Option<Rcode> {
+        let rr_stored_data = self.cache_answer.get(domain_name, qtype, qclass);
+
+        if let Some(rr_stored_data) = rr_stored_data {
+            Some(rr_stored_data[0].get_rcode())
+        } else {
+            None
+        }
+    }
+
+    /// Gets an response from the cache
+    pub fn get(&mut self, query: DnsMessage) -> Option<DnsMessage> {
+        self.timeout();
+        let domain_name = query.get_question().get_qname();
+        let qtype = query.get_question().get_qtype();
+        let qclass = query.get_question().get_qclass();
+
+        let mut message = DnsMessage::new();
+        let mut header = query.get_header();
+        let rcode = self.get_rcode(domain_name.clone(), qtype, qclass);
+        header.set_rcode(rcode.unwrap_or(Rcode::NOERROR));
+
+        let question = query.get_question().clone();
+
+        let query_id = query.get_query_id();
+
+        message.set_header(header);
+        message.set_question(question);
+        message.set_query_id(query_id);
+
+        let answers = self.get_answer(domain_name.clone(), qtype, qclass);
+        let authorities = self.get_authority(domain_name.clone(), qtype, qclass);
+        let additionals = self.get_additional(domain_name.clone(), qtype, qclass);
+
+        if let Some(answers) = answers {
+            message.set_answer(answers);
+        }
+
+        if let Some(authorities) = authorities {
+            message.set_authority(authorities);
+        }
+
+        if let Some(additionals) = additionals {
+            message.set_additional(additionals);
+        }
+
+        if message.get_answer().is_empty() && 
+           message.get_authority().is_empty() && 
+           message.get_additional().is_empty() {
+            None
+        } else {
+            Some(message)
+        }
+    }
+
+    /// Performs the timeout of cache by removing the elements that have expired for the answer cache.
+    pub fn timeout_answer(&mut self) {
+        self.cache_answer.timeout_cache();
+    }
+
+    /// Performs the timeout of cache by removing the elements that have expired for the authority cache.
+    pub fn timeout_authority(&mut self) {
+        self.cache_authority.timeout_cache();
+    }
+
+    /// Performs the timeout of cache by removing the elements that have expired for the additional cache.
+    pub fn timeout_additional(&mut self) {
+        self.cache_additional.timeout_cache();
+    }
+
+    /// Performs the timeout of cache by removing the elements that have expired.
+    pub fn timeout(&mut self) {
+        self.timeout_answer();
+        self.timeout_authority();
+        self.timeout_additional();
+    }
 }
 
 impl ResolverCache {

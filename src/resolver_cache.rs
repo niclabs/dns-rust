@@ -152,7 +152,7 @@ impl ResolverCache {
     /// Gets an response from the cache
     pub fn get(&mut self, query: DnsMessage) -> Option<DnsMessage> {
         self.timeout();
-        
+
         let domain_name = query.get_question().get_qname();
         let qtype = query.get_question().get_qtype();
         let qclass = query.get_question().get_qclass();
@@ -193,6 +193,28 @@ impl ResolverCache {
         } else {
             Some(message)
         }
+    }
+
+    /// Removes an element from the answer cache.
+    pub fn remove_answer(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+        self.cache_answer.remove(domain_name, qtype, qclass);
+    }
+
+    /// Removes an element from the authority cache.
+    pub fn remove_authority(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+        self.cache_authority.remove(domain_name, qtype, qclass);
+    }
+
+    /// Removes an element from the additional cache.
+    pub fn remove_additional(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+        self.cache_additional.remove(domain_name, qtype, qclass);
+    }
+
+    /// Removes an element from the cache.
+    pub fn remove(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+        self.remove_answer(domain_name.clone(), qtype, qclass);
+        self.remove_authority(domain_name.clone(), qtype, qclass);
+        self.remove_additional(domain_name.clone(), qtype, qclass);
     }
 
     /// Performs the timeout of cache by removing the elements that have expired for the answer cache.

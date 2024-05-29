@@ -43,17 +43,25 @@ impl ResolverCache {
 
     /// Add an element to the answer cache.
     pub fn add_answer(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
-        self.cache_answer.add(domain_name, resource_record, qtype, qclass, rcode);
+        if resource_record.get_ttl() > 0 {
+            self.cache_answer.add(domain_name, resource_record, qtype, qclass, rcode);
+        }
     }
 
     /// Add an element to the authority cache.
     pub fn add_authority(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
-        self.cache_authority.add(domain_name, resource_record, qtype, qclass, rcode);
+        if resource_record.get_ttl() > 0 {
+            self.cache_authority.add(domain_name, resource_record, qtype, qclass, rcode);
+        }
     }
 
     /// Add an element to the additional cache.
     pub fn add_additional(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
-        self.cache_additional.add(domain_name, resource_record, qtype, qclass, rcode);
+        if resource_record.get_ttl() > 0 {
+            if resource_record.get_rtype() != Rtype::OPT {
+                self.cache_additional.add(domain_name, resource_record, qtype, qclass, rcode);
+            }
+        }
     }
 
     /// Adds an answer to the cache
@@ -70,25 +78,19 @@ impl ResolverCache {
 
         answers.iter()
         .for_each(|rr| {
-            if rr.get_ttl() > 0 {
-                self.add_answer(qname.clone(), rr.clone(), qtype, qclass, rcode);
-            }
+            self.add_answer(qname.clone(), rr.clone(), qtype, qclass, rcode);
+        
         });
 
         authorities.iter()
         .for_each(|rr| {
-            if rr.get_ttl() >0 {
-                self.add_authority(qname.clone(), rr.clone(), qtype, qclass, rcode);
-            }
+            self.add_authority(qname.clone(), rr.clone(), qtype, qclass, rcode);
+            
         });
 
         additionals.iter()
         .for_each(|rr| {
-            if rr.get_ttl() > 0 {
-                if rr.get_rtype() != Rtype::OPT {
-                    self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
-                }
-            }
+                self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
         });
     }
 

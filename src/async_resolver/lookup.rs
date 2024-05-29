@@ -54,7 +54,6 @@ impl LookupStrategy {
         let config: &ResolverConfig = &self.config;
         let upper_limit_of_retransmission_loops: u16 = config.get_retransmission_loop_attempts();
         let max_interval: u64 = config.get_max_retry_interval_seconds(); 
-        let start_interval: u64 = config.get_min_retry_interval_seconds();
         let initial_rto = 1.0;
         let mut rto = initial_rto;
         let mut srtt = rto;

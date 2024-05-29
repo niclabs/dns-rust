@@ -423,7 +423,7 @@ mod tests_resolver_config {
     fn get_and_set_max_retry_interval_seconds() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 10);
+        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 60);
 
         resolver_config.set_max_retry_interval_seconds(20);
 

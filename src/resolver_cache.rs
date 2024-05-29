@@ -2,8 +2,10 @@ use crate::dns_cache::DnsCache;
 use crate::domain_name::DomainName;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::type_qtype::Qtype;
+use crate::message::type_rtype::Rtype;
 use crate::message::class_qclass::Qclass;
 use crate::message::rcode::Rcode;
+use crate::message::DnsMessage;
 
 use std::num::NonZeroUsize;
 
@@ -54,6 +56,41 @@ impl ResolverCache {
         self.cache_additional.add(domain_name, resource_record, qtype, qclass, rcode);
     }
 
+    /// Adds an answer to the cache
+    pub fn add(&mut self, message: DnsMessage) {
+        let qname = message.get_question().get_qname();
+        let qtype = message.get_question().get_qtype();
+        let qclass = message.get_question().get_qclass();
+
+        let answers = message.get_answer();
+        let authorities = message.get_authority();
+        let additionals = message.get_additional();
+
+        let rcode = Some(message.get_header().get_rcode());
+
+        answers.iter()
+        .for_each(|rr| {
+            if rr.get_ttl() > 0 {
+                self.add_answer(qname.clone(), rr.clone(), qtype, qclass, rcode);
+            }
+        });
+
+        authorities.iter()
+        .for_each(|rr| {
+            if rr.get_ttl() >0 {
+                self.add_authority(qname.clone(), rr.clone(), qtype, qclass, rcode);
+            }
+        });
+
+        additionals.iter()
+        .for_each(|rr| {
+            if rr.get_ttl() > 0 {
+                if rr.get_rtype() != Rtype::OPT {
+                    self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
+                }
+            }
+        });
+    }
 }
 
 impl ResolverCache {

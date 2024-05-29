@@ -55,7 +55,10 @@ impl LookupStrategy {
         let upper_limit_of_retransmission_loops: u16 = config.get_retransmission_loop_attempts();
         let max_interval: u64 = config.get_max_retry_interval_seconds(); 
         let start_interval: u64 = config.get_min_retry_interval_seconds();
-        let initial_rto = 1;
+        let initial_rto = 1.0;
+        let mut rto = initial_rto;
+        let mut srtt = rto;
+        let mut rttvar = rto/2.0;
 
         let mut interval: u64 = start_interval;
         let mut timeout_duration = tokio::time::Duration::from_secs(interval);
@@ -79,15 +82,17 @@ impl LookupStrategy {
                 let end = Instant::now();
 
                 let rtt = end.duration_since(start);
-
+                rttvar = (1.0 - 0.25) * rttvar + 0.25 * (rtt.as_secs_f64() - srtt).abs();
+                srtt= (1.0 - 0.125) * srtt+ 0.125 * rtt.as_secs_f64();
+                rto= srtt+ 4.0 * rttvar;
+                timeout_duration = tokio::time::Duration::from_secs_f64(rto);
                 if self.received_appropriate_response() {break 'global_cycle}
             }
 
             // Exponencial backoff
-            if interval < max_interval {
-                interval = interval*2;
-            }
-            timeout_duration = tokio::time::Duration::from_secs(interval);
+
+            rto = (rto * 2.0).min(max_interval as f64);
+            timeout_duration = tokio::time::Duration::from_secs_f64(rto);
             tokio::time::sleep(timeout_duration).await;
         }
         return lookup_response_result;

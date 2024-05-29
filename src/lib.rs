@@ -1,4 +1,5 @@
 pub mod client;
+pub mod resolver_cache;
 pub mod dns_cache;
 pub mod domain_name;
 pub mod message;

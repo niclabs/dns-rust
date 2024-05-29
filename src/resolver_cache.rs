@@ -91,6 +91,51 @@ impl ResolverCache {
             }
         });
     }
+
+    /// Gets elements from the answer cache
+    pub fn get_answer(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) -> Option<Vec<ResourceRecord>> {
+        let rr_stored_data = self.cache_answer.get(domain_name, qtype, qclass);
+
+        if let Some(rr_stored_data) = rr_stored_data {
+            let mut rr_vec = Vec::new();
+            for rr_data in rr_stored_data {
+                rr_vec.push(rr_data.get_resource_record().clone());
+            }
+            Some(rr_vec)
+        } else {
+            None
+        }
+    }
+
+    /// Gets elements from the authority cache
+    pub fn get_authority(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) -> Option<Vec<ResourceRecord>> {
+        let rr_stored_data = self.cache_authority.get(domain_name, qtype, qclass);
+
+        if let Some(rr_stored_data) = rr_stored_data {
+            let mut rr_vec = Vec::new();
+            for rr_data in rr_stored_data {
+                rr_vec.push(rr_data.get_resource_record().clone());
+            }
+            Some(rr_vec)
+        } else {
+            None
+        }
+    }
+
+    /// Gets elements from the additional cache
+    pub fn get_additional(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) -> Option<Vec<ResourceRecord>> {
+        let rr_stored_data = self.cache_additional.get(domain_name, qtype, qclass);
+
+        if let Some(rr_stored_data) = rr_stored_data {
+            let mut rr_vec = Vec::new();
+            for rr_data in rr_stored_data {
+                rr_vec.push(rr_data.get_resource_record().clone());
+            }
+            Some(rr_vec)
+        } else {
+            None
+        }
+    }
 }
 
 impl ResolverCache {

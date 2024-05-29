@@ -20,6 +20,19 @@ impl ResolverCache {
             cache_additional: DnsCache::new(Some(size)),
         }
     }
+
+    /// Create a new ResolverCache with the given sizes.
+    pub fn with_sizes(
+        size_answer: Option<NonZeroUsize>,
+        size_authority: Option<NonZeroUsize>,
+        size_additional: Option<NonZeroUsize>,
+    ) -> Self {
+        Self {
+            cache_answer: DnsCache::new(size_answer),
+            cache_authority: DnsCache::new(size_authority),
+            cache_additional: DnsCache::new(size_additional),
+        }
+    }
 }
 
 impl ResolverCache {

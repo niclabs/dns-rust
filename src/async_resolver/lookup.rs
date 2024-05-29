@@ -6,6 +6,7 @@ use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
 use super::server_info::ServerInfo;
 use std::sync::{Mutex,Arc};
+use std::time::Instant;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
 
@@ -54,6 +55,7 @@ impl LookupStrategy {
         let upper_limit_of_retransmission_loops: u16 = config.get_retransmission_loop_attempts();
         let max_interval: u64 = config.get_max_retry_interval_seconds(); 
         let start_interval: u64 = config.get_min_retry_interval_seconds();
+        let initial_rto = 1;
 
         let mut interval: u64 = start_interval;
         let mut timeout_duration = tokio::time::Duration::from_secs(interval);
@@ -67,10 +69,17 @@ impl LookupStrategy {
             let mut servers_iter = servers_to_query.iter();
 
             while let Some(server_info) = servers_iter.next() {
+                //start timer
+                let start = Instant::now();
                 lookup_response_result = self.transmit_query_to_server(
                     server_info, 
                     timeout_duration
                 ).await;
+                //end timer
+                let end = Instant::now();
+
+                let rtt = end.duration_since(start);
+
                 if self.received_appropriate_response() {break 'global_cycle}
             }
 

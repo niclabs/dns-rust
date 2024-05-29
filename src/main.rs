@@ -99,8 +99,8 @@ pub async fn main() {
                 client_args.qclass.as_str()
             );
 
-            if let Ok(mut resp) = response.await {
-                resp.print_dns_message()
+            if let Ok(resp) = response.await {
+                println!("{}", resp);
             }
         }
 

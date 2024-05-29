@@ -152,6 +152,7 @@ impl ResolverCache {
     /// Gets an response from the cache
     pub fn get(&mut self, query: DnsMessage) -> Option<DnsMessage> {
         self.timeout();
+        
         let domain_name = query.get_question().get_qname();
         let qtype = query.get_question().get_qtype();
         let qclass = query.get_question().get_qclass();

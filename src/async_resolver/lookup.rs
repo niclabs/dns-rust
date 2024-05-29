@@ -60,8 +60,7 @@ impl LookupStrategy {
         let mut srtt = rto;
         let mut rttvar = rto/2.0;
 
-        let mut interval: u64 = start_interval;
-        let mut timeout_duration = tokio::time::Duration::from_secs(interval);
+        let mut timeout_duration = tokio::time::Duration::from_secs_f64(rto);
         let mut lookup_response_result: Result<LookupResponse, ResolverError> = Err(ResolverError::EmptyQuery);
 
         // The resolver cycles through servers and at the end of a cycle, backs off 

@@ -105,7 +105,7 @@ impl ResolverConfig {
         let retransmission_loop_attempts = 3;
         let global_retransmission_limit = 30;
         let timeout = Duration::from_secs(45);
-        let max_retry_interval_seconds = 10;
+        let max_retry_interval_seconds = 60;
 
         let mut servers_info = Vec::new();
         servers_info.push(ServerInfo::new_from_addr(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
@@ -423,7 +423,7 @@ mod tests_resolver_config {
     fn get_and_set_max_retry_interval_seconds() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 10);
+        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 60);
 
         resolver_config.set_max_retry_interval_seconds(20);
 

@@ -124,6 +124,7 @@ mod udp_connection_test{
     
     use crate::domain_name::DomainName;
     use crate::message::type_qtype::Qtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::class_qclass::Qclass;
     use super::*;
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
@@ -215,7 +216,7 @@ mod udp_connection_test{
         let dns_query =
         DnsMessage::new_query_message(
             domain_name,
-            Qtype::A,
+            Rrtype::A,
             Qclass::IN,
             0,
             false,
@@ -238,7 +239,7 @@ mod udp_connection_test{
         let dns_query =
         DnsMessage::new_query_message(
             domain_name,
-            Qtype::A,
+            Rrtype::A,
             Qclass::IN,
             0,
             false,

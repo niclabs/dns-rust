@@ -9,6 +9,7 @@ use crate::dns_cache::rr_stored_data::RRStoredData;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::type_qtype::Qtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::class_qclass::Qclass;
 use std::net::IpAddr;
 use crate::domain_name::DomainName;

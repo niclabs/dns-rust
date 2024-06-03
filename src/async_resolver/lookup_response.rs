@@ -74,7 +74,8 @@ mod lookup_response_tests {
             rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, 
             resource_record::ResourceRecord, 
             type_qtype::Qtype, 
-            type_rtype::Rtype, 
+            type_rtype::Rtype,
+            rrtype::Rrtype, 
             DnsMessage
         }
     };
@@ -99,7 +100,7 @@ mod lookup_response_tests {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
+                Rrtype::A,
                 Qclass::IN,
                 0,
                 false,
@@ -134,7 +135,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Qtype::CNAME);
+        question.set_rrtype(Rrtype::CNAME);
         question.set_qclass(Qclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
@@ -185,7 +186,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Qtype::CNAME);
+        question.set_rrtype(Rrtype::CNAME);
         question.set_qclass(Qclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
@@ -218,7 +219,7 @@ mod lookup_response_tests {
         assert_eq!(dns_from_lookup.get_header().get_ancount(), 0b0000000000000001);
         assert_eq!(dns_from_lookup.get_header().get_qdcount(), 1);
         assert_eq!(dns_from_lookup.get_question().get_qname().get_name(), "test.com");
-        assert_eq!(dns_from_lookup.get_question().get_qtype(), Qtype::CNAME);
+        assert_eq!(dns_from_lookup.get_question().get_rrtype(), Rrtype::CNAME);
         assert_eq!(dns_from_lookup.get_question().get_qclass(), Qclass::CS);
         assert_eq!(dns_from_lookup.get_answer()[0].get_name().get_name(), "dcc.cl");
     }
@@ -241,7 +242,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Qtype::CNAME);
+        question.set_rrtype(Rrtype::CNAME);
         question.set_qclass(Qclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));

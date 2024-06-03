@@ -179,7 +179,7 @@ impl LookupStrategy {
     /// let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
     /// 
     /// let config = ResolverConfig::default();
-    /// let record_type = Qtype::A;
+    /// let record_type = Rrtype::A;
     /// 
     /// let name_servers = vec![(conn_udp,conn_tcp)];
     /// let response = transmit_query_to_server(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
@@ -322,6 +322,7 @@ mod async_resolver_test {
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::type_qtype::Qtype;
+    use crate::message::rrtype::Rrtype;
     use crate::{ domain_name::DomainName, dns_cache::DnsCache};
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::str::FromStr;
@@ -338,7 +339,7 @@ mod async_resolver_test {
         
         let mut cache: DnsCache = DnsCache::new(NonZeroUsize::new(20));
 
-        let record_type = Qtype::A;
+        let record_type = Rrtype::A;
         let record_class = Qclass::IN;
 
         let a_rdata = Rdata::A(ARdata::new());
@@ -367,7 +368,7 @@ mod async_resolver_test {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
 
         let config = ResolverConfig::default();
-        let record_type = Qtype::A;
+        let record_type = Rrtype::A;
         let record_class = Qclass::IN;
         let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let name_servers = vec![server_info];
@@ -423,7 +424,7 @@ mod async_resolver_test {
 
         let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
-        let record_type = Qtype::NS;
+        let record_type = Rrtype::NS;
         let record_class = Qclass::IN;
         let name_servers = vec![server_info];
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
@@ -469,7 +470,7 @@ mod async_resolver_test {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
         let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
-        let record_type = Qtype::A;
+        let record_type = Rrtype::A;
         let record_class = Qclass::CH;
         let name_servers = vec![server_info];
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
@@ -508,7 +509,7 @@ mod async_resolver_test {
     #[tokio::test] // TODO: finish up test
     async fn lookup_ip_cache_test() {
         let domain_name = DomainName::new_from_string("example.com".to_string());
-        let record_type = Qtype::A;
+        let record_type = Rrtype::A;
         let record_class = Qclass::IN;
         let config: ResolverConfig = ResolverConfig::default();
         let addr = IpAddr::from_str("93.184.216.34").unwrap();

@@ -317,4 +317,28 @@ mod resolver_cache_test{
         let cache = resolver_cache.get_cache_additional();
         assert_eq!(cache.get_max_size(), NonZeroUsize::new(1667).unwrap());
     }
+
+    #[test]
+    fn set_cache_answer(){
+        let mut resolver_cache = ResolverCache::new(None);
+        let cache = DnsCache::new(None);
+        resolver_cache.set_cache_answer(cache.clone());
+        assert_eq!(resolver_cache.get_cache_answer().get_max_size(), cache.get_max_size());
+    }
+
+    #[test]
+    fn set_cache_authority(){
+        let mut resolver_cache = ResolverCache::new(None);
+        let cache = DnsCache::new(None);
+        resolver_cache.set_cache_authority(cache.clone());
+        assert_eq!(resolver_cache.get_cache_authority().get_max_size(), cache.get_max_size());
+    }
+
+    #[test]
+    fn set_cache_additional(){
+        let mut resolver_cache = ResolverCache::new(None);
+        let cache = DnsCache::new(None);
+        resolver_cache.set_cache_additional(cache.clone());
+        assert_eq!(resolver_cache.get_cache_additional().get_max_size(), cache.get_max_size());
+    }
 }

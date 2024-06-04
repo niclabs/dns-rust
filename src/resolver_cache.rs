@@ -82,8 +82,11 @@ impl ResolverCache {
         
         });
 
+        println!("authority: {:?}", authorities.len());
+
         authorities.iter()
         .for_each(|rr| {
+            println!("Adding authority");
             self.add_authority(qname.clone(), rr.clone(), qtype, qclass, rcode);
             
         });
@@ -280,9 +283,11 @@ impl ResolverCache {
 #[cfg(test)]
 mod resolver_cache_test{
     use super::*;
+    use crate::message::question;
     use crate::message::type_rtype::Rtype;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
+    use crate::message::question::Question;
     use std::net::IpAddr;
     use crate::message::rdata::aaaa_rdata::AAAARdata;
 
@@ -414,5 +419,75 @@ mod resolver_cache_test{
         let rr = resolver_cache.cache_additional.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
         assert_eq!(rr[0].get_resource_record(), resource_record);
+    }
+
+    #[test]
+    fn add(){
+        let mut resolver_cache = ResolverCache::new(None);
+
+        let domain_name = DomainName::new_from_string("www.example.com".to_string());
+
+        let ip_address_1 = IpAddr::from([127, 0, 0, 0]);
+        let ip_address_2 = IpAddr::from([127, 0, 0, 1]);
+        let ip_address_3 = IpAddr::from([127, 0, 0, 2]);
+
+        let mut a_rdata_1 = ARdata::new();
+        let mut a_rdata_2 = ARdata::new();
+        let mut a_rdata_3 = ARdata::new();
+
+        a_rdata_1.set_address(ip_address_1);
+        a_rdata_2.set_address(ip_address_2);
+        a_rdata_3.set_address(ip_address_3);
+
+        let rdata_1 = Rdata::A(a_rdata_1);
+        let rdata_2 = Rdata::A(a_rdata_2);
+        let rdata_3 = Rdata::A(a_rdata_3);
+
+        let mut resource_record_1 = ResourceRecord::new(rdata_1);
+
+        resource_record_1.set_name(domain_name.clone());
+        resource_record_1.set_type_code(Rtype::A);
+        resource_record_1.set_ttl(1000);
+
+        let mut resource_record_2 = ResourceRecord::new(rdata_2);
+
+        resource_record_2.set_name(domain_name.clone());
+        resource_record_2.set_type_code(Rtype::A);
+        resource_record_2.set_ttl(1000);
+
+        let mut resource_record_3 = ResourceRecord::new(rdata_3);
+
+        resource_record_3.set_name(domain_name.clone());
+        resource_record_3.set_type_code(Rtype::A);
+        resource_record_3.set_ttl(1000);
+
+        let mut message = DnsMessage::new();
+        let mut header = message.get_header();
+        header.set_rcode(Rcode::NOERROR);
+        message.set_header(header);
+
+        message.set_query_id(1);
+
+
+        let mut question = Question::new();
+        question.set_qname(domain_name.clone());
+        question.set_qtype(Qtype::A);
+        question.set_qclass(Qclass::IN);
+
+        message.set_question(question);
+
+        message.set_answer(vec![resource_record_1.clone()]);
+        message.set_authority(vec![resource_record_2.clone()]);
+        message.set_additional(vec![resource_record_3.clone()]);
+
+        resolver_cache.add(message.clone());
+
+        let rr_answer = resolver_cache.cache_answer.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
+        let rr_authority = resolver_cache.cache_authority.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
+        let rr_additional = resolver_cache.cache_additional.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
+
+        assert_eq!(rr_answer[0].get_resource_record(), resource_record_1);
+        assert_eq!(rr_authority[0].get_resource_record(), resource_record_2);
+        assert_eq!(rr_additional[0].get_resource_record(), resource_record_3);
     }
 }

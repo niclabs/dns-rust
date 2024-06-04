@@ -283,7 +283,6 @@ impl ResolverCache {
 #[cfg(test)]
 mod resolver_cache_test{
     use super::*;
-    use crate::message::question;
     use crate::message::type_rtype::Rtype;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;

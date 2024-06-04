@@ -537,6 +537,59 @@ mod resolver_cache_test{
 
         let rr = resolver_cache.get_answer(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
-        println!("{:?}", rr);
+        assert_eq!(rr[0], resource_record_1);
+        assert_eq!(rr[1], resource_record_2);
+        assert_eq!(rr[2], resource_record_3);
+    }
+
+    #[test]
+    fn get_authority(){
+        let mut resolver_cache = ResolverCache::new(None);
+
+        let domain_name = DomainName::new_from_string("www.example.com".to_string());
+
+        let ip_address_1 = IpAddr::from([127, 0, 0, 0]);
+        let ip_address_2 = IpAddr::from([127, 0, 0, 1]);
+        let ip_address_3 = IpAddr::from([127, 0, 0, 2]);
+
+        let mut a_rdata_1 = ARdata::new();
+        let mut a_rdata_2 = ARdata::new();
+        let mut a_rdata_3 = ARdata::new();
+
+        a_rdata_1.set_address(ip_address_1);
+        a_rdata_2.set_address(ip_address_2);
+        a_rdata_3.set_address(ip_address_3);
+
+        let rdata_1 = Rdata::A(a_rdata_1);
+        let rdata_2 = Rdata::A(a_rdata_2);
+        let rdata_3 = Rdata::A(a_rdata_3);
+
+        let mut resource_record_1 = ResourceRecord::new(rdata_1);
+
+        resource_record_1.set_name(domain_name.clone());
+        resource_record_1.set_type_code(Rtype::A);
+        resource_record_1.set_ttl(1000);
+
+        let mut resource_record_2 = ResourceRecord::new(rdata_2);
+
+        resource_record_2.set_name(domain_name.clone());
+        resource_record_2.set_type_code(Rtype::A);
+        resource_record_2.set_ttl(1000);
+
+        let mut resource_record_3 = ResourceRecord::new(rdata_3);
+
+        resource_record_3.set_name(domain_name.clone());
+        resource_record_3.set_type_code(Rtype::A);
+        resource_record_3.set_ttl(1000);
+
+        resolver_cache.add_authority(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+
+        let rr = resolver_cache.get_authority(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
+
+        assert_eq!(rr[0], resource_record_1);
+        assert_eq!(rr[1], resource_record_2);
+        assert_eq!(rr[2], resource_record_3);
     }
 }

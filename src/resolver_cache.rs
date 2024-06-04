@@ -288,7 +288,6 @@ mod resolver_cache_test{
     use crate::message::rdata::Rdata;
     use crate::message::question::Question;
     use std::net::IpAddr;
-    use crate::message::rdata::aaaa_rdata::AAAARdata;
 
     #[test]
     fn constructor_test() {

@@ -281,5 +281,40 @@ impl ResolverCache {
 mod resolver_cache_test{
     use super::*;
 
-    //TODO: Add tests for ResolverCache
+    #[test]
+    fn constructor_test() {
+        let resolver_cache = ResolverCache::new(None);
+        assert_eq!(resolver_cache.get_cache_answer().get_max_size(), NonZeroUsize::new(1667).unwrap());
+        assert_eq!(resolver_cache.get_cache_authority().get_max_size(), NonZeroUsize::new(1667).unwrap());
+        assert_eq!(resolver_cache.get_cache_additional().get_max_size(), NonZeroUsize::new(1667).unwrap());
+    }
+
+    #[test]
+    fn with_sizes_test() {
+        let resolver_cache = ResolverCache::with_sizes(Some(NonZeroUsize::new(100).unwrap()), Some(NonZeroUsize::new(200).unwrap()), Some(NonZeroUsize::new(300).unwrap()));
+        assert_eq!(resolver_cache.get_cache_answer().get_max_size(), NonZeroUsize::new(100).unwrap());
+        assert_eq!(resolver_cache.get_cache_authority().get_max_size(), NonZeroUsize::new(200).unwrap());
+        assert_eq!(resolver_cache.get_cache_additional().get_max_size(), NonZeroUsize::new(300).unwrap());
+    }
+
+    #[test]
+    fn get_cache_answer(){
+        let resolver_cache = ResolverCache::new(None);
+        let cache = resolver_cache.get_cache_answer();
+        assert_eq!(cache.get_max_size(), NonZeroUsize::new(1667).unwrap());
+    }
+
+    #[test]
+    fn get_cache_authority(){
+        let resolver_cache = ResolverCache::new(None);
+        let cache = resolver_cache.get_cache_authority();
+        assert_eq!(cache.get_max_size(), NonZeroUsize::new(1667).unwrap());
+    }
+
+    #[test]
+    fn get_cache_additional(){
+        let resolver_cache = ResolverCache::new(None);
+        let cache = resolver_cache.get_cache_additional();
+        assert_eq!(cache.get_max_size(), NonZeroUsize::new(1667).unwrap());
+    }
 }

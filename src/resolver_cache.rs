@@ -280,6 +280,11 @@ impl ResolverCache {
 #[cfg(test)]
 mod resolver_cache_test{
     use super::*;
+    use crate::message::type_rtype::Rtype;
+    use crate::message::rdata::a_rdata::ARdata;
+    use crate::message::rdata::Rdata;
+    use std::net::IpAddr;
+    use crate::message::rdata::aaaa_rdata::AAAARdata;
 
     #[test]
     fn constructor_test() {
@@ -340,5 +345,74 @@ mod resolver_cache_test{
         let cache = DnsCache::new(None);
         resolver_cache.set_cache_additional(cache.clone());
         assert_eq!(resolver_cache.get_cache_additional().get_max_size(), cache.get_max_size());
+    }
+
+    #[test]
+    fn add_answer() {
+        let mut resolver_cache = ResolverCache::new(None);
+
+        let domain_name = DomainName::new_from_string("www.example.com".to_string());
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let mut a_rdata = ARdata::new();
+
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+        resource_record.set_ttl(1000);
+
+        resolver_cache.add_answer(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+
+        let rr = resolver_cache.cache_answer.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
+
+        assert_eq!(rr[0].get_resource_record(), resource_record);
+    }
+
+    #[test]
+    fn add_authority() {
+        let mut resolver_cache = ResolverCache::new(None);
+
+        let domain_name = DomainName::new_from_string("www.example.com".to_string());
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let mut a_rdata = ARdata::new();
+
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+        resource_record.set_ttl(1000);
+
+        resolver_cache.add_authority(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+
+        let rr = resolver_cache.cache_authority.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
+
+        assert_eq!(rr[0].get_resource_record(), resource_record);
+    }
+
+    #[test]
+    fn add_additional() {
+        let mut resolver_cache = ResolverCache::new(None);
+
+        let domain_name = DomainName::new_from_string("www.example.com".to_string());
+        let ip_address = IpAddr::from([127, 0, 0, 0]);
+        let mut a_rdata = ARdata::new();
+
+        a_rdata.set_address(ip_address);
+        let rdata = Rdata::A(a_rdata);
+        let mut resource_record = ResourceRecord::new(rdata);
+
+        resource_record.set_name(domain_name.clone());
+        resource_record.set_type_code(Rtype::A);
+        resource_record.set_ttl(1000);
+
+        resolver_cache.add_additional(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+
+        let rr = resolver_cache.cache_additional.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
+
+        assert_eq!(rr[0].get_resource_record(), resource_record);
     }
 }

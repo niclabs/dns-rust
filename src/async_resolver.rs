@@ -17,7 +17,6 @@ use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::ResourceRecord;
 use crate::async_resolver::{config::ResolverConfig,lookup::LookupStrategy};
 use crate::message::rdata::Rdata;
-use crate::message::type_rtype::Rtype;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
 use crate::message::rrtype::Rrtype;
@@ -388,7 +387,7 @@ impl AsyncResolver {
         if additionals.len() > 0 && answer.len() == 0 && aa == true{
             additionals.iter()
             .for_each(|rr| {
-                if rr.get_rtype() == Rtype::SOA {
+                if rr.get_rtype() == Rrtype::SOA {
                     cache.add_negative_answer(qname.clone(),rrtype , qclass, rr.clone());
                 }
             });

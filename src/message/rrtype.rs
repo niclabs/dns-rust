@@ -66,8 +66,6 @@ pub enum Rrtype {
     ANY,         // 255 - [RFC1035][RFC6895][RFC8482]
     URI,         // 256 - [RFC7553]
     CAA,         // 257 - [RFC8659]
-    AVC,         // 258 - [Wolfgang_Riedel]
-    DOA,         // 259 - [draft-durand-doa-over-dns]
     AMTRELAY,    // 260 - [RFC8777]
     RESINFO,     // 261 - [RFC-ietf-add-resolver-info-13]
     UNKNOWN(u16),
@@ -139,8 +137,6 @@ impl From<Rrtype> for u16 {
             Rrtype::ANY => 255,
             Rrtype::URI => 256,
             Rrtype::CAA => 257,
-            Rrtype::AVC => 258,
-            Rrtype::DOA => 259,
             Rrtype::AMTRELAY => 260,
             Rrtype::RESINFO => 261,
             Rrtype::UNKNOWN(val) => val
@@ -246,8 +242,6 @@ impl From<&str> for Rrtype {
             "ANY" => Rrtype::ANY,
             "URI" => Rrtype::URI,
             "CAA" => Rrtype::CAA,
-            "AVC" => Rrtype::AVC,
-            "DOA" => Rrtype::DOA,
             "AMTRELAY" => Rrtype::AMTRELAY,
             "RESINFO" => Rrtype::RESINFO,
             _ => Rrtype::UNKNOWN(99),
@@ -321,8 +315,6 @@ impl fmt::Display for Rrtype {
             Rrtype::EUI64 => "EUI64",
             Rrtype::TKEY => "TKEY",
             Rrtype::IXFR => "IXFR",
-            Rrtype::AVC => "AVC",
-            Rrtype::DOA => "DOA",
             Rrtype::AMTRELAY => "AMTRELAY",
             Rrtype::RESINFO => "RESINFO",
             Rrtype::RP => "RP",

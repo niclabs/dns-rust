@@ -42,21 +42,21 @@ impl ResolverCache {
     }
 
     /// Add an element to the answer cache.
-    pub fn add_answer(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
+    pub fn add_answer(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Qtype>, qclass: Qclass, rcode: Option<Rcode>) {
         if resource_record.get_ttl() > 0 {
             self.cache_answer.add(domain_name, resource_record, qtype, qclass, rcode);
         }
     }
 
     /// Add an element to the authority cache.
-    pub fn add_authority(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
+    pub fn add_authority(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Qtype>, qclass: Qclass, rcode: Option<Rcode>) {
         if resource_record.get_ttl() > 0 {
             self.cache_authority.add(domain_name, resource_record, qtype, qclass, rcode);
         }
     }
 
     /// Add an element to the additional cache.
-    pub fn add_additional(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Qtype, qclass: Qclass, rcode: Option<Rcode>) {
+    pub fn add_additional(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Qtype>, qclass: Qclass, rcode: Option<Rcode>) {
         if resource_record.get_ttl() > 0 {
             if resource_record.get_rtype() != Rtype::OPT {
                 self.cache_additional.add(domain_name, resource_record, qtype, qclass, rcode);
@@ -67,7 +67,7 @@ impl ResolverCache {
     /// Adds an answer to the cache
     pub fn add(&mut self, message: DnsMessage) {
         let qname = message.get_question().get_qname();
-        let qtype = message.get_question().get_qtype();
+        let qtype = Some(message.get_question().get_qtype());
         let qclass = message.get_question().get_qclass();
 
         let answers = message.get_answer();
@@ -366,7 +366,7 @@ mod resolver_cache_test{
         resource_record.set_type_code(Rtype::A);
         resource_record.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let rr = resolver_cache.cache_answer.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -389,7 +389,7 @@ mod resolver_cache_test{
         resource_record.set_type_code(Rtype::A);
         resource_record.set_ttl(1000);
 
-        resolver_cache.add_authority(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let rr = resolver_cache.cache_authority.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -412,7 +412,7 @@ mod resolver_cache_test{
         resource_record.set_type_code(Rtype::A);
         resource_record.set_ttl(1000);
 
-        resolver_cache.add_additional(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let rr = resolver_cache.cache_additional.get(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -529,9 +529,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let rr = resolver_cache.get_answer(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -580,9 +580,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_authority(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let rr = resolver_cache.get_authority(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -631,9 +631,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_additional(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let rr = resolver_cache.get_additional(domain_name.clone(), Qtype::A, Qclass::IN).unwrap();
 
@@ -682,9 +682,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let qname = DomainName::new_from_string("www.example.com".to_string());
         let qtype = Qtype::A;
@@ -746,9 +746,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         resolver_cache.remove_answer(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -797,9 +797,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_authority(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         resolver_cache.remove_authority(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -848,9 +848,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_additional(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
         
         resolver_cache.remove_additional(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -899,9 +899,9 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         let qname = DomainName::new_from_string("www.example.com".to_string());
         let qtype = Qtype::A;
@@ -956,9 +956,9 @@ mod resolver_cache_test{
         resource_record_3.set_name(domain_name.clone());
         resource_record_3.set_type_code(Rtype::A);
 
-        resolver_cache.cache_answer.add(domain_name.clone(), resource_record_1.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.cache_authority.add(domain_name.clone(), resource_record_2.clone(), Qtype::A, Qclass::IN, None);
-        resolver_cache.cache_additional.add(domain_name.clone(), resource_record_3.clone(), Qtype::A, Qclass::IN, None);
+        resolver_cache.cache_answer.add(domain_name.clone(), resource_record_1.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.cache_authority.add(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
+        resolver_cache.cache_additional.add(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
         resolver_cache.timeout();
 

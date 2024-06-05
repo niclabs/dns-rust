@@ -345,7 +345,7 @@ impl AsyncResolver {
                 if rr.get_ttl() > 0 {
                     cache_answer.add(rr.get_name(), 
                              rr.clone(),
-                             response.get_question().get_qtype(),
+                             Some(response.get_question().get_qtype()),
                              response.get_question().get_qclass(),
                              Some(rcode));
                 }
@@ -364,7 +364,7 @@ impl AsyncResolver {
                     if rtype != Rtype::OPT{
                         cache_additional.add(rr.get_name(), 
                                 rr.clone(),
-                                response.get_question().get_qtype(),
+                                Some(response.get_question().get_qtype()),
                                 response.get_question().get_qclass(),
                                 Some(rcode));
                     }
@@ -380,7 +380,7 @@ impl AsyncResolver {
                 if rr.get_ttl() > 0 {
                     cache_authority.add(rr.get_name(), 
                              rr.clone(),
-                             response.get_question().get_qtype(),
+                             Some(response.get_question().get_qtype()),
                              response.get_question().get_qclass(),
                              Some(rcode));
                 }
@@ -926,7 +926,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        resolver.cache_answer.lock().unwrap().add(domain_name, resource_record, Qtype::A, Qclass::IN, None);
+        resolver.cache_answer.lock().unwrap().add(domain_name, resource_record, Some(Qtype::A), Qclass::IN, None);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Qtype::A, Qclass::IN).await;
@@ -953,7 +953,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name, resource_record, Qtype::A, Qclass::IN, None);
+        cache.add(domain_name, resource_record, Some(Qtype::A), Qclass::IN, None);
         }
 
         let domain_name = DomainName::new_from_string("example.com".to_string());

@@ -73,8 +73,7 @@ mod lookup_response_tests {
             question::Question, 
             rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, 
             resource_record::ResourceRecord, 
-            type_rtype::Rtype,
-            rrtype::Rrtype, 
+            rrtype::Rrtype,
             DnsMessage
         }
     };
@@ -144,7 +143,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);
@@ -195,7 +194,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);
@@ -251,7 +250,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);

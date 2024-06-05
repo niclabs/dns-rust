@@ -15,11 +15,18 @@ use std::net::IpAddr;
 use crate::domain_name::DomainName;
 use chrono::Utc;
 
+/// Enum that represents the key of the cache for the case os NAME ERROR RCODE (RFC 2308)
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
+pub enum CacheKey {
+    Primary(Qtype, Qclass, DomainName),
+    Secondary(Qclass, DomainName),
+}
+
 #[derive(Clone, Debug)]
 /// Struct that represents a cache for dns
 pub struct DnsCache {
     // Cache for the resource records, where the key is the type of the query, the class of the query and the qname of the query
-    cache: LruCache<(Qtype, Qclass, DomainName), Vec<RRStoredData>>,
+    cache: LruCache<CacheKey, Vec<RRStoredData>>,
     max_size: NonZeroUsize,
 }
 
@@ -54,7 +61,7 @@ impl DnsCache {
 
         let mut cache_data = self.get_cache();
 
-        if let Some(rr_cache_vec) = cache_data.get_mut(&(qtype, qclass, domain_name.clone())) {
+        if let Some(rr_cache_vec) = cache_data.get_mut(&CacheKey::Primary(qtype, qclass, domain_name.clone())) {
             let mut val_exist = false;
             for rr in rr_cache_vec.iter_mut() {
                 if rr.get_resource_record().get_rdata() == rr_cache.get_resource_record().get_rdata() {
@@ -69,7 +76,7 @@ impl DnsCache {
         } else {
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);
-            cache_data.put((qtype, qclass, domain_name.clone()), rr_cache_vec);
+            cache_data.put(CacheKey::Primary(qtype, qclass, domain_name.clone()), rr_cache_vec);
         }
 
         self.set_cache(cache_data); 
@@ -82,12 +89,12 @@ impl DnsCache {
         let mut cache_data = self.get_cache();
         let rr_cache = RRStoredData::new(resource_record);
         
-        if let Some(rr_cache_vec) = cache_data.get_mut(&(qtype, qclass, domain_name.clone())){
+        if let Some(rr_cache_vec) = cache_data.get_mut(&CacheKey::Primary(qtype, qclass, domain_name.clone())){
             rr_cache_vec.push(rr_cache);
         } else {
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);
-            cache_data.put((qtype, qclass, domain_name.clone()), rr_cache_vec);
+            cache_data.put(CacheKey::Primary(qtype, qclass, domain_name.clone()), rr_cache_vec);
         }
 
         self.set_cache(cache_data);
@@ -96,7 +103,7 @@ impl DnsCache {
     /// Removes an element from cache
     pub fn remove(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
         let mut cache_data = self.get_cache();
-        let _extracted = cache_data.pop(&(qtype, qclass, domain_name));
+        let _extracted = cache_data.pop(&CacheKey::Primary(qtype, qclass, domain_name));
         self.set_cache(cache_data); 
     }
 
@@ -104,7 +111,7 @@ impl DnsCache {
     pub fn get(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) -> Option<Vec<RRStoredData>> {
         let mut cache = self.get_cache();
 
-        let rr_cache_vec = cache.get(&(qtype, qclass, domain_name)).cloned();
+        let rr_cache_vec = cache.get(&CacheKey::Primary(qtype, qclass, domain_name)).cloned();
 
         self.set_cache(cache);
 
@@ -156,7 +163,7 @@ impl DnsCache {
     ) {
         let mut cache = self.get_cache();
 
-        if let Some(rr_cache_vec) = cache.get_mut(&(qtype, qclass, domain_name)){
+        if let Some(rr_cache_vec) = cache.get_mut(&CacheKey::Primary(qtype, qclass, domain_name)){
             for rr in rr_cache_vec {
                 let rr_ip_address = match rr.get_resource_record().get_rdata() {
                     Rdata::A(val) => val.get_address(),
@@ -177,8 +184,8 @@ impl DnsCache {
     }
 
     /// Checks if a domain name is cached
-    pub fn is_cached(&self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) -> bool {
-        if let Some(key_data) = self.cache.peek(&(qtype, qclass, domain_name)) {
+    pub fn is_cached(&self, key: CacheKey) -> bool {
+        if let Some(key_data) = self.cache.peek(&key) {
             if key_data.len() > 0 {
                 return true;
             }
@@ -238,7 +245,7 @@ impl DnsCache {
 // Getters
 impl DnsCache {
     // Gets the cache from the struct
-    pub fn get_cache(&self) -> LruCache<(Qtype, Qclass, DomainName), Vec<RRStoredData>>{
+    pub fn get_cache(&self) -> LruCache<CacheKey, Vec<RRStoredData>>{
         self.cache.clone()
     }
 
@@ -251,7 +258,7 @@ impl DnsCache {
 // Setters
 impl DnsCache {
     // Sets the cache
-    pub fn set_cache(&mut self, cache: LruCache<(Qtype, Qclass, DomainName), Vec<RRStoredData>>) {
+    pub fn set_cache(&mut self, cache: LruCache<CacheKey, Vec<RRStoredData>>) {
         self.cache = cache
     }
 
@@ -297,7 +304,7 @@ mod dns_cache_test {
     fn set_cache() {
         let mut cache = DnsCache::new(NonZeroUsize::new(10));
         let mut cache_data = LruCache::new(NonZeroUsize::new(10).unwrap());
-        cache_data.put((Qtype::A, Qclass::IN, DomainName::new_from_str("example.com")), vec![]);
+        cache_data.put(CacheKey::Primary(Qtype::A, Qclass::IN, DomainName::new_from_str("example.com")), vec![]);
 
         cache.set_cache(cache_data.clone());
 
@@ -567,7 +574,7 @@ mod dns_cache_test {
 
         let mut lru_cache = cache.get_cache();
 
-        lru_cache.put((Qtype::A, Qclass::IN, domain_name.clone()), rr_cache_vec);
+        lru_cache.put(CacheKey::Primary(Qtype::A, Qclass::IN, domain_name.clone()), rr_cache_vec);
 
         cache.set_cache(lru_cache);
 
@@ -625,7 +632,7 @@ mod dns_cache_test {
 
         let domain_name = DomainName::new_from_str("example.com");
 
-        assert!(!cache.is_cached(domain_name.clone(), Qtype::A, Qclass::IN));
+        assert!(!cache.is_cached(CacheKey::Primary(Qtype::A, Qclass::IN, domain_name.clone())));
 
         let ip_address = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
@@ -637,9 +644,9 @@ mod dns_cache_test {
         
         cache.add(domain_name.clone(), resource_record.clone(), Qtype::A, Qclass::IN, None);
 
-        assert!(cache.is_cached(domain_name.clone(), Qtype::A, Qclass::IN));
+        assert!(cache.is_cached(CacheKey::Primary(Qtype::A, Qclass::IN, domain_name.clone())));
 
-        assert!(!cache.is_cached(domain_name.clone(), Qtype::AAAA, Qclass::IN));
+        assert!(!cache.is_cached(CacheKey::Primary(Qtype::AAAA, Qclass::IN, domain_name.clone())));
     }
 
     #[test]

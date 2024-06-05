@@ -134,7 +134,6 @@ mod tcp_connection_test{
     use super::*;
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     use crate::domain_name::DomainName;
-    use crate::message::type_qtype::Qtype;
     use crate::message::rrtype::Rrtype;
     use crate::message::class_qclass::Qclass;
 

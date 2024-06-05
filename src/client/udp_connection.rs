@@ -123,7 +123,6 @@ impl ClientUDPConnection {
 mod udp_connection_test{
     
     use crate::domain_name::DomainName;
-    use crate::message::type_qtype::Qtype;
     use crate::message::rrtype::Rrtype;
     use crate::message::class_qclass::Qclass;
     use super::*;

@@ -1,10 +1,11 @@
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
-use crate::message::Rtype;
 use crate::domain_name;
 use crate::domain_name::DomainName;
 use std::fmt;
 use std::vec::Vec;
+
+use super::rrtype::Rrtype;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.2.1
@@ -37,7 +38,7 @@ pub struct ResourceRecord {
     /// Domain Name
     name: DomainName,
     /// Specifies the meaning of the data in the RDATA.
-    rtype: Rtype,
+    rtype: Rrtype,
     /// Specifies the class of the data in the RDATA.
     rclass: Rclass,
     /// Specifies the time interval (in seconds) that the resource record may be cached before it should be discarded.
@@ -82,7 +83,7 @@ impl ResourceRecord {
         match rdata {
             Rdata::A(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::A,
+                rtype: Rrtype::A,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -90,7 +91,7 @@ impl ResourceRecord {
             },
             Rdata::NS(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NS,
+                rtype: Rrtype::NS,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -98,7 +99,7 @@ impl ResourceRecord {
             },
             Rdata::CNAME(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::CNAME,
+                rtype: Rrtype::CNAME,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -106,7 +107,7 @@ impl ResourceRecord {
             },
             Rdata::SOA(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::SOA,
+                rtype: Rrtype::SOA,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -114,7 +115,7 @@ impl ResourceRecord {
             },
             Rdata::PTR(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::PTR,
+                rtype: Rrtype::PTR,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -122,7 +123,7 @@ impl ResourceRecord {
             },
             Rdata::HINFO(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::HINFO,
+                rtype: Rrtype::HINFO,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -130,7 +131,7 @@ impl ResourceRecord {
             },
             Rdata::MX(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::MX,
+                rtype: Rrtype::MX,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -138,7 +139,7 @@ impl ResourceRecord {
             },
             Rdata::TXT(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::TXT,
+                rtype: Rrtype::TXT,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -146,7 +147,7 @@ impl ResourceRecord {
             },
             Rdata::AAAA(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::AAAA,
+                rtype: Rrtype::AAAA,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -154,7 +155,7 @@ impl ResourceRecord {
             },
             Rdata::OPT(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::OPT,
+                rtype: Rrtype::OPT,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -162,7 +163,7 @@ impl ResourceRecord {
             },
             Rdata::DS(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::DS,
+                rtype: Rrtype::DS,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -170,7 +171,7 @@ impl ResourceRecord {
             },
             Rdata::RRSIG(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::RRSIG,
+                rtype: Rrtype::RRSIG,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -178,7 +179,7 @@ impl ResourceRecord {
             },
             Rdata::NSEC(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NSEC,
+                rtype: Rrtype::NSEC,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -186,7 +187,7 @@ impl ResourceRecord {
             },
             Rdata::DNSKEY(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::DNSKEY,
+                rtype: Rrtype::DNSKEY,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -194,7 +195,7 @@ impl ResourceRecord {
             },
             Rdata::NSEC3(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NSEC3,
+                rtype: Rrtype::NSEC3,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -202,7 +203,7 @@ impl ResourceRecord {
             },
             Rdata::NSEC3PARAM(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NSEC3PARAM,
+                rtype: Rrtype::NSEC3PARAM,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -210,7 +211,7 @@ impl ResourceRecord {
             },
             Rdata::TSIG(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::TSIG,
+                rtype: Rrtype::TSIG,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -218,7 +219,7 @@ impl ResourceRecord {
             },
             _ => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::UNKNOWN(0),
+                rtype: Rrtype::UNKNOWN(0),
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -268,7 +269,7 @@ impl ResourceRecord {
         }
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
-        let rtype = Rtype::from(type_code);
+        let rtype = Rrtype::from(type_code);
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
         let rclass = Rclass::from(class);
         let ttl = ((bytes_without_name[4] as u32) << 24)
@@ -476,7 +477,7 @@ impl ResourceRecord {
     }
 
     /// Sets the type_code attribute with a value.
-    pub fn set_type_code(&mut self, rtype: Rtype) {
+    pub fn set_type_code(&mut self, rtype: Rrtype) {
         self.rtype = rtype;
     }
 
@@ -539,7 +540,7 @@ impl ResourceRecord {
     }
 
     /// Returns a copy of the `rtype` attribute value.
-    pub fn get_rtype(&self) -> Rtype {
+    pub fn get_rtype(&self) -> Rrtype {
         self.rtype.clone()
     }
 
@@ -592,7 +593,7 @@ mod resource_record_test {
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::rdata::Rdata;
-    use crate::message::Rtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::Rclass;
     use std::net::IpAddr;
     use crate::message::resource_record::ResourceRecord;
@@ -911,7 +912,7 @@ mod resource_record_test {
         let mut resource_record = ResourceRecord::new(txt_rdata);
         assert_eq!(u16::from(resource_record.get_rtype()), 16);
 
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
 
         let type_code = u16::from(resource_record.get_rtype());
         assert_eq!(type_code, 1 as u16);
@@ -985,7 +986,7 @@ mod resource_record_test {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(4);

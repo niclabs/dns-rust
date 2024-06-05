@@ -2,8 +2,6 @@ pub mod header;
 pub mod question;
 pub mod rdata;
 pub mod resource_record;
-pub mod type_rtype;
-pub mod type_qtype;
 pub mod rrtype;
 pub mod class_rclass;
 pub mod class_qclass;

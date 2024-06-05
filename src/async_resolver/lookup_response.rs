@@ -73,7 +73,6 @@ mod lookup_response_tests {
             question::Question, 
             rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, 
             resource_record::ResourceRecord, 
-            type_qtype::Qtype, 
             type_rtype::Rtype,
             rrtype::Rrtype, 
             DnsMessage

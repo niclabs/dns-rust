@@ -1,7 +1,7 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use std::net::IpAddr;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
@@ -103,7 +103,7 @@ impl ARdata {
     ///     a_rr.get_name().get_name(),
     ///     String::from("admin1.googleplex.edu")
     /// );
-    /// assert_eq!(a_rr.get_rtype(), Rtype::A);
+    /// assert_eq!(a_rr.get_rtype(), Rrtype::A);
     /// assert_eq!(a_rr.get_ttl(), 0);
     /// assert_eq!(a_rr.get_rdlength(), 4);
     /// let a_rdata = a_rr.get_rdata();
@@ -140,7 +140,7 @@ impl ARdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
         let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
@@ -198,7 +198,7 @@ mod a_rdata_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::Rclass;
-    use crate::message::Rtype;
+    use crate::message::rrtype::Rrtype;
     use std::net::IpAddr;
     use std::str::FromStr;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -265,7 +265,7 @@ mod a_rdata_test {
             a_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")
         );
-        assert_eq!(a_rr.get_rtype(), Rtype::A);
+        assert_eq!(a_rr.get_rtype(), Rrtype::A);
         assert_eq!(a_rr.get_ttl(), 0);
         assert_eq!(a_rr.get_rdlength(), 4);
 

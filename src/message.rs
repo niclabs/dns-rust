@@ -11,7 +11,6 @@ pub mod rcode;
 
 use crate::message::class_qclass::Qclass;
 use crate::message::class_rclass::Rclass;
-use crate::message::type_qtype::Qtype;
 use crate::message::type_rtype::Rtype;
 use crate::message::rrtype::Rrtype;
 use crate::domain_name::DomainName;

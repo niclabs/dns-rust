@@ -11,7 +11,6 @@ pub mod rcode;
 
 use crate::message::class_qclass::Qclass;
 use crate::message::class_rclass::Rclass;
-use crate::message::type_rtype::Rtype;
 use crate::message::rrtype::Rrtype;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
@@ -800,7 +799,6 @@ mod message_test {
     use crate::message::Rclass;
     use crate::message::Qclass;
     use crate::message::Rrtype;
-    use crate::message::type_rtype::Rtype;
 
     #[test]
     fn constructor_test() {
@@ -1021,7 +1019,7 @@ mod message_test {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);

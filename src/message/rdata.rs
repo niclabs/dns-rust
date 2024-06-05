@@ -367,7 +367,7 @@ mod resolver_query_tests {
     use crate::domain_name::DomainName;
     use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
-    use crate::message::type_rtype::Rtype;
+    use crate::message::rrtype::Rrtype;
     use super:: a_ch_rdata::AChRdata;
     use super::a_rdata::ARdata;
     use super::cname_rdata::CnameRdata;
@@ -635,7 +635,7 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_rrsig_rdata(){
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(Rtype::A);
+        rrsig_rdata.set_type_covered(Rrtype::A);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -663,7 +663,7 @@ mod resolver_query_tests {
         domain_name.set_name(String::from("host.example.com"));
         nsec_rdata.set_next_domain_name(domain_name);
 
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+        nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
         
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
@@ -712,7 +712,7 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_nsec3_rdata(){
         let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
-            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
 
         let rdata = Rdata::NSEC3(nsec3_rdata);
         let bytes = rdata.to_bytes();
@@ -974,7 +974,7 @@ mod resolver_query_tests {
 
         match rdata {
             Rdata::RRSIG(val) => {
-                assert_eq!(val.get_type_covered(), Rtype::A);
+                assert_eq!(val.get_type_covered(), Rrtype::A);
                 assert_eq!(val.get_algorithm(), 5);
                 assert_eq!(val.get_labels(), 2);
                 assert_eq!(val.get_original_ttl(), 3600);
@@ -1008,7 +1008,7 @@ mod resolver_query_tests {
         match rdata {
             Rdata::NSEC(val) => {
                 assert_eq!(val.get_next_domain_name().get_name(), String::from("host.example.com"));
-                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+                assert_eq!(val.get_type_bit_maps(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
             }
             _ => {}
         }
@@ -1066,7 +1066,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_salt(), "salt");
                 assert_eq!(val.get_hash_length(), 22);
                 assert_eq!(val.get_next_hashed_owner_name(), "next_hashed_owner_name");
-                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+                assert_eq!(val.get_type_bit_maps(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
             }
             _ => {}
         } 

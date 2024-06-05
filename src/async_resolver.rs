@@ -508,6 +508,7 @@ mod async_resolver_test {
     use crate::client::client_error::ClientError;
     use crate::client::tcp_connection::ClientTCPConnection;
     use crate::client::udp_connection::ClientUDPConnection;
+    use crate::dns_cache::CacheKey;
     use crate::message::DnsMessage;
     use crate::message::class_qclass::Qclass;
     use crate::message::rdata::Rdata;
@@ -973,7 +974,7 @@ mod async_resolver_test {
         assert_eq!(resolver.cache_answer.lock().unwrap().is_empty(), true);
 
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
-        assert_eq!(resolver.cache_answer.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Qtype::A, Qclass::IN), true);
+        assert_eq!(resolver.cache_answer.lock().unwrap().is_cached(CacheKey::Primary(Qtype::A, Qclass::IN, DomainName::new_from_str("example.com"))), true);
         // TODO: Test special cases from RFC
     }
 

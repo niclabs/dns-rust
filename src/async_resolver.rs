@@ -20,7 +20,6 @@ use crate::message::rdata::Rdata;
 use crate::message::type_rtype::Rtype;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::resolver_error::ResolverError;
-use crate:: message::type_qtype::Qtype;
 use crate::message::rrtype::Rrtype;
 use self::lookup_response::LookupResponse;
 
@@ -458,7 +457,6 @@ mod async_resolver_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate:: message::type_qtype::Qtype;
     use crate::message::rrtype::Rrtype;
     use crate::async_resolver::config::ResolverConfig;
     use super::lookup_response::LookupResponse;

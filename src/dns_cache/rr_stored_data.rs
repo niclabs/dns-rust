@@ -89,7 +89,7 @@ impl RRStoredData {
 mod rr_cache_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
-    use crate::message::type_rtype::Rtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::resource_record::ResourceRecord;
     use crate::dns_cache::rr_stored_data::RRStoredData;
     use std::net::IpAddr;
@@ -104,7 +104,7 @@ mod rr_cache_test {
         let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
 
         let rr_cache = RRStoredData::new(resource_record);
 
@@ -121,7 +121,7 @@ mod rr_cache_test {
         let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
 
         let mut rr_cache = RRStoredData::new(resource_record);
 
@@ -141,7 +141,7 @@ mod rr_cache_test {
         let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata.clone());
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
 
         let mut rr_cache = RRStoredData::new(resource_record);
 
@@ -154,7 +154,7 @@ mod rr_cache_test {
         let second_rdata = Rdata::A(second_a_rdata);
 
         let mut second_resource_record = ResourceRecord::new(second_rdata);
-        second_resource_record.set_type_code(Rtype::NS);
+        second_resource_record.set_type_code(Rrtype::NS);
 
         rr_cache.set_resource_record(second_resource_record);
 
@@ -170,7 +170,7 @@ mod rr_cache_test {
         let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
 
         let mut rr_cache = RRStoredData::new(resource_record);
 
@@ -190,7 +190,7 @@ mod rr_cache_test {
         let rdata = Rdata::A(a_rdata);
 
         let mut resource_record = ResourceRecord::new(rdata);
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
 
         let rr_cache = RRStoredData::new(resource_record);
 

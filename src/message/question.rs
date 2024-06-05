@@ -1,7 +1,6 @@
 use crate::domain_name::DomainName;
 
 use crate::message::class_qclass::Qclass;
-use crate::message::type_qtype::Qtype;
 
 use super::rrtype::Rrtype;
 
@@ -190,7 +189,6 @@ mod question_test {
 
     use super::Question;
     use crate::domain_name::DomainName;
-    use crate::message::type_qtype::Qtype;
     use crate::message::rrtype::Rrtype;
     use crate::message::class_qclass::Qclass;
 

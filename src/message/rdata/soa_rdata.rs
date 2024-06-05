@@ -1,5 +1,6 @@
 use crate::domain_name::DomainName;
-use crate::message::{Rtype, Rclass};
+use crate::message::Rclass;
+use crate::message::rrtype::Rrtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
@@ -280,7 +281,7 @@ impl SoaRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::SOA);
+        resource_record.set_type_code(Rrtype::SOA);
         let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);

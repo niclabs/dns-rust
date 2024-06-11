@@ -135,7 +135,7 @@ mod tcp_connection_test{
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     use crate::domain_name::DomainName;
     use crate::message::rrtype::Rrtype;
-    use crate::message::class_qclass::Qclass;
+    use crate::message::rclass::Rclass;
 
     #[test]
     fn create_tcp() {
@@ -228,7 +228,7 @@ mod tcp_connection_test{
         DnsMessage::new_query_message(
             domain_name,
             Rrtype::A,
-            Qclass::IN,
+            Rclass::IN,
             0,
             false,
             1);

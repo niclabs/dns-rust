@@ -109,9 +109,13 @@ impl DnsCache {
     }
 
     /// Removes an element from cache
-    pub fn remove(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+    pub fn remove(&mut self, domain_name: DomainName, qtype: Option<Qtype>, qclass: Qclass) {
         let mut cache_data = self.get_cache();
-        let _extracted = cache_data.pop(&CacheKey::Primary(qtype, qclass, domain_name));
+        if qtype != None {
+            let _extracted = cache_data.pop(&CacheKey::Primary(qtype.unwrap(), qclass, domain_name));
+        } else {
+            let _extracted = cache_data.pop(&CacheKey::Secondary(qclass, domain_name));
+        }
         self.set_cache(cache_data); 
     }
 
@@ -458,7 +462,7 @@ mod dns_cache_test {
 
         cache.add(domain_name.clone(), resource_record.clone(), Some(Qtype::A), Qclass::IN, None);
 
-        cache.remove(domain_name.clone(), Qtype::A, Qclass::IN);
+        cache.remove(domain_name.clone(), Some(Qtype::A), Qclass::IN);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Qtype::A, Qclass::IN);
 

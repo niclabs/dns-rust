@@ -199,22 +199,22 @@ impl ResolverCache {
     }
 
     /// Removes an element from the answer cache.
-    pub fn remove_answer(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+    pub fn remove_answer(&mut self, domain_name: DomainName, qtype: Option<Qtype>, qclass: Qclass) {
         self.cache_answer.remove(domain_name, qtype, qclass);
     }
 
     /// Removes an element from the authority cache.
-    pub fn remove_authority(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+    pub fn remove_authority(&mut self, domain_name: DomainName, qtype: Option<Qtype>, qclass: Qclass) {
         self.cache_authority.remove(domain_name, qtype, qclass);
     }
 
     /// Removes an element from the additional cache.
-    pub fn remove_additional(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+    pub fn remove_additional(&mut self, domain_name: DomainName, qtype: Option<Qtype>, qclass: Qclass) {
         self.cache_additional.remove(domain_name, qtype, qclass);
     }
 
     /// Removes an element from the cache.
-    pub fn remove(&mut self, domain_name: DomainName, qtype: Qtype, qclass: Qclass) {
+    pub fn remove(&mut self, domain_name: DomainName, qtype: Option<Qtype>, qclass: Qclass) {
         self.remove_answer(domain_name.clone(), qtype, qclass);
         self.remove_authority(domain_name.clone(), qtype, qclass);
         self.remove_additional(domain_name.clone(), qtype, qclass);
@@ -750,7 +750,7 @@ mod resolver_cache_test{
         resolver_cache.add_answer(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
         resolver_cache.add_answer(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
-        resolver_cache.remove_answer(domain_name.clone(), Qtype::A, Qclass::IN);
+        resolver_cache.remove_answer(domain_name.clone(), Some(Qtype::A), Qclass::IN);
 
         let rr = resolver_cache.get_answer(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -801,7 +801,7 @@ mod resolver_cache_test{
         resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
         resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
 
-        resolver_cache.remove_authority(domain_name.clone(), Qtype::A, Qclass::IN);
+        resolver_cache.remove_authority(domain_name.clone(), Some(Qtype::A), Qclass::IN);
 
         let rr = resolver_cache.get_authority(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -852,7 +852,7 @@ mod resolver_cache_test{
         resolver_cache.add_additional(domain_name.clone(), resource_record_2.clone(), Some(Qtype::A), Qclass::IN, None);
         resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Qtype::A), Qclass::IN, None);
         
-        resolver_cache.remove_additional(domain_name.clone(), Qtype::A, Qclass::IN);
+        resolver_cache.remove_additional(domain_name.clone(), Some(Qtype::A), Qclass::IN);
 
         let rr = resolver_cache.get_additional(domain_name.clone(), Qtype::A, Qclass::IN);
 
@@ -912,7 +912,7 @@ mod resolver_cache_test{
         
         let query = DnsMessage::new_query_message(qname.clone(), qtype.clone(), qclass.clone(), op_code.clone(), rd.clone(), id.clone());
 
-        resolver_cache.remove(domain_name.clone(), Qtype::A, Qclass::IN);
+        resolver_cache.remove(domain_name.clone(), Some(Qtype::A), Qclass::IN);
 
         let message = resolver_cache.get(query);
 

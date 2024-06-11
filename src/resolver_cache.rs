@@ -1,4 +1,4 @@
-use crate::dns_cache::DnsCache;
+use crate::dns_cache::{CacheKey, DnsCache};
 use crate::domain_name::DomainName;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::type_qtype::Qtype;
@@ -39,6 +39,23 @@ impl ResolverCache {
             cache_authority: DnsCache::new(size_authority),
             cache_additional: DnsCache::new(size_additional),
         }
+    }
+
+    /// Set the maximum size of the cache.
+    pub fn set_max_size(&mut self, size: NonZeroUsize) {
+        self.cache_answer.set_max_size(size);
+        self.cache_authority.set_max_size(size);
+        self.cache_additional.set_max_size(size);
+    }
+
+    /// See if the cache is empty.
+    pub fn is_empty(&self) -> bool {
+        self.cache_answer.is_empty() && self.cache_authority.is_empty() && self.cache_additional.is_empty()
+    }
+
+    /// See if an element is in the cache.
+    pub fn is_cached(&self, cache_key: CacheKey) -> bool {
+        self.cache_answer.is_cached(cache_key.clone()) || self.cache_authority.is_cached(cache_key.clone()) || self.cache_additional.is_cached(cache_key.clone())
     }
 
     /// Add an element to the answer cache.

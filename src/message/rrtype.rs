@@ -56,7 +56,7 @@ impl From<Rrtype> for u16 {
             Rrtype::MAILB => 253,
             Rrtype::MAILA => 254,
             Rrtype::ANY => 255,
-            Rrtype::UNKNOWN(val) => val
+            Rrtype::UNKNOWN(val) => val,
         }
     }
 }

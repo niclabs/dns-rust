@@ -3,12 +3,12 @@ pub mod question;
 pub mod rdata;
 pub mod resource_record;
 pub mod rrtype;
-pub mod class_rclass;
+pub mod rclass;
 pub mod class_qclass;
 pub mod rcode;
 
 use crate::message::class_qclass::Qclass;
-use crate::message::class_rclass::Rclass;
+use crate::message::rclass::Rclass;   
 use crate::message::rrtype::Rrtype;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;

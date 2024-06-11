@@ -191,7 +191,7 @@ impl <T: ClientConnection> Client<T>{
 #[cfg(test)]
 mod client_test {
     use std::{net::{IpAddr, Ipv4Addr}, time::Duration};
-    use crate::message::Rclass::Rclass;
+    use crate::message::rclass::Rclass;
     use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::domain_name::DomainName;

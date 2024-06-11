@@ -137,7 +137,7 @@ impl AsyncResolver {
     ///
     /// This function retrieves arbitrary information from the DNS,
     /// and has no counterpart in previous systems.  The caller
-    /// supplies a QNAME, QTYPE, and QCLASS, and wants all of the
+    /// supplies a QNAME, QTYPE, and RCLASS, and wants all of the
     /// matching RRs.  This function will often use the DNS format
     /// for all RR data instead of the local host's, and returns all
     /// RR content (e.g., TTL) instead of a processed form with local
@@ -377,7 +377,7 @@ impl AsyncResolver {
     fn save_negative_answers(&self, response: DnsMessage){
         let qname = response.get_question().get_qname();
         let rrtype = response.get_question().get_rrtype();
-        let rclass = response.get_question().get_qclass();
+        let rclass = response.get_question().get_rclass();
         let additionals = response.get_additional();
         let answer = response.get_answer();
         let aa = response.get_header().get_aa();

@@ -60,13 +60,13 @@ impl <T: ClientConnection> Client<T> {
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// assert_eq!(dns_query.get_qname().get_name(), String::from("www.test.com"));
     /// assert_eq!(dns_query.get_rrtype(), Rtype::A);
-    /// assert_eq!(dns_query.get_qclass(), Rclass::IN);
+    /// assert_eq!(dns_query.get_rclass(), Rclass::IN);
     /// ```
     pub fn create_dns_query(
         &mut self,
         domain_name: DomainName,
         rrtype: &str,
-        qclass: &str,
+        rclass: &str,
     ) -> DnsMessage {
         // Create random generator
         let mut rng = thread_rng();
@@ -78,7 +78,7 @@ impl <T: ClientConnection> Client<T> {
         let client_query: DnsMessage = DnsMessage::new_query_message(
             domain_name,
             Rrtype::from(rrtype),
-            qclass.into(),
+            rclass.into(),
             0,
             false,
             query_id,
@@ -151,8 +151,8 @@ impl <T: ClientConnection> Client<T> {
     /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
     /// assert_eq!(dns_response.get_question().get_rrtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
-    pub async fn query(&mut self, domain_name: DomainName, rrtype: &str, qclass: &str) -> Result<DnsMessage, ClientError> {
-        let _dns_message = self.create_dns_query(domain_name, rrtype, qclass);
+    pub async fn query(&mut self, domain_name: DomainName, rrtype: &str, rclass: &str) -> Result<DnsMessage, ClientError> {
+        let _dns_message = self.create_dns_query(domain_name, rrtype, rclass);
 
         let response = self.send_query().await;
 
@@ -191,7 +191,7 @@ impl <T: ClientConnection> Client<T>{
 #[cfg(test)]
 mod client_test {
     use std::{net::{IpAddr, Ipv4Addr}, time::Duration};
-    use crate::message::class_qclass::Qclass;
+    use crate::message::Rclass::Rclass;
     use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::domain_name::DomainName;
@@ -211,9 +211,9 @@ mod client_test {
         // sends query
         domain_name.set_name(String::from("example.com"));
         let rrtype = "A"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -245,9 +245,9 @@ mod client_test {
 
         // sends query, rrtype A 
         let rrtype = "A"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -273,9 +273,9 @@ mod client_test {
 
         // sends query, rrtype NS
         let rrtype = "NS"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -301,9 +301,9 @@ mod client_test {
 
         // sends query, rrtype CNAME
         let rrtype = "CNAME"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -329,9 +329,9 @@ mod client_test {
 
         // sends query, rrtype SOA
         let rrtype = "SOA"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -357,9 +357,9 @@ mod client_test {
 
         // sends query, rrtype MX
         let rrtype = "MX"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -385,9 +385,9 @@ mod client_test {
 
         // sends query, rrtype PTR
         let rrtype = "PTR"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -413,9 +413,9 @@ mod client_test {
         // sends query, rrtype TSIG
         domain_name.set_name(String::from("example.com"));
         let rrtype = "TSIG"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -441,9 +441,9 @@ mod client_test {
         // sends query, rrtype HINFO
         domain_name.set_name(String::from("example.com"));
         let rrtype = "HINFO"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -469,9 +469,9 @@ mod client_test {
         // sends query, rrtype TXT
         domain_name.set_name(String::from("example.com"));
         let rrtype = "TXT"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, rrtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, rrtype, qclass) {
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -502,8 +502,8 @@ mod client_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("test.test2.com."));
         let rrtype = "A"; 
-        let qclass= "IN";
-        let response = tcp_client.query(domain_name, rrtype, qclass).await.unwrap();
+        let rclass= "IN";
+        let response = tcp_client.query(domain_name, rrtype, rclass).await.unwrap();
 
         println!("Response: {:?}", response);
 
@@ -546,7 +546,7 @@ mod client_test {
 
         assert_eq!(dns_query.get_question().get_rrtype(), Rrtype::A);
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
-        assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
+        assert_eq!(dns_query.get_question().get_rclass(), Rclass::IN);
     }
     
     // Query TCP
@@ -563,7 +563,7 @@ mod client_test {
 
         assert_eq!(dns_query.get_question().get_rrtype(), Rrtype::A);
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
-        assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
+        assert_eq!(dns_query.get_question().get_rclass(), Rclass::IN);
     }
 
     #[tokio::test]

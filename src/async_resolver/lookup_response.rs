@@ -68,7 +68,7 @@ mod lookup_response_tests {
         domain_name::DomainName,  
         message::{
             class_qclass::Qclass, 
-            class_rclass::Rclass, 
+            rclass::Rclass, 
             header::Header, 
             question::Question, 
             rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, 

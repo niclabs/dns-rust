@@ -60,16 +60,6 @@ impl ResolverCache {
 
     /// Add an element to the answer cache.
     pub fn add_answer(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Qtype>, qclass: Qclass, rcode: Option<Rcode>) {
-        let key;
-        if qtype == None {
-            key = CacheKey::Secondary(qclass, domain_name.clone());
-        }
-        else {
-            key = CacheKey::Primary(qtype.unwrap(), qclass, domain_name.clone());
-        }
-        if self.cache_answer.is_cached(key.clone()) {
-            self.cache_answer.remove(domain_name.clone(), qtype, qclass);
-        }
         if resource_record.get_ttl() > 0 {
             self.cache_answer.add(domain_name, resource_record, qtype, qclass, rcode);
         }
@@ -77,16 +67,6 @@ impl ResolverCache {
 
     /// Add an element to the authority cache.
     pub fn add_authority(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Qtype>, qclass: Qclass, rcode: Option<Rcode>) {
-        let key;
-        if qtype == None {
-            key = CacheKey::Secondary(qclass, domain_name.clone());
-        }
-        else {
-            key = CacheKey::Primary(qtype.unwrap(), qclass, domain_name.clone());
-        }
-        if self.cache_authority.is_cached(key.clone()) {
-            self.cache_authority.remove(domain_name.clone(), qtype, qclass);
-        }
         if resource_record.get_ttl() > 0 {
             self.cache_authority.add(domain_name, resource_record, qtype, qclass, rcode);
         }
@@ -94,16 +74,6 @@ impl ResolverCache {
 
     /// Add an element to the additional cache.
     pub fn add_additional(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Qtype>, qclass: Qclass, rcode: Option<Rcode>) {
-        let key;
-        if qtype == None {
-            key = CacheKey::Secondary(qclass, domain_name.clone());
-        }
-        else {
-            key = CacheKey::Primary(qtype.unwrap(), qclass, domain_name.clone());
-        }
-        if self.cache_additional.is_cached(key.clone()) {
-            self.cache_additional.remove(domain_name.clone(), qtype, qclass);
-        }
         if resource_record.get_ttl() > 0 {
             if resource_record.get_rtype() != Rtype::OPT {
                 self.cache_additional.add(domain_name, resource_record, qtype, qclass, rcode);
@@ -116,12 +86,23 @@ impl ResolverCache {
         let qname = message.get_question().get_qname();
         let qtype = Some(message.get_question().get_qtype());
         let qclass = message.get_question().get_qclass();
+        let rcode = Some(message.get_header().get_rcode());
+
+        // Checks if something with the same key is already cached
+        let key;
+        if rcode == Some(Rcode::NXDOMAIN) {
+            key = CacheKey::Secondary(qclass, qname.clone());
+        }
+        else {
+            key = CacheKey::Primary(qtype.unwrap(), qclass, qname.clone());
+        }
+        if self.is_cached(key.clone()) {
+            self.remove(qname.clone(), qtype, qclass);
+        }
 
         let answers = message.get_answer();
         let authorities = message.get_authority();
         let additionals = message.get_additional();
-
-        let rcode = Some(message.get_header().get_rcode());
 
         answers.iter()
         .for_each(|rr| {

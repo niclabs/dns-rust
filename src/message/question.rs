@@ -1,6 +1,6 @@
 use crate::domain_name::DomainName;
 
-use crate::message::class_qclass::Qclass;
+use crate::message::rclass::Rclass;
 
 use super::rrtype::Rrtype;
 
@@ -14,7 +14,7 @@ use super::rrtype::Rrtype;
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 /// |                    QTYPE                      |
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-/// |                    QCLASS                     |
+/// |                    rclass                     |
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 ///
 ///
@@ -26,7 +26,7 @@ pub struct Question {
     // type of query
     rrtype: Rrtype,
     // class of query
-    qclass: Qclass,
+    rclass: Rclass,
 }
 
 // Methods
@@ -37,13 +37,13 @@ impl Question {
     /// let mut question = Question::new();
     /// assert_eq!(question.qname.get_name(), String::from(""));
     /// assert_eq!(question.qtype, 0);
-    /// assert_eq!(question.qclass, 0);
+    /// assert_eq!(question.rclass, 0);
     /// ```
     pub fn new() -> Self {
         let question: Question = Question {
             qname: DomainName::new(),
             rrtype: Rrtype::A,
-            qclass: Qclass::IN,
+            rclass: Rclass::IN,
         };
         question
     }
@@ -59,8 +59,8 @@ impl Question {
     /// assert_eq!(qname, String::from("test.com"));
     /// let qtype = question.get_qtype();
     /// assert_eq!(u16::from(qtype), 5);
-    /// let qclass = question.get_qclass();
-    /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+    /// let rclass = question.get_rclass();
+    /// assert_eq!(Rclass::from_rclass_to_int(rclass), 1);
     /// ```
     pub fn from_bytes<'a>(
         bytes: &'a [u8],
@@ -83,13 +83,13 @@ impl Question {
 
         let rrtype_int = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let rrtype = Rrtype::from(rrtype_int);
-        let qclass_int = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
-        let qclass = Qclass::from(qclass_int);
+        let rclass_int = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
+        let rclass = Rclass::from(rclass_int);
 
         let mut question = Question::new();
         question.set_qname(qname);
         question.set_rrtype(rrtype);
-        question.set_qclass(qclass);
+        question.set_rclass(rclass);
 
         Ok((question, &bytes_without_name[4..]))
     }
@@ -117,18 +117,18 @@ impl Question {
         second_byte
     }
 
-    // Returns a byte that represents the first byte from qclass.
-    fn get_first_qclass_byte(&self) -> u8 {
-        let qclass: Qclass = self.get_qclass();
-        let first_byte = (u16::from(qclass) >> 8) as u8;
+    // Returns a byte that represents the first byte from rclass.
+    fn get_first_rclass_byte(&self) -> u8 {
+        let rclass: Rclass = self.get_rclass();
+        let first_byte = (u16::from(rclass) >> 8) as u8;
 
         first_byte
     }
 
-    // Returns a byte that represents the second byte from qclass.
-    fn get_second_qclass_byte(&self) -> u8 {
-        let qclass = self.get_qclass();
-        let second_byte = u16::from(qclass) as u8;
+    // Returns a byte that represents the second byte from rclass.
+    fn get_second_rclass_byte(&self) -> u8 {
+        let rclass = self.get_rclass();
+        let second_byte = u16::from(rclass) as u8;
 
         second_byte
     }
@@ -147,8 +147,8 @@ impl Question {
 
             question_bytes.push(self.get_first_rrtype_byte());
             question_bytes.push(self.get_second_rrtype_byte());
-            question_bytes.push(self.get_first_qclass_byte());
-            question_bytes.push(self.get_second_qclass_byte());
+            question_bytes.push(self.get_first_rclass_byte());
+            question_bytes.push(self.get_second_rclass_byte());
         }
         return question_bytes;
     }
@@ -164,8 +164,8 @@ impl Question {
         self.rrtype = rrtype;
     }
 
-    pub fn set_qclass(&mut self, qclass: Qclass) {
-        self.qclass = qclass;
+    pub fn set_rclass(&mut self, rclass: Rclass) {
+        self.rclass = rclass;
     }
 }
 
@@ -179,8 +179,8 @@ impl Question {
         self.rrtype.clone()
     }
 
-    pub fn get_qclass(&self) -> Qclass {
-        self.qclass.clone()
+    pub fn get_rclass(&self) -> Rclass {
+        self.rclass.clone()
     }
 }
 
@@ -190,7 +190,7 @@ mod question_test {
     use super::Question;
     use crate::domain_name::DomainName;
     use crate::message::rrtype::Rrtype;
-    use crate::message::class_qclass::Qclass;
+    use crate::message::rclass::Rclass;
 
     #[test]
     fn constructor_test() {
@@ -198,7 +198,7 @@ mod question_test {
 
         assert_eq!(question.qname.get_name(), String::from(""));
         assert_eq!(question.rrtype.to_string(), String::from("A"));
-        assert_eq!(question.qclass.to_string(), String::from("IN"));
+        assert_eq!(question.rclass.to_string(), String::from("IN"));
     }
 
     #[test]
@@ -229,15 +229,15 @@ mod question_test {
     }
 
     #[test]
-    fn set_and_get_qclass() {
+    fn set_and_get_rclass() {
         let mut question = Question::new();
 
-        let mut qclass = question.get_qclass();
-        assert_eq!(qclass.to_string(), String::from("IN"));
+        let mut rclass = question.get_rclass();
+        assert_eq!(rclass.to_string(), String::from("IN"));
 
-        question.set_qclass(Qclass::CS);
-        qclass = question.get_qclass();
-        assert_eq!(qclass.to_string(), String::from("CS"));
+        question.set_rclass(Rclass::CS);
+        rclass = question.get_rclass();
+        assert_eq!(rclass.to_string(), String::from("CS"));
     }
 
     #[test]
@@ -248,7 +248,7 @@ mod question_test {
         domain_name.set_name(String::from("test.com"));
         question.set_qname(domain_name);
         question.set_rrtype(Rrtype::CNAME);
-        question.set_qclass(Qclass::IN);
+        question.set_rclass(Rclass::IN);
 
         let bytes_to_test: [u8; 14] = [4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 1];
         let question_to_bytes = question.to_bytes();
@@ -277,8 +277,8 @@ mod question_test {
         assert_eq!(qname, String::from("test.com"));
         let rrtype = question.get_rrtype();
         assert_eq!(u16::from(rrtype), 5);
-        let qclass = question.get_qclass();
-        assert_eq!(u16::from(qclass), 1);
+        let rclass = question.get_rclass();
+        assert_eq!(u16::from(rclass), 1);
     }
 
     #[test]

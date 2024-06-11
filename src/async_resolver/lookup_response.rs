@@ -67,7 +67,6 @@ mod lookup_response_tests {
     use crate::{
         domain_name::DomainName,  
         message::{
-            class_qclass::Qclass, 
             rclass::Rclass, 
             header::Header, 
             question::Question, 
@@ -99,7 +98,7 @@ mod lookup_response_tests {
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
                 Rrtype::A,
-                Qclass::IN,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -134,7 +133,7 @@ mod lookup_response_tests {
 
         question.set_qname(domain_name);
         question.set_rrtype(Rrtype::CNAME);
-        question.set_qclass(Qclass::CS);
+        question.set_rclass(Rclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
@@ -185,7 +184,7 @@ mod lookup_response_tests {
 
         question.set_qname(domain_name);
         question.set_rrtype(Rrtype::CNAME);
-        question.set_qclass(Qclass::CS);
+        question.set_rclass(Rclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
@@ -218,7 +217,7 @@ mod lookup_response_tests {
         assert_eq!(dns_from_lookup.get_header().get_qdcount(), 1);
         assert_eq!(dns_from_lookup.get_question().get_qname().get_name(), "test.com");
         assert_eq!(dns_from_lookup.get_question().get_rrtype(), Rrtype::CNAME);
-        assert_eq!(dns_from_lookup.get_question().get_qclass(), Qclass::CS);
+        assert_eq!(dns_from_lookup.get_question().get_rclass(), Rclass::CS);
         assert_eq!(dns_from_lookup.get_answer()[0].get_name().get_name(), "dcc.cl");
     }
 
@@ -241,7 +240,7 @@ mod lookup_response_tests {
 
         question.set_qname(domain_name);
         question.set_rrtype(Rrtype::CNAME);
-        question.set_qclass(Qclass::CS);
+        question.set_rclass(Rclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);

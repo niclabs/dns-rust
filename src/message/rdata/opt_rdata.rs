@@ -55,7 +55,7 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
         opt_rdata.set_option_length(option_length);
 
         let mut option_data: Vec<u8> = Vec::new();
-        for i in 4..bytes_len {
+        for i in 4..4 + option_length as usize {
             option_data.push(bytes[i]);
         }
         if option_data.len() != option_length as usize {

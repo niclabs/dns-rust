@@ -142,7 +142,8 @@ async fn tsig_signature() {
                 println!("Received {} bytes from {}", size, source);
                 let mut data = DnsMessage::from_bytes(&buf[0..size]).unwrap();
                 println!("The data is {:?}", data);
-                tsig::sign_tsig(&mut data, b"1234567890",TsigAlgorithm::HmacSha1,0,0);
+                let key_name = "".to_string();
+                tsig::sign_tsig(&mut data, b"1234567890",TsigAlgorithm::HmacSha1,0,0, key_name);
                 let response = &DnsMessage::to_bytes(&data);
                 udp_socket
                     .send_to(&response, source)

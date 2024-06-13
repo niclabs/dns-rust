@@ -2,16 +2,14 @@
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
-use crate::message::resource_record::{self, ResourceRecord, ToBytes};
+use crate::message::resource_record::{ResourceRecord, ToBytes};
 use crate::message::type_qtype::Qtype;
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage};
-use std::time::{SystemTime, UNIX_EPOCH};
-use crate::message::rdata::{rrsig_rdata, Rdata};
+use crate::message::rdata::{Rdata};
 use crypto::hmac::Hmac as crypto_hmac;
 use crypto::mac::Mac as crypto_mac;
 use hmac::{Hmac, Mac};
 use crypto::{sha1::Sha1,sha2::Sha256};
-use std::str;
 use crate::message::rdata::a_rdata::ARdata;
 type HmacSha256 = Hmac<Sha256>;
 
@@ -144,7 +142,7 @@ fn check_time_values(mytime: u64,fudge: u16, time: u64) -> bool {
 fn check_exists_tsig_rr(add_rec: &Vec<ResourceRecord>) -> bool {
     let filtered_tsig:Vec<_> = add_rec.iter()
                                 .filter(|tsig| 
-                                if let Rdata::TSIG(data) = tsig.get_rdata() {true}
+                                if let Rdata::TSIG(_) = tsig.get_rdata() {true}
                                 else {false}).collect();
 
     filtered_tsig.len()==0
@@ -156,10 +154,10 @@ fn check_exists_tsig_rr(add_rec: &Vec<ResourceRecord>) -> bool {
 fn check_last_one_is_tsig(add_rec: &Vec<ResourceRecord>) -> bool {
     let filtered_tsig:Vec<_> = add_rec.iter()
                                 .filter(|tsig| 
-                                if let Rdata::TSIG(data) = tsig.get_rdata() {true}
+                                if let Rdata::TSIG(_) = tsig.get_rdata() {true}
                                 else {false}).collect();
     
-    let islast = if let Rdata::TSIG(data) = add_rec[add_rec.len()-1].get_rdata() {false} else {true};
+    let islast = if let Rdata::TSIG(_) = add_rec[add_rec.len()-1].get_rdata() {false} else {true};
 
     filtered_tsig.len()>1 || islast
 }
@@ -372,7 +370,6 @@ fn check_process_tsig_badsign(){
     // Se establece un DnsMessage de prueba. Lo firmaremos, alteraremos la firma generada y esperamos recibir un error BADSIGN
     let mut msg1 = DnsMessage::new_response_message(String::from("test.com"), "NS", "IN", 1, true, 1);
     let key = b"1234567890";
-    let key_name:String = "".to_string();
     let alg_name = TsigAlgorithm::HmacSha1;
     let fudge = 1000;
     let time_signed = 210000000;

@@ -2,7 +2,22 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 use std::fmt;
 use std::net::IpAddr;
 
+// Define a trait that abstracts setting the address
+pub trait SetAddress {
+    fn set_address(&self) -> Option<IpAddr>;
+}
 
+impl SetAddress for &str {
+    fn set_address(&self) -> Option<IpAddr> {
+        self.parse::<IpAddr>().ok()
+    }
+}
+
+impl SetAddress for IpAddr {
+    fn set_address(&self) -> Option<IpAddr> {
+        Some(*self)
+    }
+}
 
 /// Struct for the AAAA Rdata
 /// 2.2 AAAA data format
@@ -96,8 +111,13 @@ impl AAAARdata{
 /// Setter for the struct AAAARdata
 impl AAAARdata{
     /// Function to set the address of the AAAA Rdata
-    pub fn set_address(&mut self, address: IpAddr){
-        self.address = address;
+    pub fn set_address<T: SetAddress>(&mut self, address: T) {
+        if let Some(ip_addr) = address.set_address() {
+            self.address = ip_addr;
+        } else {
+            // Handle the IP address parsing error here
+            println!("Error: invalid IP address");
+        }
     }
 }
 

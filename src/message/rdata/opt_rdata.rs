@@ -17,9 +17,7 @@ use std::fmt;
 /// +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
 
 pub struct OptRdata {
-    pub option_code: u16,
-    pub option_length: u16,
-    pub option_data: Vec<u8>,
+    pub option: Vec<(u16, u16, Vec<u8>)> // (OPTION-CODE, OPTION-LENGTH, OPTION-DATA)
 }
 
 impl ToBytes for OptRdata {
@@ -27,9 +25,11 @@ impl ToBytes for OptRdata {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
-        bytes.extend_from_slice(&self.option_code.to_be_bytes());
-        bytes.extend_from_slice(&self.option_length.to_be_bytes());
-        bytes.extend_from_slice(&self.option_data);
+        for (option_code, option_length, option_data) in &self.option {
+            bytes.extend(&option_code.to_be_bytes());
+            bytes.extend(&option_length.to_be_bytes());
+            bytes.extend(option_data);
+        }
 
         bytes
     }
@@ -40,28 +40,31 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
     fn from_bytes(bytes: &[u8], _full_msg: &[u8]) -> Result<Self, &'static str> {
         let bytes_len = bytes.len();
 
-        if bytes_len < 4 {
-            return Err("Format Error");
-        }
-
         let mut opt_rdata = OptRdata::new();
 
-        let array_bytes = [bytes[0], bytes[1]];
-        let option_code = u16::from_be_bytes(array_bytes);
-        opt_rdata.set_option_code(option_code);
+        let mut i = 0;
+        
+        while i < bytes_len {
 
-        let array_bytes = [bytes[2], bytes[3]];
-        let option_length = u16::from_be_bytes(array_bytes);
-        opt_rdata.set_option_length(option_length);
+            if i + 4 > bytes_len {
+                return Err("Format Error");
+            }
 
-        let mut option_data: Vec<u8> = Vec::new();
-        for i in 4..bytes_len {
-            option_data.push(bytes[i]);
+            let option_code = u16::from_be_bytes([bytes[i], bytes[i + 1]]);
+            let option_length = u16::from_be_bytes([bytes[i + 2], bytes[i + 3]]);
+
+            i += 4;
+
+            if i + option_length as usize > bytes_len {
+                return Err("Format Error");
+            }
+
+            let option_data = bytes[i..i + option_length as usize].to_vec();
+
+            i += option_length as usize;
+
+            opt_rdata.option.push((option_code, option_length, option_data));
         }
-        if option_data.len() != option_length as usize {
-            return Err("Format Error");
-        }
-        opt_rdata.set_option_data(option_data);
 
         Ok(opt_rdata)
     }
@@ -71,37 +74,19 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
 impl OptRdata {
     pub fn new() -> Self {
         OptRdata {
-            option_code: 0,
-            option_length: 0,
-            option_data: Vec::new(),
+            option: Vec::new(),
         }
     }
 
-    pub fn get_option_code(&self) -> u16 {
-        self.option_code.clone()
-    }
-
-    pub fn get_option_length(&self) -> u16 {
-        self.option_length.clone()
-    }
-
-    pub fn get_option_data(&self) -> Vec<u8> {
-        self.option_data.clone()
+    pub fn get_option(&self) -> Vec<(u16, u16, Vec<u8>)> {
+        self.option.clone()
     }
 }
 
 /// Setters for OptRdata
 impl OptRdata {
-    pub fn set_option_code(&mut self, option_code: u16) {
-        self.option_code = option_code;
-    }
-
-    pub fn set_option_length(&mut self, option_length: u16) {
-        self.option_length = option_length;
-    }
-
-    pub fn set_option_data(&mut self, option_data: Vec<u8>) {
-        self.option_data = option_data;
+    pub fn set_option(&mut self, option: Vec<(u16, u16, Vec<u8>)>) {
+        self.option= option;
     }
 }
 
@@ -109,9 +94,15 @@ impl OptRdata {
 impl fmt::Display for OptRdata {
     /// Formats the record data for display
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {} {:?}", self.get_option_code(), 
-        self.get_option_length(), 
-        self.get_option_data())
+        let mut result = String::new();
+
+        for (option_code, option_length, option_data) in &self.option {
+            result.push_str(&format!("OPTION-CODE: {}\n", option_code));
+            result.push_str(&format!("OPTION-LENGTH: {}\n", option_length));
+            result.push_str(&format!("OPTION-DATA: {:?}\n", option_data));
+        }
+
+        write!(f, "{}", result)
     }
 }
 
@@ -122,12 +113,12 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_to_bytes() {
         let mut opt_rdata = OptRdata::new();
-        opt_rdata.set_option_code(1 as u16);
-        opt_rdata.set_option_length(2 as u16);
-        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        opt_rdata.option.push((1 as u16, 2 as u16, vec![0x06, 0x04]));
+
+        let result = opt_rdata.to_bytes();
 
         let expected_result: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
-        let result = opt_rdata.to_bytes();
 
         assert_eq!(expected_result, result);
     }
@@ -135,9 +126,8 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_from_bytes() {
         let mut opt_rdata = OptRdata::new();
-        opt_rdata.set_option_code(1 as u16);
-        opt_rdata.set_option_length(2 as u16);
-        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        opt_rdata.option.push((1 as u16, 2 as u16, vec![0x06, 0x04]));
 
         let bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
 
@@ -159,12 +149,11 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_setters_and_getters() {
         let mut opt_rdata = OptRdata::new();
-        opt_rdata.set_option_code(1 as u16);
-        opt_rdata.set_option_length(2 as u16);
-        opt_rdata.set_option_data(vec![0x06, 0x04]);
+        
+        let option: Vec<(u16, u16, Vec<u8>)> = vec![(1 as u16, 2 as u16, vec![0x06, 0x04])];
 
-        assert_eq!(1 as u16, opt_rdata.get_option_code());
-        assert_eq!(2 as u16, opt_rdata.get_option_length());
-        assert_eq!(vec![0x06, 0x04], opt_rdata.get_option_data());
+        opt_rdata.set_option(option);
+
+        assert_eq!(opt_rdata.get_option(), option);
     }
 }

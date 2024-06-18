@@ -716,7 +716,6 @@ impl DnsMessage {
                     }
 
                     Rdata::OPT(_val) => {
-                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                     Rdata::DS(val) => {
                         println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())
@@ -785,7 +784,6 @@ impl DnsMessage {
                     Rdata::TSIG(_val) => {
                     }
                     Rdata::OPT(_val) => {
-                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                     Rdata::RRSIG(val) => {
                         println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered().to_string(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
@@ -851,7 +849,6 @@ impl DnsMessage {
                     Rdata::TSIG(_val) => {
                     }
                     Rdata::OPT(_val) => {
-                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
                     }
                     Rdata::DS(val) => {
                         println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())

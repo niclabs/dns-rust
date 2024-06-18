@@ -152,7 +152,7 @@ mod opt_rdata_test{
         
         let option: Vec<(u16, u16, Vec<u8>)> = vec![(1 as u16, 2 as u16, vec![0x06, 0x04])];
 
-        opt_rdata.set_option(option);
+        opt_rdata.set_option(option.clone());
 
         assert_eq!(opt_rdata.get_option(), option);
     }

@@ -8,6 +8,24 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::fmt;
 
+
+pub trait SetAddress {
+    fn set_address(&self) -> Option<IpAddr>;
+}
+
+impl SetAddress for &str {
+    fn set_address(&self) -> Option<IpAddr> {
+        self.parse::<IpAddr>().ok()
+    }
+}
+
+impl SetAddress for IpAddr {
+    fn set_address(&self) -> Option<IpAddr> {
+        Some(*self)
+    }
+}
+
+
 #[derive(Clone, PartialEq, Debug)]
 /// An struct that represents the `Rdata` for a type.
 /// 
@@ -180,9 +198,14 @@ impl ARdata {
 
 // Setters
 impl ARdata {
-    /// Sets the `address` attibute with the given value.
-    pub fn set_address(&mut self, address: IpAddr) {
-        self.address = address;
+    /// Sets the `address` attribute with the given value.
+    pub fn set_address<T: SetAddress>(&mut self, address: T) {
+        if let Some(ip_addr) = address.set_address() {
+            self.address = ip_addr;
+        } else {
+            // Handle the IP address parsing error here
+            println!("Error: invalid IP address");
+        }
     }
 }
 

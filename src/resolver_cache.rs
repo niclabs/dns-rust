@@ -6,6 +6,7 @@ use crate::message::type_rtype::Rtype;
 use crate::message::class_qclass::Qclass;
 use crate::message::rcode::Rcode;
 use crate::message::DnsMessage;
+use crate::message::rdata::*;
 
 use std::num::NonZeroUsize;
 
@@ -93,11 +94,31 @@ impl ResolverCache {
         if rcode == Some(Rcode::NXDOMAIN) {
             key = CacheKey::Secondary(qclass, qname.clone());
         }
+
         else {
             key = CacheKey::Primary(qtype.unwrap(), qclass, qname.clone());
         }
+
         if self.is_cached(key.clone()) {
             self.remove(qname.clone(), qtype, qclass);
+        }
+
+
+        // Get the minimum TTL from the SOA record if the answer is negative
+        let mut minimum = 0;
+        if rcode != Some(Rcode::NOERROR) {
+            for rr in message.get_authority(){
+                if rr.get_rtype() == Rtype::SOA {
+                    match rr.get_rdata() {
+                        Rdata::SOA(soa) => {
+                            minimum = soa.get_minimum();
+                            
+                        }
+                        _ => {}
+                    }
+                break
+                }
+            }
         }
 
         let answers = message.get_answer();
@@ -105,22 +126,30 @@ impl ResolverCache {
         let additionals = message.get_additional();
 
         answers.iter()
-        .for_each(|rr| {
-            self.add_answer(qname.clone(), rr.clone(), qtype, qclass, rcode);
-        
-        });
-
-        println!("authority: {:?}", authorities.len());
+            .for_each(|rr| {
+                let mut rr = rr.clone();
+                if minimum != 0 {
+                    rr.set_ttl(minimum);
+                }
+                self.add_answer(qname.clone(), rr, qtype, qclass, rcode);
+            });
 
         authorities.iter()
         .for_each(|rr| {
-            println!("Adding authority");
+            let mut rr = rr.clone();
+                if minimum != 0 {
+                    rr.set_ttl(minimum);
+                }
             self.add_authority(qname.clone(), rr.clone(), qtype, qclass, rcode);
             
         });
 
         additionals.iter()
         .for_each(|rr| {
+            let mut rr = rr.clone();
+                if minimum != 0 {
+                    rr.set_ttl(minimum);
+                }
                 self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
         });
     }

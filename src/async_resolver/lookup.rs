@@ -125,140 +125,115 @@ impl LookupStrategy {
         false
     }
 
-/// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
-/// 
-/// This function performs the lookup of the requested records asynchronously. 
-/// After creating the query with the given parameters, the function sends it to 
-/// the name servers specified in the configuration. 
-/// 
-/// When a response is received, the function performs the parsing of the response 
-/// to a `DnsMessage`. After the response is checked, the function updates the 
-/// value of the reference in `response_arc` with the parsed response.
-/// 
-/// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
-/// 
-/// 5.3.1. Stub resolvers
-/// 
-/// One option for implementing a resolver is to move the resolution
-/// function out of the local machine and into a name server which supports
-/// recursive queries.  This can provide an easy method of providing domain
-/// service in a PC which lacks the resources to perform the resolver
-/// function, or can centralize the cache for a whole local network or
-/// organization.
-/// 
-/// All that the remaining stub needs is a list of name server addresses
-/// that will perform the recursive requests.  This type of resolver
-/// presumably needs the information in a configuration file, since it
-/// probably lacks the sophistication to locate it in the domain database.
-/// The user also needs to verify that the listed servers will perform the
-/// recursive service; a name server is free to refuse to perform recursive
-/// services for any or all clients.  The user should consult the local
-/// system administrator to find name servers willing to perform the
-/// service.
-///
-/// This type of service suffers from some drawbacks.  Since the recursive
-/// requests may take an arbitrary amount of time to perform, the stub may
-/// have difficulty optimizing retransmission intervals to deal with both
-/// lost UDP packets and dead servers; the name server can be easily
-/// overloaded by too zealous a stub if it interprets retransmissions as new
-/// requests.  Use of TCP may be an answer, but TCP may well place burdens
-/// on the host's capabilities which are similar to those of a real
-/// resolver.
-/// 
-/// # Example
-/// ```
-/// let domain_name = DomainName::new_from_string("example.com".to_string());
-/// let cache = DnsCache::new();
-/// let waker = None;
-/// let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
-///
-/// let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-/// let timeout: Duration = Duration::from_secs(20);
-///
-/// let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-/// let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
-/// 
-/// let config = ResolverConfig::default();
-/// let record_type = Qtype::A;
-/// 
-/// let name_servers = vec![(conn_udp,conn_tcp)];
-/// let response = execute_lookup_strategy(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
-/// ```
-pub async fn execute_lookup_strategy(
-    name: DomainName,
-    record_type: Qtype,
-    record_class: Qclass,
-    name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
-    config: ResolverConfig,
-    response_arc: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
-) -> Result<LookupResponse, ResolverError>  {
-    // Create random generator
-    let mut rng = thread_rng();
-
-    // Create query id
-    let query_id: u16 = rng.gen();
-
-    // Create query
-    let new_query = DnsMessage::new_query_message(
-        name.clone(),
-        record_type,
-        record_class,
-        0,
-        false,
-        query_id
-    );
-
-    // Create Server failure query 
-    let mut response = new_query.clone(); // le quite el to_owned
-    let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2); // FIXME: is this the origin of the bug?
-    new_header.set_qr(true);
-    response.set_header(new_header);
-
-    let mut result_dns_msg: Result<DnsMessage, ResolverError> = Ok(response.clone());
-    let mut retry_count = 0;
-    let mut i = 0;
-    
-    loop {
-        let mut response_guard = response_arc.lock().unwrap();
-        let response = response_guard.as_ref();
-
-        if response.is_ok() || retry_count >= config.get_retry() {
-            break; 
+    /// Perfoms the lookup of a Domain Name acting as a Stub Resolver.
+    /// 
+    /// This function performs the lookup of the requested records asynchronously. 
+    /// After creating the query with the given parameters, the function sends it to 
+    /// the name servers specified in the configuration. 
+    /// 
+    /// When a response is received, the function performs the parsing of the response 
+    /// to a `DnsMessage`. After the response is checked, the function updates the 
+    /// value of the reference in `response_arc` with the parsed response.
+    /// 
+    /// [RFC 1034]: https://datatracker.ietf.org/doc/html/rfc1034#section-5.3.1
+    /// 
+    /// 5.3.1. Stub resolvers
+    /// 
+    /// One option for implementing a resolver is to move the resolution
+    /// function out of the local machine and into a name server which supports
+    /// recursive queries.  This can provide an easy method of providing domain
+    /// service in a PC which lacks the resources to perform the resolver
+    /// function, or can centralize the cache for a whole local network or
+    /// organization.
+    /// 
+    /// All that the remaining stub needs is a list of name server addresses
+    /// that will perform the recursive requests.  This type of resolver
+    /// presumably needs the information in a configuration file, since it
+    /// probably lacks the sophistication to locate it in the domain database.
+    /// The user also needs to verify that the listed servers will perform the
+    /// recursive service; a name server is free to refuse to perform recursive
+    /// services for any or all clients.  The user should consult the local
+    /// system administrator to find name servers willing to perform the
+    /// service.
+    ///
+    /// This type of service suffers from some drawbacks.  Since the recursive
+    /// requests may take an arbitrary amount of time to perform, the stub may
+    /// have difficulty optimizing retransmission intervals to deal with both
+    /// lost UDP packets and dead servers; the name server can be easily
+    /// overloaded by too zealous a stub if it interprets retransmissions as new
+    /// requests.  Use of TCP may be an answer, but TCP may well place burdens
+    /// on the host's capabilities which are similar to those of a real
+    /// resolver.
+    /// 
+    /// # Example
+    /// ```
+    /// let domain_name = DomainName::new_from_string("example.com".to_string());
+    /// let cache = DnsCache::new();
+    /// let waker = None;
+    /// let query =  Arc::new(Mutex::new(future::err(ResolverError::EmptyQuery).boxed()));
+    ///
+    /// let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+    /// let timeout: Duration = Duration::from_secs(20);
+    ///
+    /// let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
+    /// let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+    /// 
+    /// let config = ResolverConfig::default();
+    /// let record_type = Rrtype::A;
+    /// 
+    /// let name_servers = vec![(conn_udp,conn_tcp)];
+    /// let response = transmit_query_to_server(domain_name,record_type, cache, name_servers, waker,query,config).await.unwrap();
+    /// ```
+    pub async fn transmit_query_to_server(
+        &self,
+        server_info: &ServerInfo,
+        timeout_duration: tokio::time::Duration
+    ) -> Result<LookupResponse, ResolverError>  {
+        let response_arc=  self.response_msg.clone();
+        let protocol = self.config.get_protocol();
+        let mut dns_msg_result: Result<DnsMessage, ResolverError>;
+        {
+            // Guard reference to modify the response
+            let mut response_guard = response_arc.lock().unwrap(); // TODO: add error handling
+            let send_future = send_query_by_protocol(
+                timeout_duration,
+                &self.query,
+                protocol,
+                server_info
+            );
+            dns_msg_result = tokio::time::timeout(timeout_duration, send_future)
+                .await
+                .unwrap_or_else(
+                    |_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))}
+                );  
+            *response_guard = dns_msg_result.clone();
         }
-
-        let connections = name_servers.get(i).unwrap();
-        result_dns_msg = 
-                timeout(Duration::from_secs(6), 
-            send_query_resolver_by_protocol(
-                        config.get_protocol(),
-                        new_query.clone(),
-                        result_dns_msg.clone(),
-                        connections,
-                    )).await
-                .unwrap_or_else(|_| {
-                    Err(ResolverError::Message("Timeout Error".into()))
-                });  
-        
-        *response_guard = result_dns_msg.clone();
-        retry_count = retry_count + 1;
-        i = i+1;
-
+        if self.received_appropriate_response() {
+            return dns_msg_result.and_then(
+                |dns_msg| Ok(LookupResponse::new(dns_msg))
+            )
+        }
+        if let ConnectionProtocol::UDP = protocol {
+            let tcp_protocol = ConnectionProtocol::TCP;
+            let send_future = send_query_by_protocol(
+                timeout_duration,
+                &self.query,
+                tcp_protocol,
+                server_info
+            );
+            tokio::time::sleep(timeout_duration).await;
+            dns_msg_result = tokio::time::timeout(timeout_duration, send_future)
+                .await
+                .unwrap_or_else(
+                    |_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))}
+                ); 
+            let mut response_guard = response_arc.lock().unwrap();
+            *response_guard = dns_msg_result.clone();
+        }
+        dns_msg_result.and_then(
+            |dns_msg| Ok(LookupResponse::new(dns_msg))
+        )
     }
-
-    let response_dns_msg = match result_dns_msg.clone() {
-        Ok(response_message) => response_message,
-        Err(ResolverError::Parse(_)) => {
-            let mut format_error_response = response.clone();
-            let mut header = format_error_response.get_header();
-            header.set_rcode(1);
-            format_error_response.set_header(header);
-            format_error_response
-        }
-        Err(_) => response,
-    };
-
-    Ok(LookupResponse::new(response_dns_msg))  
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.

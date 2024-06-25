@@ -1,10 +1,11 @@
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
-use crate::message::Rtype;
-use crate::utils;
+use crate::domain_name;
 use crate::domain_name::DomainName;
 use std::fmt;
 use std::vec::Vec;
+
+use super::rrtype::Rrtype;
 
 #[derive(Clone, PartialEq, Debug)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.2.1
@@ -37,7 +38,7 @@ pub struct ResourceRecord {
     /// Domain Name
     name: DomainName,
     /// Specifies the meaning of the data in the RDATA.
-    rtype: Rtype,
+    rtype: Rrtype,
     /// Specifies the class of the data in the RDATA.
     rclass: Rclass,
     /// Specifies the time interval (in seconds) that the resource record may be cached before it should be discarded.
@@ -82,7 +83,7 @@ impl ResourceRecord {
         match rdata {
             Rdata::A(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::A,
+                rtype: Rrtype::A,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -90,7 +91,7 @@ impl ResourceRecord {
             },
             Rdata::NS(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NS,
+                rtype: Rrtype::NS,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -98,7 +99,7 @@ impl ResourceRecord {
             },
             Rdata::CNAME(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::CNAME,
+                rtype: Rrtype::CNAME,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -106,7 +107,7 @@ impl ResourceRecord {
             },
             Rdata::SOA(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::SOA,
+                rtype: Rrtype::SOA,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -114,7 +115,7 @@ impl ResourceRecord {
             },
             Rdata::PTR(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::PTR,
+                rtype: Rrtype::PTR,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -122,7 +123,7 @@ impl ResourceRecord {
             },
             Rdata::HINFO(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::HINFO,
+                rtype: Rrtype::HINFO,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -130,7 +131,7 @@ impl ResourceRecord {
             },
             Rdata::MX(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::MX,
+                rtype: Rrtype::MX,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -138,7 +139,7 @@ impl ResourceRecord {
             },
             Rdata::TXT(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::TXT,
+                rtype: Rrtype::TXT,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -146,7 +147,7 @@ impl ResourceRecord {
             },
             Rdata::AAAA(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::AAAA,
+                rtype: Rrtype::AAAA,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -154,7 +155,7 @@ impl ResourceRecord {
             },
             Rdata::OPT(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::OPT,
+                rtype: Rrtype::OPT,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -162,7 +163,7 @@ impl ResourceRecord {
             },
             Rdata::DS(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::DS,
+                rtype: Rrtype::DS,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -170,7 +171,7 @@ impl ResourceRecord {
             },
             Rdata::RRSIG(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::RRSIG,
+                rtype: Rrtype::RRSIG,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -178,7 +179,7 @@ impl ResourceRecord {
             },
             Rdata::NSEC(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NSEC,
+                rtype: Rrtype::NSEC,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -186,7 +187,7 @@ impl ResourceRecord {
             },
             Rdata::DNSKEY(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::DNSKEY,
+                rtype: Rrtype::DNSKEY,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -194,7 +195,7 @@ impl ResourceRecord {
             },
             Rdata::NSEC3(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NSEC3,
+                rtype: Rrtype::NSEC3,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -202,7 +203,7 @@ impl ResourceRecord {
             },
             Rdata::NSEC3PARAM(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::NSEC3PARAM,
+                rtype: Rrtype::NSEC3PARAM,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -210,7 +211,7 @@ impl ResourceRecord {
             },
             Rdata::TSIG(val) => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::TSIG,
+                rtype: Rrtype::TSIG,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -218,7 +219,7 @@ impl ResourceRecord {
             },
             _ => ResourceRecord {
                 name: DomainName::new(),
-                rtype: Rtype::UNKNOWN(0),
+                rtype: Rrtype::UNKNOWN(0),
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
@@ -256,7 +257,7 @@ impl ResourceRecord {
 
         match domain_name_result.clone() {
             Ok((domain_name,_)) => {
-                utils::domain_validity_syntax(domain_name)?;
+                domain_name::domain_validity_syntax(domain_name)?;
             }
             Err(e) => return Err(e),
         }
@@ -268,9 +269,9 @@ impl ResourceRecord {
         }
 
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
-        let rtype = Rtype::from_int_to_rtype(type_code);
+        let rtype = Rrtype::from(type_code);
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
-        let rclass = Rclass::from_int_to_rclass(class);
+        let rclass = Rclass::from(class);
         let ttl = ((bytes_without_name[4] as u32) << 24)
             | ((bytes_without_name[5] as u32) << 16)
             | ((bytes_without_name[6] as u32) << 8)
@@ -314,7 +315,7 @@ impl ResourceRecord {
 
     /// Returns a byte that represents the first byte from type code in the dns message.
     fn get_first_type_code_byte(&self) -> u8 {
-        let type_code = Rtype::from_rtype_to_int(self.get_rtype());
+        let type_code = u16::from(self.get_rtype());
         let first_byte = (type_code >> 8) as u8;
 
         first_byte
@@ -322,7 +323,7 @@ impl ResourceRecord {
 
     /// Returns a byte that represents the second byte from type code in the dns message.
     fn get_second_type_code_byte(&self) -> u8 {
-        let type_code = Rtype::from_rtype_to_int(self.get_rtype());
+        let type_code = u16::from(self.get_rtype());
         let second_byte = type_code as u8;
 
         second_byte
@@ -330,7 +331,7 @@ impl ResourceRecord {
 
     /// Returns a byte that represents the first byte from class in the dns message.
     fn get_first_class_byte(&self) -> u8 {
-        let class = Rclass::from_rclass_to_int(self.get_rclass());
+        let class = u16::from(self.get_rclass());
         let first_byte = (class >> 8) as u8;
 
         first_byte
@@ -338,7 +339,7 @@ impl ResourceRecord {
 
     /// Returns a byte that represents the second byte from class in the dns message.
     fn get_second_class_byte(&self) -> u8 {
-        let class = Rclass::from_rclass_to_int(self.get_rclass());
+        let class = u16::from(self.get_rclass());
         let second_byte = class as u8;
 
         second_byte
@@ -476,7 +477,7 @@ impl ResourceRecord {
     }
 
     /// Sets the type_code attribute with a value.
-    pub fn set_type_code(&mut self, rtype: Rtype) {
+    pub fn set_type_code(&mut self, rtype: Rrtype) {
         self.rtype = rtype;
     }
 
@@ -487,6 +488,9 @@ impl ResourceRecord {
 
     /// Sets the ttl attribute with a value.
     pub fn set_ttl(&mut self, ttl: u32) {
+        if ttl > 2147483647 {
+            panic!("TTL must be less than 0xFFFFFFFF");
+        }
         self.ttl = ttl;
     }
 
@@ -503,10 +507,10 @@ impl ResourceRecord {
 
 impl ResourceRecord {
     pub fn rr_equal(&mut self, rr: ResourceRecord) -> bool {
-        let a: u16 = Rtype::from_rtype_to_int(self.get_rtype());
-        let aa: u16 = Rtype::from_rtype_to_int(rr.get_rtype());
-        let b: u16 = Rclass::from_rclass_to_int(self.get_rclass());
-        let bb: u16 = Rclass::from_rclass_to_int(rr.get_rclass());
+        let a: u16 = u16::from(self.get_rtype());
+        let aa: u16 = u16::from(rr.get_rtype());
+        let b: u16 = u16::from(self.get_rclass());
+        let bb: u16 = u16::from(rr.get_rclass());
         let c: u16 = self.get_rdlength();
         let cc: u16 = rr.get_rdlength();
         let d: u32 = self.get_ttl();
@@ -536,7 +540,7 @@ impl ResourceRecord {
     }
 
     /// Returns a copy of the `rtype` attribute value.
-    pub fn get_rtype(&self) -> Rtype {
+    pub fn get_rtype(&self) -> Rrtype {
         self.rtype.clone()
     }
 
@@ -589,7 +593,7 @@ mod resource_record_test {
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::txt_rdata::TxtRdata;
     use crate::message::rdata::Rdata;
-    use crate::message::Rtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::Rclass;
     use std::net::IpAddr;
     use crate::message::resource_record::ResourceRecord;
@@ -605,8 +609,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(a_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 1);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 1);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -633,8 +637,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(ns_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 2);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 2);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -661,8 +665,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(cname_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 5);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 5);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -696,8 +700,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(soa_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 6);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 6);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -738,8 +742,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(ptr_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 12);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 12);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -769,8 +773,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(hinfo_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 13);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 13);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -808,8 +812,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(mx_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 15);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 15);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -836,8 +840,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(txt_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 16);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -868,8 +872,8 @@ mod resource_record_test {
         let resource_record = ResourceRecord::new(ach_rdata);
 
         assert_eq!(resource_record.name.get_name(), String::from(""));
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.rtype.clone()), 0);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.rclass.clone()), 1);
+        assert_eq!(u16::from(resource_record.rtype.clone()), 0);
+        assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
         assert_eq!(resource_record.rdlength, 0);
         assert_eq!(
@@ -906,11 +910,11 @@ mod resource_record_test {
     fn set_and_get_type_code_test() {
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
-        assert_eq!(Rtype::from_rtype_to_int(resource_record.get_rtype()), 16);
+        assert_eq!(u16::from(resource_record.get_rtype()), 16);
 
-        resource_record.set_type_code(Rtype::A);
+        resource_record.set_type_code(Rrtype::A);
 
-        let type_code = Rtype::from_rtype_to_int(resource_record.get_rtype());
+        let type_code = u16::from(resource_record.get_rtype());
         assert_eq!(type_code, 1 as u16);
     }
 
@@ -918,11 +922,11 @@ mod resource_record_test {
     fn set_and_get_class_test() {
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record.get_rclass()), 1);
+        assert_eq!(u16::from(resource_record.get_rclass()), 1);
 
         resource_record.set_rclass(Rclass::CS);
 
-        let class = Rclass::from_rclass_to_int(resource_record.get_rclass());
+        let class = u16::from(resource_record.get_rclass());
         assert_eq!(class, 2 as u16);
     }
 
@@ -982,7 +986,7 @@ mod resource_record_test {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(4);
@@ -1017,8 +1021,8 @@ mod resource_record_test {
             resource_record_test.get_name().get_name(),
             String::from("dcc.cl")
         );
-        assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_rtype()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record_test.get_rclass()), 1);
+        assert_eq!(u16::from(resource_record_test.get_rtype()), 16);
+        assert_eq!(u16::from(resource_record_test.get_rclass()), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
         assert_eq!(resource_record_test.get_rdlength(), 4);
 
@@ -1042,8 +1046,8 @@ mod resource_record_test {
             resource_record_test.get_name().get_name(),
             String::from("dcc.cl")
         );
-        assert_eq!(Rtype::from_rtype_to_int(resource_record_test.get_rtype()), 1);
-        assert_eq!(Rclass::from_rclass_to_int(resource_record_test.get_rclass()), 1);
+        assert_eq!(u16::from(resource_record_test.get_rtype()), 1);
+        assert_eq!(u16::from(resource_record_test.get_rclass()), 1);
         assert_eq!(resource_record_test.get_ttl(), 5642);
         assert_eq!(resource_record_test.get_rdlength(), 4);
 
@@ -1077,5 +1081,24 @@ mod resource_record_test {
         assert!(resource_record.rr_equal(resource_record1.clone()));
         resource_record.set_rdlength(16);
         assert_ne!(resource_record.rr_equal(resource_record1.clone()), true);
+    }
+
+    #[test]
+    fn ttl_max() {
+        let soa_rdata = Rdata::SOA(SoaRdata::new());
+        let mut resource_record = ResourceRecord::new(soa_rdata);
+        assert_eq!(resource_record.get_ttl(), 0);
+        resource_record.set_ttl(2147483647);
+        assert_eq!(resource_record.get_ttl(), 2147483647);
+    }
+
+    #[test]
+    #[should_panic]
+    fn ttl_fail() {
+        let soa_rdata = Rdata::SOA(SoaRdata::new());
+        let mut resource_record = ResourceRecord::new(soa_rdata);
+        assert_eq!(resource_record.get_ttl(), 0);
+        resource_record.set_ttl(2147483648);
+        assert_eq!(resource_record.get_ttl(), 2147483648);
     }
 }

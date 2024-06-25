@@ -1,5 +1,9 @@
 use crate::client::ClientConnection;
 use crate::message::DnsMessage;
+use crate::message::rdata::Rdata;
+use crate::message::rdata::a_rdata::ARdata;
+use crate::message::resource_record::ResourceRecord;
+
 use async_trait::async_trait;
 use std::net::{SocketAddr, IpAddr};
 
@@ -34,7 +38,8 @@ impl ClientConnection for ClientUDPConnection {
         return self.server_addr.clone();
     }
 
-    async fn send(self, dns_query:DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> { 
+    async fn send(self, dns_query:DnsMessage) -> Result<Vec<u8>, ClientError> { 
+    // async fn send(self, dns_query:DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> { 
 
         let conn_timeout:Duration = self.timeout;
         let server_addr = SocketAddr::new(self.get_server_addr(), 53);
@@ -61,7 +66,8 @@ impl ClientConnection for ClientUDPConnection {
         };
         
         let mut msg: [u8;512] = [0;512];
-        //FIXME: change to timeout
+        //FIXME: not always is timeout error, since it doesn't have to be wait for the timeout return
+        // and error, is just an IO error, the timeout error should come by itself from the timeout function
         let result = match timeout(conn_timeout, socket_udp.recv_from(&mut msg)).await {
             Ok(val) => val,
             Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
@@ -73,9 +79,16 @@ impl ClientConnection for ClientUDPConnection {
         };
 
         let ip = self.get_server_addr();
+        let mut additionals = dns_query.get_additional();
+        let mut ar = ARdata::new();
+        ar.set_address(ip);
+        let a_rdata = Rdata::A(ar);
+        let rr = ResourceRecord::new(a_rdata);
+        additionals.push(rr);
+       
 
         drop(socket_udp);
-        return Ok((msg.to_vec(), ip));
+        return Ok(msg.to_vec());
     }
 
 }
@@ -110,8 +123,8 @@ impl ClientUDPConnection {
 mod udp_connection_test{
     
     use crate::domain_name::DomainName;
-    use crate::message::type_qtype::Qtype;
-    use crate::message::class_qclass::Qclass;
+    use crate::message::rrtype::Rrtype;
+    use crate::message::rclass::Rclass;
     use super::*;
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
     #[test]
@@ -202,8 +215,8 @@ mod udp_connection_test{
         let dns_query =
         DnsMessage::new_query_message(
             domain_name,
-            Qtype::A,
-            Qclass::IN,
+            Rrtype::A,
+            Rclass::IN,
             0,
             false,
             1);
@@ -225,12 +238,13 @@ mod udp_connection_test{
         let dns_query =
         DnsMessage::new_query_message(
             domain_name,
-            Qtype::A,
-            Qclass::IN,
+            Rrtype::A,
+            Rclass::IN,
             0,
             false,
             1);
         
+        // let response = conn.send(dns_query).unwrap();
         let response = conn.send(dns_query).await;
 
         assert!(response.is_ok());

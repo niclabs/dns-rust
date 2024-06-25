@@ -1,6 +1,18 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
-use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
+use std::cmp::max;
+use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
+
+use super::server_info::ServerInfo;
+
+const GOOGLE_PRIMARY_DNS_SERVER: [u8; 4] = [8, 8, 8, 8];
+const GOOGLE_SECONDARY_DNS_SERVER: [u8; 4] = [8, 8, 4, 4];
+const CLOUDFLARE_PRIMARY_DNS_SERVER: [u8; 4] = [1, 1, 1, 1];
+const CLOUDFLARE_SECONDARY_DNS_SERVER: [u8; 4] = [1, 0, 0, 1];
+const OPEN_DNS_PRIMARY_DNS_SERVER: [u8; 4] = [208, 67, 222, 222];
+const OPEN_DNS_SECONDARY_DNS_SERVER: [u8; 4] = [208, 67, 220, 220];
+const QUAD9_PRIMARY_DNS_SERVER: [u8; 4] = [9, 9, 9, 9];
+const QUAD9_SECONDARY_DNS_SERVER: [u8; 4] = [149, 112, 112, 112];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 
@@ -13,14 +25,14 @@ use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration, vec};
 /// the chosen transport protocol and the timeout for the connections.
 pub struct ResolverConfig {
     /// Vector of tuples with the UDP and TCP connections to a Name Server.
-    name_servers: Vec<(ClientUDPConnection, ClientTCPConnection)>,
+    name_servers: Vec<ServerInfo>,
     /// Socket address of the resolver.
     bind_addr: SocketAddr,
     /// Maximum quantity of queries for each sent query. 
     /// 
     /// If this number is surpassed, the resolver is expected to panic in 
     /// a Temporary Error.
-    retry: u16,
+    retransmission_loop_attempts: u16,
     /// Activation of cache in this resolver.
     /// 
     /// This is whether the resolver uses cache or not.
@@ -38,6 +50,17 @@ pub struct ResolverConfig {
     /// 
     /// This corresponds a `Duration` type.
     timeout: Duration,
+    max_retry_interval_seconds: u64,
+    min_retry_interval_seconds: u64,
+    // While local limits on the number of times a resolver will retransmit
+    // a particular query to a particular name server address are
+    // essential, the resolver should have a global per-request
+    // counter to limit work on a single request.  The counter should
+    // be set to some initial value and decremented whenever the
+    // resolver performs any action (retransmission timeout,
+    // retransmission, etc.)  If the counter passes zero, the request
+    // is terminated with a temporary error.
+    global_retransmission_limit: u16,
 }
 
 impl ResolverConfig {
@@ -57,35 +80,58 @@ impl ResolverConfig {
     /// let resolver_config = ResolverConfig::new(addr, protocol, timeout);
     /// assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 53));
     /// ```
-    pub fn new(resolver_addr: IpAddr, protocol: ConnectionProtocol, timeout: Duration) -> Self {
+    pub fn new(
+        resolver_addr: IpAddr, 
+        protocol: ConnectionProtocol, 
+        timeout: Duration,
+        ) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),
             bind_addr: SocketAddr::new(resolver_addr, 53),
-            retry: 30,
+            retransmission_loop_attempts: 3,
             cache_enabled: true,
             recursive_available: false,
             protocol: protocol,
             timeout: timeout,
+            max_retry_interval_seconds: 10,
+            min_retry_interval_seconds: 1,
+            global_retransmission_limit: 30,
         };
         resolver_config
     }
     
     pub fn default()-> Self {
         // FIXME: these are examples values
-        let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)); 
-        let timeout = Duration::from_secs(10);
-    
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+        let retransmission_loop_attempts = 3;
+        let global_retransmission_limit = 30;
+        let timeout = Duration::from_secs(45);
+        let max_retry_interval_seconds = 60;
+
+        let mut servers_info = Vec::new();
+        servers_info.push(ServerInfo::new_from_addr(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
+
+        // Recommended by RFC 1536: max(4, 5/number_of_server_to_query)
+        let number_of_server_to_query = servers_info.len() as u64;
+        let min_retry_interval_seconds: u64 = max(1, 5/number_of_server_to_query).into();
 
         let resolver_config: ResolverConfig = ResolverConfig {
-            name_servers: vec![(conn_udp,conn_tcp)],
+            name_servers: servers_info,
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
-            retry: 30,
+            retransmission_loop_attempts: retransmission_loop_attempts,
             cache_enabled: true,
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,
             timeout: timeout,
+            max_retry_interval_seconds: max_retry_interval_seconds,
+            min_retry_interval_seconds: min_retry_interval_seconds,
+            global_retransmission_limit: global_retransmission_limit,
         };
         resolver_config
     }
@@ -111,8 +157,9 @@ impl ResolverConfig {
     pub fn add_servers(&mut self, addr: IpAddr) {
         let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout);
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout);
-        
-        self.name_servers.push((conn_udp,conn_tcp));
+
+        let server_info = ServerInfo::new_with_ip(addr, conn_udp, conn_tcp);
+        self.name_servers.push(server_info);
     }
 
     /// Remove all servers from the list of Name Servers.
@@ -141,7 +188,7 @@ impl ResolverConfig {
 impl ResolverConfig {
 
     /// Returns the list of Name Servers.
-    pub fn get_name_servers(&self) -> Vec<(ClientUDPConnection,ClientTCPConnection)> {
+    pub fn get_name_servers(&self) -> Vec<ServerInfo> {
         self.name_servers.clone()
     }
 
@@ -152,8 +199,8 @@ impl ResolverConfig {
 
     /// Returns the quantity of retries before the resolver panic in a
     /// Temporary Error.
-    pub fn get_retry(&self) -> u16 {
-        self.retry
+    pub fn get_retransmission_loop_attempts(&self) -> u16 {
+        self.retransmission_loop_attempts
     }
 
     /// Returns whether the cache is enabled or not.
@@ -175,13 +222,25 @@ impl ResolverConfig {
     pub fn get_timeout(&self) -> Duration {
         self.timeout
     }
+
+    pub fn get_max_retry_interval_seconds(&self) -> u64 {
+        self.max_retry_interval_seconds
+    }
+
+    pub fn get_min_retry_interval_seconds(&self) -> u64 {
+        self.min_retry_interval_seconds
+    }
+
+    pub fn get_global_retransmission_limit(&self) -> u16 {
+        self.global_retransmission_limit
+    }
 }
 
 ///Setters
 impl ResolverConfig{
 
     /// Sets the list of Name Servers.
-    pub fn set_name_servers(&mut self, list_name_servers: Vec<(ClientUDPConnection,ClientTCPConnection)>) {
+    pub fn set_name_servers(&mut self, list_name_servers: Vec<ServerInfo>) {
         self.name_servers = list_name_servers;
     }
 
@@ -192,8 +251,8 @@ impl ResolverConfig{
 
     /// Sets the quantity of retries before the resolver panic in a
     /// Temporary Error.
-    pub fn set_retry(&mut self, retry:u16) {
-        self.retry = retry;
+    pub fn set_retransmission_loop_attempts(&mut self, retransmission_loop_attempts:u16) {
+        self.retransmission_loop_attempts = retransmission_loop_attempts;
     }
 
     /// Sets whether the cache is enabled or not.
@@ -215,11 +274,24 @@ impl ResolverConfig{
     pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = timeout;
     }
+
+    pub fn set_max_retry_interval_seconds(&mut self, max_retry_interval_seconds: u64) {
+        self.max_retry_interval_seconds = max_retry_interval_seconds;
+    }
+
+    pub fn set_min_retry_interval_seconds(&mut self, min_retry_interval_seconds: u64) {
+        self.min_retry_interval_seconds = min_retry_interval_seconds;
+    }
+
+    pub fn set_global_retransmission_limit(&mut self, global_retransmission_limit: u16) {
+        self.global_retransmission_limit = global_retransmission_limit;
+    }
 }
 
 
 #[cfg(test)]
 mod tests_resolver_config {
+    use crate::async_resolver::server_info;
     //TODO: FK test config and documentation
     use crate::client::client_connection::ClientConnection;
     use crate::client::tcp_connection::ClientTCPConnection;
@@ -245,14 +317,14 @@ mod tests_resolver_config {
         let mut resolver_config = ResolverConfig::default();
         let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         resolver_config.add_servers(addr);
-        assert_eq!(resolver_config.get_name_servers().len(), 2);
+        assert_eq!(resolver_config.get_name_servers().len(), 9);
     }
 
     #[test]
     fn get_and_set_name_servers() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_name_servers().len(), 1);
+        assert_eq!(resolver_config.get_name_servers().len(), 8);
 
         let addr_1 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let tcp_conn_1 = ClientTCPConnection::new(addr_1, Duration::from_secs(TIMEOUT));
@@ -261,8 +333,10 @@ mod tests_resolver_config {
         let addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
         let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
         let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
+        let server_info_1 = server_info::ServerInfo::new_with_ip(addr_1, udp_conn_1, tcp_conn_1);
+        let server_info_2 = server_info::ServerInfo::new_with_ip(addr_2, udp_conn_2, tcp_conn_2);
 
-        let name_servers = vec![(udp_conn_1, tcp_conn_1), (udp_conn_2, tcp_conn_2)];
+        let name_servers = vec![server_info_1, server_info_2];
         resolver_config.set_name_servers(name_servers.clone());
 
         assert_eq!(resolver_config.get_name_servers(), name_servers);
@@ -281,14 +355,14 @@ mod tests_resolver_config {
     }
 
     #[test]
-    fn get_and_set_retry() {
+    fn get_and_set_retransmission_loop_attempts() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_retry(), 30);
+        assert_eq!(resolver_config.get_retransmission_loop_attempts(), 3);
 
-        resolver_config.set_retry(10);
+        resolver_config.set_retransmission_loop_attempts(10);
 
-        assert_eq!(resolver_config.get_retry(), 10);
+        assert_eq!(resolver_config.get_retransmission_loop_attempts(), 10);
     }
 
     #[test]
@@ -317,7 +391,7 @@ mod tests_resolver_config {
     fn get_and_set_timeout() {
         let mut resolver_config = ResolverConfig::default();
 
-        assert_eq!(resolver_config.get_timeout(), Duration::from_secs(TIMEOUT));
+        assert_eq!(resolver_config.get_timeout(), Duration::from_secs(45));
 
         resolver_config.set_timeout(Duration::from_secs(10));
 
@@ -340,8 +414,41 @@ mod tests_resolver_config {
         let mut resolver_config = ResolverConfig::default();
         let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         resolver_config.add_servers(addr);
-        assert_eq!(resolver_config.get_name_servers().len(), 2);
+        assert_eq!(resolver_config.get_name_servers().len(), 9);
         resolver_config.remove_servers();
         assert_eq!(resolver_config.get_name_servers().len(), 0);
+    }
+
+    #[test]
+    fn get_and_set_max_retry_interval_seconds() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 60);
+
+        resolver_config.set_max_retry_interval_seconds(20);
+
+        assert_eq!(resolver_config.get_max_retry_interval_seconds(), 20);
+    }
+
+    #[test]
+    fn get_and_set_min_retry_interval_seconds() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_min_retry_interval_seconds(), 1);
+
+        resolver_config.set_min_retry_interval_seconds(2);
+
+        assert_eq!(resolver_config.get_min_retry_interval_seconds(), 2);
+    }
+
+    #[test]
+    fn get_and_set_global_retransmission_limit() {
+        let mut resolver_config = ResolverConfig::default();
+
+        assert_eq!(resolver_config.get_global_retransmission_limit(), 30);
+
+        resolver_config.set_global_retransmission_limit(40);
+
+        assert_eq!(resolver_config.get_global_retransmission_limit(), 40);
     }
 }

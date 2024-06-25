@@ -1,7 +1,7 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::fmt;
@@ -99,8 +99,8 @@ impl CnameRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::CNAME);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::CNAME);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
@@ -136,7 +136,7 @@ mod cname_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::cname_rdata::CnameRdata;
-    use crate::message::Rtype;
+    use crate::message::Rrtype;
     use crate::message::Rclass;
     use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -200,7 +200,7 @@ mod cname_rdata_test {
             cname_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")
         );
-        assert_eq!(cname_rr.get_rtype(), Rtype::CNAME);
+        assert_eq!(cname_rr.get_rtype(), Rrtype::CNAME);
         assert_eq!(cname_rr.get_ttl(), 0);
         assert_eq!(cname_rr.get_rdlength(), 22);
 

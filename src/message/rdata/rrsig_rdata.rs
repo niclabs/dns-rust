@@ -1,6 +1,6 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
-use crate::message::type_rtype::Rtype;
+use crate::message::rrtype::Rrtype;
 
 use std::fmt;
 
@@ -28,7 +28,7 @@ use std::fmt;
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 pub struct RRSIGRdata {
-    type_covered: Rtype, // RR type mnemonic
+    type_covered: Rrtype, // RR type mnemonic
     algorithm: u8, // Unsigned decimal integer
     labels: u8, // Unsigned decimal integer, represents the number of layers in the siger name
     original_ttl: u32, // Unsigned decimal integer
@@ -44,7 +44,7 @@ impl ToBytes for RRSIGRdata {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
-        let type_covered = Rtype::from_rtype_to_int(self.type_covered.clone());
+        let type_covered = u16::from(self.type_covered.clone());
         bytes.extend_from_slice(&type_covered.to_be_bytes());
 
         bytes.push(self.algorithm);
@@ -77,7 +77,7 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
 
         let array_bytes = [bytes[0], bytes[1]];
         let type_covered_int = u16::from_be_bytes(array_bytes);
-        let type_covered = Rtype::from_int_to_rtype(type_covered_int);
+        let type_covered = Rrtype::from(type_covered_int);
         rrsig_rdata.set_type_covered(type_covered);
 
         let algorithm = bytes[2];
@@ -159,7 +159,7 @@ impl RRSIGRdata{
     /// ```
     pub fn new() -> RRSIGRdata{
         RRSIGRdata{
-            type_covered: Rtype::A,
+            type_covered: Rrtype::A,
             algorithm: 0,
             labels: 0,
             original_ttl: 0,
@@ -178,7 +178,7 @@ impl RRSIGRdata{
     /// let rrsig_rdata = RRSIGRdata::new();
     /// let type_covered = rrsig_rdata.get_type_covered();
     /// ```
-    pub fn get_type_covered(&self) -> Rtype{
+    pub fn get_type_covered(&self) -> Rrtype{
         self.type_covered.clone()
     }
 
@@ -289,7 +289,7 @@ impl RRSIGRdata{
     /// let mut rrsig_rdata = RRSIGRdata::new();
     /// rrsig_rdata.set_type_covered("A".to_string());
     /// ```
-    pub fn set_type_covered(&mut self, type_covered: Rtype) {
+    pub fn set_type_covered(&mut self, type_covered: Rrtype) {
         self.type_covered = type_covered;
     }
 
@@ -394,7 +394,7 @@ impl fmt::Display for RRSIGRdata {
     /// Formats the record data for display
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {} {} {} {} {} {} {} {}", 
-        Rtype::from_rtype_to_int(self.get_type_covered()), 
+        u16::from(self.get_type_covered()), 
         self.get_algorithm(), 
         self.get_labels(), 
         self.get_original_ttl(), 
@@ -414,7 +414,7 @@ mod rrsig_rdata_test{
     fn constructor_test(){
         let rrsig_rdata = RRSIGRdata::new();
 
-        assert_eq!(rrsig_rdata.type_covered, Rtype::A);
+        assert_eq!(rrsig_rdata.type_covered, Rrtype::A);
         assert_eq!(rrsig_rdata.algorithm, 0);
         assert_eq!(rrsig_rdata.labels, 0);
         assert_eq!(rrsig_rdata.original_ttl, 0);
@@ -429,7 +429,7 @@ mod rrsig_rdata_test{
     fn setters_and_getters_test(){
         let mut rrsig_rdata = RRSIGRdata::new();
 
-        assert_eq!(rrsig_rdata.get_type_covered(), Rtype::A);
+        assert_eq!(rrsig_rdata.get_type_covered(), Rrtype::A);
         assert_eq!(rrsig_rdata.get_algorithm(), 0);
         assert_eq!(rrsig_rdata.get_labels(), 0);
         assert_eq!(rrsig_rdata.get_original_ttl(), 0);
@@ -439,7 +439,7 @@ mod rrsig_rdata_test{
         assert_eq!(rrsig_rdata.get_signer_name(), DomainName::new());
         assert_eq!(rrsig_rdata.get_signature(), String::new());
 
-        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_type_covered(Rrtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -449,7 +449,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
         rrsig_rdata.set_signature(String::from("abcdefg"));
 
-        assert_eq!(rrsig_rdata.get_type_covered(), Rtype::CNAME);
+        assert_eq!(rrsig_rdata.get_type_covered(), Rrtype::CNAME);
         assert_eq!(rrsig_rdata.get_algorithm(), 5);
         assert_eq!(rrsig_rdata.get_labels(), 2);
         assert_eq!(rrsig_rdata.get_original_ttl(), 3600);
@@ -463,7 +463,7 @@ mod rrsig_rdata_test{
     #[test]
     fn to_bytes(){
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_type_covered(Rrtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -495,7 +495,7 @@ mod rrsig_rdata_test{
          98, 99, 100, 101, 102, 103];
 
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_type_covered(Rrtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -534,7 +534,7 @@ mod rrsig_rdata_test{
         97, 98, 99, 100, 101, 102, 103]; //signature
 
        let mut rrsig_rdata = RRSIGRdata::new();
-       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(65535));
+       rrsig_rdata.set_type_covered(Rrtype::UNKNOWN(65535));
        rrsig_rdata.set_algorithm(255);
        rrsig_rdata.set_labels(2);
        rrsig_rdata.set_original_ttl(4294967295);
@@ -567,7 +567,7 @@ mod rrsig_rdata_test{
         97, 98, 99, 100, 101, 102, 103]; //signature
 
        let mut rrsig_rdata = RRSIGRdata::new();
-       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(65535));
+       rrsig_rdata.set_type_covered(Rrtype::UNKNOWN(65535));
        rrsig_rdata.set_algorithm(255);
        rrsig_rdata.set_labels(2);
        rrsig_rdata.set_original_ttl(4294967295);
@@ -595,7 +595,7 @@ mod rrsig_rdata_test{
         0]; //signature
 
        let mut rrsig_rdata = RRSIGRdata::new();
-       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(0));
+       rrsig_rdata.set_type_covered(Rrtype::UNKNOWN(0));
        rrsig_rdata.set_algorithm(0);
        rrsig_rdata.set_labels(0);
        rrsig_rdata.set_original_ttl(0);
@@ -627,7 +627,7 @@ mod rrsig_rdata_test{
         0]; //signautre 
 
        let mut rrsig_rdata = RRSIGRdata::new();
-       rrsig_rdata.set_type_covered(Rtype::UNKNOWN(0));
+       rrsig_rdata.set_type_covered(Rrtype::UNKNOWN(0));
        rrsig_rdata.set_algorithm(0);
        rrsig_rdata.set_labels(0);
        rrsig_rdata.set_original_ttl(0);
@@ -699,7 +699,7 @@ mod rrsig_rdata_test{
         97, 98, 99, 100, 101, 102, 103]; //signature
 
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_type_covered(Rrtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(8);
         rrsig_rdata.set_original_ttl(3600);
@@ -753,7 +753,7 @@ mod rrsig_rdata_test{
 
 
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(Rtype::CNAME);
+        rrsig_rdata.set_type_covered(Rrtype::CNAME);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(0);
         rrsig_rdata.set_original_ttl(3600);

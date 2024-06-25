@@ -1,6 +1,6 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
@@ -123,7 +123,7 @@ impl MxRdata {
     /// use dns_message_parser::message::rdata::mx_rdata::MxRdata;
     /// use dns_message_parser::message::rdata::Rdata;
     /// use dns_message_parser::message::rdata::Rdata::MX;
-    /// use dns_message_parser::message::rdata::Rtype;
+    /// use dns_message_parser::message::rdata::Rrtype;
     /// use dns_message_parser::message::rdata::Rclass;
     /// use dns_message_parser::message::resource_record::ResourceRecord;
     /// 
@@ -133,7 +133,7 @@ impl MxRdata {
     /// String::from("uchile.cl"));
 
     /// assert_eq!(mxrdata_rr.get_class(), Rclass::IN);
-    /// assert_eq!(mxrdata_rr.get_rtype(), Rtype::MX);
+    /// assert_eq!(mxrdata_rr.get_rtype(), Rrtype::MX);
     /// assert_eq!(mxrdata_rr.get_ttl(), 20);
     /// assert_eq!(mxrdata_rr.get_name().get_name(), String::from("uchile.cl"));
     /// assert_eq!(mxrdata_rr.get_rdlength(), 7);
@@ -167,8 +167,8 @@ impl MxRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::MX);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::MX);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
@@ -233,7 +233,7 @@ impl fmt::Display for MxRdata {
 mod mx_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
-    use crate::message::Rtype;
+    use crate::message::Rrtype;
     use crate::message::Rclass;
     use crate::message::rdata::mx_rdata::MxRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -308,7 +308,7 @@ mod mx_rdata_test {
         String::from("uchile.cl"));
 
         assert_eq!(mxrdata_rr.get_rclass(), Rclass::IN);
-        assert_eq!(mxrdata_rr.get_rtype(), Rtype::MX);
+        assert_eq!(mxrdata_rr.get_rtype(), Rrtype::MX);
         assert_eq!(mxrdata_rr.get_ttl(), 20);
         assert_eq!(mxrdata_rr.get_name().get_name(), String::from("uchile.cl"));
         assert_eq!(mxrdata_rr.get_rdlength(), 7);

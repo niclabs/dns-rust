@@ -3,8 +3,9 @@ pub mod tcp_connection;
 pub mod udp_connection;
 pub mod client_error;
 
-use crate::message::class_qclass::Qclass;
-use crate::{client::client_connection::ClientConnection, message::type_qtype::Qtype};
+use crate::message::rdata::Rdata;
+use crate::message::rrtype::Rrtype;
+use crate::client::client_connection::ClientConnection;
 use crate::message::DnsMessage;
 use crate::domain_name::DomainName;
 
@@ -58,14 +59,14 @@ impl <T: ClientConnection> Client<T> {
     /// let mut client = Client::new(conn_tcp);
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// assert_eq!(dns_query.get_qname().get_name(), String::from("www.test.com"));
-    /// assert_eq!(dns_query.get_qtype(), Rtype::A);
-    /// assert_eq!(dns_query.get_qclass(), Rclass::IN);
+    /// assert_eq!(dns_query.get_rrtype(), Rtype::A);
+    /// assert_eq!(dns_query.get_rclass(), Rclass::IN);
     /// ```
     pub fn create_dns_query(
         &mut self,
         domain_name: DomainName,
-        qtype: &str,
-        qclass: &str,
+        rrtype: &str,
+        rclass: &str,
     ) -> DnsMessage {
         // Create random generator
         let mut rng = thread_rng();
@@ -76,8 +77,8 @@ impl <T: ClientConnection> Client<T> {
         // Create query msg
         let client_query: DnsMessage = DnsMessage::new_query_message(
             domain_name,
-            Qtype::from_str_to_qtype(qtype),
-            Qclass::from_str_to_qclass(qclass),
+            Rrtype::from(rrtype),
+            rclass.into(),
             0,
             false,
             query_id,
@@ -97,7 +98,7 @@ impl <T: ClientConnection> Client<T> {
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// let dns_response = client.send_query();
     /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
-    /// assert_eq!(dns_response.get_question().get_qtype(), Rtype::A);
+    /// assert_eq!(dns_response.get_question().get_rrtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
     /// ```
     async fn send_query(&self) -> Result<DnsMessage, ClientError> {
@@ -106,13 +107,29 @@ impl <T: ClientConnection> Client<T> {
         let conn: &T = &self.get_conn();
         let ip_addr = conn.get_ip();
 
-       let dns_response: DnsMessage = match conn.send(client_query).await {
-            Ok((response_message, ip)) => {
-                if ip != ip_addr {
-                    return Err(ClientError::Message("The ip address of the server is not the same as the one in the connection."))?;
-                }
+        let dns_response: DnsMessage = match conn.send(client_query).await {
+            Ok(response_message) => {
                 match DnsMessage::from_bytes(&response_message) {
-                    Ok(dns_message) => dns_message,
+                    Ok(dns_message) => {
+                        let additional = dns_message.get_additional();
+                        let lenght = additional.len();
+                        let a_r = additional.get(lenght - 1);
+                        match a_r {
+                            Some(a_r) => {
+                                let rdata = a_r.get_rdata();
+                                match rdata {
+                                    Rdata::A(val) => {
+                                        let ipv = val.get_address();
+                                        if ip_addr != ipv{
+                                            return Err(ClientError::Message("The ip address of the server is not the same as the one in the connection."))?;
+                                        }
+                                    },
+                                    _ => {},
+                                }
+                            },
+                            None => {},
+                        }
+                        dns_message},
                     Err(_) => return Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
                 }
             },
@@ -132,10 +149,10 @@ impl <T: ClientConnection> Client<T> {
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// let dns_response = client.query();
     /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
-    /// assert_eq!(dns_response.get_question().get_qtype(), Rtype::A);
+    /// assert_eq!(dns_response.get_question().get_rrtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
-    pub async fn query(&mut self, domain_name: DomainName, qtype: &str, qclass: &str) -> Result<DnsMessage, ClientError> {
-        let _dns_message = self.create_dns_query(domain_name, qtype, qclass);
+    pub async fn query(&mut self, domain_name: DomainName, rrtype: &str, rclass: &str) -> Result<DnsMessage, ClientError> {
+        let _dns_message = self.create_dns_query(domain_name, rrtype, rclass);
 
         let response = self.send_query().await;
 
@@ -174,8 +191,8 @@ impl <T: ClientConnection> Client<T>{
 #[cfg(test)]
 mod client_test {
     use std::{net::{IpAddr, Ipv4Addr}, time::Duration};
-    use crate::message::type_qtype::Qtype;
-    use crate::message::class_qclass::Qclass;
+    use crate::message::rclass::Rclass;
+    use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::domain_name::DomainName;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
@@ -193,10 +210,10 @@ mod client_test {
 
         // sends query
         domain_name.set_name(String::from("example.com"));
-        let qtype = "A"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        let rrtype = "A"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -215,7 +232,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_a() {
+    async fn udp_client_rrtype_a() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -226,11 +243,11 @@ mod client_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("example.com"));
 
-        // sends query, qtype A 
-        let qtype = "A"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        // sends query, rrtype A 
+        let rrtype = "A"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -243,7 +260,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_ns() {
+    async fn udp_client_rrtype_ns() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -254,11 +271,11 @@ mod client_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("example.com"));
 
-        // sends query, qtype NS
-        let qtype = "NS"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        // sends query, rrtype NS
+        let rrtype = "NS"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -271,7 +288,7 @@ mod client_test {
     }
     
     #[tokio::test]
-    async fn udp_client_qtype_cname() {
+    async fn udp_client_rrtype_cname() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -282,11 +299,11 @@ mod client_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("example.com"));
 
-        // sends query, qtype CNAME
-        let qtype = "CNAME"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        // sends query, rrtype CNAME
+        let rrtype = "CNAME"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -299,7 +316,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_soa() {
+    async fn udp_client_rrtype_soa() {
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -310,11 +327,11 @@ mod client_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("example.com"));
 
-        // sends query, qtype SOA
-        let qtype = "SOA"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        // sends query, rrtype SOA
+        let rrtype = "SOA"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -327,7 +344,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_mx(){
+    async fn udp_client_rrtype_mx(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -338,11 +355,11 @@ mod client_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("example.com"));
 
-        // sends query, qtype MX
-        let qtype = "MX"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        // sends query, rrtype MX
+        let rrtype = "MX"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -355,7 +372,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_ptr(){
+    async fn udp_client_rrtype_ptr(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -366,11 +383,11 @@ mod client_test {
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("example.com"));
 
-        // sends query, qtype PTR
-        let qtype = "PTR"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        // sends query, rrtype PTR
+        let rrtype = "PTR"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -383,7 +400,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_tsig(){
+    async fn udp_client_rrtype_tsig(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -393,12 +410,12 @@ mod client_test {
 
         let mut domain_name = DomainName::new();
 
-        // sends query, qtype TSIG
+        // sends query, rrtype TSIG
         domain_name.set_name(String::from("example.com"));
-        let qtype = "TSIG"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        let rrtype = "TSIG"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -411,7 +428,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_hinfo(){
+    async fn udp_client_rrtype_hinfo(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -421,12 +438,12 @@ mod client_test {
 
         let mut domain_name = DomainName::new();
 
-        // sends query, qtype HINFO
+        // sends query, rrtype HINFO
         domain_name.set_name(String::from("example.com"));
-        let qtype = "HINFO"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        let rrtype = "HINFO"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -439,7 +456,7 @@ mod client_test {
     }
 
     #[tokio::test]
-    async fn udp_client_qtype_txt(){
+    async fn udp_client_rrtype_txt(){
         //create connection
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
@@ -449,12 +466,12 @@ mod client_test {
 
         let mut domain_name = DomainName::new();
 
-        // sends query, qtype TXT
+        // sends query, rrtype TXT
         domain_name.set_name(String::from("example.com"));
-        let qtype = "TXT"; 
-        let qclass= "IN";
-        let response = udp_client.query(domain_name, qtype, qclass).await.unwrap();
-        // let response = match udp_client.query(domain_name, qtype, qclass) {
+        let rrtype = "TXT"; 
+        let rclass= "IN";
+        let response = udp_client.query(domain_name, rrtype, rclass).await.unwrap();
+        // let response = match udp_client.query(domain_name, rrtype, rclass) {
         //     Ok(value) => value,
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
@@ -484,9 +501,9 @@ mod client_test {
         //create query
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("test.test2.com."));
-        let qtype = "A"; 
-        let qclass= "IN";
-        let response = tcp_client.query(domain_name, qtype, qclass).await.unwrap();
+        let rrtype = "A"; 
+        let rclass= "IN";
+        let response = tcp_client.query(domain_name, rrtype, rclass).await.unwrap();
 
         println!("Response: {:?}", response);
 
@@ -527,9 +544,9 @@ mod client_test {
         domain_name.set_name(String::from("www.test.com"));
         let dns_query = new_client.create_dns_query(domain_name, "A", "IN");
 
-        assert_eq!(dns_query.get_question().get_qtype(), Qtype::A);
+        assert_eq!(dns_query.get_question().get_rrtype(), Rrtype::A);
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
-        assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
+        assert_eq!(dns_query.get_question().get_rclass(), Rclass::IN);
     }
     
     // Query TCP
@@ -544,9 +561,9 @@ mod client_test {
         domain_name.set_name(String::from("www.test.com"));
         let dns_query = new_client.create_dns_query(domain_name, "A", "IN");
 
-        assert_eq!(dns_query.get_question().get_qtype(), Qtype::A);
+        assert_eq!(dns_query.get_question().get_rrtype(), Rrtype::A);
         assert_eq!(dns_query.get_question().get_qname().get_name(), String::from("www.test.com"));
-        assert_eq!(dns_query.get_question().get_qclass(), Qclass::IN);
+        assert_eq!(dns_query.get_question().get_rclass(), Rclass::IN);
     }
 
     #[tokio::test]

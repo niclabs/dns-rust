@@ -1,6 +1,6 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
-use crate::message::type_rtype::Rtype;
+use crate::message::rrtype::Rrtype;
 
 use std::fmt;
 
@@ -17,7 +17,7 @@ use std::fmt;
 
 pub struct NsecRdata {
     pub next_domain_name: DomainName,
-    pub type_bit_maps: Vec<Rtype>,
+    pub type_bit_maps: Vec<Rrtype>,
 }
 
 impl ToBytes for NsecRdata{
@@ -39,8 +39,8 @@ impl ToBytes for NsecRdata{
 
         for rtype in bitmap {
             let window = match rtype {
-                Rtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
-                _ => (Rtype::from_rtype_to_int(rtype) / 256) as u8,
+                Rrtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
+                _ => (u16::from(rtype) / 256) as u8,
             };
 
             if let Some(current_window_value) = current_window {
@@ -118,7 +118,7 @@ impl FromBytes<Result<Self, &'static str>> for NsecRdata {
                     let rr_type = window_number as u16 * 256 + i as u16 * 8 + j as u16;
                     let bit_mask = 1 << (7 - j);
                     if byte & bit_mask != 0 {
-                        decoded_types.push(Rtype::from_int_to_rtype(rr_type));
+                        decoded_types.push(Rrtype::from(rr_type));
                     }
                 }
             }
@@ -134,7 +134,7 @@ impl FromBytes<Result<Self, &'static str>> for NsecRdata {
 
 impl NsecRdata{
     /// Creates a new `NsecRdata` with next_domain_name and type_bit_maps
-    pub fn new(next_domain_name: DomainName, type_bit_maps: Vec<Rtype>) -> Self {
+    pub fn new(next_domain_name: DomainName, type_bit_maps: Vec<Rrtype>) -> Self {
         if next_domain_name.get_name() == ""{
             panic!("The next_domain_name can't be empty");
         }
@@ -147,7 +147,7 @@ impl NsecRdata{
     /// Returns the next_domain_name of the `NsecRdata`.
     /// # Example
     /// ```
-    /// let nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
+    /// let nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rrtype::A, Rrtype::NS]);
     /// assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("www.example.com"));
     /// ```
     pub fn get_next_domain_name(&self) -> DomainName {
@@ -157,10 +157,10 @@ impl NsecRdata{
     /// Returns the type_bit_maps of the `NsecRdata`.
     /// # Example
     /// ```
-    /// let nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
-    /// assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::NS]);
+    /// let nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rrtype::A, Rrtype::NS]);
+    /// assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rrtype::A, Rrtype::NS]);
     /// ```
-    pub fn get_type_bit_maps(&self) -> Vec<Rtype> {
+    pub fn get_type_bit_maps(&self) -> Vec<Rrtype> {
         self.type_bit_maps.clone()
     }
 }
@@ -171,7 +171,7 @@ impl NsecRdata{
     /// Set the next_domain_name of the `NsecRdata`.
     /// # Example
     /// ```
-    /// let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
+    /// let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rrtype::A, Rrtype::NS]);
     /// nsec_rdata.set_next_domain_name(DomainName::new_from_str("www.example2.com"));
     /// assert_eq!(nsec_rdata.get_next_domain_name().get_name(), String::from("www.example2.com"));
     /// ```
@@ -182,20 +182,20 @@ impl NsecRdata{
     /// Set the type_bit_maps of the `NsecRdata`.
     /// # Example   
     /// ```
-    /// let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rtype::A, Rtype::NS]);
-    /// nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::NS, Rtype::CNAME]);
-    /// assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::NS, Rtype::CNAME]);
+    /// let mut nsec_rdata = NsecRdata::new(DomainName::new_from_str("example.com"), vec![Rrtype::A, Rrtype::NS]);
+    /// nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::NS, Rrtype::CNAME]);
+    /// assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rrtype::A, Rrtype::NS, Rrtype::CNAME]);
     /// ```
-    pub fn set_type_bit_maps(&mut self, type_bit_maps: Vec<Rtype>) {
+    pub fn set_type_bit_maps(&mut self, type_bit_maps: Vec<Rrtype>) {
         self.type_bit_maps = type_bit_maps;
     }
 }
 
 impl NsecRdata{
     /// Complementary functions for to_bytes
-    pub fn add_rtype_to_bitmap(rtype: &Rtype, bitmap: &mut Vec<u8>) {
+    pub fn add_rtype_to_bitmap(rtype: &Rrtype, bitmap: &mut Vec<u8>) {
         // Calculate the offset and bit for the specific Qtype
-        let rr_type = Rtype::from_rtype_to_int(*rtype);
+        let rr_type = u16::from(*rtype);
         let offset = (rr_type % 256) / 8;
         let bit = 7 - (rr_type % 8);
     
@@ -247,9 +247,9 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), vec![]);
 
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::NS]);
+        nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::NS]);
 
-        assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::NS]);
+        assert_eq!(nsec_rdata.get_type_bit_maps(), vec![Rrtype::A, Rrtype::NS]);
     }
 
     #[test]
@@ -260,7 +260,7 @@ mod nsec_rdata_test{
         domain_name.set_name(String::from("host.example.com"));
         nsec_rdata.set_next_domain_name(domain_name);
 
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+        nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
 
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
@@ -291,7 +291,7 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
 
-        let expected_type_bit_maps = vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)];
+        let expected_type_bit_maps = vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)];
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
     }
@@ -362,7 +362,7 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
 
-        let expected_type_bit_maps = vec![Rtype::UNKNOWN(65535)];
+        let expected_type_bit_maps = vec![Rrtype::UNKNOWN(65535)];
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
 
@@ -381,7 +381,7 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
 
-        let expected_type_bit_maps = vec![Rtype::UNKNOWN(65535)];
+        let expected_type_bit_maps = vec![Rrtype::UNKNOWN(65535)];
 
         nsec_rdata.set_type_bit_maps(expected_type_bit_maps.clone());
 
@@ -404,7 +404,7 @@ mod nsec_rdata_test{
     fn from_bytes_all_standar_rtypes(){
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
-        //this shoud represent all the Rtypes except the UNKOWNS(value), the first windown (windown 0) only is necessary, 
+        //this shoud represent all the Rrtypes except the UNKOWNS(value), the first windown (windown 0) only is necessary, 
         let bit_map_bytes_to_test = vec![0, 32,
         102, 31, 128, 0, 1, 83, 128, 0, // 102 <-> 01100110 <-> (1, 2, 5, 6) <-> (A, NS, CNAME, SOA) and so on
         0, 0, 0, 0, 0, 0, 0, 0, //16
@@ -419,8 +419,8 @@ mod nsec_rdata_test{
 
         assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
 
-        let expected_type_bit_maps = vec![Rtype::A, Rtype::NS, Rtype::CNAME,Rtype::SOA, Rtype::WKS, Rtype::PTR, Rtype::HINFO, Rtype::MINFO,
-        Rtype::MX, Rtype::TXT, Rtype::DNAME, Rtype::OPT, Rtype::DS, Rtype::RRSIG, Rtype::NSEC, Rtype::DNSKEY, Rtype::TSIG];
+        let expected_type_bit_maps = vec![Rrtype::A, Rrtype::NS, Rrtype::CNAME,Rrtype::SOA, Rrtype::WKS, Rrtype::PTR, Rrtype::HINFO, Rrtype::MINFO,
+        Rrtype::MX, Rrtype::TXT, Rrtype::DNAME, Rrtype::OPT, Rrtype::DS, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::DNSKEY, Rrtype::TSIG];
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
     }
@@ -433,8 +433,8 @@ mod nsec_rdata_test{
         domain_name.set_name(String::from("host.example.com"));
         nsec_rdata.set_next_domain_name(domain_name);
 
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::NS, Rtype::CNAME,Rtype::SOA, Rtype::WKS, Rtype::PTR, Rtype::HINFO, Rtype::MINFO,
-            Rtype::MX, Rtype::TXT, Rtype::DNAME, Rtype::OPT, Rtype::DS, Rtype::RRSIG, Rtype::NSEC, Rtype::DNSKEY, Rtype::TSIG]);
+        nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::NS, Rrtype::CNAME,Rrtype::SOA, Rrtype::WKS, Rrtype::PTR, Rrtype::HINFO, Rrtype::MINFO,
+            Rrtype::MX, Rrtype::TXT, Rrtype::DNAME, Rrtype::OPT, Rrtype::DS, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::DNSKEY, Rrtype::TSIG]);
 
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
@@ -454,7 +454,7 @@ mod nsec_rdata_test{
     fn from_bytes_wrong_map_lenght(){
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
-        //this shoud represent all the Rtypes except the UNKOWNS(value), the first windown (windown 0) only is necessary, 
+        //this shoud represent all the Rrtypes except the UNKOWNS(value), the first windown (windown 0) only is necessary, 
         let bit_map_bytes_to_test = vec![0, 33,
         102, 31, 128, 0, 1, 83, 128, 0, // 102 <-> 01100110 <-> (1, 2, 5, 6) <-> (A, NS, CNAME, SOA) and so on
         0, 0, 0, 0, 0, 0, 0, 0, //16
@@ -479,7 +479,7 @@ mod nsec_rdata_test{
         domain_name.set_name(String::from("."));
         nsec_rdata.set_next_domain_name(domain_name);
 
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+        nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
 
         let next_domain_name_bytes = vec![0];
 
@@ -510,7 +510,7 @@ mod nsec_rdata_test{
         
          assert_eq!(nsec_rdata.get_next_domain_name().get_name(), expected_next_domain_name);
 
-        let expected_type_bit_maps = vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)];
+        let expected_type_bit_maps = vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)];
 
         assert_eq!(nsec_rdata.get_type_bit_maps(), expected_type_bit_maps);
     }

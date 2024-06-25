@@ -600,12 +600,11 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_opt_rdata(){
-        let expected_bytes = vec![
-            0, 1, 0, 2, 6, 4];
         let mut opt_rdata = OptRdata::new();
-        opt_rdata.set_option_code(1 as u16);
-        opt_rdata.set_option_length(2 as u16);
-        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        opt_rdata.option.push((1 as u16, 2 as u16, vec![0x06, 0x04]));
+
+        let expected_bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
 
         let rdata = Rdata::OPT(opt_rdata);
         let bytes = rdata.to_bytes();
@@ -938,9 +937,7 @@ mod resolver_query_tests {
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
         match rdata {
             Rdata::OPT(val) => {
-                assert_eq!(val.get_option_code(), 1);
-                assert_eq!(val.get_option_length(), 2);
-                assert_eq!(val.get_option_data(), vec![0x06, 0x04]);
+                assert_eq!(val.option[0], (1, 2, vec![0x06, 0x04]));
             }
             _ => {}
         }

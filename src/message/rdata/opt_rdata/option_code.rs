@@ -1,5 +1,5 @@
 use std::fmt;
-
+#[derive(Clone, PartialEq, Debug, Hash, PartialOrd, Ord, Eq, Copy)]
 /// Enum for the option code in an OPT Rdata
 pub enum OptionCode {
     NSID,

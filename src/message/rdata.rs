@@ -365,6 +365,7 @@ impl fmt::Display for Rdata {
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
+    use crate::message::rdata::opt_rdata::option_code::OptionCode;
     use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
     use crate::message::rrtype::Rrtype;
@@ -602,7 +603,7 @@ mod resolver_query_tests {
     fn to_bytes_opt_rdata(){
         let mut opt_rdata = OptRdata::new();
 
-        opt_rdata.option.push((1 as u16, 2 as u16, vec![0x06, 0x04]));
+        opt_rdata.option.push((OptionCode::UNKNOWN(1), 2 as u16, vec![0x06, 0x04]));
 
         let expected_bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
 
@@ -937,7 +938,7 @@ mod resolver_query_tests {
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
         match rdata {
             Rdata::OPT(val) => {
-                assert_eq!(val.option[0], (1, 2, vec![0x06, 0x04]));
+                assert_eq!(val.option[0], (OptionCode::UNKNOWN(1), 2, vec![0x06, 0x04]));
             }
             _ => {}
         }

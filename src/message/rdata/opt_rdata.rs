@@ -1,3 +1,5 @@
+pub mod option_code;
+
 use crate::message::resource_record::{FromBytes, ToBytes};
 use std::fmt;
 

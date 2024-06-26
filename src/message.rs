@@ -12,8 +12,12 @@ use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
 use crate::message::resource_record::ResourceRecord;
+use crate::message::rdata::Rdata;
+use crate::message::rdata::opt_rdata::OptRdata;
+use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
+use resource_record::ToBytes;
 use core::fmt;
 use std::vec::Vec;
 
@@ -239,6 +243,45 @@ impl DnsMessage {
         msg.set_header(header);
 
         msg
+    }
+
+    /// Adds ENDS0 to the message.
+    /// 
+    /// # Example
+    /// ´´´
+    /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// dns_query_message.add_edns0(4096, 0, 0, vec![12]);
+    /// ´´´
+    pub fn add_edns0(&mut self, max_payload: u16, version: u16, z: u16, option_codes: Vec<u16>){
+        let mut opt_rdata = OptRdata::new();
+
+        let mut option = Vec::new();
+
+        for code in option_codes {
+            option.push((OptionCode::from(code), 0, Vec::new()));
+        }
+
+        opt_rdata.set_option(option);
+        let rdata = Rdata::OPT(opt_rdata);
+
+        let rdlength = rdata.to_bytes().len() as u16;
+
+        let mut rr = ResourceRecord::new(rdata);
+
+        rr.set_name(DomainName::new_from_string(".".to_string()));
+
+        rr.set_type_code(Rrtype::OPT);
+
+        rr.set_rclass(Rclass::UNKNOWN(max_payload));
+
+        let ttl = u32::from(version) << 16 | u32::from(z);
+        rr.set_ttl(ttl);
+
+        rr.set_rdlength(rdlength);
+
+        self.add_additionals(vec![rr]);
+
+        self.update_header_counters();
     }
 
 
@@ -1423,6 +1466,36 @@ mod message_test {
         assert_eq!(response.get_question().get_rclass(), record_class);    
         assert_eq!(response.get_header().get_rcode(), 2);
         assert!(response.get_header().get_qr());
+    }
+
+    #[test]
+    fn add_edns0(){
+        let mut dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Rrtype::A,
+                Rclass::IN,
+                0,
+                false,
+                1);
+
+        dns_query_message.add_edns0(512, 0, 32768, vec![12]);
+
+        let additional = dns_query_message.get_additional();
+
+        assert_eq!(additional.len(), 1);
+
+        let rr = &additional[0];
+
+        assert_eq!(rr.get_name().get_name(), String::from("."));
+
+        assert_eq!(rr.get_rtype(), Rrtype::OPT);
+
+        assert_eq!(rr.get_rclass(), Rclass::UNKNOWN(512));
+
+        assert_eq!(rr.get_ttl(), 32768);
+
+        assert_eq!(rr.get_rdlength(), 1);
     }
 
 }

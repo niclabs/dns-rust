@@ -252,7 +252,7 @@ impl DnsMessage {
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(4096, 0, 0, vec![12]);
     /// ´´´
-    pub fn add_edns0(&mut self, max_payload: u16, version: u16, z: u16, option_codes: Vec<u16>){
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, z: u16, option_codes: Vec<u16>){
         let mut opt_rdata = OptRdata::new();
 
         let mut option = Vec::new();
@@ -272,7 +272,7 @@ impl DnsMessage {
 
         rr.set_type_code(Rrtype::OPT);
 
-        rr.set_rclass(Rclass::UNKNOWN(max_payload));
+        rr.set_rclass(Rclass::UNKNOWN(max_payload.unwrap_or(512)));
 
         let ttl = u32::from(version) << 16 | u32::from(z);
         rr.set_ttl(ttl);
@@ -1479,7 +1479,7 @@ mod message_test {
                 false,
                 1);
 
-        dns_query_message.add_edns0(512, 0, 32768, vec![12]);
+        dns_query_message.add_edns0(None, 0, 32768, vec![12]);
 
         let additional = dns_query_message.get_additional();
 

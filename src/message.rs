@@ -1495,7 +1495,20 @@ mod message_test {
 
         assert_eq!(rr.get_ttl(), 32768);
 
-        assert_eq!(rr.get_rdlength(), 1);
+        assert_eq!(rr.get_rdlength(), 4);
+
+        let rdata = rr.get_rdata();
+
+        match rdata {
+            Rdata::OPT(opt) => {
+                let options = opt.get_option();
+                for option in options {
+                    assert_eq!(option, (OptionCode::PADDING, 0, Vec::new()));
+                }
+            },
+            _ => {}
+
+        }
     }
 
 }

@@ -75,8 +75,6 @@ impl DnsMessage {
         id: u16,
     ) -> Self {
         let qr = false;
-        // dnssec
-        let ad = true;
         let qdcount = 1;
         let mut header = Header::new();
 
@@ -84,7 +82,6 @@ impl DnsMessage {
         header.set_qr(qr);
         header.set_op_code(op_code);
         header.set_rd(rd);
-        header.set_ad(ad);
         header.set_qdcount(qdcount);
 
         let mut question = Question::new();

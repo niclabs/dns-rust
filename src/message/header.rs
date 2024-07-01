@@ -256,6 +256,32 @@ impl Header {
         return 0u8;
     }
 
+    /// Returns a byte that represents the field in the DNS message.
+    ///
+    /// See the DNS message structure in struct documentation for more info.
+    fn ad_to_byte(&self) -> u8 {
+        let ad = self.get_ad();
+
+        if ad {
+            return 0b00100000;
+        }
+
+        return 0u8;
+    }
+
+    /// Returns a byte that represents the field in the DNS message.
+    ///
+    /// See the DNS message structure in struct documentation for more info.
+    fn cd_to_byte(&self) -> u8 {
+        let cd = self.get_cd();
+
+        if cd {
+            return 0b00010000;
+        }
+
+        return 0u8;
+    }
+
     /// Gets the first byte from the qdcount attribute.
     fn get_first_qdcount_byte(&self) -> u8 {
         let header_qdcount = self.get_qdcount();
@@ -387,7 +413,7 @@ impl Header {
         header_bytes
     }
 
-    /// Checks if the header is well formed.
+    /// Checks if the header is well-formed.
     pub fn format_check(&self)-> Result<bool, &'static str>{
 
         // OP CODE: A four bit field between 0-15 
@@ -517,6 +543,16 @@ impl Header {
     /// Gets the ra attribute value.
     pub fn get_ra(&self) -> bool {
         self.ra
+    }
+
+    /// Gets the ad attribute value.
+    pub fn get_ad(&self) -> bool {
+        self.ad
+    }
+
+    /// Gets the cd attribute value.
+    pub fn get_cd(&self) -> bool {
+        self.cd
     }
 
     /// Gets the `rcode` attribute value.

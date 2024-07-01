@@ -138,8 +138,8 @@ impl Header {
         let tc = (bytes[2] & 0b00000010) >> 1;
         let rd = bytes[2] & 0b00000001;
         let ra = bytes[3] >> 7;
-        let ad = bytes[3] & 0b00100000 >> 5;
-        let cd = bytes[3] & 0b00010000 >> 4;
+        let ad = (bytes[3] & 0b00100000) >> 5;
+        let cd = (bytes[3] & 0b00010000) >> 4;
         let rcode = bytes[3] & 0b00001111;
         let qdcount = ((bytes[4] as u16) << 8) | bytes[5] as u16;
         let ancount = ((bytes[6] as u16) << 8) | bytes[7] as u16;
@@ -362,9 +362,11 @@ impl Header {
     /// Gets a byte that represents the second byte of flags section.
     fn get_second_flags_byte(&self) -> u8 {
         let ra_byte = self.ra_to_byte();
+        let ad_byte = self.ad_to_byte();
+        let cd_byte = self.cd_to_byte();
         let rcode_byte = self.get_rcode();
 
-        let second_byte = ra_byte | rcode_byte;
+        let second_byte = ra_byte | ad_byte | cd_byte |  rcode_byte;
 
         second_byte
     }

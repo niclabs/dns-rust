@@ -1,6 +1,7 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
 use std::cmp::max;
+use std::option;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 use super::server_info::ServerInfo;
@@ -201,6 +202,31 @@ impl ResolverConfig {
     /// ```
     pub fn remove_servers(&mut self) {
         self.name_servers = Vec::new();
+    }
+
+    /// add edns0 to the resolver
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::time::Duration;
+    /// use dns_resolver::client::client_connection::ConnectionProtocol;
+    /// use dns_resolver::resolver::config::ResolverConfig;
+    /// 
+    /// let mut resolver_config = ResolverConfig::default();
+    /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
+    /// ```
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, flags: u16, options: Option<Vec<u16>>) {
+        self.ends0 = true;
+        if let Some(max_payload) = max_payload {
+            self.max_payload = max_payload;
+        }
+        self.ends0_version = version;
+        self.ends0_flags = flags;
+        if let Some(options) =  options {
+            self.ends0_options = options;
+        }
     }
 }
 

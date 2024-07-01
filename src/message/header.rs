@@ -785,13 +785,15 @@ mod header_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
+        header.set_ad(true);
+        header.set_cd(true);
         header.set_rcode(5);
         header.set_ancount(0b0000101010100101);
 
         bytes[0] = 0b00100100;
         bytes[1] = 0b10010101;
         bytes[2] = 0b10010010;
-        bytes[3] = 0b00000101;
+        bytes[3] = 0b00110101;
         bytes[6] = 0b00001010;
         bytes[7] = 0b10100101;
 
@@ -805,7 +807,7 @@ mod header_test {
         bytes[0] = 0b00100100;
         bytes[1] = 0b10010101;
         bytes[2] = 0b10010010;
-        bytes[3] = 0b00000101;
+        bytes[3] = 0b00110101;
         bytes[6] = 0b00001010;
         bytes[7] = 0b10100101;
 
@@ -815,6 +817,8 @@ mod header_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
+        header.set_ad(true);
+        header.set_cd(true);
         header.set_rcode(5);
         header.set_ancount(0b0000101010100101);
 

@@ -42,7 +42,7 @@ pub struct Header {
     ad: bool, // Authentic data
     cd: bool, // cd data
 
-    /// Reserved
+    /// Reserved Edit: Now z is just a flag
     #[allow(dead_code)]
     z: bool,
 
@@ -138,6 +138,8 @@ impl Header {
         let tc = (bytes[2] & 0b00000010) >> 1;
         let rd = bytes[2] & 0b00000001;
         let ra = bytes[3] >> 7;
+        let ad = bytes[3] & 0b00100000 >> 5;
+        let cd = bytes[3] & 0b00010000 >> 4;
         let rcode = bytes[3] & 0b00001111;
         let qdcount = ((bytes[4] as u16) << 8) | bytes[5] as u16;
         let ancount = ((bytes[6] as u16) << 8) | bytes[7] as u16;
@@ -152,6 +154,8 @@ impl Header {
         header.set_tc(tc != 0);
         header.set_rd(rd != 0);
         header.set_ra(ra != 0);
+        header.set_ad(ad != 0);
+        header.set_cd(cd != 0);
         header.set_rcode(rcode);
         header.set_qdcount(qdcount);
         header.set_ancount(ancount);
@@ -392,7 +396,7 @@ impl Header {
         }
 
         // Z: A 3 bit field that MUST be zero 
-        if self.z != 0 {
+        if self.z != false {
             return Err("Format Error: Z");
         }
 
@@ -440,6 +444,16 @@ impl Header {
     /// Sets the ra attribute with a value.
     pub fn set_ra(&mut self, ra: bool) {
         self.ra = ra;
+    }
+
+    /// Sets the ad attribute with a value.
+    pub fn set_ad(&mut self, ra: bool) {
+        self.ad = ra;
+    }
+
+    /// Sets the cd attribute with a value.
+    pub fn set_cd(&mut self, ra: bool) {
+        self.cd = ra;
     }
 
     /// Sets the rcode attribute with a value.

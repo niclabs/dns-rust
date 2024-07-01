@@ -218,14 +218,14 @@ impl ResolverConfig {
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
     /// ```
     pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, flags: u16, options: Option<Vec<u16>>) {
-        self.ends0 = true;
+        self.set_ends0(true);
         if let Some(max_payload) = max_payload {
-            self.max_payload = max_payload;
+            self.set_max_payload(max_payload);
         }
-        self.ends0_version = version;
-        self.ends0_flags = flags;
+        self.set_ends0_version(version);
+        self.set_ends0_flags(flags);
         if let Some(options) =  options {
-            self.ends0_options = options;
+            self.set_ends0_options(options);
         }
     }
 }
@@ -280,6 +280,26 @@ impl ResolverConfig {
     pub fn get_global_retransmission_limit(&self) -> u16 {
         self.global_retransmission_limit
     }
+
+    pub fn get_ends0(&self) -> bool {
+        self.ends0
+    }
+
+    pub fn get_max_payload(&self) -> u16 {
+        self.max_payload
+    }
+
+    pub fn get_ends0_version(&self) -> u16 {
+        self.ends0_version
+    }
+
+    pub fn get_ends0_flags(&self) -> u16 {
+        self.ends0_flags
+    }
+
+    pub fn get_ends0_options(&self) -> Vec<u16> {
+        self.ends0_options.clone()
+    }
 }
 
 ///Setters
@@ -331,6 +351,26 @@ impl ResolverConfig{
 
     pub fn set_global_retransmission_limit(&mut self, global_retransmission_limit: u16) {
         self.global_retransmission_limit = global_retransmission_limit;
+    }
+
+    pub fn set_ends0(&mut self, ends0: bool) {
+        self.ends0 = ends0;
+    }
+
+    pub fn set_max_payload(&mut self, max_payload: u16) {
+        self.max_payload = max_payload;
+    }
+
+    pub fn set_ends0_version(&mut self, ends0_version: u16) {
+        self.ends0_version = ends0_version;
+    }
+
+    pub fn set_ends0_flags(&mut self, ends0_flags: u16) {
+        self.ends0_flags = ends0_flags;
+    }
+
+    pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
+        self.ends0_options = ends0_options;
     }
 }
 

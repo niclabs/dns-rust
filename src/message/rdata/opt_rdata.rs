@@ -98,13 +98,17 @@ impl fmt::Display for OptRdata {
     /// Formats the record data for display
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::new();
-
-        for (option_code, option_length, option_data) in &self.option {
-            result.push_str(&format!("OPTION-CODE: {}\n", option_code));
-            result.push_str(&format!("OPTION-LENGTH: {}\n", option_length));
-            result.push_str(&format!("OPTION-DATA: {:?}\n", option_data));
+        
+        if !self.option.is_empty() {
+            for (option_code, option_length, option_data) in &self.option {
+                result.push_str(&format!("OPTION-CODE: {}\n", option_code));
+                result.push_str(&format!("OPTION-LENGTH: {}\n", option_length));
+                result.push_str(&format!("OPTION-DATA: {:?}\n", option_data));
+            }
         }
-
+        else {
+            result.push_str("No Option");
+        }
         write!(f, "{}", result)
     }
 }

@@ -1,5 +1,6 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
+use crate::message::DnsMessage;
 use std::cmp::max;
 use std::option;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
@@ -226,6 +227,22 @@ impl ResolverConfig {
         self.set_ends0_flags(flags);
         if let Some(options) =  options {
             self.set_ends0_options(options);
+        }
+    }
+
+    /// add edns0 from the resolver to a dns message
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut resolver_config = ResolverConfig::default();
+    /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
+    /// let message = Message::new();
+    /// resolver_config.add_edns0_to_message(&message);
+    /// ```
+    pub fn add_edns0_to_message(&self, message: &mut DnsMessage) {
+        if self.ends0 {
+            message.add_edns0(Some(self.get_max_payload()), self.get_ends0_version(), self.get_ends0_flags(), Some(self.get_ends0_options()));
         }
     }
 }

@@ -211,7 +211,13 @@ impl AsyncResolver {
         rrtype: Rrtype,
         rclass: Rclass
     ) -> Result<LookupResponse, ResolverError> {
-        let query = message::create_recursive_query(domain_name.clone(), rrtype, rclass);
+        let mut query = message::create_recursive_query(domain_name.clone(), rrtype, rclass);
+
+        let config = self.config.clone();
+
+        if config.get_ends0() {
+            config.add_edns0_to_message(&mut query);
+        }
 
         // Cache lookup
         // Search in cache only if its available

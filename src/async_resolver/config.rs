@@ -61,6 +61,16 @@ pub struct ResolverConfig {
     // retransmission, etc.)  If the counter passes zero, the request
     // is terminated with a temporary error.
     global_retransmission_limit: u16,
+    /// This is whether ends0 is enabled or not.
+    ends0: bool,
+    /// Max payload for the resolver.
+    max_payload: u16,
+    /// Version of endns0.
+    ends0_version: u16,
+    /// edns0 flags for the resolver.
+    ends0_flags: u16,
+    /// edns0 options for the resolver.
+    ends0_options: Vec<u16>,
 }
 
 impl ResolverConfig {
@@ -96,6 +106,11 @@ impl ResolverConfig {
             max_retry_interval_seconds: 10,
             min_retry_interval_seconds: 1,
             global_retransmission_limit: 30,
+            ends0: false,
+            max_payload: 512,
+            ends0_version: 0,
+            ends0_flags: 0,
+            ends0_options: Vec::new(),
         };
         resolver_config
     }
@@ -132,6 +147,11 @@ impl ResolverConfig {
             max_retry_interval_seconds: max_retry_interval_seconds,
             min_retry_interval_seconds: min_retry_interval_seconds,
             global_retransmission_limit: global_retransmission_limit,
+            ends0: false,
+            max_payload: 512,
+            ends0_version: 0,
+            ends0_flags: 0,
+            ends0_options: Vec::new(),
         };
         resolver_config
     }

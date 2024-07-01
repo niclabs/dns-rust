@@ -214,7 +214,7 @@ impl Header {
             return 0b00000100;
         }
 
-        return 0 as u8;
+        return 0u8;
     }
 
     /// Returns a byte that represents the field in the DNS message.
@@ -227,7 +227,7 @@ impl Header {
             return 0b00000010;
         }
 
-        return 0 as u8;
+        return 0u8;
     }
 
     /// Returns a byte that represents the field in the DNS message.
@@ -240,7 +240,7 @@ impl Header {
             return 0b00000001;
         }
 
-        return 0 as u8;
+        return 0u8;
     }
 
     /// Returns a byte that represents the field in the DNS message.
@@ -253,7 +253,7 @@ impl Header {
             return 0b10000000;
         }
 
-        return 0 as u8;
+        return 0u8;
     }
 
     /// Gets the first byte from the qdcount attribute.

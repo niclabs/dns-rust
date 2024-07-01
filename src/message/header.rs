@@ -597,6 +597,8 @@ mod header_test {
         assert_eq!(header.tc, false);
         assert_eq!(header.rd, false);
         assert_eq!(header.ra, false);
+        assert_eq!(header.ad, false);
+        assert_eq!(header.cd, false);
         assert_eq!(header.rcode, 0);
         assert_eq!(header.qdcount, 0);
         assert_eq!(header.ancount, 0);
@@ -686,6 +688,30 @@ mod header_test {
         header.set_ra(true);
         ra = header.get_ra();
         assert_eq!(ra, true);
+    }
+
+    #[test]
+    fn set_and_get_ad() {
+        let mut header = Header::new();
+
+        let mut ad = header.get_ad();
+        assert_eq!(ad, false);
+
+        header.set_ad(true);
+        ad = header.get_ad();
+        assert_eq!(ad, true);
+    }
+
+    #[test]
+    fn set_and_get_cd() {
+        let mut header = Header::new();
+
+        let mut cd = header.get_cd();
+        assert_eq!(cd, false);
+
+        header.set_cd(true);
+        cd = header.get_cd();
+        assert_eq!(cd, true);
     }
 
     #[test]
@@ -841,7 +867,7 @@ mod header_test {
         ];
 
         let mut header = Header::from_bytes(&bytes_header);
-        header.z = 3;
+        header.z = true;
         header.set_rcode(16);
         header.set_op_code(22);
 

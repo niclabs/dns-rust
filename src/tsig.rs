@@ -302,7 +302,7 @@ pub fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  av
     let fudge = tsig_rr_copy.get_fudge();
     let time_signed = tsig_rr_copy.get_time_signed();
     let mac_received = tsig_rr_copy.get_mac();
-    let key_name = "".to_string();
+    let key_name = rr_copy.get_name().get_name();
     let mut new_alg_name: TsigAlgorithm = TsigAlgorithm::HmacSha1;
     match name_alg.as_str() {
         "hmac-sha1" => new_alg_name = TsigAlgorithm::HmacSha1,

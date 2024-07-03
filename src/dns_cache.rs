@@ -8,17 +8,25 @@ use std::num::NonZeroUsize;
 use crate::dns_cache::rr_stored_data::RRStoredData;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
+use crate::message::rcode::Rcode;
 use crate::message::rrtype::Rrtype;
 use crate::message::rclass::Rclass;
 use std::net::IpAddr;
 use crate::domain_name::DomainName;
 use chrono::Utc;
 
+/// Enum that represents the key of the cache for the case os NAME ERROR RCODE (RFC 2308)
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
+pub enum CacheKey {
+    Primary(Rrtype, Rclass, DomainName),
+    Secondary(Rclass, DomainName),
+}
+
 #[derive(Clone, Debug)]
 /// Struct that represents a cache for dns
 pub struct DnsCache {
     // Cache for the resource records, where the key is the type of the query, the class of the query and the qname of the query
-    cache: LruCache<(Rrtype, Rclass, DomainName), Vec<RRStoredData>>,
+    cache: LruCache<CacheKey, Vec<RRStoredData>>,
     max_size: NonZeroUsize,
 }
 
@@ -34,26 +42,34 @@ impl DnsCache {
     ///
     pub fn new(max_size: Option<NonZeroUsize>) -> Self {
         let cache = DnsCache {
-            cache: LruCache::new(max_size.unwrap_or_else(|| NonZeroUsize::new(5000).unwrap())),
+            cache: LruCache::new(max_size.unwrap_or_else(|| NonZeroUsize::new(1667).unwrap())),
             max_size: max_size.unwrap_or_else(|| NonZeroUsize::new(100).unwrap()),
         };
         cache
     }
 
     /// Adds an element to cache
-    pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord, rrtype: Rrtype, rclass: Rclass, rcode: Option<u8>) {
+    pub fn add(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Rrtype>, qclass: Rclass, rcode: Option<Rcode>) {
 
         let mut rr_cache = RRStoredData::new(resource_record);
 
-        let rcode = rcode.unwrap_or_else(|| 0);
+        let rcode = rcode.unwrap_or_else(|| Rcode::NOERROR);
 
-        if rcode != 0 {
+        let key;
+
+        if rcode == Rcode::NXDOMAIN {
+            key = CacheKey::Secondary(qclass, domain_name.clone());
+        } else {
+            key = CacheKey::Primary(qtype.unwrap(), qclass, domain_name.clone());
+        }
+
+        if rcode != Rcode::NOERROR {
             rr_cache.set_rcode(rcode);
         }
 
         let mut cache_data = self.get_cache();
 
-        if let Some(rr_cache_vec) = cache_data.get_mut(&(rrtype, rclass, domain_name.clone())) {
+        if let Some(rr_cache_vec) = cache_data.get_mut(&key) {
             let mut val_exist = false;
             for rr in rr_cache_vec.iter_mut() {
                 if rr.get_resource_record().get_rdata() == rr_cache.get_resource_record().get_rdata() {
@@ -68,7 +84,7 @@ impl DnsCache {
         } else {
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);
-            cache_data.put((rrtype, rclass, domain_name.clone()), rr_cache_vec);
+            cache_data.put(key, rr_cache_vec);
         }
 
         self.set_cache(cache_data); 
@@ -81,21 +97,25 @@ impl DnsCache {
         let mut cache_data = self.get_cache();
         let rr_cache = RRStoredData::new(resource_record);
         
-        if let Some(rr_cache_vec) = cache_data.get_mut(&(rrtype, rclass, domain_name.clone())){
+        if let Some(rr_cache_vec) = cache_data.get_mut(&CacheKey::Primary(rrtype, rclass, domain_name.clone())){
             rr_cache_vec.push(rr_cache);
         } else {
             let mut rr_cache_vec = Vec::new();
             rr_cache_vec.push(rr_cache);
-            cache_data.put((rrtype, rclass, domain_name.clone()), rr_cache_vec);
+            cache_data.put(CacheKey::Primary(rrtype, rclass, domain_name.clone()), rr_cache_vec);
         }
 
         self.set_cache(cache_data);
     }
 
     /// Removes an element from cache
-    pub fn remove(&mut self, domain_name: DomainName, rrtype: Rrtype, rclass: Rclass) {
+    pub fn remove(&mut self, domain_name: DomainName, rrtype: Option<Rrtype>, rclass: Rclass) {
         let mut cache_data = self.get_cache();
-        let _extracted = cache_data.pop(&(rrtype, rclass, domain_name));
+        if rrtype != None {
+            let _extracted = cache_data.pop(&CacheKey::Primary(rrtype.unwrap(), rclass, domain_name));
+        } else {
+            let _extracted = cache_data.pop(&CacheKey::Secondary(rclass, domain_name));
+        }
         self.set_cache(cache_data); 
     }
 
@@ -103,7 +123,7 @@ impl DnsCache {
     pub fn get(&mut self, domain_name: DomainName, rrtype: Rrtype, rclass: Rclass) -> Option<Vec<RRStoredData>> {
         let mut cache = self.get_cache();
 
-        let rr_cache_vec = cache.get(&(rrtype, rclass, domain_name)).cloned();
+        let rr_cache_vec = cache.get(&CacheKey::Primary(rrtype, rclass, domain_name)).cloned();
 
         self.set_cache(cache);
 
@@ -155,7 +175,7 @@ impl DnsCache {
     ) {
         let mut cache = self.get_cache();
 
-        if let Some(rr_cache_vec) = cache.get_mut(&(rrtype, rclass, domain_name)){
+        if let Some(rr_cache_vec) = cache.get_mut(&CacheKey::Primary(rrtype, rclass, domain_name)){
             for rr in rr_cache_vec {
                 let rr_ip_address = match rr.get_resource_record().get_rdata() {
                     Rdata::A(val) => val.get_address(),
@@ -176,8 +196,8 @@ impl DnsCache {
     }
 
     /// Checks if a domain name is cached
-    pub fn is_cached(&self, domain_name: DomainName, rrtype: Rrtype, rclass: Rclass) -> bool {
-        if let Some(key_data) = self.cache.peek(&(rrtype, rclass, domain_name)) {
+    pub fn is_cached(&self, key: CacheKey) -> bool {
+        if let Some(key_data) = self.cache.peek(&key) {
             if key_data.len() > 0 {
                 return true;
             }
@@ -237,7 +257,7 @@ impl DnsCache {
 // Getters
 impl DnsCache {
     // Gets the cache from the struct
-    pub fn get_cache(&self) -> LruCache<(Rrtype, Rclass, DomainName), Vec<RRStoredData>>{
+    pub fn get_cache(&self) -> LruCache<CacheKey, Vec<RRStoredData>>{
         self.cache.clone()
     }
 
@@ -250,7 +270,7 @@ impl DnsCache {
 // Setters
 impl DnsCache {
     // Sets the cache
-    pub fn set_cache(&mut self, cache: LruCache<(Rrtype, Rclass, DomainName), Vec<RRStoredData>>) {
+    pub fn set_cache(&mut self, cache: LruCache<CacheKey, Vec<RRStoredData>>) {
         self.cache = cache
     }
 
@@ -296,7 +316,7 @@ mod dns_cache_test {
     fn set_cache() {
         let mut cache = DnsCache::new(NonZeroUsize::new(10));
         let mut cache_data = LruCache::new(NonZeroUsize::new(10).unwrap());
-        cache_data.put((Rrtype::A, Rclass::IN, DomainName::new_from_str("example.com")), vec![]);
+        cache_data.put(CacheKey::Primary(Rrtype::A, Rclass::IN, DomainName::new_from_str("example.com")), vec![]);
 
         cache.set_cache(cache_data.clone());
 
@@ -325,7 +345,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
 
@@ -350,7 +370,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let ip_address = IpAddr::from([127, 0, 0, 1]);
         let mut a_rdata = ARdata::new();
@@ -360,7 +380,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
 
@@ -379,7 +399,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let ip_address_v6 = IpAddr::from([0, 0, 0, 0, 0, 0, 0, 1]);
         let mut aaaa_rdata = AAAARdata::new();
@@ -389,7 +409,7 @@ mod dns_cache_test {
         resource_record_2.set_name(domain_name.clone());
         resource_record_2.set_type_code(Rrtype::AAAA);
 
-        cache.add(domain_name.clone(), resource_record_2.clone(), Rrtype::AAAA, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::AAAA), Rclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
 
@@ -411,7 +431,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let ip_address = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
@@ -421,7 +441,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
 
@@ -440,9 +460,9 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
-        cache.remove(domain_name.clone(), Rrtype::A, Rclass::IN);
+        cache.remove(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Rrtype::A, Rclass::IN);
 
@@ -461,7 +481,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let rr_cache_vec = cache.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
 
@@ -523,9 +543,9 @@ mod dns_cache_test {
         resource_record_3.set_name(domain_name_3.clone());
         resource_record_3.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
-        cache.add(domain_name_2.clone(), resource_record_2.clone(), Rrtype::A, Rclass::IN, None);
-        cache.add(domain_name_3.clone(), resource_record_3.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
+        cache.add(domain_name_2.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
+        cache.add(domain_name_3.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let _rr_cache_vec = cache.get(domain_name.clone(), Rrtype::A, Rclass::IN);
 
@@ -566,7 +586,7 @@ mod dns_cache_test {
 
         let mut lru_cache = cache.get_cache();
 
-        lru_cache.put((Rrtype::A, Rclass::IN, domain_name.clone()), rr_cache_vec);
+        lru_cache.put(CacheKey::Primary(Rrtype::A, Rclass::IN, domain_name.clone()), rr_cache_vec);
 
         cache.set_cache(lru_cache);
 
@@ -587,7 +607,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         let new_response_time = 2000;
 
@@ -613,7 +633,7 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
         
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         assert!(!cache.is_empty());
     }
@@ -624,7 +644,7 @@ mod dns_cache_test {
 
         let domain_name = DomainName::new_from_str("example.com");
 
-        assert!(!cache.is_cached(domain_name.clone(), Rrtype::A, Rclass::IN));
+        assert!(!cache.is_cached(CacheKey::Primary(Rrtype::A, Rclass::IN, domain_name.clone())));
 
         let ip_address = IpAddr::from([127, 0, 0, 0]);
         let mut a_rdata = ARdata::new();
@@ -634,11 +654,11 @@ mod dns_cache_test {
         resource_record.set_name(domain_name.clone());
         resource_record.set_type_code(Rrtype::A);
         
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
-        assert!(cache.is_cached(domain_name.clone(), Rrtype::A, Rclass::IN));
+        assert!(cache.is_cached(CacheKey::Primary(Rrtype::A, Rclass::IN, domain_name.clone())));
 
-        assert!(!cache.is_cached(domain_name.clone(), Rrtype::AAAA, Rclass::IN));
+        assert!(!cache.is_cached(CacheKey::Primary(Rrtype::AAAA, Rclass::IN, domain_name.clone())));
     }
 
     #[test]
@@ -657,7 +677,7 @@ mod dns_cache_test {
         resource_record.set_type_code(Rrtype::A);
         resource_record.set_ttl(ttl);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         cache.timeout_cache();
 
@@ -691,8 +711,8 @@ mod dns_cache_test {
         resource_record_2.set_type_code(Rrtype::A);
         resource_record_2.set_ttl(ttl_2);
 
-        cache.add(domain_name.clone(), resource_record.clone(), Rrtype::A, Rclass::IN, None);
-        cache.add(domain_name_2.clone(), resource_record_2.clone(), Rrtype::A, Rclass::IN, None);
+        cache.add(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
+        cache.add(domain_name_2.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
 
         cache.timeout_cache();
 

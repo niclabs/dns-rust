@@ -1,11 +1,12 @@
 use crate::message::resource_record::ResourceRecord;
+use crate::message::rcode::Rcode;
 use chrono::prelude::*;
 
 #[derive(Clone,PartialEq,Debug)]
 /// An structs that represents one element in the dns cache.
 pub struct RRStoredData {
     // RCODE associated with the answer
-    rcode: u8,
+    rcode: Rcode,
     /// Resource Records of the domain name
     resource_record: ResourceRecord,
     /// Mean of response time of the ip address
@@ -27,7 +28,7 @@ impl RRStoredData {
     //
     pub fn new(resource_record: ResourceRecord) -> Self {
         let rr_cache = RRStoredData {
-            rcode: 0,
+            rcode: Rcode::NOERROR,
             resource_record: resource_record,
             response_time: 5000,
             creation_time: Utc::now(),
@@ -47,7 +48,7 @@ impl RRStoredData {
 // Getters
 impl RRStoredData {
     // Gets the rcode of the stored data
-    pub fn get_rcode(&self) -> u8 {
+    pub fn get_rcode(&self) -> Rcode {
         self.rcode
     }
 
@@ -70,7 +71,7 @@ impl RRStoredData {
 // Setters
 impl RRStoredData {
     // Sets the rcode attribute with new value
-    pub fn set_rcode(&mut self, rcode: u8) {
+    pub fn set_rcode(&mut self, rcode: Rcode) {
         self.rcode = rcode;
     }
 
@@ -91,6 +92,7 @@ mod rr_cache_test {
     use crate::message::rdata::Rdata;
     use crate::message::rrtype::Rrtype;
     use crate::message::resource_record::ResourceRecord;
+    use crate::message::rcode::Rcode;
     use crate::dns_cache::rr_stored_data::RRStoredData;
     use std::net::IpAddr;
     use chrono::prelude::*;
@@ -125,11 +127,11 @@ mod rr_cache_test {
 
         let mut rr_cache = RRStoredData::new(resource_record);
 
-        assert_eq!(rr_cache.get_rcode(), 0);
+        assert_eq!(rr_cache.get_rcode(), Rcode::NOERROR);
 
-        rr_cache.set_rcode(1);
+        rr_cache.set_rcode(Rcode::FORMERR);
 
-        assert_eq!(rr_cache.get_rcode(), 1);
+        assert_eq!(rr_cache.get_rcode(), Rcode::FORMERR);
     }
 
     #[test]

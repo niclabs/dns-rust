@@ -162,5 +162,8 @@ mod opt_rdata_test{
         opt_rdata.set_option(option.clone());
 
         assert_eq!(opt_rdata.get_option(), option);
+        opt_rdata.set_option(option.clone());
+
+        assert_eq!(opt_rdata.get_option(), option);
     }
 }

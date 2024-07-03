@@ -233,7 +233,7 @@ impl fmt::Display for MxRdata {
 mod mx_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
-    use crate::message::Rrtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::Rclass;
     use crate::message::rdata::mx_rdata::MxRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

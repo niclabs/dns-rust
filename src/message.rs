@@ -8,6 +8,7 @@ pub mod rcode;
 
 use crate::message::rclass::Rclass;
 use crate::message::rrtype::Rrtype;
+use crate::message::rcode::Rcode;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
@@ -211,7 +212,7 @@ impl DnsMessage {
         let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
 
-        header.set_rcode(1);
+        header.set_rcode(Rcode::FORMERR);
         header.set_qr(true);
         msg.set_header(header);
 
@@ -339,7 +340,7 @@ impl DnsMessage {
     pub fn not_implemented_msg() -> Self {
         let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
-        header.set_rcode(4);
+        header.set_rcode(Rcode::NOTIMP);
         header.set_qr(true);
 
         msg.set_header(header);
@@ -819,7 +820,7 @@ pub fn create_server_failure_response_from_query(
 ) -> DnsMessage {
     let mut response = query.clone();
     let mut new_header: Header = response.get_header();
-    new_header.set_rcode(2);
+    new_header.set_rcode(Rcode::SERVFAIL);
     new_header.set_qr(true);
     response.set_header(new_header);
     return response;
@@ -999,7 +1000,7 @@ mod message_test {
         assert_eq!(header.get_qr(), true);
         assert_eq!(header.get_op_code(), 2);
         assert_eq!(header.get_tc(), true);
-        assert_eq!(header.get_rcode(), 0);
+        assert_eq!(header.get_rcode(), Rcode::NOERROR);
         assert_eq!(header.get_ancount(), 1);
 
         // Question
@@ -1038,7 +1039,7 @@ mod message_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -1131,7 +1132,7 @@ mod message_test {
 
         let header = msg.get_header();
         //only two things are set in this fn
-        assert_eq!(header.get_rcode(), 1);
+        assert_eq!(header.get_rcode(), Rcode::FORMERR);
         assert_eq!(header.get_qr(), true);
     }
 
@@ -1158,7 +1159,7 @@ mod message_test {
 
         let header = msg.get_header();
 
-        assert_eq!(header.get_rcode(), 4);
+        assert_eq!(header.get_rcode(), Rcode::NOTIMP);
         assert_eq!(header.get_qr(), true);
     }
 
@@ -1465,7 +1466,7 @@ mod message_test {
         assert_eq!(response.get_question().get_qname(), name);
         assert_eq!(response.get_question().get_rrtype(), record_type);
         assert_eq!(response.get_question().get_rclass(), record_class);    
-        assert_eq!(response.get_header().get_rcode(), 2);
+        assert_eq!(response.get_header().get_rcode(), Rcode::SERVFAIL);
         assert!(response.get_header().get_qr());
     }
 

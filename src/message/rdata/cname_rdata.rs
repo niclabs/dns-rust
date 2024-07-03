@@ -136,7 +136,7 @@ mod cname_rdata_test {
     use crate::domain_name::DomainName;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::cname_rdata::CnameRdata;
-    use crate::message::Rrtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::Rclass;
     use crate::message::resource_record::{FromBytes, ToBytes};
 

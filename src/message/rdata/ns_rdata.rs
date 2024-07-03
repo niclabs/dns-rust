@@ -153,7 +153,8 @@ impl fmt::Display for NsRdata {
 #[cfg(test)]
 mod ns_rdata_test {
     use crate::domain_name::DomainName;
-    use crate::message::{Rclass, Rrtype};
+    use crate::message::Rclass;
+    use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

@@ -156,7 +156,8 @@ impl fmt::Display for PtrRdata {
 #[cfg(test)]
 mod ptr_rdata_test {
     use crate::domain_name::DomainName;
-    use crate::message::{Rclass, Rrtype};
+    use crate::message::Rclass;
+    use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::ptr_rdata::PtrRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};

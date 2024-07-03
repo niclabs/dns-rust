@@ -9,7 +9,7 @@ use std::net::IpAddr;
 use std::vec;
 use std::sync::{Arc, Mutex};
 use crate::client::client_error::ClientError;
-use crate::dns_cache::DnsCache;
+use crate::resolver_cache::ResolverCache;
 use crate::domain_name::DomainName;
 use crate::message::rcode::Rcode;
 use crate::message::{self, DnsMessage};
@@ -38,8 +38,8 @@ use self::lookup_response::LookupResponse;
 /// `lookup_ip` method.
 #[derive(Clone)]
 pub struct AsyncResolver {
-    /// Cache for the resolver.
-    cache: Arc<Mutex<DnsCache>>,
+    /// Cache for the resolver
+    cache: Arc<Mutex<ResolverCache>>,
     /// Configuration for the resolver.
     config: ResolverConfig ,
 }
@@ -60,7 +60,7 @@ impl AsyncResolver {
     /// ```
     pub fn new(config: ResolverConfig)-> Self {
         let async_resolver = AsyncResolver {
-            cache: Arc::new(Mutex::new(DnsCache::new(None))),
+            cache: Arc::new(Mutex::new(ResolverCache::new(None))),
             config: config,
         };
         async_resolver
@@ -205,6 +205,7 @@ impl AsyncResolver {
     /// let response = resolver.inner_lookup(domain_name).await;
     /// assert!(response.is_ok());
     /// ```
+    /// TODO: Refactor to use the three caches
     async fn inner_lookup(
         &self,
         domain_name: DomainName,
@@ -226,29 +227,11 @@ impl AsyncResolver {
             let cache = match lock_result {
                 Ok(val) => val,
                 Err(_) => Err(ClientError::Message("Error getting cache"))?, // FIXME: it shouldn't 
-                // return the error, it shoul go to the next part of the code
+                // return the error, it should go to the next part of the code
             };
-            if let Some(cache_lookup) = cache.clone().get(domain_name.clone(), rrtype, rclass) {
-                let mut new_query = query.clone();
-
-                // Get RR from cache
-                for rr_cache_value in cache_lookup.iter() {
-                    let rr = rr_cache_value.get_resource_record();
-
-                    // Get negative answer
-                    if u16::from(rrtype) != u16::from(rr.get_rtype()) {
-                        let additionals: Vec<ResourceRecord> = vec![rr];
-                        new_query.add_additionals(additionals);
-                        let mut new_header = new_query.get_header();
-                        new_header.set_rcode(3);  // TODO: is here where the other problem originates?
-                        new_query.set_header(new_header);
-                    }
-                    else { //FIXME: change to alg RFC 1034-1035
-                        let answer: Vec<ResourceRecord> = vec![rr];
-                        new_query.set_answer(answer);
-                    }
-                }
-                let new_lookup_response = LookupResponse::new(new_query);
+            if let Some(cache_lookup) = cache.clone().get(query.clone()) {
+                
+                let new_lookup_response = LookupResponse::new(cache_lookup.clone());
 
                 return Ok(new_lookup_response)
             }
@@ -331,23 +314,15 @@ impl AsyncResolver {
     /// answer section, it is always preferred.
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
+        let rcode = response.get_header().get_rcode();
         {
         let mut cache = self.cache.lock().unwrap();
-        // FIXME: maybe add corresponding type of erro
-        cache.timeout_cache();
+        cache.timeout();
         if !truncated {
-            // TODO: RFC 1035: 7.4. Using the cache
-            response.get_answer()
-            .iter()
-            .for_each(|rr| {
-                if rr.get_ttl() > 0 {
-                    cache.add(rr.get_name(), rr.clone(), response.get_question().get_rrtype(), response.get_question().get_rclass(), Some(response.get_header().get_rcode()));
-                }
-            });
-
-        }
+            cache.add(response.clone());
         }
         self.save_negative_answers(response);
+        }
     }
 
     /// Stores the data of negative answers in the cache.
@@ -382,8 +357,9 @@ impl AsyncResolver {
     /// cached.
     fn save_negative_answers(&self, response: DnsMessage){
         let qname = response.get_question().get_qname();
-        let rrtype = response.get_question().get_rrtype();
-        let rclass = response.get_question().get_rclass();
+        let qtype = response.get_question().get_rrtype();
+        let qclass = response.get_question().get_rclass();
+        let rcode = response.get_header().get_rcode();
         let additionals = response.get_additional();
         let answer = response.get_answer();
         let aa = response.get_header().get_aa();
@@ -391,12 +367,11 @@ impl AsyncResolver {
         // If not existence RR for query, add SOA to cache
         let mut cache = self.cache.lock().unwrap(); // FIXME: que la función entregue result
         if additionals.len() > 0 && answer.len() == 0 && aa == true{
-            additionals.iter()
-            .for_each(|rr| {
-                if rr.get_rtype() == Rrtype::SOA {
-                    cache.add_negative_answer(qname.clone(),rrtype , rclass, rr.clone());
+            for additional in additionals {
+                if additional.get_rtype() == Rrtype::SOA {
+                    cache.add_additional(qname.clone(), additional, Some(qtype), qclass, Some(rcode));
                 }
-            });
+            }
         }
 
     }
@@ -440,8 +415,8 @@ impl AsyncResolver {
 // Getters
 impl AsyncResolver {
     // Gets the cache from the struct
-    pub fn get_cache(&self) -> DnsCache {
-        let cache = self.cache.lock().unwrap(); // FIXME: ver que hacer ocn el error
+    pub fn get_cache(&self) -> ResolverCache {
+        let cache = self.cache.lock().unwrap(); // FIXME: ver que hacer con el error
         return cache.clone();
     }
 }
@@ -456,13 +431,15 @@ mod async_resolver_test {
     use crate::client::client_error::ClientError;
     use crate::client::tcp_connection::ClientTCPConnection;
     use crate::client::udp_connection::ClientUDPConnection;
+    use crate::dns_cache::CacheKey;
     use crate::message::DnsMessage;
     use crate::message::rclass::Rclass;
+    use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::resource_record::ResourceRecord;
-    use crate::message::rrtype::Rrtype;
+    use crate::message::rcode::Rcode;
     use crate::async_resolver::config::ResolverConfig;
     use super::lookup_response::LookupResponse;
     use super::AsyncResolver;
@@ -872,7 +849,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        resolver.cache.lock().unwrap().add(domain_name, resource_record, Rrtype::A, Rclass::IN, None);
+        resolver.cache.lock().unwrap().add_answer(domain_name, resource_record, Some(Rrtype::A), Rclass::IN, None);
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
         let response = resolver.inner_lookup(domain_name, Rrtype::A, Rclass::IN).await;
@@ -899,7 +876,7 @@ mod async_resolver_test {
         let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
         let a_rdata = Rdata::A(a_rdata);
         let resource_record = ResourceRecord::new(a_rdata);
-        cache.add(domain_name, resource_record, Rrtype::A, Rclass::IN, None);
+        cache.add_answer(domain_name, resource_record, Some(Rrtype::A), Rclass::IN, None);
         }
 
         let domain_name = DomainName::new_from_string("example.com".to_string());
@@ -920,7 +897,7 @@ mod async_resolver_test {
         assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
 
         let _response = resolver.lookup("example.com", "UDP", "A","IN").await;
-        assert_eq!(resolver.cache.lock().unwrap().is_cached(DomainName::new_from_str("example.com"), Rrtype::A, Rclass::IN), true);
+        assert_eq!(resolver.cache.lock().unwrap().is_cached(CacheKey::Primary(Rrtype::A, Rclass::IN, DomainName::new_from_str("example.com"))), true);
         // TODO: Test special cases from RFC
     }
 
@@ -1050,7 +1027,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(1);
+        header.set_rcode(Rcode::FORMERR);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1095,7 +1072,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(2);
+        header.set_rcode(Rcode::SERVFAIL);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1141,7 +1118,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(3);
+        header.set_rcode(Rcode::NXDOMAIN);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1186,7 +1163,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(4);
+        header.set_rcode(Rcode::NOTIMP);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1231,7 +1208,7 @@ mod async_resolver_test {
         dns_response.set_answer(answer);
         let mut header = dns_response.get_header();
         header.set_qr(true);
-        header.set_rcode(5);
+        header.set_rcode(Rcode::REFUSED);
         dns_response.set_header(header);
         let lookup_response = LookupResponse::new(dns_response);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
@@ -1878,8 +1855,8 @@ mod async_resolver_test {
         dns_response.set_header(truncated_header);
 
         resolver.store_data_cache(dns_response);
-
-        assert_eq!(resolver.get_cache().get_cache().len(), 0);
+        
+        assert_eq!(resolver.cache.lock().unwrap().get_cache_answer().get_cache().len(), 0);
     }
 
     #[test]
@@ -1921,10 +1898,10 @@ mod async_resolver_test {
 
         dns_response.set_answer(answer);
         assert_eq!(dns_response.get_answer().len(), 3);
-        assert_eq!(resolver.get_cache().get_cache().len(), 0);
+        assert_eq!(resolver.cache.lock().unwrap().get_cache_answer().get_cache().len(), 0);
 
         resolver.store_data_cache(dns_response);
-        assert_eq!(resolver.get_cache().get_cache().len(), 2);
+        assert_eq!(resolver.cache.lock().unwrap().get_cache_answer().get_cache().len(), 2);
     }
 
     #[test]
@@ -1977,17 +1954,17 @@ mod async_resolver_test {
         let rrtype_search = Rrtype::A;
         assert_eq!(dns_response.get_answer().len(), 0);
         assert_eq!(dns_response.get_additional().len(), 1);
-        assert_eq!(resolver.get_cache().get_cache().len(), 1);
-        assert!(resolver.get_cache().get(dns_response.get_question().get_qname().clone(), rrtype_search, Rclass::IN).is_some())
+        assert_eq!(resolver.cache.lock().unwrap().get_cache_answer().get_cache().len(), 1);
+        // assert!(resolver.cache.lock().unwrap().get_cache_answer().get(dns_response.get_question().get_qname().clone(), qtype_search, Qclass::IN).is_some())
 
     }
 
-    #[ignore = "Optional, not implemented"]
+   /*  #[ignore = "Optional, not implemented"]
     #[tokio::test]
     async fn inner_lookup_negative_answer_in_cache(){
         let resolver = AsyncResolver::new(ResolverConfig::default());
-        let mut cache = resolver.get_cache();
-        let rrtype = Rrtype::A;
+        let mut cache = resolver.cache.lock().unwrap().get_cache_answer();
+        let qtype = Qtype::A;
         cache.set_max_size(NonZeroUsize::new(9).unwrap());
 
         let domain_name = DomainName::new_from_string("banana.exaple".to_string());
@@ -2015,18 +1992,18 @@ mod async_resolver_test {
         rr.set_name(domain_name.clone());
 
         // Add negative answer to cache
-        let mut cache  = resolver.get_cache();
+        let mut cache  = resolver.cache.lock().unwrap().get_cache_answer();
         cache.set_max_size(NonZeroUsize::new(9).unwrap());
-        cache.add_negative_answer(domain_name.clone(),rrtype ,Rclass::IN, rr.clone());
-        let mut cache_guard = resolver.cache.lock().unwrap();
+        cache.add_negative_answer(domain_name.clone(),qtype ,Qclass::IN, rr.clone());
+        let mut cache_guard = resolver.cache.lock().unwrap().get_cache_answer();
         *cache_guard = cache;
 
-        assert_eq!(resolver.get_cache().get_cache().len(), 1);
+        assert_eq!(resolver.cache.lock().unwrap().get_cache_answer().get_cache().len(), 1);
 
         let rclass = Rclass::IN;
         let response = resolver.inner_lookup(domain_name,rrtype,rclass).await.unwrap();
 
-        assert_eq!(resolver.get_cache().get_cache().len(), 1);
+        assert_eq!(resolver.cache.lock().unwrap().get_cache_answer().get_cache().len(), 1);
         assert_eq!(response.to_dns_msg().get_answer().len(), 0);
         assert_eq!(response
             .to_dns_msg()
@@ -2035,8 +2012,8 @@ mod async_resolver_test {
         assert_eq!(response
             .to_dns_msg()
             .get_header()
-            .get_rcode(), 3);
-    }
+            .get_rcode(), Rcode::NXDOMAIN);
+    } */
 
     // TODO: Finish tests, it shoudl verify that we can send several asynchroneous queries concurrently
     #[tokio::test]

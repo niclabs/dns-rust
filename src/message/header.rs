@@ -423,7 +423,7 @@ impl Header {
             return Err("Format Error: OP CODE");
         }
 
-        // Z: A 3 bit field that MUST be zero 
+        // Z: A z flag field MUST be zero/false
         if self.z != false {
             return Err("Format Error: Z");
         }

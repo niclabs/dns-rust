@@ -1,6 +1,8 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
+use crate::message::DnsMessage;
 use std::cmp::max;
+use std::option;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 use super::server_info::ServerInfo;
@@ -61,6 +63,16 @@ pub struct ResolverConfig {
     // retransmission, etc.)  If the counter passes zero, the request
     // is terminated with a temporary error.
     global_retransmission_limit: u16,
+    /// This is whether ends0 is enabled or not.
+    ends0: bool,
+    /// Max payload for the resolver.
+    max_payload: u16,
+    /// Version of endns0.
+    ends0_version: u16,
+    /// edns0 flags for the resolver.
+    ends0_flags: u16,
+    /// edns0 options for the resolver.
+    ends0_options: Vec<u16>,
 }
 
 impl ResolverConfig {
@@ -96,6 +108,11 @@ impl ResolverConfig {
             max_retry_interval_seconds: 10,
             min_retry_interval_seconds: 1,
             global_retransmission_limit: 30,
+            ends0: false,
+            max_payload: 512,
+            ends0_version: 0,
+            ends0_flags: 0,
+            ends0_options: Vec::new(),
         };
         resolver_config
     }
@@ -132,6 +149,11 @@ impl ResolverConfig {
             max_retry_interval_seconds: max_retry_interval_seconds,
             min_retry_interval_seconds: min_retry_interval_seconds,
             global_retransmission_limit: global_retransmission_limit,
+            ends0: false,
+            max_payload: 512,
+            ends0_version: 0,
+            ends0_flags: 0,
+            ends0_options: Vec::new(),
         };
         resolver_config
     }
@@ -181,6 +203,47 @@ impl ResolverConfig {
     /// ```
     pub fn remove_servers(&mut self) {
         self.name_servers = Vec::new();
+    }
+
+    /// add edns0 to the resolver
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::time::Duration;
+    /// use dns_resolver::client::client_connection::ConnectionProtocol;
+    /// use dns_resolver::resolver::config::ResolverConfig;
+    /// 
+    /// let mut resolver_config = ResolverConfig::default();
+    /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
+    /// ```
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, flags: u16, options: Option<Vec<u16>>) {
+        self.set_ends0(true);
+        if let Some(max_payload) = max_payload {
+            self.set_max_payload(max_payload);
+        }
+        self.set_ends0_version(version);
+        self.set_ends0_flags(flags);
+        if let Some(options) =  options {
+            self.set_ends0_options(options);
+        }
+    }
+
+    /// add edns0 from the resolver to a dns message
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut resolver_config = ResolverConfig::default();
+    /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
+    /// let message = Message::new();
+    /// resolver_config.add_edns0_to_message(&message);
+    /// ```
+    pub fn add_edns0_to_message(&self, message: &mut DnsMessage) {
+        if self.ends0 {
+            message.add_edns0(Some(self.get_max_payload()), self.get_ends0_version(), self.get_ends0_flags(), Some(self.get_ends0_options()));
+        }
     }
 }
 
@@ -234,6 +297,26 @@ impl ResolverConfig {
     pub fn get_global_retransmission_limit(&self) -> u16 {
         self.global_retransmission_limit
     }
+
+    pub fn get_ends0(&self) -> bool {
+        self.ends0
+    }
+
+    pub fn get_max_payload(&self) -> u16 {
+        self.max_payload
+    }
+
+    pub fn get_ends0_version(&self) -> u16 {
+        self.ends0_version
+    }
+
+    pub fn get_ends0_flags(&self) -> u16 {
+        self.ends0_flags
+    }
+
+    pub fn get_ends0_options(&self) -> Vec<u16> {
+        self.ends0_options.clone()
+    }
 }
 
 ///Setters
@@ -285,6 +368,26 @@ impl ResolverConfig{
 
     pub fn set_global_retransmission_limit(&mut self, global_retransmission_limit: u16) {
         self.global_retransmission_limit = global_retransmission_limit;
+    }
+
+    pub fn set_ends0(&mut self, ends0: bool) {
+        self.ends0 = ends0;
+    }
+
+    pub fn set_max_payload(&mut self, max_payload: u16) {
+        self.max_payload = max_payload;
+    }
+
+    pub fn set_ends0_version(&mut self, ends0_version: u16) {
+        self.ends0_version = ends0_version;
+    }
+
+    pub fn set_ends0_flags(&mut self, ends0_flags: u16) {
+        self.ends0_flags = ends0_flags;
+    }
+
+    pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
+        self.ends0_options = ends0_options;
     }
 }
 

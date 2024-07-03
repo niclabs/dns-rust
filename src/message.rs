@@ -1066,13 +1066,15 @@ mod message_test {
 
         let answer = vec![resource_record];
 
-        let dns_msg = DnsMessage {
+        let mut dns_msg = DnsMessage {
             header: header,
             question: question,
             answer: answer,
             authority: Vec::new(),
             additional: Vec::new(),
         };
+
+        dns_msg.update_header_counters();
 
         let msg_bytes = &dns_msg.to_bytes();
 

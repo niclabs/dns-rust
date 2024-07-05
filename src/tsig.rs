@@ -4,7 +4,7 @@ use crate::domain_name::DomainName;
 use crate::message::class_qclass::Qclass;
 use crate::message::resource_record::{ResourceRecord, ToBytes};
 use crate::message::type_qtype::Qtype;
-use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage};
+use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage, class_rclass};
 use crate::message::rdata::{Rdata};
 use crypto::hmac::Hmac as crypto_hmac;
 use crypto::mac::Mac as crypto_mac;
@@ -50,16 +50,88 @@ fn set_tsig_rd(query_msg: &DnsMessage, name: String, original_id: u16, result: M
 
     return tsig_rd;
 }
+#[doc = r"This function recives a DNS message and appends the TSIG variables  requested by RFC 8946 4.3.3 "]
+fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
+        let mut res: Vec<u8> = dns_msg.clone();
+        let tsig_rdata = tsig_rr.get_rdata();
+        res.extend(tsig_rr.get_name().to_bytes());
+        //processing TSIG RR
+        let rclass_bytes: u16 = u16::to_be(class_rclass::Rclass::from_rclass_to_int(tsig_rr.get_rclass()));
+        let rclass_lbyte = (rclass_bytes & 0xFF) as u8;
+        let rclass_ubyte = (rclass_bytes >> 8) as u8;
+        res.push(rclass_lbyte);
+        res.push(rclass_ubyte);
+        let rclass_ttl:  u32 = u32::to_be(tsig_rr.get_ttl());
+        let r_ttl1 = (rclass_ttl & 0xFF) as u8;
+        let r_ttl2 = (rclass_ttl >> 24) as u8;
+        let r_ttl3 = (rclass_ttl >>16) as u8;
+        let r_ttl4 = (rclass_ttl >>8) as u8;
+        res.push(r_ttl1);
+        res.push(r_ttl2);
+        res.push(r_ttl3);
+        res.push(r_ttl4);
 
+        //processing TSIG RDATA
+
+        let tsig_rd = match tsig_rdata {
+            Rdata::TSIG(tsig_rd) => tsig_rd,
+            _ => panic!()
+        };
+        let a_name = tsig_rd.get_algorithm_name().to_bytes();
+        let tsig_rd_time_signed: u64 = u64::to_be(tsig_rd.get_time_signed());
+        let tsig_rd_fudge: u16 = u16::to_be(tsig_rd.get_fudge());
+        let tsig_rd_error: u16= u16::to_be(tsig_rd.get_error());
+        let tsig_rd_other_len: u16 =  u16::to_be(tsig_rd.get_other_len());
+        let tsig_rd_other_data = tsig_rd.get_other_data();
+        res.extend(a_name);
+
+        let time_s1 = (tsig_rd_time_signed & 0xFF) as u8;
+        let time_s2 = (tsig_rd_time_signed >> 56) as u8;
+        let time_s3 = (tsig_rd_time_signed >> 48) as u8;
+        let time_s4 = (tsig_rd_time_signed >> 40) as u8;
+        let time_s5 = (tsig_rd_time_signed >> 32) as u8;
+        let time_s6 = (tsig_rd_time_signed >> 24) as u8;
+        res.push(time_s1);
+        res.push(time_s2);
+        res.push(time_s3);
+        res.push(time_s4);
+        res.push(time_s5);
+        res.push(time_s6);
+        let fudge1 = (tsig_rd_time_signed & 0xFF) as u8;
+        let fudge2 = (tsig_rd_time_signed >> 8) as u8;
+        res.push(fudge1);
+        res.push(fudge2);
+
+        let error1 = (tsig_rd_error & 0xFF) as u8;
+        let error2 = (tsig_rd_error >> 8) as u8;
+        res.push(error1);
+        res.push(error2);
+        let otherl1 = (tsig_rd_other_len & 0xFF) as u8;
+        let otherl2 = (tsig_rd_other_len >> 8) as u8;
+        res.push(otherl1);
+        res.push(otherl2);
+
+        res.extend(tsig_rd_other_data);
+
+        return res;
+}
+
+//TODO: actualizar sign_tsig usando la funcion get_digest_request
+//RFC 8945, section 5.1
 #[doc = r"This function creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
 pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm,
                  fudge: u16, time_signed: u64, key_name: String) -> Vec<u8> {
     let mut tsig_rd: TSigRdata = TSigRdata::new();
     let mut new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
+    //let mut tsig_var_rr = TSIG::new();
+    let mut tsig_var_rdata = TSigRdata::new();
+    
     match alg_name {
         
         TsigAlgorithm::HmacSha1 => {
+
+            //new_query_message.push();
             let mut hasher = crypto_hmac::new(Sha1::new(), key);
             hasher.input(&new_query_message.to_bytes()[..]);
             let result = hasher.result();
@@ -424,6 +496,7 @@ fn check_process_tsig() {
     assert!(answer);
     assert_eq!(error,TsigErrorCode::NOERR);
 }
+//Unitary test to verify that the signer function is properly working
 #[test]
 fn check_signed_tsig() {
     let key = b"1234567890";

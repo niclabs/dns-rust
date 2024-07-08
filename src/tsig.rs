@@ -317,8 +317,29 @@ pub fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  av
     (true, TsigErrorCode::NOERR)
 
 }
+//Auxiliar function to create the TSIG variables and resource recrods
+#[doc= r"This function helps to set TSIG variabes on  a DNS query"]
+fn set_tsig_vars(query_msg: &mut DnsMessage, alg_name: &str, name: &str, time_signed: u64, fudge: u16) -> ResourceRecord{
+    //TSIG Variables
+    // TSIG RDATA
+    let mut tsig_rd: TSigRdata = TSigRdata::new();
+    tsig_rd.set_algorithm_name(DomainName::new_from_str(alg_name));
+    tsig_rd.set_time_signed(time_signed);
+    tsig_rd.set_fudge(fudge);
+    tsig_rd.set_error(0);
+    tsig_rd.set_other_len(0);
+    // TSIG RR
+    let mut tsig_rr = ResourceRecord::new(Rdata::TSIG(tsig_rd));
+    tsig_rr.set_name(DomainName::new_from_str(name));
+    //tsig_rr.set_rclass(Rclass::ANY);
+    tsig_rr.set_ttl(0);
+    // append of the TSIG variables to the ADDITIONAL record in the DNS query
+    let mut tsig_additional = Vec::<ResourceRecord>::new();
+    tsig_additional.push(tsig_rr.clone());
+    query_msg.add_additionals(tsig_additional);
 
-                                                            
+    return tsig_rr
+}                                                 
 
 //Sección de tests unitarios
 
@@ -346,8 +367,15 @@ fn check_process_tsig_exists2() {
     let fudge = 300;
     let time_signed = 21000;
     let key_name = "".to_string();
+    let name = "test.com";
+    set_tsig_vars(&mut response, "hmac-sha256", name, time_signed, fudge);
+
+    // cloning response
+    let mut response2 = response.clone();
+
+
     sign_tsig(&mut response, server_key, alg_name, fudge, time_signed, key_name.clone());
-    sign_tsig(&mut response, server_key, alg_name2, fudge, time_signed, key_name.clone());
+    sign_tsig(&mut response2, server_key, alg_name2, fudge, time_signed, key_name.clone());
     let mut response_capture = response.clone();
     //Client process
     let key_name:String = "".to_string();
@@ -523,25 +551,8 @@ fn check_signed_tsig() {
         false,
         id
     );
-    //TSIG Variables
-
-    // TSIG RDATA
-    let mut tsig_rd: TSigRdata = TSigRdata::new();
-    tsig_rd.set_algorithm_name(domain.clone());
-    tsig_rd.set_time_signed(time_signed);
-    tsig_rd.set_fudge(fudge);
-    tsig_rd.set_error(0);
-    tsig_rd.set_other_len(0);
-    // TSIG RR
-    let mut tsig_rr = ResourceRecord::new(Rdata::TSIG(tsig_rd));
-    tsig_rr.set_name(domain.clone());
-    //tsig_rr.set_rclass(Rclass::ANY);
-    tsig_rr.set_ttl(0);
-
-    // append of the TSIG variables to the ADDITIONAL record in the DNS query
-    let mut tsig_additional = Vec::<ResourceRecord>::new();
-    tsig_additional.push(tsig_rr.clone());
-    q.add_additionals(tsig_additional);
+    //TSIG Resource record
+    let mut tsig_rr = set_tsig_vars(&mut q, "hmac-sha1", &name, time_signed, fudge);
 
     let q_for_mac = q.clone();
     //creation of the signature to compare

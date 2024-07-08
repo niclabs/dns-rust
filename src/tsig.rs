@@ -1,11 +1,14 @@
+use std::convert::TryInto;
+
 //aquí debe ir todo lo relacionado a la implementación de tsig como módulo
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
-use crate::message::class_qclass::Qclass;
+use crate::message::class_qclass::{Qclass};
+use crate::message::class_rclass::Rclass;
 use crate::message::resource_record::{ResourceRecord, ToBytes};
 use crate::message::type_qtype::Qtype;
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage, class_rclass};
-use crate::message::rdata::{Rdata};
+use crate::message::rdata::{tsig_rdata, Rdata};
 use crypto::hmac::Hmac as crypto_hmac;
 use crypto::mac::Mac as crypto_mac;
 use hmac::{Hmac, Mac};
@@ -52,7 +55,7 @@ fn set_tsig_rd(query_msg: &DnsMessage, name: String, original_id: u16, result: M
 }
 //TODO: crear una función para simplificar la extracción de bits paa simplificar código
 #[doc = r"This function recives a DNS message and appends the TSIG variables. Requested by RFC 8945 4.3.3 "]
-fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: &ResourceRecord) -> Vec<u8> {
+fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
         let mut res: Vec<u8> = dns_msg.clone();
         let tsig_rdata = tsig_rr.get_rdata();
         res.extend(tsig_rr.get_name().to_bytes());
@@ -125,7 +128,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     let mut new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
     let mut resource_records = query_msg.get_additional();
-    let tsig_rr = resource_records.last().unwrap();
+    let tsig_rr = resource_records.pop().unwrap();
     let mut tsig_var_rdata = TSigRdata::new();
     let mut digest_comp = get_digest_request(new_query_message.to_bytes(), tsig_rr);
     
@@ -508,20 +511,45 @@ fn check_signed_tsig() {
     let fudge = 0;
     let time_signed = 0;
     let id = 6502; 
+    let name: String = "".to_string();
+    let mac_size = 20;
+    let domain = DomainName::new_from_str("uchile.cl");
+    //DNS message
     let mut q = DnsMessage::new_query_message(
-        DomainName::new_from_str("uchile.cl"),
+        domain.clone(),
         Qtype::A,
         Qclass::ANY, 
         0, 
         false,
         id
     );
-    let q_for_mac = q.clone();
-    let key_name = "".to_string();
-    let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, key_name);
+    //TSIG Variables
 
+    // TSIG RDATA
+    let mut tsig_rd: TSigRdata = TSigRdata::new();
+    tsig_rd.set_algorithm_name(domain.clone());
+    tsig_rd.set_time_signed(time_signed);
+    tsig_rd.set_fudge(fudge);
+    tsig_rd.set_error(0);
+    tsig_rd.set_other_len(0);
+    // TSIG RR
+    let mut tsig_rr = ResourceRecord::new(Rdata::TSIG(tsig_rd));
+    tsig_rr.set_name(domain.clone());
+    //tsig_rr.set_rclass(Rclass::ANY);
+    tsig_rr.set_ttl(0);
+
+    // append of the TSIG variables to the ADDITIONAL record in the DNS query
+    let mut tsig_additional = Vec::<ResourceRecord>::new();
+    tsig_additional.push(tsig_rr.clone());
+    q.add_additionals(tsig_additional);
+
+    let q_for_mac = q.clone();
+    //creation of the signature to compare
+    let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, name);
+    // creation of the signature digest
+    let dig_for_mac = get_digest_request(q_for_mac.to_bytes(), tsig_rr);
     let mut hasher = crypto_hmac::new(Sha1::new(), key);
-    hasher.input(&q_for_mac.to_bytes()[..]);
+    hasher.input(&dig_for_mac[..]);
     
     let result = hasher.result();
     let mac_to_cmp = result.code();
@@ -544,6 +572,7 @@ fn check_signed_tsig() {
     }
     println!("Comparando el mac");
     for i in 0..mac_to_cmp.len() {
+        //println!("Comp: {} {}" ,mac_to_cmp[i], firma_a_comparar[i]);
         assert_eq!(mac_to_cmp[i], firma_a_comparar[i]);
     }
 }

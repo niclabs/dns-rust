@@ -50,8 +50,9 @@ fn set_tsig_rd(query_msg: &DnsMessage, name: String, original_id: u16, result: M
 
     return tsig_rd;
 }
-#[doc = r"This function recives a DNS message and appends the TSIG variables  requested by RFC 8946 4.3.3 "]
-fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
+//TODO: crear una función para simplificar la extracción de bits paa simplificar código
+#[doc = r"This function recives a DNS message and appends the TSIG variables. Requested by RFC 8945 4.3.3 "]
+fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: &ResourceRecord) -> Vec<u8> {
         let mut res: Vec<u8> = dns_msg.clone();
         let tsig_rdata = tsig_rr.get_rdata();
         res.extend(tsig_rr.get_name().to_bytes());
@@ -72,7 +73,6 @@ fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
         res.push(r_ttl4);
 
         //processing TSIG RDATA
-
         let tsig_rd = match tsig_rdata {
             Rdata::TSIG(tsig_rd) => tsig_rd,
             _ => panic!()
@@ -124,8 +124,10 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     let mut tsig_rd: TSigRdata = TSigRdata::new();
     let mut new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
-    //let mut tsig_var_rr = TSIG::new();
+    let mut resource_records = query_msg.get_additional();
+    let tsig_rr = resource_records.last().unwrap();
     let mut tsig_var_rdata = TSigRdata::new();
+    let mut digest_comp = get_digest_request(new_query_message.to_bytes(), tsig_rr);
     
     match alg_name {
         
@@ -133,7 +135,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
 
             //new_query_message.push();
             let mut hasher = crypto_hmac::new(Sha1::new(), key);
-            hasher.input(&new_query_message.to_bytes()[..]);
+            hasher.input(&digest_comp[..]);
             let result = hasher.result();
             tsig_rd = set_tsig_rd(&new_query_message,  
                 "Hmac-Sha1".to_lowercase(), 
@@ -146,7 +148,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
         },
         TsigAlgorithm::HmacSha256 => {
             let mut hasher = crypto_hmac::new(Sha256::new(), key);
-            hasher.input(&new_query_message.to_bytes()[..]);
+            hasher.input(&digest_comp[..]);
             let result = hasher.result();
             tsig_rd = set_tsig_rd(&new_query_message, 
                 "Hmac-Sha256".to_lowercase(),
@@ -159,6 +161,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
         },
         _ => {panic!("Error: Invalid algorithm")},
     }
+    
     let rr_len = tsig_rd.to_bytes().len() as u16;
     let signature = tsig_rd.get_mac();
     let mut new_rr: ResourceRecord = ResourceRecord::new(Rdata::TSIG(tsig_rd));
@@ -166,6 +169,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     new_rr.set_rdlength(rr_len);
     let mut vec: Vec<ResourceRecord> = vec![];
     vec.push(new_rr);
+    
     query_msg.add_additionals(vec);
     return signature;
 }

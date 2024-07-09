@@ -128,7 +128,7 @@ fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
         return res;
 }
 
-//TODO: actualizar sign_tsig usando la funcion get_digest_request
+//TODO: revisar que la creación del TSIG resourcerecord contenga efectivamente los campos  del 8945, 4.3.3
 //RFC 8945, section 5.1
 #[doc = r"This function creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
 pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm,

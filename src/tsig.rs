@@ -1,5 +1,5 @@
 use std::convert::TryInto;
-
+use std::fmt::{self,Display,Debug};
 //aquí debe ir todo lo relacionado a la implementación de tsig como módulo
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
@@ -16,11 +16,20 @@ use crypto::{sha1::Sha1,sha2::Sha256};
 use crate::message::rdata::a_rdata::ARdata;
 type HmacSha256 = Hmac<Sha256>;
 
+
+#[derive(Debug)]
 //TODO: usar arreglar el funcionamiento del enum en sign_msg
 pub enum TsigAlgorithm {
     HmacSha1,
     HmacSha256,
 }
+
+impl fmt::Display for TsigAlgorithm{
+    fn fmt(&self, f: &mut fmt::Formatter) ->fmt::Result{
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum TsigErrorCode{
@@ -128,8 +137,8 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     let mut new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
     let mut resource_records = query_msg.get_additional();
-    let tsig_rr = resource_records.pop().unwrap();
-    let mut tsig_var_rdata = TSigRdata::new();
+    let alg_name_str = alg_name.to_string();
+    let tsig_rr= set_tsig_vars(query_msg, alg_name_str.as_str(), key_name.as_str(), time_signed, fudge);  
     let mut digest_comp = get_digest_request(new_query_message.to_bytes(), tsig_rr);
     
     match alg_name {
@@ -164,7 +173,12 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
         },
         _ => {panic!("Error: Invalid algorithm")},
     }
-    
+    if resource_records.len()>1 {
+        query_msg.set_additional(resource_records);
+    }else{
+        let mut v: Vec<ResourceRecord> = vec![];
+        query_msg.set_additional(v);
+    }
     let rr_len = tsig_rd.to_bytes().len() as u16;
     let signature = tsig_rd.get_mac();
     let mut new_rr: ResourceRecord = ResourceRecord::new(Rdata::TSIG(tsig_rd));
@@ -172,7 +186,6 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     new_rr.set_rdlength(rr_len);
     let mut vec: Vec<ResourceRecord> = vec![];
     vec.push(new_rr);
-    
     query_msg.add_additionals(vec);
     return signature;
 }
@@ -318,7 +331,7 @@ pub fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  av
 
 }
 //Auxiliar function to create the TSIG variables and resource recrods
-#[doc= r"This function helps to set TSIG variabes on  a DNS query"]
+#[doc= r"This function helps to set create a partial TSIG resource record on  a DNS query"]
 fn set_tsig_vars(query_msg: &mut DnsMessage, alg_name: &str, name: &str, time_signed: u64, fudge: u16) -> ResourceRecord{
     //TSIG Variables
     // TSIG RDATA
@@ -333,10 +346,6 @@ fn set_tsig_vars(query_msg: &mut DnsMessage, alg_name: &str, name: &str, time_si
     tsig_rr.set_name(DomainName::new_from_str(name));
     //tsig_rr.set_rclass(Rclass::ANY);
     tsig_rr.set_ttl(0);
-    // append of the TSIG variables to the ADDITIONAL record in the DNS query
-    let mut tsig_additional = Vec::<ResourceRecord>::new();
-    tsig_additional.push(tsig_rr.clone());
-    query_msg.add_additionals(tsig_additional);
 
     return tsig_rr
 }                                                 
@@ -368,11 +377,10 @@ fn check_process_tsig_exists2() {
     let time_signed = 21000;
     let key_name = "".to_string();
     let name = "test.com";
-    set_tsig_vars(&mut response, "hmac-sha256", name, time_signed, fudge);
+   
 
     // cloning response
     let mut response2 = response.clone();
-
 
     sign_tsig(&mut response, server_key, alg_name, fudge, time_signed, key_name.clone());
     sign_tsig(&mut response2, server_key, alg_name2, fudge, time_signed, key_name.clone());
@@ -386,6 +394,7 @@ fn check_process_tsig_exists2() {
     assert_eq!(error, TsigErrorCode::FORMERR);
 }
 
+// verificar que no se haya añadido otro resource record en el additionals luego de añadir un tsig_rr
 #[test]
 fn check_process_tsig_exists3(){
     //Server process
@@ -394,15 +403,18 @@ fn check_process_tsig_exists3(){
     let alg_name = TsigAlgorithm::HmacSha256;
     let fudge = 300;
     let time_signed = 21000;
-    let key_name = "".to_string();
-    sign_tsig(&mut response, server_key, alg_name, fudge, time_signed, key_name);
-    //necesito agregar algo más en el additional
+    let key_name = "";
+    //se crea un rr TSIG que se añadirá en adittionals
+    sign_tsig(&mut response, server_key, alg_name, fudge, time_signed, key_name.to_string());
+
+    //se agrega otro resource record en el additional...
     let mut new_additional = Vec::<ResourceRecord>::new();
     let a_rdata5 = Rdata::A(ARdata::new());
     let rr5 = ResourceRecord::new(a_rdata5);
     new_additional.push(rr5);
     response.add_additionals(new_additional);
     let mut response_capture = response.clone();
+
     //Client process
     let key_name:String = "".to_string();
     let mut lista :Vec<(String, bool)>  = vec![];

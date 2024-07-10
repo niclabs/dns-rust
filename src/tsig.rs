@@ -70,16 +70,17 @@ fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
         let tsig_rdata = tsig_rr.get_rdata();
         res.extend(tsig_rr.get_name().to_bytes());
         //processing TSIG RR
-        let rclass_bytes: u16 = u16::to_be(class_rclass::Rclass::from_rclass_to_int(tsig_rr.get_rclass()));
-        let rclass_lbyte = (rclass_bytes & 0xFF) as u8;
+        let rclass_bytes: u16 = class_rclass::Rclass::from_rclass_to_int(tsig_rr.get_rclass());
+        let rclass_lbyte = rclass_bytes as u8;
         let rclass_ubyte = (rclass_bytes >> 8) as u8;
-        res.push(rclass_lbyte);
         res.push(rclass_ubyte);
-        let rclass_ttl:  u32 = u32::to_be(tsig_rr.get_ttl());
-        let r_ttl1 = (rclass_ttl & 0xFF) as u8;
-        let r_ttl2 = (rclass_ttl >> 24) as u8;
-        let r_ttl3 = (rclass_ttl >>16) as u8;
-        let r_ttl4 = (rclass_ttl >>8) as u8;
+        res.push(rclass_lbyte);
+
+        let rclass_ttl:  u32 = tsig_rr.get_ttl();
+        let r_ttl1 = (rclass_ttl >> 24) as u8;
+        let r_ttl2 = (rclass_ttl >> 16) as u8;
+        let r_ttl3 = (rclass_ttl >>  8) as u8;
+        let r_ttl4 = rclass_ttl as u8;
         res.push(r_ttl1);
         res.push(r_ttl2);
         res.push(r_ttl3);
@@ -91,36 +92,39 @@ fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
             _ => panic!()
         };
         let a_name = tsig_rd.get_algorithm_name().to_bytes();
-        let tsig_rd_time_signed: u64 = u64::to_be(tsig_rd.get_time_signed());
-        let tsig_rd_fudge: u16 = u16::to_be(tsig_rd.get_fudge());
-        let tsig_rd_error: u16= u16::to_be(tsig_rd.get_error());
-        let tsig_rd_other_len: u16 =  u16::to_be(tsig_rd.get_other_len());
+        let tsig_rd_time_signed: u64 = tsig_rd.get_time_signed();
+        let tsig_rd_fudge: u16 = tsig_rd.get_fudge();
+        let tsig_rd_error: u16= tsig_rd.get_error();
+        let tsig_rd_other_len: u16 =  tsig_rd.get_other_len();
         let tsig_rd_other_data = tsig_rd.get_other_data();
+        
         res.extend(a_name);
-
-        let time_s1 = (tsig_rd_time_signed & 0xFF) as u8;
-        let time_s2 = (tsig_rd_time_signed >> 56) as u8;
-        let time_s3 = (tsig_rd_time_signed >> 48) as u8;
-        let time_s4 = (tsig_rd_time_signed >> 40) as u8;
-        let time_s5 = (tsig_rd_time_signed >> 32) as u8;
-        let time_s6 = (tsig_rd_time_signed >> 24) as u8;
+        
+        let time_s6 = (tsig_rd_time_signed) as u8;
+        let time_s5 = (tsig_rd_time_signed >> 8) as u8;
+        let time_s4 = (tsig_rd_time_signed >> 16) as u8;
+        let time_s3 = (tsig_rd_time_signed >> 24) as u8;
+        let time_s2 = (tsig_rd_time_signed >> 32) as u8;
+        let time_s1 = (tsig_rd_time_signed >> 40) as u8;
         res.push(time_s1);
         res.push(time_s2);
         res.push(time_s3);
         res.push(time_s4);
         res.push(time_s5);
         res.push(time_s6);
-        let fudge1 = (tsig_rd_time_signed & 0xFF) as u8;
-        let fudge2 = (tsig_rd_time_signed >> 8) as u8;
+
+        let fudge1 = (tsig_rd_fudge >> 8) as u8;
+        let fudge2 = (tsig_rd_fudge ) as u8;
         res.push(fudge1);
         res.push(fudge2);
 
-        let error1 = (tsig_rd_error & 0xFF) as u8;
-        let error2 = (tsig_rd_error >> 8) as u8;
+        let error1 = (tsig_rd_error >> 8) as u8;
+        let error2 = (tsig_rd_error) as u8;
         res.push(error1);
         res.push(error2);
-        let otherl1 = (tsig_rd_other_len & 0xFF) as u8;
-        let otherl2 = (tsig_rd_other_len >> 8) as u8;
+
+        let otherl1 = (tsig_rd_other_len >> 8) as u8;
+        let otherl2 = (tsig_rd_other_len) as u8;
         res.push(otherl1);
         res.push(otherl2);
 
@@ -135,12 +139,11 @@ fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
 pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm,
                  fudge: u16, time_signed: u64, key_name: String) -> Vec<u8> {
     let mut tsig_rd: TSigRdata = TSigRdata::new();
-    let mut new_query_message = query_msg.clone();
+    let new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
-    let mut resource_records = query_msg.get_additional();
     let alg_name_str = alg_name.to_string();
     let tsig_rr= set_tsig_vars(query_msg, alg_name_str.as_str(), key_name.as_str(), time_signed, fudge);  
-    let mut digest_comp = get_digest_request(new_query_message.to_bytes(), tsig_rr);
+    let digest_comp = get_digest_request(new_query_message.to_bytes(), tsig_rr);
     
     match alg_name {
         
@@ -559,12 +562,13 @@ fn check_signed_tsig() {
         id
     );
     //partial TSIG Resource record verify the signing process
-    let mut tsig_rr = set_tsig_vars(&mut q, "hmac-sha1", &name, time_signed, fudge);
+    let tsig_rr = set_tsig_vars(&mut q, "hmac-sha1", &name, time_signed, fudge);
     let q_for_mac = q.clone();
     //creation of the signature to compare
     let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, name);
     // creation of the signature digest
     let dig_for_mac = get_digest_request(q_for_mac.to_bytes(), tsig_rr);
+    let dig_for_mac = dig_for_mac[0..=55].to_vec();
     let mut hasher = crypto_hmac::new(Sha1::new(), key);
     hasher.input(&dig_for_mac[..]);
     

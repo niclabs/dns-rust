@@ -63,7 +63,8 @@ fn set_tsig_rd(query_msg: &DnsMessage, name: String, original_id: u16, result: M
     return tsig_rd;
 }
 //TODO: crear una función para simplificar la extracción de bits paa simplificar código
-#[doc = r"This function recives a DNS message and appends the TSIG variables. Requested by RFC 8945 4.3.3 "]
+// This function extracts the digest 
+#[doc = r"This function recives a DNS message and generate the digest da. Requested by RFC 8945 4.3.3 "]
 fn get_digest_request(dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
         let mut res: Vec<u8> = dns_msg.clone();
         let tsig_rdata = tsig_rr.get_rdata();
@@ -172,12 +173,6 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
             
         },
         _ => {panic!("Error: Invalid algorithm")},
-    }
-    if resource_records.len()>1 {
-        query_msg.set_additional(resource_records);
-    }else{
-        let mut v: Vec<ResourceRecord> = vec![];
-        query_msg.set_additional(v);
     }
     let rr_len = tsig_rd.to_bytes().len() as u16;
     let signature = tsig_rd.get_mac();
@@ -377,18 +372,18 @@ fn check_process_tsig_exists2() {
     let time_signed = 21000;
     let key_name = "".to_string();
     let name = "test.com";
-   
-
     // cloning response
     let mut response2 = response.clone();
 
     sign_tsig(&mut response, server_key, alg_name, fudge, time_signed, key_name.clone());
-    sign_tsig(&mut response2, server_key, alg_name2, fudge, time_signed, key_name.clone());
     let mut response_capture = response.clone();
+    sign_tsig(&mut response_capture, server_key, alg_name2, fudge, time_signed, key_name.clone());
     //Client process
     let key_name:String = "".to_string();
     let mut lista :Vec<(String, bool)>  = vec![];
     lista.push((String::from("hmac-sha256"),true));
+    let (control_answer, _) = process_tsig(& response, server_key, key_name.clone(),21010, lista.clone());
+    assert!(control_answer);
     let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista);
     assert!(!answer);
     assert_eq!(error, TsigErrorCode::FORMERR);
@@ -563,9 +558,8 @@ fn check_signed_tsig() {
         false,
         id
     );
-    //TSIG Resource record
+    //partial TSIG Resource record verify the signing process
     let mut tsig_rr = set_tsig_vars(&mut q, "hmac-sha1", &name, time_signed, fudge);
-
     let q_for_mac = q.clone();
     //creation of the signature to compare
     let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, name);
@@ -595,7 +589,6 @@ fn check_signed_tsig() {
     }
     println!("Comparando el mac");
     for i in 0..mac_to_cmp.len() {
-        //println!("Comp: {} {}" ,mac_to_cmp[i], firma_a_comparar[i]);
         assert_eq!(mac_to_cmp[i], firma_a_comparar[i]);
     }
 }

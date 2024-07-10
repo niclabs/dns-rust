@@ -241,7 +241,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::CNAME(rdata.unwrap()))
             }
             41 => {
-                println!("OPT");
                 let rdata = OptRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
                     Ok(_) => {}

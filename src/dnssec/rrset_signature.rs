@@ -85,4 +85,3 @@ pub fn verify_rrset(rrset: &RRset, rrsig: &RRSIGRdata, public_key: &Rsa) -> Resu
     
     public_key.verify(hasher, &hash.as_bytes(), &signature).map_err(|_| "Verification failed")
 }
-

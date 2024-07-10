@@ -24,9 +24,10 @@ pub enum TsigAlgorithm {
     HmacSha256,
 }
 
-impl fmt::Display for TsigAlgorithm{
-    fn fmt(&self, f: &mut fmt::Formatter) ->fmt::Result{
-        write!(f, "{:?}", self)
+fn tsig_alg_to_string(alg: &TsigAlgorithm) -> String {
+    match alg {
+        TsigAlgorithm::HmacSha1 => "hmac-sha1".to_string(),
+        TsigAlgorithm::HmacSha256 => "hmac-sha256".to_string(),
     }
 }
 
@@ -141,7 +142,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     let mut tsig_rd: TSigRdata = TSigRdata::new();
     let new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
-    let alg_name_str = alg_name.to_string();
+    let alg_name_str = tsig_alg_to_string(&alg_name);
     let tsig_rr= set_tsig_vars(query_msg, alg_name_str.as_str(), key_name.as_str(), time_signed, fudge);  
     let digest_comp = get_digest_request(new_query_message.to_bytes(), tsig_rr);
     
@@ -154,7 +155,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
             hasher.input(&digest_comp[..]);
             let result = hasher.result();
             tsig_rd = set_tsig_rd(&new_query_message,  
-                "Hmac-Sha1".to_lowercase(), 
+                "hmac-sha1".to_lowercase(), 
                 original_id,
                 result,
                 fudge, 
@@ -167,7 +168,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
             hasher.input(&digest_comp[..]);
             let result = hasher.result();
             tsig_rd = set_tsig_rd(&new_query_message, 
-                "Hmac-Sha256".to_lowercase(),
+                "hmac-sha256".to_lowercase(),
                 original_id,
                 result,
                 fudge, 
@@ -562,7 +563,7 @@ fn check_signed_tsig() {
         id
     );
     //partial TSIG Resource record verify the signing process
-    let tsig_rr = set_tsig_vars(&mut q, "hmac-sha1", &name, time_signed, fudge);
+    let tsig_rr = set_tsig_vars(&mut q, tsig_alg_to_string(&alg_name).as_str(), &name, time_signed, fudge);
     let q_for_mac = q.clone();
     //creation of the signature to compare
     let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, name);

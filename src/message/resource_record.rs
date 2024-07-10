@@ -284,12 +284,12 @@ impl ResourceRecord {
             return Err("Format Error");
         }
 
-        let mut rdata_bytes_vec = bytes_without_name[10..].to_vec();
+        let mut rdata_bytes_vec = bytes_without_name[10..end_rr_byte].to_vec();
         rdata_bytes_vec.push(bytes_without_name[0]);
         rdata_bytes_vec.push(bytes_without_name[1]);
         rdata_bytes_vec.push(bytes_without_name[2]);
         rdata_bytes_vec.push(bytes_without_name[3]);
-
+        
         let rdata_result = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
 
         match rdata_result {

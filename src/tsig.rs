@@ -43,7 +43,7 @@ pub enum TsigErrorCode{
 }
 //TODO: Encontrar alguna manera de pasar una referencia Digest u Hmac de un algoritmo no especificado
 // función auxiliar para evitar la redundancia de código en sign_tsig
-fn set_tsig_rd(query_msg: &DnsMessage, name: String, original_id: u16, result: MacResult,
+fn set_tsig_rd(name: String, original_id: u16, result: MacResult,
                fudge: u16, time_signed: u64, mac_size: u16) -> TSigRdata{
     let mut tsig_rd: TSigRdata = TSigRdata::new();
     let mac = result.code();
@@ -143,7 +143,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     let new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
     let alg_name_str = tsig_alg_to_string(&alg_name);
-    let tsig_rr= set_tsig_vars(query_msg, alg_name_str.as_str(), key_name.as_str(), time_signed, fudge);  
+    let tsig_rr= set_tsig_vars( alg_name_str.as_str(), key_name.as_str(), time_signed, fudge);  
     let digest_comp = get_digest_request(new_query_message.to_bytes(), tsig_rr);
     
     match alg_name {
@@ -154,7 +154,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
             let mut hasher = crypto_hmac::new(Sha1::new(), key);
             hasher.input(&digest_comp[..]);
             let result = hasher.result();
-            tsig_rd = set_tsig_rd(&new_query_message,  
+            tsig_rd = set_tsig_rd( 
                 "hmac-sha1".to_lowercase(), 
                 original_id,
                 result,
@@ -167,7 +167,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
             let mut hasher = crypto_hmac::new(Sha256::new(), key);
             hasher.input(&digest_comp[..]);
             let result = hasher.result();
-            tsig_rd = set_tsig_rd(&new_query_message, 
+            tsig_rd = set_tsig_rd( 
                 "hmac-sha256".to_lowercase(),
                 original_id,
                 result,
@@ -331,7 +331,7 @@ pub fn process_tsig(msg: &DnsMessage,key:&[u8], key_name: String, time: u64,  av
 }
 //Auxiliar function to create the TSIG variables and resource recrods
 #[doc= r"This function helps to set create a partial TSIG resource record on  a DNS query"]
-fn set_tsig_vars(query_msg: &mut DnsMessage, alg_name: &str, name: &str, time_signed: u64, fudge: u16) -> ResourceRecord{
+fn set_tsig_vars(alg_name: &str, name: &str, time_signed: u64, fudge: u16) -> ResourceRecord{
     //TSIG Variables
     // TSIG RDATA
     let mut tsig_rd: TSigRdata = TSigRdata::new();
@@ -542,7 +542,7 @@ fn check_process_tsig() {
     assert!(answer);
     assert_eq!(error,TsigErrorCode::NOERR);
 }
-//Unitary test to verify that the signer function is properly working
+//Unitary test to verify that the signer function is working properly
 #[test]
 fn check_signed_tsig() {
     let key = b"1234567890";
@@ -563,13 +563,12 @@ fn check_signed_tsig() {
         id
     );
     //partial TSIG Resource record verify the signing process
-    let tsig_rr = set_tsig_vars(&mut q, tsig_alg_to_string(&alg_name).as_str(), &name, time_signed, fudge);
+    let tsig_rr = set_tsig_vars(tsig_alg_to_string(&alg_name).as_str(), &name, time_signed, fudge);
     let q_for_mac = q.clone();
     //creation of the signature to compare
     let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, name);
     // creation of the signature digest
     let dig_for_mac = get_digest_request(q_for_mac.to_bytes(), tsig_rr);
-    let dig_for_mac = dig_for_mac[0..=55].to_vec();
     let mut hasher = crypto_hmac::new(Sha1::new(), key);
     hasher.input(&dig_for_mac[..]);
     

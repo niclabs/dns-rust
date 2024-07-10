@@ -477,13 +477,15 @@ impl DnsMessage {
         }
 
         // Create message
-        let dns_message = DnsMessage {
+        let mut dns_message = DnsMessage {
             header: header,
             question: question,
             answer: answer,
             authority: authority,
             additional: additional,
         };
+
+        dns_message.update_header_counters();
 
         Ok(dns_message)
     }
@@ -1225,7 +1227,6 @@ mod message_test {
         dns_query_message.set_additional(new_additional);
 
         dns_query_message.update_header_counters();
-        println!("{}", dns_query_message);
 
         assert_eq!(dns_query_message.get_header().get_ancount(), 3);
         assert_eq!(dns_query_message.get_header().get_nscount(), 2);
@@ -1513,6 +1514,125 @@ mod message_test {
             _ => {}
 
         }
+    }
+
+    #[test]
+    fn bytes_parser_debugg(){
+
+    let bytes_query = [
+    179, 212,
+    1, 32,
+    0, 1,
+    0, 0,
+    0, 0,
+    0, 2,
+    3, 110, 115, 49,
+    7, 110, 105, 99, 116, 101, 115, 116, 
+    0,
+    0, 1,
+    0, 1,
+    0,
+    0, 41,
+    4, 208,
+    0, 0, 0, 0,
+    0, 4,
+    0, 12, 0, 0,
+    5, 119, 101, 105, 114, 100,
+    7, 110, 105, 99, 116, 101, 115, 116,
+    0,
+    0, 250,
+    0, 255,
+    0, 0, 0, 0,
+    0, 47,
+    9, 104, 109, 97, 99, 45, 115, 104, 97, 49,
+    0,
+    0, 0, 102, 136, 61, 116,
+    1, 44,
+    0, 20,
+    12, 214, 6, 119, 123, 158, 97, 127, 34, 57,
+    191, 49, 145, 90, 37, 39, 88, 53, 218, 32,
+    179, 212,
+    0, 0,
+    0, 0];
+
+    let dns_message = DnsMessage::from_bytes(&bytes_query).unwrap();
+
+    println!("{:?}", dns_message);
+
+    let bytes_query_2 = dns_message.to_bytes();
+
+    println!("bytes_query len: {:?}, bytes_query_2 len: {:?}", bytes_query.len(), bytes_query_2.len());
+
+    let dns_message = DnsMessage::from_bytes(&bytes_query_2).unwrap();
+
+    println!("{:?}", dns_message);
+
+    let bytes_response = [
+    179, 212,
+    133, 128,
+    0, 1,
+    0, 1,
+    0, 0,
+    0, 2,
+    3, 110, 115, 49,
+    7, 110, 105, 99, 116, 101, 115, 116,
+    0,
+    0, 1,
+    0, 1,
+    192, 12, 
+    0, 1, 
+    0, 1,
+    0, 9, 58, 128, 0,
+    4, 192, 168, 100, 10,
+    0,
+    0, 41,
+    4, 208,
+    0, 0, 0, 0,
+    0, 28,
+    0, 10,
+    0, 24, 
+    249, 3, 17, 195, 45, 139, 105, 170,
+    1, 0, 0, 0, 102, 136, 61, 116, 102, 130,
+    211, 13, 27, 147, 16, 17,
+    5, 119, 101, 105, 114, 100, 
+    7, 110, 105, 99, 116, 101, 115, 116,
+    0,
+    0, 250, 
+    0, 255, 
+    0, 0, 0, 0, 
+    0, 47,
+    9, 104, 109, 97, 99, 45, 115, 104, 97, 49,
+    0,
+    0, 0, 102, 136, 61, 116,
+    1, 44,
+    0, 20,
+    231, 93, 58, 134, 218, 188,
+    23, 21, 186, 227, 231, 4,
+    187, 16, 201, 206, 199, 
+    17, 145, 106, 179, 212, 
+    0, 0, 0, 0];
+
+    let dns_message = DnsMessage::from_bytes(&bytes_response).unwrap();
+
+    println!("      ");
+
+    println!("{:?}", dns_message);
+
+    let bytes_response_2 = dns_message.to_bytes();
+
+    println!("      ");
+
+    println!("bytes_response len: {:?}, bytes_response_2 len: {:?}", bytes_response.len(), bytes_response_2.len());
+
+    // assert_eq!(bytes_response.to_vec(), bytes_response_2.to_vec());
+
+    println!("      ");
+
+    let dns_message = DnsMessage::from_bytes(&bytes_response_2).unwrap();
+
+    println!("{:?}", dns_message);
+
+    println!("      ");
     }
 
 }

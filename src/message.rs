@@ -894,6 +894,18 @@ impl DnsMessage {
         }
     }
 
+    pub fn extract_dnssec_records(&self) -> Vec<DnskeyRdata> {
+        let mut dnssec_records = Vec::new();
+
+        for record in self.additional.iter() {
+            if let Rdata::DNSKEY(dnskey) = &record.get_rdata() {
+                dnssec_records.push(dnskey.clone());
+            }
+        }
+
+        dnssec_records
+    }
+
 }
 
 impl fmt::Display for DnsMessage {

@@ -2,6 +2,26 @@ use std::{net::IpAddr, str::FromStr, thread, net::UdpSocket, time::Duration};
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rdata::Rdata,class_qclass::Qclass, type_qtype, resource_record::ResourceRecord, header::Header, DnsMessage},tsig::{self, TsigAlgorithm}};
 
 ///RFC 8945 TSIG tests
+/*This tests verifies section 5.3:
+   When a server has generated a response to a signed request, it signs
+   the response using the same algorithm and key.  The server MUST NOT
+   generate a signed response to a request if either the key is invalid
+   (e.g., key name or algorithm name are unknown) or the MAC fails
+   validation; see Section 5.3.2 for details of responding in these
+   cases.
+
+   It also MUST NOT generate a signed response to an unsigned request,
+   except in the case of a response to a client's unsigned TKEY request
+   if the secret key is established on the server side after the server
+   processed the client's request.  Signing responses to unsigned TKEY
+   requests MUST be explicitly specified in the description of an
+   individual secret key establishment algorithm [RFC3645].
+
+   The digest components used to generate a TSIG on a response are:
+
+      Request MAC
+      DNS Message (response)
+      TSIG Variables (response) */
 #[tokio::test]
 async fn tsig_signature() {
     // global test variables
@@ -18,7 +38,7 @@ async fn tsig_signature() {
                 0,
                 false,
                 id);
-    let q_for_mac = dns_query_message.clone();
+
     //Lanzamiento de threads
     //Se lanza el servidor. Recibe un mensaje sin firmar, lo firma y lo reenvía
     fn host(){

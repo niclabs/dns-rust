@@ -1,87 +1,79 @@
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
-use crypto::sha2::Sha256;
-use crypto::rsa::Rsa;
-use crate::dnssec::RRset;
-use crate::dnskey_rdata::DnskeyRdata;
-use crate::rrsig_rdata::RRSIGRdata;
-use base64;
+use sha2::{Sha256, Digest};
+use rust_crypto::digest::Digest as RustDigest;
+use rust_crypto::sha1::Sha1;
+use base64::encode;
+use crate::message::rdata::{DnskeyRdata, RrsigRdata, Rdata};
+use crate::message::resource_record::ResourceRecord;
+use crate::client::client_error::ClientError;
 
-/// RFCs: [4033, 4034, 4035, 4509]
+pub fn verify_rrsig(rrsig: &RrsigRdata, dnskey: &DnskeyRdata, rrset: &[ResourceRecord]) -> Result<bool, ClientError> {
+    let mut rrsig_data = Vec::new();
+    rrsig_data.extend_from_slice(&rrsig.type_covered.to_be_bytes());
+    rrsig_data.push(rrsig.algorithm);
+    rrsig_data.push(rrsig.labels);
+    rrsig_data.extend_from_slice(&rrsig.original_ttl.to_be_bytes());
+    rrsig_data.extend_from_slice(&rrsig.expiration.to_be_bytes());
+    rrsig_data.extend_from_slice(&rrsig.inception.to_be_bytes());
+    rrsig_data.extend_from_slice(&rrsig.key_tag.to_be_bytes());
+    rrsig_data.extend_from_slice(rrsig.signer_name.to_bytes()?);
 
-/// Signs a RRset using the private_key given.
-/// Returns a RRSIG that contains the signature.
-pub fn sign_rrset(rrset: &RRset, private_key: &Rsa, algorithm: u8) -> Result<RRSIGRdata, &'static str> {
-    let rrset_bytes = rrset.to_bytes();
-    
-    let mut hasher: Box<dyn Digest> = match algorithm {
-        1 => Box::new(Sha1::new()),
-        2 => Box::new(Sha256::new()),
-        _ => return Err("Algorithm not supported"),
-    };
-    
-    hasher.input(&rrset_bytes);
-    let hash = hasher.result_str();
-    
-    let signature = private_key.sign(hasher, &hash.as_bytes()).map_err(|_| "Error while signing")?;
-    
-    let rrsig = RRSIGRdata {
-        type_covered: rrset.get_type(),
-        algorithm,
-        labels: rrset.get_labels(),
-        original_ttl: rrset.get_ttl(),
-        signature_expiration: get_expiration_time(),
-        signature_inception: get_inception_time(),
-        key_tag: calculate_key_tag(private_key),
-        signer_name: rrset.get_name().clone(),
-        signature: base64::encode(&signature),
-    };
-    
-    Ok(rrsig)
+    let mut rrset_sorted = rrset.to_vec();
+    rrset_sorted.sort_by(|a, b| a.name.cmp(&b.name));
+
+    for rr in rrset_sorted.iter() {
+        rrsig_data.extend_from_slice(rr.name.to_bytes()?);
+        rrsig_data.extend_from_slice(&rr.ttl.to_be_bytes());
+        rrsig_data.extend_from_slice(&(rr.rdata.to_bytes().len() as u16).to_be_bytes());
+        rrsig_data.extend_from_slice(&rr.rdata.to_bytes()?);
+    }
+
+    let signature = rrsig.signature.clone();
+    let mut hasher = Sha256::new();
+    hasher.update(rrsig_data);
+    let hashed = hasher.finalize();
+
+    match dnskey.algorithm {
+        3 => {
+            //DSA/SHA1
+            let mut sha1 = Sha1::new();
+            sha1.input(&rrsig_data);
+            let digest = sha1.result_str();
+            Ok(digest == encode(&signature))
+        },
+        5 => {
+            //RSA/SHA1
+            let mut sha1 = Sha1::new();
+            sha1.input(&rrsig_data);
+            let digest = sha1.result_str();
+            Ok(digest == encode(&signature))
+        },
+        8 => {
+            //RSA/SHA256
+            let hashed = Sha256::digest(&rrsig_data);
+            Ok(encode(&hashed) == encode(&signature))
+        },
+        _ => Err(ClientError::new("Unknown DNSKEY algorithm")),
+    }
 }
 
-// Gets the expiration time for the signature.
-fn get_expiration_time() -> u32 {
-    // Supposing sign validity = 1 day (86400 seconds)
-    let now = std::time::SystemTime::now();
-    let expiration_duration = std::time::Duration::new(86400, 0);
-    let expiration_time = now + expiration_duration;
-    expiration_time.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as u32
-}
+pub fn verify_ds(ds_record: &ResourceRecord, dnskey: &DnskeyRdata) -> Result<bool, ClientError> {
+    if let Rdata::DS(ds_rdata) = &ds_record.get_rdata() {
+        let dnskey_bytes = dnskey.to_bytes()?;
+        let hashed_key = match ds_rdata.algorithm {
+            1 => {
+                let mut hasher = Sha1::new();
+                hasher.input(&dnskey_bytes);
+                hasher.result_str()
+            },
+            2 => {
+                let hashed = Sha256::digest(&dnskey_bytes);
+                encode(&hashed)
+            },
+            _ => return Err(ClientError::new("Unknown DS algorithm")),
+        };
 
-// Gets the inception time for the signature.
-fn get_inception_time() -> u32 {
-    // Assuming current time
-    let now = std::time::SystemTime::now();
-    now.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as u32
-}
-
-// Calculates the key tag for the public key.
-fn calculate_key_tag(private_key: &Rsa) -> u16 {
-    let public_key_der = private_key.to_public_key_der().unwrap();
-    let mut hasher = Sha1::new();
-    hasher.input(&public_key_der);
-    let hash = hasher.result_str();
-    u16::from_be_bytes([hash.as_bytes()[18], hash.as_bytes()[19]])
-}
-
-/// RFCs: [4033, 4034, 4035, 5702]
-
-/// Verifies an RRset using the provided public key and RRSIG record.
-/// Returns true if the verification is successful.
-pub fn verify_rrset(rrset: &RRset, rrsig: &RRSIGRdata, public_key: &Rsa) -> Result<bool, &'static str> {
-    let rrset_bytes = rrset.to_bytes();
-    
-    let mut hasher: Box<dyn Digest> = match rrsig.algorithm {
-        1 => Box::new(Sha1::new()),
-        2 => Box::new(Sha256::new()),
-        _ => return Err("Algorithm not supported"),
-    };
-    
-    hasher.input(&rrset_bytes);
-    let hash = hasher.result_str();
-    
-    let signature = base64::decode(&rrsig.signature).map_err(|_| "Error while decoding signature")?;
-    
-    public_key.verify(hasher, &hash.as_bytes(), &signature).map_err(|_| "Verification failed")
+        Ok(ds_rdata.digest == hashed_key)
+    } else {
+        Err(ClientError::new("Provided record is not a DS record"))
+    }
 }

@@ -1,16 +1,17 @@
 use sha2::{Sha256, Digest};
-use rust_crypto::digest::Digest as RustDigest;
-use rust_crypto::sha1::Sha1;
+use crypto::digest::Digest as RustDigest;
+use crypto::sha1::Sha1;
 use base64::encode;
-use crate::message::rdata::{DnskeyRdata, RrsigRdata, Rdata};
+use crate::message::rdata::{DnskeyRdata, Rdata};
+use crate::message::rdata::rrsig_rdata::{RRSIGRdata};
 use crate::message::resource_record::ResourceRecord;
 use crate::client::client_error::ClientError;
 
-pub fn verify_rrsig(rrsig: &RrsigRdata, dnskey: &DnskeyRdata, rrset: &[ResourceRecord]) -> Result<bool, ClientError> {
+pub fn verify_rrsig(rrsig: &RRSIGRdata, dnskey: &DnskeyRdata, rrset: &[ResourceRecord]) -> Result<bool, ClientError> {
     let mut rrsig_data = Vec::new();
-    rrsig_data.extend_from_slice(&rrsig.type_covered.to_be_bytes());
-    rrsig_data.push(rrsig.algorithm);
-    rrsig_data.push(rrsig.labels);
+    rrsig_data.extend_from_slice(&rrsig.get_type_covered().to_be_bytes());
+    rrsig_data.push(rrsig.get_algorithm());
+    rrsig_data.push(rrsig.get_labels());
     rrsig_data.extend_from_slice(&rrsig.original_ttl.to_be_bytes());
     rrsig_data.extend_from_slice(&rrsig.expiration.to_be_bytes());
     rrsig_data.extend_from_slice(&rrsig.inception.to_be_bytes());

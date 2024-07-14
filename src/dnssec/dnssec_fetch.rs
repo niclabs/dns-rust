@@ -1,6 +1,6 @@
 use crate::message::{DnsMessage, Rdata, ResourceRecord};
-use crate::dnssec_message_processing::extract_dnssec_records;
-use crate::rrset_signature::{verify_rrsig, verify_ds};
+use crate::dnssec::dnssec_message_processing::extract_dnssec_records;
+use crate::dnssec::rrset_signature::{verify_rrsig, verify_ds};
 use crate::message::rdata::DnskeyRdata;
 use crate::client::client_error::ClientError;
 

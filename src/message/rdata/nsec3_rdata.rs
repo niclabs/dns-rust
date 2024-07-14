@@ -1,5 +1,5 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
-use crate::message::type_rtype::Rtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::rdata::NsecRdata;
 
 use std::fmt;
@@ -32,7 +32,7 @@ pub struct Nsec3Rdata {
     salt: String,
     hash_length: u8,
     next_hashed_owner_name: String,
-    type_bit_maps: Vec<Rtype>,
+    type_bit_maps: Vec<Rrtype>,
 }
 
 impl ToBytes for Nsec3Rdata {
@@ -54,7 +54,7 @@ impl ToBytes for Nsec3Rdata {
         bytes.push(hash_length);
         let next_hashed_owner_name = self.get_next_hashed_owner_name();
         bytes.extend_from_slice(next_hashed_owner_name.as_bytes());
-        let type_bit_maps: Vec<Rtype> = self.get_type_bit_maps();
+        let type_bit_maps: Vec<Rrtype> = self.get_type_bit_maps();
 
         let mut enconded_type_bit_maps: Vec<u8> = Vec::new();
         let mut current_window: Option<u8> = None;
@@ -62,8 +62,8 @@ impl ToBytes for Nsec3Rdata {
 
         for rtype in type_bit_maps {
             let window = match rtype {
-                Rtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
-                _ => (Rtype::from_rtype_to_int(rtype) / 256) as u8,
+                Rrtype::UNKNOWN(rr_type) => (rr_type / 256) as u8,
+                _ => (u16::from(rtype) / 256) as u8,
             };
 
             if let Some(current_window_value) = current_window {
@@ -111,7 +111,7 @@ impl FromBytes<Result<Self, &'static str>> for Nsec3Rdata {
         let next_hashed_owner_name: String = String::from_utf8_lossy(&bytes[(6 + salt_length as usize)..(6 + salt_length as usize + hash_length as usize)]).to_string();
 
         let rest_bytes = &bytes[(6 + salt_length as usize + hash_length as usize)..bytes_len];
-        let mut decoded_type_bit_maps: Vec<Rtype> = Vec::new();
+        let mut decoded_type_bit_maps: Vec<Rrtype> = Vec::new();
         let mut offset = 0;
 
         while offset < rest_bytes.len() {
@@ -129,7 +129,7 @@ impl FromBytes<Result<Self, &'static str>> for Nsec3Rdata {
                     let rr_type = window_number as u16 * 256 + i as u16 * 8 + j as u16;
                     let bit_mask = 1 << (7 - j);
                     if byte & bit_mask != 0 {
-                        decoded_type_bit_maps.push(Rtype::from_int_to_rtype(rr_type));
+                        decoded_type_bit_maps.push(Rrtype::from(rr_type));
                     }
                 }
             }
@@ -161,7 +161,7 @@ impl Nsec3Rdata {
         salt: String,
         hash_length: u8,
         next_hashed_owner_name: String,
-        type_bit_maps: Vec<Rtype>,
+        type_bit_maps: Vec<Rrtype>,
     ) -> Nsec3Rdata {
         Nsec3Rdata {
             hash_algorithm,
@@ -211,7 +211,7 @@ impl Nsec3Rdata {
     }
 
     /// Getter for the type_bit_maps
-    pub fn get_type_bit_maps(&self) -> Vec<Rtype> {
+    pub fn get_type_bit_maps(&self) -> Vec<Rrtype> {
         self.type_bit_maps.clone()
     }
 }
@@ -255,7 +255,7 @@ impl Nsec3Rdata {
     }
 
     /// Setter for the type_bit_maps
-    pub fn set_type_bit_maps(&mut self, type_bit_maps: Vec<Rtype>) {
+    pub fn set_type_bit_maps(&mut self, type_bit_maps: Vec<Rrtype>) {
         self.type_bit_maps = type_bit_maps;
     }
 }
@@ -281,7 +281,7 @@ mod nsec3_rdata_tests {
 
     #[test]
     fn constructor(){
-        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::AAAA]);
+        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::AAAA]);
         assert_eq!(nsec3_rdata.hash_algorithm, 1);
         assert_eq!(nsec3_rdata.flags, 2);
         assert_eq!(nsec3_rdata.iterations, 3);
@@ -289,12 +289,12 @@ mod nsec3_rdata_tests {
         assert_eq!(nsec3_rdata.salt, "salt".to_string());
         assert_eq!(nsec3_rdata.hash_length, 5);
         assert_eq!(nsec3_rdata.next_hashed_owner_name, "next_hashed_owner_name".to_string());
-        assert_eq!(nsec3_rdata.type_bit_maps, vec![Rtype::A, Rtype::AAAA]);
+        assert_eq!(nsec3_rdata.type_bit_maps, vec![Rrtype::A, Rrtype::AAAA]);
     }
 
     #[test]
     fn getters(){
-        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::AAAA]);
+        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::AAAA]);
         assert_eq!(nsec3_rdata.get_hash_algorithm(), 1);
         assert_eq!(nsec3_rdata.get_flags(), 2);
         assert_eq!(nsec3_rdata.get_iterations(), 3);
@@ -302,12 +302,12 @@ mod nsec3_rdata_tests {
         assert_eq!(nsec3_rdata.get_salt(), "salt".to_string());
         assert_eq!(nsec3_rdata.get_hash_length(), 5);
         assert_eq!(nsec3_rdata.get_next_hashed_owner_name(), "next_hashed_owner_name".to_string());
-        assert_eq!(nsec3_rdata.get_type_bit_maps(), vec![Rtype::A, Rtype::AAAA]);
+        assert_eq!(nsec3_rdata.get_type_bit_maps(), vec![Rrtype::A, Rrtype::AAAA]);
     }
 
     #[test]
     fn setters(){
-        let mut nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::AAAA]);
+        let mut nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 4, "salt".to_string(), 5, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::AAAA]);
         nsec3_rdata.set_hash_algorithm(10);
         nsec3_rdata.set_flags(20);
         nsec3_rdata.set_iterations(30);
@@ -315,7 +315,7 @@ mod nsec3_rdata_tests {
         nsec3_rdata.set_salt("new_salt".to_string());
         nsec3_rdata.set_hash_length(50);
         nsec3_rdata.set_next_hashed_owner_name("new_next_hashed_owner_name".to_string());
-        nsec3_rdata.set_type_bit_maps(vec![Rtype::CNAME, Rtype::MX]);
+        nsec3_rdata.set_type_bit_maps(vec![Rrtype::CNAME, Rrtype::MX]);
 
         assert_eq!(nsec3_rdata.hash_algorithm, 10);
         assert_eq!(nsec3_rdata.flags, 20);
@@ -324,13 +324,13 @@ mod nsec3_rdata_tests {
         assert_eq!(nsec3_rdata.salt, "new_salt".to_string());
         assert_eq!(nsec3_rdata.hash_length, 50);
         assert_eq!(nsec3_rdata.next_hashed_owner_name, "new_next_hashed_owner_name".to_string());
-        assert_eq!(nsec3_rdata.type_bit_maps, vec![Rtype::CNAME, Rtype::MX]);
+        assert_eq!(nsec3_rdata.type_bit_maps, vec![Rrtype::CNAME, Rrtype::MX]);
     }
 
     #[test]
     fn to_bytes(){
         let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
-            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
         
         let bytes = nsec3_rdata.to_bytes();
 
@@ -362,7 +362,7 @@ mod nsec3_rdata_tests {
         let bytes = [&first_bytes[..], &bit_map_bytes_to_test[..]].concat();
 
         let expected_nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
-            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
         
         let nsec3_rdata = Nsec3Rdata::from_bytes(&bytes, &bytes).unwrap();
 

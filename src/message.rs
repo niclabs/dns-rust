@@ -2,24 +2,23 @@ pub mod header;
 pub mod question;
 pub mod rdata;
 pub mod resource_record;
-pub mod type_rtype;
-pub mod type_qtype;
-pub mod class_rclass;
-pub mod class_qclass;
+pub mod rrtype;
+pub mod rclass;
 pub mod rcode;
 
-use crate::message::class_qclass::Qclass;
-use crate::message::class_rclass::Rclass;
-use crate::message::type_qtype::Qtype;
-use crate::message::type_rtype::Rtype;
+use crate::message::rclass::Rclass;
+use crate::message::rrtype::Rrtype;
 use crate::message::rcode::Rcode;
 use crate::domain_name::DomainName;
 use crate::message::header::Header;
 use crate::message::question::Question;
-use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
+use crate::message::rdata::Rdata;
+use crate::message::rdata::opt_rdata::OptRdata;
+use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
+use resource_record::ToBytes;
 use core::fmt;
 use std::vec::Vec;
 
@@ -55,11 +54,11 @@ impl DnsMessage {
     /// 
     /// ```
     /// let dns_query_message =
-    /// DnsMessage::new_query_message(DomainName::new_from_str("example.com".to_string()), Qtype::A, Qclass:IN, 0, false);
+    /// DnsMessage::new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     ///
     /// assert_eq!(dns_query_message.header.get_rd(), false);
-    /// assert_eq!(dns_query_message.question.get_qtype(), Qtype::A);
-    /// assert_eq!(dns_query_message.question.get_qclass(), Qclass::IN);
+    /// assert_eq!(dns_query_message.question.get_qtype(), Rrtype::A);
+    /// assert_eq!(dns_query_message.question.get_rclass(), Rclass::IN);
     /// assert_eq!(
     ///     dns_query_message.question.get_qname().get_name(),
     ///     "example.com".to_string()
@@ -68,8 +67,8 @@ impl DnsMessage {
     ///
     pub fn new_query_message(
         qname: DomainName,
-        qtype: Qtype,
-        qclass: Qclass,
+        rrtype: Rrtype,
+        rclass: Rclass,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -88,8 +87,8 @@ impl DnsMessage {
         let domain_name = qname;
 
         question.set_qname(domain_name);
-        question.set_qtype(qtype);
-        question.set_qclass(qclass);
+        question.set_rrtype(rrtype);
+        question.set_rclass(rclass);
 
         let dns_message = DnsMessage {
             header: header,
@@ -133,20 +132,20 @@ impl DnsMessage {
     ///
     /// let question = new_response.get_question();
     /// let qname = question.get_qname().get_name();
-    /// let qtype = question.get_qtype();
-    /// let qclass = question.get_qclass();
+    /// let rrtype = question.get_rrtype();
+    /// let rclass = question.get_rclass();
     /// 
     /// assert_eq!(id, 1);
     /// assert_eq!(op_code, 1);
     /// assert!(rd);
     /// assert_eq!(qname, String::from("test.com"));
-    /// assert_eq!(Rtype::from_rtype_to_int(qtype), 2);
-    /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+    /// assert_eq!(u16::from(rrtype), 2);
+    /// assert_eq!(u16::from(rclass), 1);
     /// ```
     pub fn new_response_message(
         qname: String,
-        qtype: &str,
-        qclass: &str,
+        rrtype: &str,
+        rclass: &str,
         op_code: u8,
         rd: bool,
         id: u16,
@@ -167,10 +166,10 @@ impl DnsMessage {
         domain_name.set_name(qname);
 
         question.set_qname(domain_name);
-        let qtype_qtype = Qtype::from_str_to_qtype(qtype);
-        question.set_qtype(qtype_qtype);
-        let qclass_qclass = Qclass::from_str_to_qclass(qclass);
-        question.set_qclass(qclass_qclass);
+        let rrtype_rrtype = Rrtype::from(rrtype);
+        question.set_rrtype(rrtype_rrtype);
+        let rclass_rclass = Rclass::from(rclass);
+        question.set_rclass(rclass_rclass);
 
         let dns_message = DnsMessage {
             header: header,
@@ -213,7 +212,7 @@ impl DnsMessage {
         let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
 
-        header.set_rcode(1);
+        header.set_rcode(Rcode::FORMERR);
         header.set_qr(true);
         msg.set_header(header);
 
@@ -247,6 +246,46 @@ impl DnsMessage {
         msg
     }
 
+    /// Adds ENDS0 to the message.
+    /// 
+    /// # Example
+    /// ´´´
+    /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
+    /// ´´´
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, z: u16, option_codes: Option<Vec<u16>>){
+        let mut opt_rdata = OptRdata::new();
+
+        let mut option = Vec::new();
+
+        if let Some(option_codes) = option_codes {
+            for code in option_codes {
+                option.push((OptionCode::from(code), 0, Vec::new()));
+            }
+        }
+        opt_rdata.set_option(option);
+        let rdata = Rdata::OPT(opt_rdata);
+
+        let rdlength = rdata.to_bytes().len() as u16;
+
+        let mut rr = ResourceRecord::new(rdata);
+
+        rr.set_name(DomainName::new_from_string(".".to_string()));
+
+        rr.set_type_code(Rrtype::OPT);
+
+        rr.set_rclass(Rclass::UNKNOWN(max_payload.unwrap_or(512)));
+
+        let ttl = u32::from(version) << 16 | u32::from(z);
+        rr.set_ttl(ttl);
+
+        rr.set_rdlength(rdlength);
+
+        self.add_additionals(vec![rr]);
+
+        self.update_header_counters();
+    }
+
 
     /// Creates a new axfr query message.
     /// 
@@ -263,8 +302,8 @@ impl DnsMessage {
     /// 
     /// let question = axfr_msg.get_question();
     /// let qname = question.get_qname().get_name();
-    /// let qtype = question.get_qtype();
-    /// let qclass = question.get_qclass();
+    /// let rrtype = question.get_rrtype();
+    /// let rclass = question.get_rclass();
     /// 
     /// assert_eq!(id, 1);
     /// assert!(qr);
@@ -272,14 +311,14 @@ impl DnsMessage {
     /// assert!(rd);
     /// assert_eq!(qdcount, 1);
     /// assert_eq!(qname, String::from("test.com"));
-    /// assert_eq!(Rtype::from_rtype_to_int(qtype), 252);
-    /// assert_eq!(Rclass::from_rclass_to_int(qclass), 1);
+    /// assert_eq!(u16::from(rrtype), 252);
+    /// assert_eq!(u16::from(rclass), 1);
     /// ```
     pub fn axfr_query_message(qname: DomainName) -> Self {
         let mut rng = thread_rng();
         let msg_id = rng.gen();
 
-        let msg = DnsMessage::new_query_message(qname, Qtype::AXFR, Qclass::IN, 0, false, msg_id);
+        let msg = DnsMessage::new_query_message(qname, Rrtype::AXFR, Rclass::IN, 0, false, msg_id);
 
         msg
     }
@@ -301,7 +340,7 @@ impl DnsMessage {
     pub fn not_implemented_msg() -> Self {
         let mut msg = DnsMessage::new();
         let mut header = msg.get_header();
-        header.set_rcode(4);
+        header.set_rcode(Rcode::NOTIMP);
         header.set_qr(true);
 
         msg.set_header(header);
@@ -438,13 +477,15 @@ impl DnsMessage {
         }
 
         // Create message
-        let dns_message = DnsMessage {
+        let mut dns_message = DnsMessage {
             header: header,
             question: question,
             answer: answer,
             authority: authority,
             additional: additional,
         };
+
+        dns_message.update_header_counters();
 
         Ok(dns_message)
     }
@@ -621,262 +662,6 @@ impl DnsMessage {
         self.set_additional(msg_additionals);
     }
 
-
-    /// Print the information of DNS message
-    /// 
-    /// # Example
-    /// 
-    /// ```
-    /// let mut msg = DnsMessage::new();
-    /// let mut header = Header::new();
-    /// header.set_qdcount(1);
-    /// header.set_ancount(1);
-    /// header.set_nscount(1);
-    /// header.set_arcount(1);
-    /// msg.set_header(header);
-    /// msg.update_header_counters();
-    /// msg.print_dns_message();
-    /// ```
-    pub fn print_dns_message(&mut self) {
-        // Get the message and print the information
-        let header = self.get_header();
-        let answers = self.get_answer();
-        let authority = self.get_authority();
-        let additional = self.get_additional();
-
-        let answer_count = header.get_ancount();
-        let authority_count = header.get_nscount();
-        let additional_count = header.get_arcount();
-
-        // Not data found error
-        if answer_count == 0 && header.get_qr() == true {
-            if header.get_aa() == true && header.get_rcode() == 3 {
-                println!("Name Error: domain name referenced in the query does not exist.");
-            } else if header.get_rcode() != 0 {
-                match header.get_rcode() {
-                1 => println!("Format Error: The name server was unable to interpret the query."),
-                2 => println!("Server Failure: The name server was unable to process this query due to a problem with the name server."),
-                4 => println!("Not implemented: The name server does not support the requested kind of query."),
-                5 => println!("Refused: The name server refuses to perform the specified operation for policy reasons."),
-                _ => println!("Response with error code {}", header.get_rcode()), 
-            }
-            } else if header.get_aa() == true && header.get_rcode() == 0 {
-                println!("Data not found error: The domain name referenced in the query exists, but data of the appropiate type does not.");
-            }
-        } else {
-            println!("-------------------------------------");
-            println!(
-                "Answers: {} - Authority: {} - Additional: {}",
-                answer_count, authority_count, additional_count
-            );
-            println!("-------------------------------------");
-
-            for answer in answers {
-                match answer.get_rdata() {
-                    Rdata::A(val) => {
-                        println!("Ip Address: {}", val.get_string_address())
-                    }
-                    Rdata::ACH(val) => {
-                        println!(
-                            "Domain name: {} - Ch Ip address: {}",
-                            val.get_domain_name().get_name(),
-                            val.get_ch_address()
-                        )
-                    }
-                    Rdata::NS(val) => {
-                        println!("Name Server: {}", val.get_nsdname().get_name())
-                    }
-                    Rdata::CNAME(val) => {
-                        println!("Cname: {}", val.get_cname().get_name())
-                    }
-                    Rdata::HINFO(val) => {
-                        println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
-                    }
-                    Rdata::MX(val) => {
-                        println!(
-                            "Preference: {} - Exchange: {}",
-                            val.get_preference(),
-                            val.get_exchange().get_name()
-                        )
-                    }
-                    Rdata::PTR(val) => {
-                        println!("Ptr name: {}", val.get_ptrdname().get_name())
-                    }
-                    Rdata::SOA(val) => {
-                        println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
-                    }
-                    Rdata::TXT(val) => {
-                        println!("Txt: {:#?}", val.get_text())
-                    }
-
-                    Rdata::AAAA(val) => {
-                        println!("Ip Address: {}", val.get_address_as_string())
-                    }
-
-                    Rdata::TSIG(_val) => {
-                    }
-
-                    Rdata::OPT(_val) => {
-                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
-                    }
-                    Rdata::DS(val) => {
-                        println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())
-                    }
-                    Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered().to_string(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
-                    }
-                    Rdata::NSEC(val) => {
-                        println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
-                    }
-                    Rdata::DNSKEY(val) => {
-                        println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
-                    }
-
-                    Rdata::NSEC3(val) => {
-                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
-                    }
-                    Rdata::NSEC3PARAM(val) => {
-                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
-                    }
-                }
-            }
-
-            for answer in authority {
-                match answer.get_rdata() {
-                    Rdata::A(val) => {
-                        println!("Ip Address: {}", val.get_string_address())
-                    }
-                    Rdata::ACH(val) => {
-                        println!(
-                            "Domain name: {} - Ch Ip address: {}",
-                            val.get_domain_name().get_name(),
-                            val.get_ch_address()
-                        )
-                    }
-                    Rdata::NS(val) => {
-                        println!("Name Server: {}", val.get_nsdname().get_name())
-                    }
-                    Rdata::CNAME(val) => {
-                        println!("Cname: {}", val.get_cname().get_name())
-                    }
-                    Rdata::HINFO(val) => {
-                        println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
-                    }
-                    Rdata::MX(val) => {
-                        println!(
-                            "Preference: {} - Exchange: {}",
-                            val.get_preference(),
-                            val.get_exchange().get_name()
-                        )
-                    }
-                    Rdata::PTR(val) => {
-                        println!("Ptr name: {}", val.get_ptrdname().get_name())
-                    }
-                    Rdata::SOA(val) => {
-                        println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
-                    }
-                    Rdata::TXT(val) => {
-                        println!("Txt: {:#?}", val.get_text())
-                    }
-
-                    Rdata::AAAA(val) => {
-                        println!("Ip Address: {}", val.get_address_as_string())
-                    }
-
-                    Rdata::TSIG(_val) => {
-                    }
-                    Rdata::OPT(_val) => {
-                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
-                    }
-                    Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered().to_string(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
-                    }
-                    Rdata::DS(val) => {
-                        println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())
-                    }
-                    Rdata::NSEC(val) => {
-                        println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
-                    }
-                    Rdata::DNSKEY(val) => {
-                        println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
-                    }
-                    Rdata::NSEC3(val) => {
-                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
-                    }
-                    Rdata::NSEC3PARAM(val) => {
-                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
-                    }
-                }
-            }
-
-            for answer in additional {
-                match answer.get_rdata() {
-                    Rdata::A(val) => {
-                        println!("Ip Address: {}", val.get_string_address())
-                    }
-                    Rdata::ACH(val) => {
-                        println!(
-                            "Domain name: {} - Ch Ip address: {}",
-                            val.get_domain_name().get_name(),
-                            val.get_ch_address()
-                        )
-                    }
-                    Rdata::NS(val) => {
-                        println!("Name Server: {}", val.get_nsdname().get_name())
-                    }
-                    Rdata::CNAME(val) => {
-                        println!("Cname: {}", val.get_cname().get_name())
-                    }
-                    Rdata::HINFO(val) => {
-                        println!("CPU: {} - OS: {}", val.get_cpu(), val.get_os())
-                    }
-                    Rdata::MX(val) => {
-                        println!(
-                            "Preference: {} - Exchange: {}",
-                            val.get_preference(),
-                            val.get_exchange().get_name()
-                        )
-                    }
-                    Rdata::PTR(val) => {
-                        println!("Ptr name: {}", val.get_ptrdname().get_name())
-                    }
-                    Rdata::SOA(val) => {
-                        println!("Mname: {} - Rname: {} - Serial: {} - Refresh: {} - Retry: {} - Expire: {} - Minimum: {}", val.get_mname().get_name(), val.get_rname().get_name(), val.get_serial(), val.get_refresh(), val.get_retry(), val.get_expire(), val.get_minimum())
-                    }
-                    Rdata::TXT(val) => {
-                        println!("Txt: {:#?}", val.get_text())
-                    }
-                    Rdata::AAAA(val) => {
-                        println!("Ip Address: {}", val.get_address_as_string())
-                    }
-                    Rdata::TSIG(_val) => {
-                    }
-                    Rdata::OPT(_val) => {
-                        println!("OPT code: {} - OPT length: {} - OPT data: {:#?}", _val.get_option_code(), _val.get_option_length(), _val.get_option_data())
-                    }
-                    Rdata::DS(val) => {
-                        println!("DS key tag: {} - DS algorithm: {} - DS digest type: {} - DS digest: {:#?}", val.get_key_tag(), val.get_algorithm(), val.get_digest_type(), val.get_digest())
-                    }
-                    Rdata::RRSIG(val) => {
-                        println!("RRSIG type covered: {} - RRSIG algorithm: {} - RRSIG labels: {} - RRSIG original TTL: {} - RRSIG signature expiration: {} - RRSIG signature inception: {} - RRSIG key tag: {} - RRSIG signer's name: {} - RRSIG signature: {:#?}", val.get_type_covered().to_string(), val.get_algorithm(), val.get_labels(), val.get_original_ttl(), val.get_signature_expiration(), val.get_signature_inception(), val.get_key_tag(), val.get_signer_name().get_name(), val.get_signature())
-                    }
-                    Rdata::NSEC(val) => {
-                        println!("NSEC next domain name: {} - NSEC type bit maps: {:#?}", val.get_next_domain_name().get_name(), val.get_type_bit_maps())
-                    }
-                    Rdata::DNSKEY(val) => {
-                        println!("DNSKEY flags: {} - DNSKEY protocol: {} - DNSKEY algorithm: {} - DNSKEY public key: {:#?}", val.get_flags(), val.get_protocol(), val.get_algorithm(), val.get_public_key())
-                    }
-                    Rdata::NSEC3(val) => {
-                        println!("NSEC3 hash algorithm: {} - NSEC3 flags: {} - NSEC3 iterations: {} - NSEC3 salt: {:#?} - NSEC3 next hash: {} - NSEC3 type bit maps: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt(), val.get_next_hashed_owner_name(), val.get_type_bit_maps())
-                    }
-                    Rdata::NSEC3PARAM(val) => {
-                        println!("NSEC3PARAM hash algorithm: {} - NSEC3PARAM flags: {} - NSEC3PARAM iterations: {} - NSEC3PARAM salt: {:#?}", val.get_hash_algorithm(), val.get_flags(), val.get_iterations(), val.get_salt())
-                    }
-                }
-            }
-        }
-    }
-
     ///Checks the Op_code of a message
     ///
     /// # Example
@@ -982,8 +767,73 @@ impl DnsMessage {
     }
 }
 
+/// Constructs and returns a new `DnsMessage` that represents a recursive query message.
+///
+/// This function is primarily used by the `AsyncResolver` to generate a query message
+/// with default parameters that are suitable for a Stub Resolver. A Stub Resolver is a type of DNS resolver
+/// that is designed to query DNS servers directly, without any caching or additional logic.
+///
+/// Given a `name`, `record_type`, and `record_class`, this function will create a new `DnsMessage`.
+/// The resulting `DnsMessage` will have a randomly generated `query_id`. This is a unique identifier for the query
+/// that allows the response to be matched up with the query. The `rd` (Recursion Desired) field is set to `true`,
+/// indicating to the DNS server that it should perform a recursive query if necessary to fulfill the request.
+///
+/// This function does not perform the DNS query itself; it merely constructs the `DnsMessage` that 
+/// represents the query.
+pub fn create_recursive_query(
+    name: DomainName,
+    record_type: Rrtype,
+    record_class: Rclass,
+) -> DnsMessage {
+    let mut random_generator = thread_rng();
+    let query_id: u16 = random_generator.gen();
+    let query = DnsMessage::new_query_message(
+        name.clone(),
+        record_type,
+        record_class,
+        0,
+        true,
+        query_id
+    );
+    return query;
+}
+
+/// Constructs a `DnsMessage` that represents a server failure response.
+///
+/// This function is primarily used by the `LookupStrategy` to generate a server failure response message
+/// based on a given query message. This can be useful in scenarios where a default response is needed before
+/// an actual response is received from the DNS server.
+///
+/// The `query` parameter is a reference to a `DnsMessage` that represents the original query.
+/// The resulting `DnsMessage` will have the same fields as the original query, except for the header. The header
+/// is modified as follows:
+/// - The `rcode` (Response Code) field is set to 2, which represents a server failure. This indicates to the client
+///   that the DNS server was unable to process the query due to a problem with the server.
+/// - The `qr` (Query/Response) field is set to `true`, indicating that this `DnsMessage` is a response, not a query.
+///
+/// This function returns the modified `DnsMessage`. Note that this function does not send the response; it merely
+/// constructs the `DnsMessage` that represents the response.
+///
+/// # Example
+///
+/// ```rust
+/// let query = DnsMessage::new();
+/// let response = create_server_failure_response_from_query(&query);
+/// ```
+pub fn create_server_failure_response_from_query(
+    query: &DnsMessage,
+) -> DnsMessage {
+    let mut response = query.clone();
+    let mut new_header: Header = response.get_header();
+    new_header.set_rcode(Rcode::SERVFAIL);
+    new_header.set_qr(true);
+    response.set_header(new_header);
+    return response;
+}
+
 #[cfg(test)]
 mod message_test {
+    use super::*;
     use crate::domain_name::DomainName;
     use crate::message::header::Header;
     use crate::message::question::Question;
@@ -993,24 +843,22 @@ mod message_test {
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::message::Rclass;
-    use crate::message::Qclass;
-    use crate::message::Qtype;
-    use crate::message::type_rtype::Rtype;
+    use crate::message::Rrtype;
 
     #[test]
     fn constructor_test() {
         let dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
 
         assert_eq!(dns_query_message.header.get_rd(), false);
-        assert_eq!(Qtype::from_qtype_to_int(dns_query_message.question.get_qtype()), 1);
-        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.question.get_qclass()), 1);
+        assert_eq!(u16::from(dns_query_message.question.get_rrtype()), 1);
+        assert_eq!(u16::from(dns_query_message.question.get_rclass()), 1);
         assert_eq!(
             dns_query_message.question.get_qname().get_name(),
             "example.com".to_string()
@@ -1025,8 +873,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1041,22 +889,22 @@ mod message_test {
     #[test]
     fn set_and_get_question() {
         let mut question = Question::new();
-        question.set_qclass(Qclass::CS);
+        question.set_rclass(Rclass::CS);
 
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
 
-        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.get_question().get_qclass()), 1);
+        assert_eq!(u16::from(dns_query_message.get_question().get_rclass()), 1);
 
         dns_query_message.set_question(question);
 
-        assert_eq!(Qclass::from_qclass_to_int(dns_query_message.get_question().get_qclass()), 2);
+        assert_eq!(u16::from(dns_query_message.get_question().get_rclass()), 2);
     }
 
     #[test]
@@ -1069,8 +917,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1092,8 +940,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1115,8 +963,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1157,21 +1005,23 @@ mod message_test {
         assert_eq!(header.get_qr(), true);
         assert_eq!(header.get_op_code(), 2);
         assert_eq!(header.get_tc(), true);
+
         assert_eq!(header.get_ad(), true);
-        assert_eq!(header.get_rcode(), 0);
+        assert_eq!(header.get_rcode(), Rcode::NOERROR);
+
         assert_eq!(header.get_ancount(), 1);
 
         // Question
         assert_eq!(question.get_qname().get_name(), String::from("test.com"));
-        assert_eq!(Qtype::from_qtype_to_int(question.get_qtype()), 16);
-        assert_eq!(Qclass::from_qclass_to_int(question.get_qclass()), 1);
+        assert_eq!(u16::from(question.get_rrtype()), 16);
+        assert_eq!(u16::from(question.get_rclass()), 1);
 
         // Answer
         assert_eq!(answer.len(), 1);
 
         assert_eq!(answer[0].get_name().get_name(), String::from("dcc.cl"));
-        assert_eq!(Rtype::from_rtype_to_int(answer[0].get_rtype()), 16);
-        assert_eq!(Rclass::from_rclass_to_int(answer[0].get_rclass()), 1);
+        assert_eq!(u16::from(answer[0].get_rtype()), 16);
+        assert_eq!(u16::from(answer[0].get_rclass()), 1);
         assert_eq!(answer[0].get_ttl(), 5642);
         assert_eq!(answer[0].get_rdlength(), 6);
         assert_eq!(
@@ -1197,8 +1047,10 @@ mod message_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
+
         header.set_ad(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
+
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -1208,8 +1060,8 @@ mod message_test {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Qtype::CNAME);
-        question.set_qclass(Qclass::CS);
+        question.set_rrtype(Rrtype::CNAME);
+        question.set_rclass(Rclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
@@ -1218,20 +1070,22 @@ mod message_test {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);
 
         let answer = vec![resource_record];
 
-        let dns_msg = DnsMessage {
+        let mut dns_msg = DnsMessage {
             header: header,
             question: question,
             answer: answer,
             authority: Vec::new(),
             additional: Vec::new(),
         };
+
+        dns_msg.update_header_counters();
 
         let msg_bytes = &dns_msg.to_bytes();
 
@@ -1264,8 +1118,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1291,7 +1145,7 @@ mod message_test {
 
         let header = msg.get_header();
         //only two things are set in this fn
-        assert_eq!(header.get_rcode(), 1);
+        assert_eq!(header.get_rcode(), Rcode::FORMERR);
         assert_eq!(header.get_qr(), true);
     }
 
@@ -1305,8 +1159,8 @@ mod message_test {
             dns_message.get_question().get_qname().get_name(),
             String::from("example.com")
         );
-        assert_eq!(Qtype::from_qtype_to_int(dns_message.get_question().get_qtype()), 252);
-        assert_eq!(Qclass::from_qclass_to_int(dns_message.get_question().get_qclass()), 1);
+        assert_eq!(u16::from(dns_message.get_question().get_rrtype()), 252);
+        assert_eq!(u16::from(dns_message.get_question().get_rclass()), 1);
         assert_eq!(dns_message.get_header().get_op_code(), 0);
         assert_eq!(dns_message.get_header().get_rd(), false);
     }
@@ -1318,7 +1172,7 @@ mod message_test {
 
         let header = msg.get_header();
 
-        assert_eq!(header.get_rcode(), 4);
+        assert_eq!(header.get_rcode(), Rcode::NOTIMP);
         assert_eq!(header.get_qr(), true);
     }
 
@@ -1340,8 +1194,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 name.clone(),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1382,7 +1236,6 @@ mod message_test {
         dns_query_message.set_additional(new_additional);
 
         dns_query_message.update_header_counters();
-        dns_query_message.print_dns_message();
 
         assert_eq!(dns_query_message.get_header().get_ancount(), 3);
         assert_eq!(dns_query_message.get_header().get_nscount(), 2);
@@ -1394,8 +1247,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1418,8 +1271,8 @@ mod message_test {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1448,125 +1301,125 @@ mod message_test {
 
         let question = new_response.get_question();
         let qname = question.get_qname().get_name();
-        let qtype = question.get_qtype();
-        let qclass = question.get_qclass();
+        let rrtype = question.get_rrtype();
+        let rclass = question.get_rclass();
 
         assert_eq!(id, 1);
         assert_eq!(op_code, 1);
         assert!(rd);
         assert_eq!(qname, String::from("test.com"));
-        assert_eq!(Qtype::from_qtype_to_int(qtype), 2);
-        assert_eq!(Qclass::from_qclass_to_int(qclass), 1);
+        assert_eq!(u16::from(rrtype), 2);
+        assert_eq!(u16::from(rclass), 1);
     }
 
     //TODO: Revisar
     #[test]
-    fn get_question_qtype_a(){
+    fn get_question_rrtype_a(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::A, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::A, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("A"));
+        assert_eq!(rrtype, String::from("A"));
     }
 
     //TODO: Revisar
     #[test]
-    fn get_question_qtype_ns(){
+    fn get_question_rrtype_ns(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::NS, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::NS, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("NS"));
+        assert_eq!(rrtype, String::from("NS"));
     }
 
     //TODO: Revisar
     #[test]
-    fn get_question_qtype_cname(){
+    fn get_question_rrtype_cname(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::CNAME, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::CNAME, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("CNAME"));
+        assert_eq!(rrtype, String::from("CNAME"));
     }
 
     //ToDo: Revisar
     #[test]
-    fn get_question_qtype_soa(){
+    fn get_question_rrtype_soa(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::SOA, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::SOA, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("SOA"));
+        assert_eq!(rrtype, String::from("SOA"));
     }
 
     //ToDo: Revisar
     #[test]
-    fn get_question_qtype_wks(){
+    fn get_question_rrtype_wks(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::WKS, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::WKS, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("WKS"));
+        assert_eq!(rrtype, String::from("WKS"));
     }
 
     //ToDo: Revisar
     #[test]
-    fn get_question_qtype_ptr(){
+    fn get_question_rrtype_ptr(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::PTR, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::PTR, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("PTR"));
+        assert_eq!(rrtype, String::from("PTR"));
     }
 
     //ToDo: Revisar
     #[test]
-    fn get_question_qtype_hinfo(){
+    fn get_question_rrtype_hinfo(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::HINFO, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::HINFO, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("HINFO"));
+        assert_eq!(rrtype, String::from("HINFO"));
     }
 
     //ToDo: Revisar
     #[test]
-    fn get_question_qtype_minfo(){
+    fn get_question_rrtype_minfo(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::MINFO, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::MINFO, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("MINFO"));
+        assert_eq!(rrtype, String::from("MINFO"));
     }
 
     //ToDo: Revisar
     #[test]
-    fn get_question_qtype_mx(){
+    fn get_question_rrtype_mx(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::MX, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::MX, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("MX"));
+        assert_eq!(rrtype, String::from("MX"));
     }
 
     //ToDo: Revisar
     #[test]
-    fn get_question_qtype_txt(){
+    fn get_question_rrtype_txt(){
         let name:DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_message = DnsMessage::new_query_message(name, Qtype::TXT, Qclass::IN, 1, true, 1);
+        let dns_message = DnsMessage::new_query_message(name, Rrtype::TXT, Rclass::IN, 1, true, 1);
 
-        let qtype = dns_message.get_question().get_qtype().to_string();
+        let rrtype = dns_message.get_question().get_rrtype().to_string();
 
-        assert_eq!(qtype, String::from("TXT"));
+        assert_eq!(rrtype, String::from("TXT"));
     }
 
     #[test]
@@ -1574,8 +1427,8 @@ mod message_test {
         let dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -1588,8 +1441,8 @@ mod message_test {
         let dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string(" ".to_string()),
-                Qtype::AXFR,
-                Qclass::IN,
+                Rrtype::AXFR,
+                Rclass::IN,
                 1,
                 false,
                 1);
@@ -1597,4 +1450,78 @@ mod message_test {
         assert_eq!(result, "IQuery not Implemented");
     }
 
+    #[test]
+    fn create_recursive_query_with_rd() {
+        let name = DomainName::new_from_str("www.example.com.");
+        let record_type = Rrtype::A;
+        let record_class = Rclass::IN;
+
+        let query = create_recursive_query(name.clone(), record_type, record_class);
+
+        assert_eq!(query.get_question().get_qname(), name);
+        assert_eq!(query.get_question().get_rrtype(), record_type);
+        assert_eq!(query.get_question().get_rclass(), record_class);
+        assert!(query.get_header().get_rd());
+        assert_eq!(query.get_header().get_qr(), false);
+    }
+
+    #[test]
+    fn server_failure_response_from_query_construction() {
+        let name = DomainName::new_from_str("www.example.com.");
+        let record_type = Rrtype::A;
+        let record_class = Rclass::IN;
+
+        let query = create_recursive_query(name.clone(), record_type, record_class);
+
+        let response = create_server_failure_response_from_query(&query);
+
+        assert_eq!(response.get_question().get_qname(), name);
+        assert_eq!(response.get_question().get_rrtype(), record_type);
+        assert_eq!(response.get_question().get_rclass(), record_class);    
+        assert_eq!(response.get_header().get_rcode(), Rcode::SERVFAIL);
+        assert!(response.get_header().get_qr());
+    }
+
+    #[test]
+    fn add_edns0(){
+        let mut dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Rrtype::A,
+                Rclass::IN,
+                0,
+                false,
+                1);
+
+        dns_query_message.add_edns0(None, 0, 32768, Some(vec![12]));
+
+        let additional = dns_query_message.get_additional();
+
+        assert_eq!(additional.len(), 1);
+
+        let rr = &additional[0];
+
+        assert_eq!(rr.get_name().get_name(), String::from("."));
+
+        assert_eq!(rr.get_rtype(), Rrtype::OPT);
+
+        assert_eq!(rr.get_rclass(), Rclass::UNKNOWN(512));
+
+        assert_eq!(rr.get_ttl(), 32768);
+
+        assert_eq!(rr.get_rdlength(), 4);
+
+        let rdata = rr.get_rdata();
+
+        match rdata {
+            Rdata::OPT(opt) => {
+                let options = opt.get_option();
+                for option in options {
+                    assert_eq!(option, (OptionCode::PADDING, 0, Vec::new()));
+                }
+            },
+            _ => {}
+
+        }
+    }
 }

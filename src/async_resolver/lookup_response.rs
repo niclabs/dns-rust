@@ -49,7 +49,13 @@ impl fmt::Display for LookupResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::new();
         for address in &self.dns_msg_response.get_answer() {
-            result.push_str(&format!("{}", address));
+            result.push_str(&format!("{} \n", address));
+        }
+        for address in &self.dns_msg_response.get_authority() {
+            result.push_str(&format!("{} \n", address));
+        }
+        for address in &self.dns_msg_response.get_additional() {
+            result.push_str(&format!("{} \n", address));
         }
         write!(f, "{}", result)
     }
@@ -58,17 +64,16 @@ impl fmt::Display for LookupResponse {
 #[cfg(test)]
 mod lookup_response_tests {
     use std::net::IpAddr;
+    use crate::message::rcode::Rcode;
     use crate::{
         domain_name::DomainName,  
         message::{
-            class_qclass::Qclass, 
-            class_rclass::Rclass, 
+            rclass::Rclass, 
             header::Header, 
             question::Question, 
             rdata::{a_rdata::ARdata, txt_rdata::TxtRdata, Rdata}, 
             resource_record::ResourceRecord, 
-            type_qtype::Qtype, 
-            type_rtype::Rtype, 
+            rrtype::Rrtype,
             DnsMessage
         }
     };
@@ -93,8 +98,8 @@ mod lookup_response_tests {
         let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string("example.com".to_string()),
-                Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 1);
@@ -106,7 +111,7 @@ mod lookup_response_tests {
         println!("{}", lookup_response.to_string());
         assert_eq!(
             lookup_response.to_string(), 
-            "example.com  IN  A  0  127.0.0.1".to_string()
+            "example.com  IN  A  0  127.0.0.1 \n".to_string()
         );
     }
 
@@ -118,7 +123,7 @@ mod lookup_response_tests {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -128,8 +133,8 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Qtype::CNAME);
-        question.set_qclass(Qclass::CS);
+        question.set_rrtype(Rrtype::CNAME);
+        question.set_rclass(Rclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
@@ -138,7 +143,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);
@@ -169,7 +174,7 @@ mod lookup_response_tests {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -179,8 +184,8 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Qtype::CNAME);
-        question.set_qclass(Qclass::CS);
+        question.set_rrtype(Rrtype::CNAME);
+        question.set_rclass(Rclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
@@ -189,7 +194,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);
@@ -208,12 +213,12 @@ mod lookup_response_tests {
         assert_eq!(dns_from_lookup.get_header().get_qr(), true);
         assert_eq!(dns_from_lookup.get_header().get_op_code(), 2);
         assert_eq!(dns_from_lookup.get_header().get_tc(), true);
-        assert_eq!(dns_from_lookup.get_header().get_rcode(), 8);
+        assert_eq!(dns_from_lookup.get_header().get_rcode(), Rcode::UNKNOWN(8));
         assert_eq!(dns_from_lookup.get_header().get_ancount(), 0b0000000000000001);
         assert_eq!(dns_from_lookup.get_header().get_qdcount(), 1);
         assert_eq!(dns_from_lookup.get_question().get_qname().get_name(), "test.com");
-        assert_eq!(dns_from_lookup.get_question().get_qtype(), Qtype::CNAME);
-        assert_eq!(dns_from_lookup.get_question().get_qclass(), Qclass::CS);
+        assert_eq!(dns_from_lookup.get_question().get_rrtype(), Rrtype::CNAME);
+        assert_eq!(dns_from_lookup.get_question().get_rclass(), Rclass::CS);
         assert_eq!(dns_from_lookup.get_answer()[0].get_name().get_name(), "dcc.cl");
     }
 
@@ -225,7 +230,7 @@ mod lookup_response_tests {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(8);
+        header.set_rcode(Rcode::UNKNOWN(8));
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -235,8 +240,8 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("test.com"));
 
         question.set_qname(domain_name);
-        question.set_qtype(Qtype::CNAME);
-        question.set_qclass(Qclass::CS);
+        question.set_rrtype(Rrtype::CNAME);
+        question.set_rclass(Rclass::CS);
 
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["hello".to_string()]));
         let mut resource_record = ResourceRecord::new(txt_rdata);
@@ -245,7 +250,7 @@ mod lookup_response_tests {
         domain_name.set_name(String::from("dcc.cl"));
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
+        resource_record.set_type_code(Rrtype::TXT);
         resource_record.set_rclass(Rclass::IN);
         resource_record.set_ttl(5642);
         resource_record.set_rdlength(6);

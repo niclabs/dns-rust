@@ -241,7 +241,6 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
                 Ok(Rdata::CNAME(rdata.unwrap()))
             }
             41 => {
-                println!("OPT");
                 let rdata = OptRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
                 match rdata {
                     Ok(_) => {}
@@ -365,9 +364,10 @@ impl fmt::Display for Rdata {
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
+    use crate::message::rdata::opt_rdata::option_code::OptionCode;
     use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
-    use crate::message::type_rtype::Rtype;
+    use crate::message::rrtype::Rrtype;
     use super:: a_ch_rdata::AChRdata;
     use super::a_rdata::ARdata;
     use super::cname_rdata::CnameRdata;
@@ -622,12 +622,11 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_opt_rdata(){
-        let expected_bytes = vec![
-            0, 1, 0, 2, 6, 4];
         let mut opt_rdata = OptRdata::new();
-        opt_rdata.set_option_code(1 as u16);
-        opt_rdata.set_option_length(2 as u16);
-        opt_rdata.set_option_data(vec![0x06, 0x04]);
+
+        opt_rdata.option.push((OptionCode::UNKNOWN(1), 2 as u16, vec![0x06, 0x04]));
+
+        let expected_bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
 
         let rdata = Rdata::OPT(opt_rdata);
         let bytes = rdata.to_bytes();
@@ -657,7 +656,7 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_rrsig_rdata(){
         let mut rrsig_rdata = RRSIGRdata::new();
-        rrsig_rdata.set_type_covered(Rtype::A);
+        rrsig_rdata.set_type_covered(Rrtype::A);
         rrsig_rdata.set_algorithm(5);
         rrsig_rdata.set_labels(2);
         rrsig_rdata.set_original_ttl(3600);
@@ -685,7 +684,7 @@ mod resolver_query_tests {
         domain_name.set_name(String::from("host.example.com"));
         nsec_rdata.set_next_domain_name(domain_name);
 
-        nsec_rdata.set_type_bit_maps(vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+        nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
         
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
@@ -734,7 +733,7 @@ mod resolver_query_tests {
     #[test]
     fn to_bytes_nsec3_rdata(){
         let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
-            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
 
         let rdata = Rdata::NSEC3(nsec3_rdata);
         let bytes = rdata.to_bytes();
@@ -983,9 +982,7 @@ mod resolver_query_tests {
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
         match rdata {
             Rdata::OPT(val) => {
-                assert_eq!(val.get_option_code(), 1);
-                assert_eq!(val.get_option_length(), 2);
-                assert_eq!(val.get_option_data(), vec![0x06, 0x04]);
+                assert_eq!(val.option[0], (OptionCode::UNKNOWN(1), 2, vec![0x06, 0x04]));
             }
             _ => {}
         }
@@ -1019,7 +1016,7 @@ mod resolver_query_tests {
 
         match rdata {
             Rdata::RRSIG(val) => {
-                assert_eq!(val.get_type_covered(), Rtype::A);
+                assert_eq!(val.get_type_covered(), Rrtype::A);
                 assert_eq!(val.get_algorithm(), 5);
                 assert_eq!(val.get_labels(), 2);
                 assert_eq!(val.get_original_ttl(), 3600);
@@ -1053,7 +1050,7 @@ mod resolver_query_tests {
         match rdata {
             Rdata::NSEC(val) => {
                 assert_eq!(val.get_next_domain_name().get_name(), String::from("host.example.com"));
-                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+                assert_eq!(val.get_type_bit_maps(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
             }
             _ => {}
         }
@@ -1111,7 +1108,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_salt(), "salt");
                 assert_eq!(val.get_hash_length(), 22);
                 assert_eq!(val.get_next_hashed_owner_name(), "next_hashed_owner_name");
-                assert_eq!(val.get_type_bit_maps(), vec![Rtype::A, Rtype::MX, Rtype::RRSIG, Rtype::NSEC, Rtype::UNKNOWN(1234)]);
+                assert_eq!(val.get_type_bit_maps(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
             }
             _ => {}
         } 

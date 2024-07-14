@@ -1,5 +1,7 @@
-use std::{net::IpAddr, str::FromStr, thread, net::UdpSocket, time::Duration};
-use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rdata::Rdata,class_qclass::Qclass, type_qtype, resource_record::ResourceRecord, header::Header, DnsMessage},tsig::{self, TsigAlgorithm}};
+
+use std::{net::IpAddr, str::FromStr};
+use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
+
 
 
 
@@ -28,7 +30,7 @@ async fn query_a_type() {
         assert_eq!(rrs.iter().count(), 1);
         let rdata = rrs[0].get_rdata();
         if let Rdata::A(ip) = rdata {
-            assert_eq!(ip.get_address(), IpAddr::from_str("93.184.216.34").unwrap());
+            assert_eq!(ip.get_address(), IpAddr::from_str("93.184.215.14").unwrap());
         } else {
             panic!("No ip address");
         }

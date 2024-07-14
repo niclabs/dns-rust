@@ -1,6 +1,6 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
@@ -152,8 +152,8 @@ impl AChRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::A);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::A);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
@@ -201,7 +201,7 @@ impl fmt::Display for AChRdata {
 #[cfg(test)]
 mod a_ch_rdata_test {
     use crate::domain_name::DomainName;
-    use crate::message::Rtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::Rclass;
     use std::net::IpAddr;
     use crate::message::rdata::a_ch_rdata::AChRdata;
@@ -325,7 +325,7 @@ mod a_ch_rdata_test {
 
         assert_eq!(ach_rr.get_rclass(), Rclass::CH);
         assert_eq!(ach_rr.get_name().get_name(), String::from("admin.googleplex"));
-        assert_eq!(ach_rr.get_rtype(), Rtype::A);
+        assert_eq!(ach_rr.get_rtype(), Rrtype::A);
         assert_eq!(ach_rr.get_ttl(), 0);
         assert_eq!(ach_rr.get_rdlength(), 16);
 

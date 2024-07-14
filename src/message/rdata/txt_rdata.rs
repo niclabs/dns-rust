@@ -1,5 +1,6 @@
 use crate::domain_name::DomainName;
-use crate::message::{Rclass, Rtype};
+use crate::message::rrtype::Rrtype;
+use crate::message::Rclass;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
@@ -124,8 +125,8 @@ impl TxtRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::TXT);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(rd_lenght as u16);

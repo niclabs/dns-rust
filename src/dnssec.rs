@@ -1,18 +1,17 @@
-pub mod dnssec_encryption;
-pub mod dnssec_decryption;
+pub mod dnssec;
+
 
 
 use std::str::FromStr;
 use crate::domain_name::DomainName;
-use crate::message::class_qclass::Qclass;
-use crate::message::class_rclass::Rclass;
+use crate::message::rclass::Rclass;
 use crate::message::DnsMessage;
 use crate::message::rdata::opt_rdata::OptRdata;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
-use crate::message::type_qtype::Qtype;
 use crate::message::rcode;
 use crate::message::rcode::Rcode;
+use crate::message::rrtype::Rrtype;
 
 const EDNS_VERSION: u8 = 0;
 const REQUESTED_UDP_LEN: u16 = 4096;
@@ -76,8 +75,8 @@ fn create_dns_message_with_dnssec(mut msg: DnsMessage) -> DnsMessage {
 fn see_dnssec_message() {
     let query = DnsMessage::new_query_message(
         DomainName::new_from_str("example.com"),
-        Qtype::A,
-        Qclass::UNKNOWN(4096),
+        Rrtype::A,
+        Rclass::UNKNOWN(4096),
         1,
         true,
         2000

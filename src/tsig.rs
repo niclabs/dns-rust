@@ -3,17 +3,19 @@ use std::fmt::{self,Display,Debug};
 //aquí debe ir todo lo relacionado a la implementación de tsig como módulo
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
-use crate::message::class_qclass::{Qclass};
-use crate::message::class_rclass::Rclass;
+
+use crate::message::rclass::Rclass;
 use crate::message::resource_record::{ResourceRecord, ToBytes};
-use crate::message::type_qtype::Qtype;
-use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage, class_rclass};
+
+use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage,};
 use crate::message::rdata::{tsig_rdata, Rdata};
 use crypto::hmac::Hmac as crypto_hmac;
 use crypto::mac::Mac as crypto_mac;
 use hmac::{Hmac, Mac};
 use crypto::{sha1::Sha1,sha2::Sha256};
 use crate::message::rdata::a_rdata::ARdata;
+use crate::message::rrtype::Rrtype;
+
 type HmacSha256 = Hmac<Sha256>;
 
 
@@ -83,7 +85,7 @@ pub fn get_digest_request(mac: Vec<u8> ,dns_msg: Vec<u8>, tsig_rr: ResourceRecor
     res.extend(tsig_rr.get_name().to_bytes());
     //The below shifts are meant to correctly retreive theby
     //processing TSIG RR
-    let rclass_bytes: u16 = class_rclass::Rclass::from_rclass_to_int(tsig_rr.get_rclass());
+    let rclass_bytes: u16 = Rclass::from_rclass_to_int(tsig_rr.get_rclass());
     let rclass_ubyte = (rclass_bytes >> 8) as u8;
     let rclass_lbyte = rclass_bytes as u8;
     res.push(rclass_ubyte);
@@ -601,8 +603,8 @@ fn check_signed_tsig() {
     //DNS message
     let mut q = DnsMessage::new_query_message(
         domain.clone(),
-        Qtype::A,
-        Qclass::ANY, 
+        Rrtype::A,
+        Rclass::ANY,
         0, 
         false,
         id

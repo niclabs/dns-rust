@@ -19,6 +19,7 @@ async-trait = "0.1.77"
 sha2 = "0.10.2"
 hmac = "0.12.1"
 rust-crypto = "0.2"
+base64 = "0.22.1"
 
 lru = "0.12.3"
 

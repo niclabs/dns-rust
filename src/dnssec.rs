@@ -1,4 +1,5 @@
 pub mod dnssec_encryption;
+pub mod dnssec_decryption;
 
 
 use std::str::FromStr;

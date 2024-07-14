@@ -72,7 +72,7 @@ fn set_tsig_rd(name: String, original_id: u16, result: MacResult,
 //TODO: crear una función para simplificar la extracción de bits paa simplificar código
 // This function extracts the digest 
 #[doc = r"This function recives a DNS message and generate the digest da. Requested by RFC 8945 4.3.3 "]
-fn get_digest_request(mac: Vec<u8> ,dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
+pub fn get_digest_request(mac: Vec<u8> ,dns_msg: Vec<u8>, tsig_rr: ResourceRecord) -> Vec<u8> {
     let mut res: Vec<u8> = vec![];
 
     if (mac.len() != 0) {

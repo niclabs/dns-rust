@@ -28,28 +28,18 @@ pub fn verify_rrsig(rrsig: &RrsigRdata, dnskey: &DnskeyRdata, rrset: &[ResourceR
     }
 
     let signature = rrsig.signature.clone();
-    let mut hasher = Sha256::new();
-    hasher.update(rrsig_data);
-    let hashed = hasher.finalize();
+    let hashed = Sha256::digest(&rrsig_data);
 
     match dnskey.algorithm {
-        3 => {
-            //DSA/SHA1
-            let mut sha1 = Sha1::new();
-            sha1.input(&rrsig_data);
-            let digest = sha1.result_str();
-            Ok(digest == encode(&signature))
-        },
-        5 => {
-            //RSA/SHA1
+        3 | 5 => {
+            // (DSA/RSA)/SHA1
             let mut sha1 = Sha1::new();
             sha1.input(&rrsig_data);
             let digest = sha1.result_str();
             Ok(digest == encode(&signature))
         },
         8 => {
-            //RSA/SHA256
-            let hashed = Sha256::digest(&rrsig_data);
+            // RSA/SHA256
             Ok(encode(&hashed) == encode(&signature))
         },
         _ => Err(ClientError::new("Unknown DNSKEY algorithm")),

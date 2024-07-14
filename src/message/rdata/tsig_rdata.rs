@@ -67,10 +67,6 @@ impl ToBytes for TSigRdata{
         
         let time_signed = self.get_time_signed();
 
-        bytes.push((time_signed >> 56) as u8);
-
-        bytes.push((time_signed >> 48) as u8);
-
         bytes.push((time_signed >> 40) as u8);
 
         bytes.push((time_signed >> 32) as u8);
@@ -255,14 +251,14 @@ impl TSigRdata {
 
     /// Set the time signed attribute from an array of bytes.
     fn set_time_signed_from_bytes(&mut self, bytes: &[u8]){
-        let time_signed = (bytes[0] as u64) << 56 
-                                | (bytes[1] as u64) << 48 
-                                | (bytes[2] as u64) << 40 
-                                | (bytes[3] as u64) << 32 
-                                | (bytes[4] as u64) << 24 
-                                | (bytes[5] as u64) << 16 
-                                | (0 as u64) << 8 
-                                | 0 as u64;
+
+        let time_signed = (bytes[0] as u64) << 40
+                                | (bytes[1] as u64) << 32 
+                                | (bytes[2] as u64) << 24 
+                                | (bytes[3] as u64) << 16 
+                                | (bytes[4] as u64) << 8 
+                                | (bytes[5] as u64) << 0;
+
         self.set_time_signed(time_signed);
     }
 
@@ -580,11 +576,33 @@ mod tsig_rdata_test {
         let bytes_to_test = tsig_rdata.to_bytes();
 
         let bytes = vec![
-        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
-        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
-        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
-        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
-        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+            //This is the string "hmac-md5.sig-alg.reg.int" in octal, terminated in 00
+            0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+            0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+            0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0,
+
+            //this is the time signed 123456789 == 0x75bcd15
+            0x0, 0x0, 0x7, 0x5B, 0xCD, 0x15,
+
+            // this the fudge 1234
+            0x4, 0xD2,
+
+            // this is the macsize = 4
+            0x0, 0x4,
+
+            // this is the mac = [0xA1, 0xB2, 0xC3, 0xD4]
+            0xA1, 0xB2, 0xC3, 0xD4,
+
+            // this is the original id = 1234
+            0x4, 0xD2,
+
+            // this is the error = 0
+            0x0, 0x0,
+
+            // this is the other len = 0
+            0x0, 0x0
+
+            // No other data, so its empty!
         ];
 
         for i in 0..bytes.len() {
@@ -596,11 +614,33 @@ mod tsig_rdata_test {
     #[ignore = "Fix test"]
     fn from_bytes_test(){
         let bytes = vec![
-        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
-        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
-        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
-        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
-        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+            //This is the string "hmac-md5.sig-alg.reg.int" in octal, terminated in 00
+            0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+            0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+            0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0,
+
+            //this is the time signed 123456789 == 0x75bcd15
+            0x0, 0x0, 0x7, 0x5B, 0xCD, 0x15,
+
+            // this the fudge 1234
+            0x4, 0xD2,
+
+            // this is the macsize = 4
+            0x0, 0x4,
+
+            // this is the mac = [0xA1, 0xB2, 0xC3, 0xD4]
+            0xA1, 0xB2, 0xC3, 0xD4,
+
+            // this is the original id = 1234
+            0x4, 0xD2,
+
+            // this is the error = 0
+            0x0, 0x0,
+
+            // this is the other len = 0
+            0x0, 0x0
+
+            // No other data, so its empty!
         ];
 
         let tsig_rdata_result = TSigRdata::from_bytes(&bytes, &bytes);

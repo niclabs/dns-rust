@@ -615,6 +615,7 @@ impl DnsMessage {
         let mut msg_answers = self.get_answer();
 
         msg_answers.append(&mut answers);
+        self.header.set_ancount(msg_answers.len() as u16);
         self.set_answer(msg_answers);
     }
 
@@ -640,6 +641,7 @@ impl DnsMessage {
         let mut msg_authorities = self.get_authority();
 
         msg_authorities.append(&mut authorities);
+        self.header.set_nscount(msg_authorities.len() as u16);
         self.set_answer(msg_authorities);
     }
 
@@ -656,6 +658,7 @@ impl DnsMessage {
         let mut msg_additionals = self.get_additional();
 
         msg_additionals.append(&mut additionals);
+        self.header.set_arcount(msg_additionals.len() as u16);
         self.set_additional(msg_additionals);
     }
 
@@ -984,7 +987,7 @@ mod message_test {
         */
         let bytes: [u8; 50] = [
             //test passes with this one
-            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+            0b00100100, 0b10010101, 0b10010010, 0b00100000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
             101, 115, 116, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
@@ -1002,7 +1005,10 @@ mod message_test {
         assert_eq!(header.get_qr(), true);
         assert_eq!(header.get_op_code(), 2);
         assert_eq!(header.get_tc(), true);
+
+        assert_eq!(header.get_ad(), true);
         assert_eq!(header.get_rcode(), Rcode::NOERROR);
+
         assert_eq!(header.get_ancount(), 1);
 
         // Question
@@ -1041,7 +1047,10 @@ mod message_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
+
+        header.set_ad(true);
         header.set_rcode(Rcode::UNKNOWN(8));
+
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -1081,7 +1090,7 @@ mod message_test {
         let msg_bytes = &dns_msg.to_bytes();
 
         let real_bytes: [u8; 50] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 1, 0b00000000, 0b00000001, 0, 0, 0,
+            0b00100100, 0b10010101, 0b10010010, 0b00101000, 0, 1, 0b00000000, 0b00000001, 0, 0, 0,
             0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
             0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];

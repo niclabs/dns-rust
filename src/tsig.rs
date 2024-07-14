@@ -30,6 +30,14 @@ fn tsig_alg_to_string(alg: &TsigAlgorithm) -> String {
         TsigAlgorithm::HmacSha256 => "hmac-sha256".to_string(),
     }
 }
+pub fn string_to_tsig_alg(name: String) -> TsigAlgorithm{
+    let sha1 = "hmac-sha1".to_string();
+    let sha256 = "hmac-sha256".to_string();
+    match name{
+        sha1=> TsigAlgorithm::HmacSha1,
+        sha256 => TsigAlgorithm::HmacSha256
+    }
+}
 
 #[derive(PartialEq)]
 #[derive(Debug)]
@@ -47,9 +55,7 @@ fn set_tsig_rd(name: String, original_id: u16, result: MacResult,
                fudge: u16, time_signed: u64, mac_size: u16) -> TSigRdata{
     let mut tsig_rd: TSigRdata = TSigRdata::new();
     let mac = result.code();
-    /*
-    hasher.input(&new_query_message.to_bytes()[..]);
-    let result = hasher.result(); */
+
     //Convertir los bytes brutos a una cadena hexadecimal
     let a_name = name.to_lowercase();
     let a_name = DomainName::new_from_string(a_name);

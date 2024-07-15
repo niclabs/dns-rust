@@ -1,4 +1,6 @@
-use crate::message::{DnsMessage, Rdata, ResourceRecord};
+use crate::message::DnsMessage;
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::ResourceRecord;
 
 pub fn extract_dnssec_records(dns_response: &DnsMessage) -> (Vec<ResourceRecord>, Vec<ResourceRecord>) {
     let answers = dns_response.get_answer();

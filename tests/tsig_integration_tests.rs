@@ -1,5 +1,7 @@
-use std::{collections::HashMap, net::{IpAddr, UdpSocket}, str::FromStr, thread, time::Duration};
-use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{class_qclass::Qclass, header::Header, rdata::{tsig_rdata::TSigRdata, Rdata}, resource_record::ResourceRecord, type_qtype, DnsMessage},tsig::{self, get_digest_request, process_tsig, sign_tsig, string_to_tsig_alg, TsigAlgorithm, TsigErrorCode}};
+use std::{collections::HashMap, net:: UdpSocket, thread, time::Duration};
+use dns_rust::{domain_name::DomainName, message::{rdata::{tsig_rdata::TSigRdata, Rdata}, rrtype::Rrtype, DnsMessage},tsig::{process_tsig, sign_tsig, string_to_tsig_alg, TsigAlgorithm, TsigErrorCode}};
+use dns_rust::message::rclass::Rclass;
+
 
 ///RFC 8945 TSIG tests
 /*This tests verifies section 5.3:
@@ -45,8 +47,8 @@ async fn tsig_signature() {
     let mut dns_query_message =
             DnsMessage::new_query_message(
                 DomainName::new_from_string(name.to_string()),
-                type_qtype::Qtype::A,
-                Qclass::IN,
+                Rrtype::A,
+                Rclass::IN,
                 0,
                 false,
                 id);
@@ -86,14 +88,14 @@ async fn tsig_signature() {
                 let mut addit = data.get_additional();
                 let rr = addit.pop().expect("No tsigrr");
                 let mut tsig_rd = TSigRdata::new();
-                let mut can_sign = false;
+                // let mut can_sign = false;
 
                 match rr.get_rdata() {
                     Rdata::TSIG(data) =>{
                         tsig_rd = data;
                     }
                     _ => {
-                        can_sign =  true;
+                        //can_sign =  true;
                         println!("error: no TSIG rdata found!");
                     }
                 }
@@ -157,18 +159,8 @@ async fn tsig_signature() {
                 println!("Received {} bytes from {}", size, source);
                 let data = DnsMessage::from_bytes(&buf[0..size]).unwrap();
                 println!("The data is {:?}", data);
-                let mut additionals = data.get_additional();
-                let tsig_rr = additionals.pop().expect("No tsigrr");
-                let mut tsig_rd= TSigRdata::new();
-                match tsig_rr.get_rdata() {
-                    Rdata::TSIG(data) =>{
-                        tsig_rd = data;
-                    }
-                    _ => {
-                        println!("error: no TSIG rdata found!");
-                    }
-                }
 
+   
                 // El cliente procesa la respuesta 
                 let (answer, error ) = process_tsig(&data, key, name.to_string(), time_signed, a_algs, mac);
                 // se verifica que el mensaje haya pasado process_tsig

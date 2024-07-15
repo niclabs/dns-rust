@@ -1,4 +1,3 @@
-
 use std::str::FromStr;
 use crate::domain_name::DomainName;
 use crate::message::rclass::Rclass;
@@ -42,7 +41,7 @@ fn create_opt_rr(capacity: u16 ,e_rcode :u8, version: u8, do_bit: bool) -> Resou
 }
 
 fn read_opt_rr(opt_rr: ResourceRecord) -> String {
-    let requested_udp_len = Rclass::from_rclass_to_int(opt_rr.get_rclass());
+    let requested_udp_len = Rclass::from(opt_rr.get_rclass());
     let data = opt_rr.get_ttl().to_be_bytes();
     let (e_rcode, version) = (data[0], data[1]);
     let z = u16::from_be_bytes([data[2], data[3]]);
@@ -59,7 +58,7 @@ fn create_dns_message_with_dnssec(mut msg: DnsMessage) -> DnsMessage {
     // We create a opt rr with the do bit set to 1
     // with NOERR as rcode and EDNS0
     let rr = create_opt_rr(REQUESTED_UDP_LEN,
-                            rcode::Rcode::from_rcode_to_int(Rcode::NOERROR),
+                            Rcode::from(Rcode::NOERROR).into(),
                             EDNS_VERSION,
                             true);
 

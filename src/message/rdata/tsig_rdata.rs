@@ -74,6 +74,10 @@ impl ToBytes for TSigRdata{
         bytes.push((time_signed >> 24) as u8);
 
         bytes.push((time_signed >> 16) as u8);
+
+        bytes.push((time_signed >> 8) as u8);
+
+        bytes.push((time_signed >> 0) as u8);
         
         let fudge = self.get_fudge();
 
@@ -557,7 +561,6 @@ mod tsig_rdata_test {
     }
 
     #[test]
-    #[ignore = "Fix test"]
     fn to_bytes_test(){
         let mut tsig_rdata = TSigRdata::new();
 
@@ -611,7 +614,6 @@ mod tsig_rdata_test {
     }
 
     #[test]
-    #[ignore = "Fix test"]
     fn from_bytes_test(){
         let bytes = vec![
             //This is the string "hmac-md5.sig-alg.reg.int" in octal, terminated in 00

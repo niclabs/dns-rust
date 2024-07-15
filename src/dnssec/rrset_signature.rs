@@ -2,7 +2,8 @@ use sha2::{Sha256, Digest};
 use crypto::digest::Digest as RustDigest;
 use crypto::sha1::Sha1;
 use base64::encode;
-use crate::message::rdata::{DnskeyRdata, Rdata};
+use crate::message::rdata::Rdata;
+use crate::message::rdata::dnskey_rdata::DnskeyRdata;
 use crate::message::rdata::rrsig_rdata::{RRSIGRdata};
 use crate::message::resource_record::ResourceRecord;
 use crate::client::client_error::ClientError;
@@ -12,23 +13,23 @@ pub fn verify_rrsig(rrsig: &RRSIGRdata, dnskey: &DnskeyRdata, rrset: &[ResourceR
     rrsig_data.extend_from_slice(&rrsig.get_type_covered().to_be_bytes());
     rrsig_data.push(rrsig.get_algorithm());
     rrsig_data.push(rrsig.get_labels());
-    rrsig_data.extend_from_slice(&rrsig.original_ttl.to_be_bytes());
-    rrsig_data.extend_from_slice(&rrsig.expiration.to_be_bytes());
-    rrsig_data.extend_from_slice(&rrsig.inception.to_be_bytes());
-    rrsig_data.extend_from_slice(&rrsig.key_tag.to_be_bytes());
-    rrsig_data.extend_from_slice(rrsig.signer_name.to_bytes()?);
+    rrsig_data.extend_from_slice(&rrsig.get_original_ttl().to_be_bytes());
+    rrsig_data.extend_from_slice(&rrsig.get_signature_expiration().to_be_bytes());
+    rrsig_data.extend_from_slice(&rrsig.get_signature_inception().to_be_bytes());
+    rrsig_data.extend_from_slice(&rrsig.get_key_tag().to_be_bytes());
+    rrsig_data.extend_from_slice(rrsig.get_signer_name().to_bytes()?);
 
     let mut rrset_sorted = rrset.to_vec();
-    rrset_sorted.sort_by(|a, b| a.name.cmp(&b.name));
+    rrset_sorted.sort_by(|a, b| a.get_name().cmp(&b.get_name()));
 
     for rr in rrset_sorted.iter() {
-        rrsig_data.extend_from_slice(rr.name.to_bytes()?);
-        rrsig_data.extend_from_slice(&rr.ttl.to_be_bytes());
-        rrsig_data.extend_from_slice(&(rr.rdata.to_bytes().len() as u16).to_be_bytes());
-        rrsig_data.extend_from_slice(&rr.rdata.to_bytes()?);
+        rrsig_data.extend_from_slice(rr.get_name().to_bytes()?);
+        rrsig_data.extend_from_slice(&rr.get_ttl.to_be_bytes());
+        rrsig_data.extend_from_slice(&(rr.get_rdata().to_bytes().len() as u16).to_be_bytes());
+        rrsig_data.extend_from_slice(&rr.get_rdata().to_bytes()?);
     }
 
-    let signature = rrsig.signature.clone();
+    let signature = rrsig.get_signature().clone();
     let hashed = Sha256::digest(&rrsig_data);
 
     match dnskey.algorithm {

@@ -85,7 +85,7 @@ pub fn get_digest_request(mac: Vec<u8> ,dns_msg: Vec<u8>, tsig_rr: ResourceRecor
     res.extend(tsig_rr.get_name().to_bytes());
     //The below shifts are meant to correctly retreive theby
     //processing TSIG RR
-    let rclass_bytes: u16 = Rclass::from_rclass_to_int(tsig_rr.get_rclass());
+    let rclass_bytes: u16 = Rclass::from(tsig_rr.get_rclass()).into();
     let rclass_ubyte = (rclass_bytes >> 8) as u8;
     let rclass_lbyte = rclass_bytes as u8;
     res.push(rclass_ubyte);

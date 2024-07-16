@@ -78,6 +78,10 @@ pub fn get_digest_request(mac: Vec<u8> ,dns_msg: Vec<u8>, tsig_rr: ResourceRecor
     let mut res: Vec<u8> = vec![];
 
     if (mac.len() != 0) {
+        let mac_len = mac.len() as u16;
+        let bytes_mac_len = mac_len.to_be_bytes();
+        res.push(bytes_mac_len[0]);
+        res.push(bytes_mac_len[1]);
         res.extend(mac.clone());
     }
     res.extend(dns_msg.clone());
@@ -328,9 +332,10 @@ pub fn process_tsig(msg: &DnsMessage, key:&[u8], key_name: String, time: u64,
         return (false, TsigErrorCode::BADKEY);
     }
 
-    let cond1 = check_key(key_in_rr, key_name);
+    let cond1 = check_key(key_in_rr.clone(), key_name.clone());
     if !cond1 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
+        println!("key in rr: {:?} key given {:?}", key_in_rr, key_name);
         return (false, TsigErrorCode::BADKEY);
     }
 

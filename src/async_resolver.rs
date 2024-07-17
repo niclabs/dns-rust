@@ -94,10 +94,10 @@ impl AsyncResolver {
     pub async fn lookup_ip(
         &mut self,
         domain_name: &str,
-        transport_protocol: &str,
         rclass: &str
     ) -> Result<Vec<IpAddr>, ClientError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
+        let transport_protocol=  self.config.get_protocol();
         let transport_protocol_struct = ConnectionProtocol::from(transport_protocol);
         self.config.set_protocol(transport_protocol_struct);
 
@@ -678,9 +678,8 @@ mod async_resolver_test {
     async fn host_name_to_host_address_translation() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
-        let transport_protocol = "TCP";
         let rclass = "IN";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,rclass).await.unwrap();
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -691,9 +690,8 @@ mod async_resolver_test {
     async fn lookup_ip_ch() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
-        let transport_protocol = "UDP";
         let rclass = "CH";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,rclass).await;
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses.is_err());
@@ -703,9 +701,8 @@ mod async_resolver_test {
     async fn lookup_ip_rclass_any() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
-        let transport_protocol = "UDP";
         let rclass = "ANY";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,rclass).await;
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses.is_err());
@@ -728,9 +725,8 @@ mod async_resolver_test {
     async fn host_name_to_host_address_translation_ch() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
-        let transport_protocol = "TCP";
         let rclass = "IN";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,rclass).await.unwrap();
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -775,14 +771,13 @@ mod async_resolver_test {
 
         // Intenta resolver un nombre de dominio que no existe o no está accesible
         let domain_name = "nonexistent-example.com";
-        let transport_protocol = "UDP";
         let rclass = "IN";
 
         // Configura un timeout corto para la resolución (ajusta según tus necesidades)
         let timeout_duration = std::time::Duration::from_secs(2);
 
         let result = tokio::time::timeout(timeout_duration, async {
-            resolver.lookup_ip(domain_name, transport_protocol,rclass).await
+            resolver.lookup_ip(domain_name,rclass).await
         }).await;
 
         // Verifica que el resultado sea un error de timeout
@@ -934,9 +929,8 @@ mod async_resolver_test {
     async fn use_udp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
-        let transport_protocol = "UDP";
         let rclass = "IN";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,rclass).await.unwrap();
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -947,9 +941,8 @@ mod async_resolver_test {
     async fn use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
-        let transport_protocol = "TCP";
         let rclass = "IN";
-        let ip_addresses = resolver.lookup_ip(domain_name, transport_protocol,rclass).await.unwrap();
+        let ip_addresses = resolver.lookup_ip(domain_name, rclass).await.unwrap();
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -961,10 +954,8 @@ mod async_resolver_test {
     async fn use_udp_but_fails_and_use_tcp() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "Ecample.com";
-        let transport_protocol_udp = "UDP";
-        let transport_protocol_tcp = "TCP";
         let rclass = "IN";
-        let udp_result = resolver.lookup_ip(domain_name, transport_protocol_udp,rclass).await;
+        let udp_result = resolver.lookup_ip(domain_name,rclass).await;
 
         match udp_result {
         Ok(_) => {
@@ -975,7 +966,7 @@ mod async_resolver_test {
             }
         }
 
-        let tcp_result = resolver.lookup_ip(domain_name, transport_protocol_tcp, rclass).await;
+        let tcp_result = resolver.lookup_ip(domain_name,  rclass).await;
         match tcp_result {
             Ok(_) => {
                 assert!(true);

@@ -46,6 +46,26 @@ impl ToBytes for SrvRdata {
     }
 }
 
+impl FromBytes<Result<Self, &'static str>> for SrvRdata {
+    /// Return a `SrvRdata` from an array of bytes.
+    fn from_bytes(bytes: &[u8], full_msg: &[u8]) -> Result<Self, &'static str> {
+        let bytes_len = bytes.len();
+
+        if bytes_len < 6 {
+            return Err("The bytes slice is too short to parse the SRV Rdata");
+        }
+
+        let priority = u16::from_be_bytes([bytes[0], bytes[1]]);
+        let weight = u16::from_be_bytes([bytes[2], bytes[3]]);
+        let port = u16::from_be_bytes([bytes[4], bytes[5]]);
+        let (target, _) = DomainName::from_bytes(&bytes[6..], full_msg).unwrap();
+
+        let srv_rdata = SrvRdata::new_with_values(priority, weight, port, target);
+
+        Ok(srv_rdata)
+    }
+}
+
 impl SrvRdata {
 
     /// Creates a new `SrvRdata` with default values.

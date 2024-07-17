@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::domain_name::DomainName;
 use crate::message::resource_record::{FromBytes, ToBytes};
 
@@ -5,6 +7,7 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 /// RFC 2782: https://datatracker.ietf.org/doc/html/rfc2782
 /// An struct that represents the `Rdata` for srv type.
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct SrvRdata {
     /// The priority of this target host. A client MUST attempt to contact the target host with the lowest-numbered priority it can reach; target hosts with the same priority SHOULD be tried in an order defined by the weight field.
     priority: u16,
@@ -139,6 +142,20 @@ impl SrvRdata {
     /// Sets the target atrribute of the SrvRdata.
     pub fn set_target(&mut self, target: DomainName) {
         self.target = target;
+    }
+}
+
+impl fmt::Display for SrvRdata {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Priority: {}, 
+        Weight: {}, 
+        Port: {}, 
+        Target: {}", 
+        self.get_priority(), 
+        self.get_weight(), 
+        self.get_port(), 
+        self.get_target())
+    
     }
 }
 

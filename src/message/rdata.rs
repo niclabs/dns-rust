@@ -38,6 +38,7 @@ use dnskey_rdata::DnskeyRdata;
 use nsec3_rdata::Nsec3Rdata;
 use nsec3param_rdata::Nsec3ParamRdata;
 use tsig_rdata::TSigRdata;
+use srv_rdata::SrvRdata;
 
 #[derive(Clone, PartialEq, Debug)]
 /// Enumerates the differents types of `Rdata` struct.
@@ -52,6 +53,7 @@ pub enum Rdata {
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
     AAAA(AAAARdata),
+    SRV(SrvRdata),
     OPT(OptRdata),
     DS(DsRdata),
     RRSIG(RRSIGRdata),
@@ -87,6 +89,7 @@ impl ToBytes for Rdata {
             Rdata::SOA(val) => val.to_bytes(),
             Rdata::TXT(val) => val.to_bytes(),
             Rdata::AAAA(val) => val.to_bytes(),
+            Rdata::SRV(val) => val.to_bytes(),
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
             Rdata::OPT(val) => val.to_bytes(),
@@ -229,6 +232,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::AAAA(rdata.unwrap()))
             }
+            33 => {
+                let rdata = SrvRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SRV(rdata.unwrap()))
+            }
             39 => {
                 let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -348,6 +363,7 @@ impl fmt::Display for Rdata {
             Rdata::SOA(val) => write!(f, "{}", val),
             Rdata::TXT(val) => write!(f, "{}", val),
             Rdata::AAAA(val) => write!(f, "{}", val),
+            Rdata::SRV(val) => write!(f, "{}", val),
             Rdata::CNAME(val) => write!(f, "{}", val),
             Rdata::HINFO(val) => write!(f, "{}", val),
             Rdata::OPT(val) => write!(f, "{}", val),

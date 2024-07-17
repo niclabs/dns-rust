@@ -177,4 +177,34 @@ mod srv_rdata_tests {
         assert_eq!(srv_rdata.get_port(), 3);
         assert_eq!(srv_rdata.get_target(), DomainName::new_from_str("www.example.com"));
     }
+
+    #[test]
+    fn to_bytes() {
+        let srv_rdata = SrvRdata::new_with_values(1, 2, 3, DomainName::new_from_str("www.example.com"));
+        let bytes = srv_rdata.to_bytes();
+        let expected_bytes = vec![0, 1,
+         0, 2, 
+         0, 3, 
+         3, 119, 119, 119, 
+         7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109,
+         0];
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
+    fn from_bytes() {
+        let bytes = vec![0, 1,
+         0, 2, 
+         0, 3, 
+         3, 119, 119, 119, 
+         7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109,
+         0];
+
+        let srv_rdata = SrvRdata::from_bytes(&bytes, &bytes).unwrap();
+
+        assert_eq!(srv_rdata.get_priority(), 1);
+        assert_eq!(srv_rdata.get_weight(), 2);
+        assert_eq!(srv_rdata.get_port(), 3);
+        assert_eq!(srv_rdata.get_target(), DomainName::new_from_str("www.example.com"));
+    }
 }

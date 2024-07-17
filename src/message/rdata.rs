@@ -403,6 +403,7 @@ mod resolver_query_tests {
     use super::nsec3param_rdata::Nsec3ParamRdata;
     use super::tsig_rdata::TSigRdata;
     use super::aaaa_rdata::AAAARdata;
+    use super::srv_rdata::SrvRdata;
     use std::net::IpAddr;
     use std::vec;
 
@@ -760,6 +761,17 @@ mod resolver_query_tests {
         assert_eq!(bytes, expected_bytes);
     }
 
+    #[test]
+    fn to_bytes_srv_rdata(){
+        let srv_rdata = SrvRdata::new_with_values(1, 2, 3, DomainName::new_from_str("example.com"));
+
+        let expected_bytes = [0, 1, 0, 2, 0, 3, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bytes = Rdata::SRV(srv_rdata).to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
     //from bytes tests
     #[test]
     fn from_bytes_a_ch_rdata(){
@@ -1106,6 +1118,21 @@ mod resolver_query_tests {
             }
             _ => {}
         } 
+    }
+
+    #[test]
+    fn from_bytes_srv_rdata(){
+        let data_bytes = [0, 1, 0, 2, 0, 3, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 0, 33, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::SRV(val) => {
+                assert_eq!(val.get_priority(), 1);
+                assert_eq!(val.get_weight(), 2);
+                assert_eq!(val.get_port(), 3);
+                assert_eq!(val.get_target().get_name(), "example.com");
+            }
+            _ => {}
+        }
     }
 
     #[test]

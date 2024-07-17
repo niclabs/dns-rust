@@ -46,3 +46,47 @@ impl SrvRdata {
         }
     }
 }
+
+impl SrvRdata {
+    /// Gets the priority atrribute of the SrvRdata.
+    pub fn get_priority(&self) -> u16 {
+        self.priority
+    }
+
+    /// Gets the weight atrribute of the SrvRdata.
+    pub fn get_weight(&self) -> u16 {
+        self.weight
+    }
+
+    /// Gets the port atrribute of the SrvRdata.
+    pub fn get_port(&self) -> u16 {
+        self.port
+    }
+
+    /// Gets the target atrribute of the SrvRdata.
+    pub fn get_target(&self) -> DomainName {
+        self.target.clone()
+    }
+}
+
+impl SrvRdata {
+    /// Sets the priority atrribute of the SrvRdata.
+    pub fn set_priority(&mut self, priority: u16) {
+        self.priority = priority;
+    }
+
+    /// Sets the weight atrribute of the SrvRdata.
+    pub fn set_weight(&mut self, weight: u16) {
+        self.weight = weight;
+    }
+
+    /// Sets the port atrribute of the SrvRdata.
+    pub fn set_port(&mut self, port: u16) {
+        self.port = port;
+    }
+
+    /// Sets the target atrribute of the SrvRdata.
+    pub fn set_target(&mut self, target: DomainName) {
+        self.target = target;
+    }
+}

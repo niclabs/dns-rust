@@ -1,4 +1,5 @@
 use crate::domain_name::DomainName;
+use crate::message::resource_record::{FromBytes, ToBytes};
 
 
 /// RFC 2782: https://datatracker.ietf.org/doc/html/rfc2782
@@ -13,6 +14,36 @@ pub struct SrvRdata {
     port: u16,
     /// The domain name of the target host.
     target: DomainName,
+}
+
+impl ToBytes for SrvRdata {
+    /// Return a `Vec<u8>` of bytes that represents the srv rdata.
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+        let priority_bytes = self.get_priority().to_be_bytes();
+        let weight_bytes = self.get_weight().to_be_bytes();
+        let port_bytes = self.get_port().to_be_bytes();
+        let target_bytes = self.get_target().to_bytes();
+
+        for byte in priority_bytes.as_slice() {
+            bytes.push(*byte);
+        }
+
+        for byte in weight_bytes.as_slice() {
+            bytes.push(*byte);
+        }
+
+        for byte in port_bytes.as_slice() {
+            bytes.push(*byte);
+        }
+
+        for byte in target_bytes.as_slice() {
+            bytes.push(*byte);
+        }
+
+        bytes
+    
+    }
 }
 
 impl SrvRdata {

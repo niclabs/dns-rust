@@ -3,7 +3,7 @@ use std::fmt::{self,Display,Debug};
 //aquí debe ir todo lo relacionado a la implementación de tsig como módulo
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
-
+use std::time::SystemTime;
 use crate::message::rclass::Rclass;
 use crate::message::resource_record::{ResourceRecord, ToBytes};
 
@@ -379,6 +379,14 @@ pub fn process_tsig(msg: &DnsMessage, key:&[u8], key_name: String, time: u64,
     (true, TsigErrorCode::NOERR)
 
 }
+
+pub fn immediate_process_tsig(msg: &DnsMessage, key:&[u8], key_name: String,
+    available_algorithm: Vec<(String, bool)>, mac_to_process: Vec<u8>) -> (bool, TsigErrorCode) {
+    
+    let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+    process_tsig(msg, key, key_name, time, available_algorithm, mac_to_process)
+}
+
 //Auxiliar function to create the TSIG variables and resource recrods
 #[doc= r"This function helps to set create a partial TSIG resource record on  a DNS query"]
 fn set_tsig_vars(alg_name: &str, name: &str, time_signed: u64, fudge: u16) -> ResourceRecord{

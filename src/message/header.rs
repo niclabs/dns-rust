@@ -481,13 +481,13 @@ impl Header {
     }
 
     /// Sets the ad attribute with a value.
-    pub fn set_ad(&mut self, ra: bool) {
-        self.ad = ra;
+    pub fn set_ad(&mut self, ad: bool) {
+        self.ad = ad;
     }
 
     /// Sets the cd attribute with a value.
-    pub fn set_cd(&mut self, ra: bool) {
-        self.cd = ra;
+    pub fn set_cd(&mut self, cd: bool) {
+        self.cd = cd;
     }
 
     /// Sets the rcode attribute with a value.

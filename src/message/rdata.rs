@@ -16,6 +16,7 @@ pub mod dnskey_rdata;
 pub mod nsec3_rdata;
 pub mod nsec3param_rdata;
 pub mod tsig_rdata;
+pub mod srv_rdata;
 
 use core::fmt;
 use crate::message::resource_record::{FromBytes, ToBytes};

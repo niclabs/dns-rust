@@ -141,3 +141,40 @@ impl SrvRdata {
         self.target = target;
     }
 }
+
+#[cfg(test)]
+mod srv_rdata_tests {
+    use super::*;
+
+    #[test]
+    fn construct_srv_rdata() {
+        let srv_rdata = SrvRdata::new();
+        assert_eq!(srv_rdata.get_priority(), 0);
+        assert_eq!(srv_rdata.get_weight(), 0);
+        assert_eq!(srv_rdata.get_port(), 0);
+        assert_eq!(srv_rdata.get_target(), DomainName::new());
+    }
+
+    #[test]
+    fn construct_srv_rdata_with_values() {
+        let srv_rdata = SrvRdata::new_with_values(1, 2, 3, DomainName::new_from_str("www.example.com"));
+        assert_eq!(srv_rdata.get_priority(), 1);
+        assert_eq!(srv_rdata.get_weight(), 2);
+        assert_eq!(srv_rdata.get_port(), 3);
+        assert_eq!(srv_rdata.get_target(), DomainName::new_from_str("www.example.com"));
+    }
+
+    #[test]
+    fn get_and_set_srv_rdata_values() {
+        let mut srv_rdata = SrvRdata::new();
+        srv_rdata.set_priority(1);
+        srv_rdata.set_weight(2);
+        srv_rdata.set_port(3);
+        srv_rdata.set_target(DomainName::new_from_str("www.example.com"));
+
+        assert_eq!(srv_rdata.get_priority(), 1);
+        assert_eq!(srv_rdata.get_weight(), 2);
+        assert_eq!(srv_rdata.get_port(), 3);
+        assert_eq!(srv_rdata.get_target(), DomainName::new_from_str("www.example.com"));
+    }
+}

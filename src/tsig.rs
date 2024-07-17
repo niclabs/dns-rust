@@ -1,5 +1,4 @@
-use std::convert::TryInto;
-use std::fmt::{self,Display,Debug};
+use std::fmt::Debug;
 //aquí debe ir todo lo relacionado a la implementación de tsig como módulo
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
@@ -8,15 +7,14 @@ use crate::message::rclass::Rclass;
 use crate::message::resource_record::{ResourceRecord, ToBytes};
 
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage,};
-use crate::message::rdata::{tsig_rdata, Rdata};
+use crate::message::rdata::Rdata;
 use crypto::hmac::Hmac as crypto_hmac;
 use crypto::mac::Mac as crypto_mac;
-use hmac::{Hmac, Mac};
 use crypto::{sha1::Sha1,sha2::Sha256};
 use crate::message::rdata::a_rdata::ARdata;
 use crate::message::rrtype::Rrtype;
 
-type HmacSha256 = Hmac<Sha256>;
+
 
 
 #[derive(Debug)]

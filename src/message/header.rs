@@ -5,8 +5,8 @@ use crate::message::rcode::Rcode;
 ///  An struct that represents a Header secction from a DNS message.
 ///  EDIT: now added bits AD CD for DNS security extensions.
 ///
-///                               1  1  1  1  1  1
-/// 0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+///                                1  1  1  1  1  1
+///  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 /// |                      ID                       |
 /// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+

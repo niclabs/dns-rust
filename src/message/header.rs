@@ -42,7 +42,7 @@ pub struct Header {
     rd: bool, // Recursion Desired
     ra: bool, // Recursion Available
     ad: bool, // Authentic data
-    cd: bool, // cd data
+    cd: bool, // Checking Disabled data
 
     /// Reserved Edit: Now z is just a flag
     #[allow(dead_code)]

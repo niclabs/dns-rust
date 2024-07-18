@@ -686,14 +686,17 @@ impl DnsMessage {
 impl fmt::Display for DnsMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::new();
+        let question = self.get_question();
         let answers = self.get_answer().into_iter();
         let authority = self.get_authority().into_iter();
         let additional = self.get_additional().into_iter();
-        result.push_str(&format!("Answer\n"));
+        result.push_str(&format!("Question section\n"));
+        result.push_str(&format!("{}\n", question));
+        result.push_str(&format!("Answer section\n"));
         answers.for_each(|answer| result.push_str(&format!("{}\n", answer)));
-        result.push_str(&format!("Authority\n"));
+        result.push_str(&format!("Authority section\n"));
         authority.for_each(|authority| result.push_str(&format!("{}\n", authority)));
-        result.push_str(&format!("Additional\n"));
+        result.push_str(&format!("Additional section\n"));
         additional.for_each(|additional| result.push_str(&format!("{}\n", additional)));
         write!(f, "{}", result)
     }

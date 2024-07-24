@@ -1,11 +1,11 @@
 use crate::dns_cache::{CacheKey, DnsCache};
 use crate::domain_name::DomainName;
-use crate::message::resource_record::ResourceRecord;
-use crate::message::rrtype::Rrtype;
 use crate::message::rclass::Rclass;
 use crate::message::rcode::Rcode;
-use crate::message::DnsMessage;
 use crate::message::rdata::*;
+use crate::message::resource_record::ResourceRecord;
+use crate::message::rrtype::Rrtype;
+use crate::message::DnsMessage;
 
 use std::num::NonZeroUsize;
 
@@ -17,7 +17,6 @@ pub struct ResolverCache {
 }
 
 impl ResolverCache {
-
     /// Create a new ResolverCache with the given size.
     pub fn new(size: Option<NonZeroUsize>) -> Self {
         let size = size.unwrap_or(NonZeroUsize::new(1667).unwrap());
@@ -50,33 +49,61 @@ impl ResolverCache {
 
     /// See if the cache is empty.
     pub fn is_empty(&self) -> bool {
-        self.cache_answer.is_empty() && self.cache_authority.is_empty() && self.cache_additional.is_empty()
+        self.cache_answer.is_empty()
+            && self.cache_authority.is_empty()
+            && self.cache_additional.is_empty()
     }
 
     /// See if an element is in the cache.
     pub fn is_cached(&self, cache_key: CacheKey) -> bool {
-        self.cache_answer.is_cached(cache_key.clone()) || self.cache_authority.is_cached(cache_key.clone()) || self.cache_additional.is_cached(cache_key.clone())
+        self.cache_answer.is_cached(cache_key.clone())
+            || self.cache_authority.is_cached(cache_key.clone())
+            || self.cache_additional.is_cached(cache_key.clone())
     }
 
     /// Add an element to the answer cache.
-    pub fn add_answer(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Rrtype>, qclass: Rclass, rcode: Option<Rcode>) {
+    pub fn add_answer(
+        &mut self,
+        domain_name: DomainName,
+        resource_record: ResourceRecord,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+        rcode: Option<Rcode>,
+    ) {
         if resource_record.get_ttl() > 0 {
-            self.cache_answer.add(domain_name, resource_record, qtype, qclass, rcode);
+            self.cache_answer
+                .add(domain_name, resource_record, qtype, qclass, rcode);
         }
     }
 
     /// Add an element to the authority cache.
-    pub fn add_authority(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Rrtype>, qclass: Rclass, rcode: Option<Rcode>) {
+    pub fn add_authority(
+        &mut self,
+        domain_name: DomainName,
+        resource_record: ResourceRecord,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+        rcode: Option<Rcode>,
+    ) {
         if resource_record.get_ttl() > 0 {
-            self.cache_authority.add(domain_name, resource_record, qtype, qclass, rcode);
+            self.cache_authority
+                .add(domain_name, resource_record, qtype, qclass, rcode);
         }
     }
 
     /// Add an element to the additional cache.
-    pub fn add_additional(&mut self, domain_name: DomainName, resource_record: ResourceRecord, qtype: Option<Rrtype>, qclass: Rclass, rcode: Option<Rcode>) {
+    pub fn add_additional(
+        &mut self,
+        domain_name: DomainName,
+        resource_record: ResourceRecord,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+        rcode: Option<Rcode>,
+    ) {
         if resource_record.get_ttl() > 0 {
             if resource_record.get_rtype() != Rrtype::OPT {
-                self.cache_additional.add(domain_name, resource_record, qtype, qclass, rcode);
+                self.cache_additional
+                    .add(domain_name, resource_record, qtype, qclass, rcode);
             }
         }
     }
@@ -92,9 +119,7 @@ impl ResolverCache {
         let key;
         if rcode == Some(Rcode::NXDOMAIN) {
             key = CacheKey::Secondary(qclass, qname.clone());
-        }
-
-        else {
+        } else {
             key = CacheKey::Primary(qtype.unwrap(), qclass, qname.clone());
         }
 
@@ -102,20 +127,18 @@ impl ResolverCache {
             self.remove(qname.clone(), qtype, qclass);
         }
 
-
         // Get the minimum TTL from the SOA record if the answer is negative
         let mut minimum = 0;
         if rcode != Some(Rcode::NOERROR) {
-            for rr in message.get_authority(){
+            for rr in message.get_authority() {
                 if rr.get_rtype() == Rrtype::SOA {
                     match rr.get_rdata() {
                         Rdata::SOA(soa) => {
                             minimum = soa.get_minimum();
-                            
                         }
                         _ => {}
                     }
-                break
+                    break;
                 }
             }
         }
@@ -124,37 +147,38 @@ impl ResolverCache {
         let authorities = message.get_authority();
         let additionals = message.get_additional();
 
-        answers.iter()
-            .for_each(|rr| {
-                let mut rr = rr.clone();
-                if minimum != 0 {
-                    rr.set_ttl(minimum);
-                }
-                self.add_answer(qname.clone(), rr, qtype, qclass, rcode);
-            });
-
-        authorities.iter()
-        .for_each(|rr| {
+        answers.iter().for_each(|rr| {
             let mut rr = rr.clone();
-                if minimum != 0 {
-                    rr.set_ttl(minimum);
-                }
-            self.add_authority(qname.clone(), rr.clone(), qtype, qclass, rcode);
-            
+            if minimum != 0 {
+                rr.set_ttl(minimum);
+            }
+            self.add_answer(qname.clone(), rr, qtype, qclass, rcode);
         });
 
-        additionals.iter()
-        .for_each(|rr| {
+        authorities.iter().for_each(|rr| {
             let mut rr = rr.clone();
-                if minimum != 0 {
-                    rr.set_ttl(minimum);
-                }
-                self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
+            if minimum != 0 {
+                rr.set_ttl(minimum);
+            }
+            self.add_authority(qname.clone(), rr.clone(), qtype, qclass, rcode);
+        });
+
+        additionals.iter().for_each(|rr| {
+            let mut rr = rr.clone();
+            if minimum != 0 {
+                rr.set_ttl(minimum);
+            }
+            self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
         });
     }
 
     /// Gets elements from the answer cache
-    pub fn get_answer(&mut self, domain_name: DomainName, qtype: Rrtype, qclass: Rclass) -> Option<Vec<ResourceRecord>> {
+    pub fn get_answer(
+        &mut self,
+        domain_name: DomainName,
+        qtype: Rrtype,
+        qclass: Rclass,
+    ) -> Option<Vec<ResourceRecord>> {
         let rr_stored_data = self.cache_answer.get(domain_name, qtype, qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
@@ -169,7 +193,12 @@ impl ResolverCache {
     }
 
     /// Gets elements from the authority cache
-    pub fn get_authority(&mut self, domain_name: DomainName, qtype: Rrtype, qclass: Rclass) -> Option<Vec<ResourceRecord>> {
+    pub fn get_authority(
+        &mut self,
+        domain_name: DomainName,
+        qtype: Rrtype,
+        qclass: Rclass,
+    ) -> Option<Vec<ResourceRecord>> {
         let rr_stored_data = self.cache_authority.get(domain_name, qtype, qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
@@ -184,7 +213,12 @@ impl ResolverCache {
     }
 
     /// Gets elements from the additional cache
-    pub fn get_additional(&mut self, domain_name: DomainName, qtype: Rrtype, qclass: Rclass) -> Option<Vec<ResourceRecord>> {
+    pub fn get_additional(
+        &mut self,
+        domain_name: DomainName,
+        qtype: Rrtype,
+        qclass: Rclass,
+    ) -> Option<Vec<ResourceRecord>> {
         let rr_stored_data = self.cache_additional.get(domain_name, qtype, qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
@@ -198,7 +232,12 @@ impl ResolverCache {
         }
     }
 
-    pub fn get_rcode(&mut self, domain_name: DomainName, qtype: Rrtype, qclass: Rclass) -> Option<Rcode> {
+    pub fn get_rcode(
+        &mut self,
+        domain_name: DomainName,
+        qtype: Rrtype,
+        qclass: Rclass,
+    ) -> Option<Rcode> {
         let rr_stored_data = self.cache_answer.get(domain_name, qtype, qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
@@ -245,9 +284,10 @@ impl ResolverCache {
             message.set_additional(additionals);
         }
 
-        if message.get_answer().is_empty() && 
-           message.get_authority().is_empty() && 
-           message.get_additional().is_empty() {
+        if message.get_answer().is_empty()
+            && message.get_authority().is_empty()
+            && message.get_additional().is_empty()
+        {
             None
         } else {
             Some(message)
@@ -255,20 +295,35 @@ impl ResolverCache {
     }
 
     /// Removes an element from the answer cache.
-    pub fn remove_answer(&mut self, domain_name: DomainName, qtype: Option<Rrtype>, qclass: Rclass) {
+    pub fn remove_answer(
+        &mut self,
+        domain_name: DomainName,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+    ) {
         self.cache_answer.remove(domain_name, qtype, qclass);
     }
-    
+
     /// Removes an element from the authority cache.
-    pub fn remove_authority(&mut self, domain_name: DomainName, qtype: Option<Rrtype>, qclass: Rclass) {
+    pub fn remove_authority(
+        &mut self,
+        domain_name: DomainName,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+    ) {
         self.cache_authority.remove(domain_name, qtype, qclass);
     }
-    
+
     /// Removes an element from the additional cache.
-    pub fn remove_additional(&mut self, domain_name: DomainName, qtype: Option<Rrtype>, qclass: Rclass) {
+    pub fn remove_additional(
+        &mut self,
+        domain_name: DomainName,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+    ) {
         self.cache_additional.remove(domain_name, qtype, qclass);
     }
-    
+
     /// Removes an element from the cache.
     pub fn remove(&mut self, domain_name: DomainName, qtype: Option<Rrtype>, qclass: Rclass) {
         self.remove_answer(domain_name.clone(), qtype, qclass);
@@ -300,7 +355,6 @@ impl ResolverCache {
 }
 
 impl ResolverCache {
-
     /// Get the answer cache.
     pub fn get_cache_answer(&self) -> &DnsCache {
         &self.cache_answer
@@ -317,9 +371,7 @@ impl ResolverCache {
     }
 }
 
-
 impl ResolverCache {
-
     /// Set the answer cache.
     pub fn set_cache_answer(&mut self, cache: DnsCache) {
         self.cache_answer = cache;
@@ -337,73 +389,104 @@ impl ResolverCache {
 }
 
 #[cfg(test)]
-mod resolver_cache_test{
+mod resolver_cache_test {
     use super::*;
-    use crate::message::rrtype::Rrtype;
+    use crate::message::question::Question;
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
-    use crate::message::question::Question;
+    use crate::message::rrtype::Rrtype;
     use std::net::IpAddr;
 
     #[test]
     fn constructor_test() {
         let resolver_cache = ResolverCache::new(None);
-        assert_eq!(resolver_cache.get_cache_answer().get_max_size(), NonZeroUsize::new(1667).unwrap());
-        assert_eq!(resolver_cache.get_cache_authority().get_max_size(), NonZeroUsize::new(1667).unwrap());
-        assert_eq!(resolver_cache.get_cache_additional().get_max_size(), NonZeroUsize::new(1667).unwrap());
+        assert_eq!(
+            resolver_cache.get_cache_answer().get_max_size(),
+            NonZeroUsize::new(1667).unwrap()
+        );
+        assert_eq!(
+            resolver_cache.get_cache_authority().get_max_size(),
+            NonZeroUsize::new(1667).unwrap()
+        );
+        assert_eq!(
+            resolver_cache.get_cache_additional().get_max_size(),
+            NonZeroUsize::new(1667).unwrap()
+        );
     }
 
     #[test]
     fn with_sizes_test() {
-        let resolver_cache = ResolverCache::with_sizes(Some(NonZeroUsize::new(100).unwrap()), Some(NonZeroUsize::new(200).unwrap()), Some(NonZeroUsize::new(300).unwrap()));
-        assert_eq!(resolver_cache.get_cache_answer().get_max_size(), NonZeroUsize::new(100).unwrap());
-        assert_eq!(resolver_cache.get_cache_authority().get_max_size(), NonZeroUsize::new(200).unwrap());
-        assert_eq!(resolver_cache.get_cache_additional().get_max_size(), NonZeroUsize::new(300).unwrap());
+        let resolver_cache = ResolverCache::with_sizes(
+            Some(NonZeroUsize::new(100).unwrap()),
+            Some(NonZeroUsize::new(200).unwrap()),
+            Some(NonZeroUsize::new(300).unwrap()),
+        );
+        assert_eq!(
+            resolver_cache.get_cache_answer().get_max_size(),
+            NonZeroUsize::new(100).unwrap()
+        );
+        assert_eq!(
+            resolver_cache.get_cache_authority().get_max_size(),
+            NonZeroUsize::new(200).unwrap()
+        );
+        assert_eq!(
+            resolver_cache.get_cache_additional().get_max_size(),
+            NonZeroUsize::new(300).unwrap()
+        );
     }
 
     #[test]
-    fn get_cache_answer(){
+    fn get_cache_answer() {
         let resolver_cache = ResolverCache::new(None);
         let cache = resolver_cache.get_cache_answer();
         assert_eq!(cache.get_max_size(), NonZeroUsize::new(1667).unwrap());
     }
 
     #[test]
-    fn get_cache_authority(){
+    fn get_cache_authority() {
         let resolver_cache = ResolverCache::new(None);
         let cache = resolver_cache.get_cache_authority();
         assert_eq!(cache.get_max_size(), NonZeroUsize::new(1667).unwrap());
     }
 
     #[test]
-    fn get_cache_additional(){
+    fn get_cache_additional() {
         let resolver_cache = ResolverCache::new(None);
         let cache = resolver_cache.get_cache_additional();
         assert_eq!(cache.get_max_size(), NonZeroUsize::new(1667).unwrap());
     }
 
     #[test]
-    fn set_cache_answer(){
+    fn set_cache_answer() {
         let mut resolver_cache = ResolverCache::new(None);
         let cache = DnsCache::new(None);
         resolver_cache.set_cache_answer(cache.clone());
-        assert_eq!(resolver_cache.get_cache_answer().get_max_size(), cache.get_max_size());
+        assert_eq!(
+            resolver_cache.get_cache_answer().get_max_size(),
+            cache.get_max_size()
+        );
     }
 
     #[test]
-    fn set_cache_authority(){
+    fn set_cache_authority() {
         let mut resolver_cache = ResolverCache::new(None);
         let cache = DnsCache::new(None);
         resolver_cache.set_cache_authority(cache.clone());
-        assert_eq!(resolver_cache.get_cache_authority().get_max_size(), cache.get_max_size());
+        assert_eq!(
+            resolver_cache.get_cache_authority().get_max_size(),
+            cache.get_max_size()
+        );
     }
 
     #[test]
-    fn set_cache_additional(){
+    fn set_cache_additional() {
         let mut resolver_cache = ResolverCache::new(None);
         let cache = DnsCache::new(None);
         resolver_cache.set_cache_additional(cache.clone());
-        assert_eq!(resolver_cache.get_cache_additional().get_max_size(), cache.get_max_size());
+        assert_eq!(
+            resolver_cache.get_cache_additional().get_max_size(),
+            cache.get_max_size()
+        );
     }
 
     #[test]
@@ -422,9 +505,18 @@ mod resolver_cache_test{
         resource_record.set_type_code(Rrtype::A);
         resource_record.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
-        
-        let rr = resolver_cache.cache_answer.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+
+        let rr = resolver_cache
+            .cache_answer
+            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
 
         assert_eq!(rr[0].get_resource_record(), resource_record);
     }
@@ -445,9 +537,18 @@ mod resolver_cache_test{
         resource_record.set_type_code(Rrtype::A);
         resource_record.set_ttl(1000);
 
-        resolver_cache.add_authority(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
-        let rr = resolver_cache.cache_authority.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
+        let rr = resolver_cache
+            .cache_authority
+            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
 
         assert_eq!(rr[0].get_resource_record(), resource_record);
     }
@@ -468,15 +569,24 @@ mod resolver_cache_test{
         resource_record.set_type_code(Rrtype::A);
         resource_record.set_ttl(1000);
 
-        resolver_cache.add_additional(domain_name.clone(), resource_record.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
-        let rr = resolver_cache.cache_additional.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
+        let rr = resolver_cache
+            .cache_additional
+            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
 
         assert_eq!(rr[0].get_resource_record(), resource_record);
     }
 
     #[test]
-    fn add(){
+    fn add() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -522,7 +632,6 @@ mod resolver_cache_test{
 
         message.set_query_id(1);
 
-
         let mut question = Question::new();
         question.set_qname(domain_name.clone());
         question.set_rrtype(Rrtype::A);
@@ -536,9 +645,18 @@ mod resolver_cache_test{
 
         resolver_cache.add(message.clone());
 
-        let rr_answer = resolver_cache.cache_answer.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
-        let rr_authority = resolver_cache.cache_authority.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
-        let rr_additional = resolver_cache.cache_additional.get(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
+        let rr_answer = resolver_cache
+            .cache_answer
+            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
+        let rr_authority = resolver_cache
+            .cache_authority
+            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
+        let rr_additional = resolver_cache
+            .cache_additional
+            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
 
         assert_eq!(rr_answer[0].get_resource_record(), resource_record_1);
         assert_eq!(rr_authority[0].get_resource_record(), resource_record_2);
@@ -546,7 +664,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn get_answer(){
+    fn get_answer() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -585,11 +703,31 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
-        let rr = resolver_cache.get_answer(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
+        let rr = resolver_cache
+            .get_answer(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
 
         assert_eq!(rr[0], resource_record_1);
         assert_eq!(rr[1], resource_record_2);
@@ -597,7 +735,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn get_authority(){
+    fn get_authority() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -636,11 +774,31 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_authority(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
-        let rr = resolver_cache.get_authority(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
+        let rr = resolver_cache
+            .get_authority(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
 
         assert_eq!(rr[0], resource_record_1);
         assert_eq!(rr[1], resource_record_2);
@@ -648,7 +806,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn get_additional(){
+    fn get_additional() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -687,11 +845,31 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_additional(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
-        let rr = resolver_cache.get_additional(domain_name.clone(), Rrtype::A, Rclass::IN).unwrap();
+        let rr = resolver_cache
+            .get_additional(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .unwrap();
 
         assert_eq!(rr[0], resource_record_1);
         assert_eq!(rr[1], resource_record_2);
@@ -699,7 +877,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn get(){
+    fn get() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -738,9 +916,27 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
         let qname = DomainName::new_from_string("www.example.com".to_string());
         let qtype = Rrtype::A;
@@ -748,8 +944,15 @@ mod resolver_cache_test{
         let op_code = 0;
         let rd = true;
         let id = 1;
-        
-        let query = DnsMessage::new_query_message(qname.clone(), qtype.clone(), qclass.clone(), op_code.clone(), rd.clone(), id.clone());
+
+        let query = DnsMessage::new_query_message(
+            qname.clone(),
+            qtype.clone(),
+            qclass.clone(),
+            op_code.clone(),
+            rd.clone(),
+            id.clone(),
+        );
 
         let message = resolver_cache.get(query).unwrap();
 
@@ -763,7 +966,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn remove_answer(){
+    fn remove_answer() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -802,9 +1005,27 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_answer(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
         resolver_cache.remove_answer(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
@@ -814,7 +1035,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn remove_authority(){
+    fn remove_authority() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -853,9 +1074,27 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_authority(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
         resolver_cache.remove_authority(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
@@ -865,7 +1104,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn remove_additional(){
+    fn remove_additional() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -904,10 +1143,28 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_additional(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
-        
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+
         resolver_cache.remove_additional(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
         let rr = resolver_cache.get_additional(domain_name.clone(), Rrtype::A, Rclass::IN);
@@ -916,7 +1173,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn remove(){
+    fn remove() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -955,9 +1212,27 @@ mod resolver_cache_test{
         resource_record_3.set_type_code(Rrtype::A);
         resource_record_3.set_ttl(1000);
 
-        resolver_cache.add_answer(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_authority(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.add_additional(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.add_answer(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_authority(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.add_additional(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
         let qname = DomainName::new_from_string("www.example.com".to_string());
         let qtype = Rrtype::A;
@@ -965,8 +1240,15 @@ mod resolver_cache_test{
         let op_code = 0;
         let rd = true;
         let id = 1;
-        
-        let query = DnsMessage::new_query_message(qname.clone(), qtype.clone(), qclass.clone(), op_code.clone(), rd.clone(), id.clone());
+
+        let query = DnsMessage::new_query_message(
+            qname.clone(),
+            qtype.clone(),
+            qclass.clone(),
+            op_code.clone(),
+            rd.clone(),
+            id.clone(),
+        );
 
         resolver_cache.remove(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
@@ -976,7 +1258,7 @@ mod resolver_cache_test{
     }
 
     #[test]
-    fn timeout(){
+    fn timeout() {
         let mut resolver_cache = ResolverCache::new(None);
 
         let domain_name = DomainName::new_from_string("www.example.com".to_string());
@@ -1012,15 +1294,41 @@ mod resolver_cache_test{
         resource_record_3.set_name(domain_name.clone());
         resource_record_3.set_type_code(Rrtype::A);
 
-        resolver_cache.cache_answer.add(domain_name.clone(), resource_record_1.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.cache_authority.add(domain_name.clone(), resource_record_2.clone(), Some(Rrtype::A), Rclass::IN, None);
-        resolver_cache.cache_additional.add(domain_name.clone(), resource_record_3.clone(), Some(Rrtype::A), Rclass::IN, None);
+        resolver_cache.cache_answer.add(
+            domain_name.clone(),
+            resource_record_1.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.cache_authority.add(
+            domain_name.clone(),
+            resource_record_2.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
+        resolver_cache.cache_additional.add(
+            domain_name.clone(),
+            resource_record_3.clone(),
+            Some(Rrtype::A),
+            Rclass::IN,
+            None,
+        );
 
         resolver_cache.timeout();
 
-        let rr_answer = resolver_cache.cache_answer.get(domain_name.clone(), Rrtype::A, Rclass::IN);
-        let rr_authority = resolver_cache.cache_authority.get(domain_name.clone(), Rrtype::A, Rclass::IN);
-        let rr_additional = resolver_cache.cache_additional.get(domain_name.clone(), Rrtype::A, Rclass::IN);
+        let rr_answer = resolver_cache
+            .cache_answer
+            .get(domain_name.clone(), Rrtype::A, Rclass::IN);
+        let rr_authority =
+            resolver_cache
+                .cache_authority
+                .get(domain_name.clone(), Rrtype::A, Rclass::IN);
+        let rr_additional =
+            resolver_cache
+                .cache_additional
+                .get(domain_name.clone(), Rrtype::A, Rclass::IN);
 
         assert_eq!(rr_answer, None);
         assert_eq!(rr_authority, None);

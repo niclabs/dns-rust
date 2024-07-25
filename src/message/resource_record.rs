@@ -212,7 +212,7 @@ impl ResourceRecord {
             Rdata::TSIG(val) => ResourceRecord {
                 name: DomainName::new(),
                 rtype: Rrtype::TSIG,
-                rclass: Rclass::IN,
+                rclass: Rclass::ANY,
                 ttl: 0 as u32,
                 rdlength: 0 as u16,
                 rdata: Rdata::TSIG(val),

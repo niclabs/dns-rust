@@ -1,5 +1,7 @@
+
 use std::{net::IpAddr, str::FromStr};
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
+
 
 
 
@@ -13,6 +15,7 @@ async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Resul
         domain_name,
         protocol,
         qtype,
+
         "IN").await;
 
     response.map(|lookup_response| lookup_response.to_vec_of_rr())
@@ -108,6 +111,4 @@ async fn no_resource_available() {
     println!("{:?}", response);
     assert!(response.is_err());
 }
-
-
 

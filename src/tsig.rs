@@ -20,10 +20,10 @@ use tsig_algorithm::TsigAlgorithm;
 #[derive(Debug)]
 pub enum TsigErrorCode{
     NOERR = 0,
+    FORMERR = 1,
     BADSIG = 16,
     BADKEY = 17,
     BADTIME = 18,
-    FORMERR = 1,
 
 }
 //TODO: Encontrar alguna manera de pasar una referencia Digest u Hmac de un algoritmo no especificado

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, net:: UdpSocket, thread, time::Duration};
-use dns_rust::{domain_name::DomainName, message::{rdata::{tsig_rdata::TSigRdata, Rdata}, rrtype::Rrtype, DnsMessage},tsig::{process_tsig, sign_tsig, TsigErrorCode}};
+use dns_rust::{domain_name::DomainName, message::{rdata::{tsig_rdata::TSigRdata, Rdata}, rrtype::Rrtype, DnsMessage},tsig::{process_tsig, sign_tsig}};
 use dns_rust::tsig::tsig_algorithm::TsigAlgorithm;
+use dns_rust::message::rcode::Rcode;
 use dns_rust::message::rclass::Rclass;
 
 
@@ -119,7 +120,7 @@ async fn tsig_signature() {
                 sign_tsig(&mut data, key_found,TsigAlgorithm::from(alg_name),fudge,time, key_name, mac);
                 let response = &DnsMessage::to_bytes(&data);
                 //se verifica que la request haya pasado proces_tsig
-                assert_eq!(error,TsigErrorCode::NOERR);
+                assert_eq!(error,Rcode::NOERROR);
                 
                 // se envia la respuesta si lo anterior resultó ser correcto
                 udp_socket
@@ -166,7 +167,7 @@ async fn tsig_signature() {
                 let (answer, error ) = process_tsig(&data, key, name.to_string(), time_signed, a_algs, mac);
                 // se verifica que el mensaje haya pasado process_tsig
                 assert!(answer);
-                assert_eq!(error,TsigErrorCode::NOERR);
+                assert_eq!(error,Rcode::NOERROR);
             }
             Err(e) => {
                 eprintln!("Error receiving data: {}", e);

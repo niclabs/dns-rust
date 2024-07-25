@@ -1,6 +1,5 @@
 pub mod tsig_algorithm;
 
-use std::fmt::Debug;
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
 use std::time::SystemTime;
@@ -13,18 +12,9 @@ use crypto::hmac::Hmac as crypto_hmac;
 use crypto::mac::Mac as crypto_mac;
 use crypto::{sha1::Sha1,sha2::Sha256};
 use tsig_algorithm::TsigAlgorithm;
+use crate::message::rcode::Rcode;
 
 
-#[derive(PartialEq)]
-#[derive(Debug)]
-pub enum TsigErrorCode{
-    NOERR = 0,
-    FORMERR = 1,
-    BADSIG = 16,
-    BADKEY = 17,
-    BADTIME = 18,
-
-}
 //TODO: Encontrar alguna manera de pasar una referencia Digest u Hmac de un algoritmo no especificado
 // función auxiliar para evitar la redundancia de código en sign_tsig
 fn set_tsig_rd(name: String, original_id: u16, result: MacResult,
@@ -270,7 +260,7 @@ fn check_last_one_is_tsig(add_rec: &Vec<ResourceRecord>) -> bool {
 
 #[doc = r"This function process a tsig message, checking for errors in the DNS message"]
 pub fn process_tsig(msg: &DnsMessage, key:&[u8], key_name: String, time: u64,
-                    available_algorithm: Vec<(String, bool)>, mac_to_process: Vec<u8>) -> (bool, TsigErrorCode) {
+                    available_algorithm: Vec<(String, bool)>, mac_to_process: Vec<u8>) -> (bool, Rcode) {
     let mut retmsg = msg.clone();
     let mut addit = retmsg.get_additional();
     //RFC 8945 5.2 y 5.4
@@ -278,14 +268,14 @@ pub fn process_tsig(msg: &DnsMessage, key:&[u8], key_name: String, time: u64,
     //vector con resource records que son TSIG. Luego se Verifica si hay algún tsig rr
     if check_exists_tsig_rr(&addit) {
         println!("RCODE 1: FORMERR");
-        return (false, TsigErrorCode::FORMERR);
+        return (false, Rcode::FORMERR);
     }
     
     //Debe haber un único tsig
     //Tsig RR debe ser el último en la sección adicional, y debe ser único
     if check_last_one_is_tsig(&addit) {
         println!("RCODE 1: FORMERR");
-        return (false, TsigErrorCode::FORMERR);
+        return (false, Rcode::FORMERR);
     }
 
     //sacar el último elemento del vector resource record, y disminuir elvalor de ARCOUNT
@@ -308,14 +298,14 @@ pub fn process_tsig(msg: &DnsMessage, key:&[u8], key_name: String, time: u64,
     let flag = check_alg_name(&name_alg, available_algorithm);
     if !flag {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
-        return (false, TsigErrorCode::BADKEY);
+        return (false, Rcode::BADKEY);
     }
 
     let cond1 = check_key(key_in_rr.clone(), key_name.clone());
     if !cond1 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 17: BADKEY");
         println!("key in rr: {:?} key given {:?}", key_in_rr, key_name);
-        return (false, TsigErrorCode::BADKEY);
+        return (false, Rcode::BADKEY);
     }
 
     //RFC 8945 5.2.2
@@ -346,20 +336,20 @@ pub fn process_tsig(msg: &DnsMessage, key:&[u8], key_name: String, time: u64,
 
     if !cond2 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 16: BADSIG");
-        return (false, TsigErrorCode::BADSIG)
+        return (false, Rcode::BADSIG)
     }
     //let mytime = SystemTime::now().duration_since(UNIX_EPOCH).expect("no debería fallar el tiempo");
     let cond3 = check_time_values(time, fudge, time_signed);
     if !cond3 {
         println!("RCODE 9: NOAUTH\n TSIG ERROR 18: BADTIME");
-        return (false, TsigErrorCode::BADTIME)
+        return (false, Rcode::BADTIME)
     }
-    (true, TsigErrorCode::NOERR)
+    (true, Rcode::NOERROR)
 
 }
 
 pub fn immediate_process_tsig(msg: &DnsMessage, key:&[u8], key_name: String,
-    available_algorithm: Vec<(String, bool)>, mac_to_process: Vec<u8>) -> (bool, TsigErrorCode) {
+    available_algorithm: Vec<(String, bool)>, mac_to_process: Vec<u8>) -> (bool, Rcode) {
     
     let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
     process_tsig(msg, key, key_name, time, available_algorithm, mac_to_process)
@@ -404,7 +394,7 @@ mod tsig_test {
         lista.push((String::from("hmac-sha256"),true));
         let (answer, error) = process_tsig(& response, server_key, key_name, 21010, lista, vec![]);
         assert!(!answer);
-        assert_eq!(error,TsigErrorCode::FORMERR);
+        assert_eq!(error,Rcode::FORMERR);
     }
 
     #[test]
@@ -429,7 +419,7 @@ mod tsig_test {
         assert!(control_answer);
         let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista, vec![]);
         assert!(!answer);
-        assert_eq!(error, TsigErrorCode::FORMERR);
+        assert_eq!(error, Rcode::FORMERR);
     }
 
     // verificar que no se haya añadido otro resource record en el additionals luego de añadir un tsig_rr
@@ -459,7 +449,7 @@ mod tsig_test {
         lista.push((String::from("hmac-sha256"),true));
         let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista, vec![]);
         assert!(!answer);
-        assert_eq!(error, TsigErrorCode::FORMERR);
+        assert_eq!(error, Rcode::FORMERR);
     }
     #[test]
     fn check_process_tsig_alg_name() {
@@ -479,7 +469,7 @@ mod tsig_test {
         lista.push((String::from("hmac-sha1"),true));
         let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista, vec![]);
         assert!(!answer);
-        assert_eq!(error,TsigErrorCode::BADKEY);
+        assert_eq!(error,Rcode::BADKEY);
     }
     #[test]
     fn check_process_tsig_alg_name2() {
@@ -499,7 +489,7 @@ mod tsig_test {
         lista.push((String::from("hmac-sha256"),false));
         let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista, vec![]);
         assert!(!answer);
-        assert_eq!(error,TsigErrorCode::BADKEY);
+        assert_eq!(error,Rcode::BADKEY);
     }
     #[test]
     fn check_process_tsig_key(){
@@ -519,7 +509,7 @@ mod tsig_test {
         lista.push((String::from("hmac-sha256"),false));
         let (answer, error) = process_tsig(& response_capture, server_key, key_name, 21010, lista, vec![]);
         assert!(!answer);
-        assert_eq!(error,TsigErrorCode::BADKEY);
+        assert_eq!(error,Rcode::BADKEY);
     }
     //TODO: completar este test, hay cosas que faltan por implementar
     #[test]
@@ -540,7 +530,7 @@ mod tsig_test {
         let key_name = "".to_string();
         let key2 = b"12345678909";
         let (_, error) = process_tsig(&mut msg1, key2, key_name, time_signed,lista, vec![]);
-        assert_eq!(error,TsigErrorCode::BADSIG);
+        assert_eq!(error,Rcode::BADSIG);
     }
     #[test]
     fn check_proces_tsig_badtime(){
@@ -561,7 +551,7 @@ mod tsig_test {
         let (answer, error) = process_tsig(& response_capture, server_key, key_name,
                                         22010, lista, vec![]);
         assert!(!answer);
-        assert_eq!(error,TsigErrorCode::BADTIME);
+        assert_eq!(error,Rcode::BADTIME);
     }
     #[test]
     fn check_process_tsig() {
@@ -581,7 +571,7 @@ mod tsig_test {
         let (answer, error) = process_tsig(& response_capture, server_key, key_name,
                                         21010, lista, vec![]);
         assert!(answer);
-        assert_eq!(error,TsigErrorCode::NOERR);
+        assert_eq!(error,Rcode::NOERROR);
     }
     //Unitary test to verify that the signer function is working properly
     #[test]

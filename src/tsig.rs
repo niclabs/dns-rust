@@ -1,7 +1,6 @@
 pub mod tsig_algorithm;
 
 use std::fmt::Debug;
-//aquí debe ir todo lo relacionado a la implementación de tsig como módulo
 use crypto::mac::MacResult;
 use crate::domain_name::DomainName;
 use std::time::SystemTime;

@@ -141,6 +141,9 @@ fn digest(bytes: Vec<u8>, tsig_algorithm: TsigAlgorithm, key: Vec<u8>) -> Vec<u8
             hasher.input(&bytes[..]);
             hasher.result().code().to_vec()
         }
+        TsigAlgorithm::UNKNOWN(a) => {
+            panic!("Unknown algorithm {}", a);
+        }
     }
 }
 
@@ -151,7 +154,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
     let tsig_rd: TSigRdata;
     let new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
-    let alg_name_str = String::from(alg_name);
+    let alg_name_str = String::from(alg_name.clone());
     let tsig_rr= set_tsig_vars(alg_name_str.as_str(), key_name.as_str(),
                                time_signed, fudge);
     let digest_comp = get_digest_request(mac_request, new_query_message.to_bytes(),
@@ -186,6 +189,9 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
                 32);
             
         },
+        TsigAlgorithm::UNKNOWN(a) => {
+            panic!("Unknown algorithm {}", a);
+        }
     }
     let rr_len = tsig_rd.to_bytes().len() as u16;
     let signature = tsig_rd.get_mac();
@@ -597,7 +603,7 @@ mod tsig_test {
             id
         );
         //partial TSIG Resource record verify the signing process
-        let tsig_rr = set_tsig_vars(String::from(alg_name).as_str(), &name, time_signed, fudge);
+        let tsig_rr = set_tsig_vars(String::from(alg_name.clone()).as_str(), &name, time_signed, fudge);
         let q_for_mac = q.clone();
         //creation of the signature to compare
         let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, name, vec![]);

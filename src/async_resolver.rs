@@ -313,7 +313,6 @@ impl AsyncResolver {
     /// answer section, it is always preferred.
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
-        let rcode = response.get_header().get_rcode();
         {
             let mut cache = self.cache.lock().unwrap();
             cache.timeout();

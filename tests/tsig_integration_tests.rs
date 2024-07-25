@@ -1,5 +1,6 @@
 use std::{collections::HashMap, net:: UdpSocket, thread, time::Duration};
-use dns_rust::{domain_name::DomainName, message::{rdata::{tsig_rdata::TSigRdata, Rdata}, rrtype::Rrtype, DnsMessage},tsig::{process_tsig, sign_tsig, string_to_tsig_alg, TsigAlgorithm, TsigErrorCode}};
+use dns_rust::{domain_name::DomainName, message::{rdata::{tsig_rdata::TSigRdata, Rdata}, rrtype::Rrtype, DnsMessage},tsig::{process_tsig, sign_tsig, TsigErrorCode}};
+use dns_rust::tsig::tsig_algorithm::TsigAlgorithm;
 use dns_rust::message::rclass::Rclass;
 
 
@@ -110,12 +111,12 @@ async fn tsig_signature() {
                 let key_found = keys[&name];
 
                 //el servidor verifica la estructura del tsig recibido. Sumamos un pequeño delay al time para simular retraso
-                let (answer,error) = process_tsig(&data, key_found, key_name.clone(), time + 50, list, vec![]); 
+                let (_,error) = process_tsig(&data, key_found, key_name.clone(), time + 50, list, vec![]); 
                 //se setea el aditional sin el ultimo resource record, para que sign_tsig lo regenere
                 data.set_additional(addit);
                 data.update_header_counters();
                 // se firma el mensaje recibido con el digest de la respuesta. Notar que el vector final ahora no está vacío
-                sign_tsig(&mut data, key_found,string_to_tsig_alg(alg_name),fudge,time, key_name, mac);
+                sign_tsig(&mut data, key_found,TsigAlgorithm::from(alg_name),fudge,time, key_name, mac);
                 let response = &DnsMessage::to_bytes(&data);
                 //se verifica que la request haya pasado proces_tsig
                 assert_eq!(error,TsigErrorCode::NOERR);

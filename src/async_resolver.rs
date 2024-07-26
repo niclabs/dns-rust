@@ -92,7 +92,16 @@ impl AsyncResolver {
     pub async fn lookup_ip(
         &mut self,
         domain_name: &str,
+<<<<<<< HEAD
         rclass: &str
+=======
+<<<<<<< HEAD
+        rclass: &str
+=======
+        transport_protocol: &str,
+        rclass: &str,
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
     ) -> Result<Vec<IpAddr>, ClientError> {
         let domain_name_struct = DomainName::new_from_string(domain_name.to_string());
         let transport_protocol=  self.config.get_protocol();
@@ -702,7 +711,18 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let rclass = "IN";
+<<<<<<< HEAD
         let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
+=======
+<<<<<<< HEAD
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
+=======
+        let ip_addresses = resolver
+            .lookup_ip(domain_name, transport_protocol, rclass)
+            .await
+            .unwrap();
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -714,7 +734,17 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let rclass = "CH";
+<<<<<<< HEAD
         let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
+=======
+<<<<<<< HEAD
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
+=======
+        let ip_addresses = resolver
+            .lookup_ip(domain_name, transport_protocol, rclass)
+            .await;
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses.is_err());
@@ -725,7 +755,17 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let rclass = "ANY";
+<<<<<<< HEAD
         let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
+=======
+<<<<<<< HEAD
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
+=======
+        let ip_addresses = resolver
+            .lookup_ip(domain_name, transport_protocol, rclass)
+            .await;
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses.is_err());
@@ -751,7 +791,18 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let rclass = "IN";
+<<<<<<< HEAD
         let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
+=======
+<<<<<<< HEAD
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
+=======
+        let ip_addresses = resolver
+            .lookup_ip(domain_name, transport_protocol, rclass)
+            .await
+            .unwrap();
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -802,8 +853,21 @@ mod async_resolver_test {
         let timeout_duration = std::time::Duration::from_secs(2);
 
         let result = tokio::time::timeout(timeout_duration, async {
+<<<<<<< HEAD
             resolver.lookup_ip(domain_name,rclass).await
         }).await;
+=======
+<<<<<<< HEAD
+            resolver.lookup_ip(domain_name,rclass).await
+        }).await;
+=======
+            resolver
+                .lookup_ip(domain_name, transport_protocol, rclass)
+                .await
+        })
+        .await;
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
 
         // Verifica que el resultado sea un error de timeout
         match result {
@@ -984,7 +1048,18 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let rclass = "IN";
+<<<<<<< HEAD
         let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
+=======
+<<<<<<< HEAD
+        let ip_addresses = resolver.lookup_ip(domain_name,rclass).await.unwrap();
+=======
+        let ip_addresses = resolver
+            .lookup_ip(domain_name, transport_protocol, rclass)
+            .await
+            .unwrap();
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -996,7 +1071,18 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
         let rclass = "IN";
+<<<<<<< HEAD
         let ip_addresses = resolver.lookup_ip(domain_name, rclass).await.unwrap();
+=======
+<<<<<<< HEAD
+        let ip_addresses = resolver.lookup_ip(domain_name, rclass).await.unwrap();
+=======
+        let ip_addresses = resolver
+            .lookup_ip(domain_name, transport_protocol, rclass)
+            .await
+            .unwrap();
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
         println!("RESPONSE : {:?}", ip_addresses);
 
         assert!(ip_addresses[0].is_ipv4());
@@ -1009,7 +1095,17 @@ mod async_resolver_test {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "Ecample.com";
         let rclass = "IN";
+<<<<<<< HEAD
         let udp_result = resolver.lookup_ip(domain_name,rclass).await;
+=======
+<<<<<<< HEAD
+        let udp_result = resolver.lookup_ip(domain_name,rclass).await;
+=======
+        let udp_result = resolver
+            .lookup_ip(domain_name, transport_protocol_udp, rclass)
+            .await;
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
 
         match udp_result {
             Ok(_) => {
@@ -1020,7 +1116,17 @@ mod async_resolver_test {
             }
         }
 
+<<<<<<< HEAD
         let tcp_result = resolver.lookup_ip(domain_name,  rclass).await;
+=======
+<<<<<<< HEAD
+        let tcp_result = resolver.lookup_ip(domain_name,  rclass).await;
+=======
+        let tcp_result = resolver
+            .lookup_ip(domain_name, transport_protocol_tcp, rclass)
+            .await;
+>>>>>>> develop
+>>>>>>> refs/remotes/origin/lookupconfig
         match tcp_result {
             Ok(_) => {
                 assert!(true);

@@ -16,6 +16,7 @@ pub mod dnskey_rdata;
 pub mod nsec3_rdata;
 pub mod nsec3param_rdata;
 pub mod tsig_rdata;
+pub mod srv_rdata;
 
 use core::fmt;
 use crate::message::resource_record::{FromBytes, ToBytes};
@@ -37,6 +38,7 @@ use dnskey_rdata::DnskeyRdata;
 use nsec3_rdata::Nsec3Rdata;
 use nsec3param_rdata::Nsec3ParamRdata;
 use tsig_rdata::TSigRdata;
+use srv_rdata::SrvRdata;
 
 #[derive(Clone, PartialEq, Debug)]
 /// Enumerates the differents types of `Rdata` struct.
@@ -51,6 +53,7 @@ pub enum Rdata {
     CNAME(CnameRdata),
     HINFO(HinfoRdata),
     AAAA(AAAARdata),
+    SRV(SrvRdata),
     OPT(OptRdata),
     DS(DsRdata),
     RRSIG(RRSIGRdata),
@@ -86,6 +89,7 @@ impl ToBytes for Rdata {
             Rdata::SOA(val) => val.to_bytes(),
             Rdata::TXT(val) => val.to_bytes(),
             Rdata::AAAA(val) => val.to_bytes(),
+            Rdata::SRV(val) => val.to_bytes(),
             Rdata::CNAME(val) => val.to_bytes(),
             Rdata::HINFO(val) => val.to_bytes(),
             Rdata::OPT(val) => val.to_bytes(),
@@ -228,6 +232,18 @@ impl FromBytes<Result<Rdata, &'static str>> for Rdata {
 
                 Ok(Rdata::AAAA(rdata.unwrap()))
             }
+            33 => {
+                let rdata = SrvRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
+
+                match rdata {
+                    Ok(_) => {}
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+
+                Ok(Rdata::SRV(rdata.unwrap()))
+            }
             39 => {
                 let rdata = CnameRdata::from_bytes(&bytes[..bytes.len() - 4], full_msg);
 
@@ -347,6 +363,7 @@ impl fmt::Display for Rdata {
             Rdata::SOA(val) => write!(f, "{}", val),
             Rdata::TXT(val) => write!(f, "{}", val),
             Rdata::AAAA(val) => write!(f, "{}", val),
+            Rdata::SRV(val) => write!(f, "{}", val),
             Rdata::CNAME(val) => write!(f, "{}", val),
             Rdata::HINFO(val) => write!(f, "{}", val),
             Rdata::OPT(val) => write!(f, "{}", val),
@@ -386,6 +403,7 @@ mod resolver_query_tests {
     use super::nsec3param_rdata::Nsec3ParamRdata;
     use super::tsig_rdata::TSigRdata;
     use super::aaaa_rdata::AAAARdata;
+    use super::srv_rdata::SrvRdata;
     use std::net::IpAddr;
     use std::vec;
 
@@ -743,6 +761,17 @@ mod resolver_query_tests {
         assert_eq!(bytes, expected_bytes);
     }
 
+    #[test]
+    fn to_bytes_srv_rdata(){
+        let srv_rdata = SrvRdata::new_with_values(1, 2, 3, DomainName::new_from_str("example.com"));
+
+        let expected_bytes = [0, 1, 0, 2, 0, 3, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
+
+        let bytes = Rdata::SRV(srv_rdata).to_bytes();
+
+        assert_eq!(bytes, expected_bytes);
+    }
+
     //from bytes tests
     #[test]
     fn from_bytes_a_ch_rdata(){
@@ -1089,6 +1118,21 @@ mod resolver_query_tests {
             }
             _ => {}
         } 
+    }
+
+    #[test]
+    fn from_bytes_srv_rdata(){
+        let data_bytes = [0, 1, 0, 2, 0, 3, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 0, 33, 0, 1];
+        let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        match rdata {
+            Rdata::SRV(val) => {
+                assert_eq!(val.get_priority(), 1);
+                assert_eq!(val.get_weight(), 2);
+                assert_eq!(val.get_port(), 3);
+                assert_eq!(val.get_target().get_name(), "example.com");
+            }
+            _ => {}
+        }
     }
 
     #[test]

@@ -102,10 +102,13 @@ impl AsyncResolver {
         let response = self
             .inner_lookup(domain_name_struct, Rrtype::A, rclass.into())
             .await;
-
+        
         return self
             .check_error_from_msg(response)
             .and_then(|lookup_response| {
+                if lookup_response.to_dns_msg().get_header().get_tc() {
+                    self.config.set_protocol(ConnectionProtocol::TCP);
+                }
                 let rrs_iter = lookup_response.to_vec_of_rr().into_iter();
                 let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter
                     .map(|rr| AsyncResolver::from_rr_to_ip(rr))
@@ -320,6 +323,7 @@ impl AsyncResolver {
             if !truncated {
                 cache.add(response.clone());
             }
+            
         }
     }
 

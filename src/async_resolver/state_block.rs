@@ -8,8 +8,8 @@ use tokio::time::Instant;
 /// perform its function efficiently, each pending request is usually
 /// represented in some block of state information.
 /// 
-/// The key algorithm uses the state information of the request to select the next name server address to
-/// query
+/// The key algorithm uses the state information of the request to select the 
+/// next name server address to query.
 pub struct StateBlock {
     /// A timestamp indicating the time the request began.
     /// 
@@ -17,6 +17,15 @@ pub struct StateBlock {
     /// can be used or are out of date. This timestamp uses the
     /// absolute time format.
     timestamp: Instant,
+
+    /// Global per-request counter to limit work on a single request.
+    /// 
+    /// This counter should be initialized to the value specified in the
+    /// request-global limit field of the resolver configuration. It must 
+    /// be decremented each time the resolver performs work on behalf of
+    /// the request. If the counter reaches zero, the resolver must
+    /// return a response to the client.
+    request_global_counter: u32,
 }
 
 impl StateBlock {
@@ -29,15 +38,36 @@ impl StateBlock {
     /// ```
     /// let state_block = StateBlock::new(Instant::now());
     /// ```
-    pub fn new() -> StateBlock {
+    pub fn new(request_global_limit: u32) -> StateBlock {
         StateBlock {
             timestamp: Instant::now(),
+            request_global_counter: request_global_limit,
         }
     }
 
     /// Returns a reference to the `timestamp` of the request.
     pub fn get_timestamp(&self) -> &Instant {
         return &self.timestamp;
+    }
+
+    /// Returns a the `request_global_counter` of the request.
+    pub fn get_request_global_counter(&self) -> u32 {
+        return self.request_global_counter;
+    }
+
+    /// Decrements the `request_global_counter` of the request.
+    /// 
+    /// This function should be called each time the resolver performs work on behalf
+    /// of the request. If the counter reaches zero, the resolver must return a 
+    /// response to the client.
+    /// 
+    /// # Example
+    /// ```
+    /// let mut state_block = StateBlock::new(Instant::now());
+    /// state_block.decrement_request_global_counter();
+    /// ```
+    pub fn decrement_request_global_counter(&mut self) {
+        self.request_global_counter -= 1;
     }
 
 }

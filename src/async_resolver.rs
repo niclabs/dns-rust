@@ -4,6 +4,7 @@ pub mod lookup_response;
 pub mod resolver_error;
 pub mod server_info;
 pub mod slist;
+pub mod state_block;
 
 use self::lookup_response::LookupResponse;
 use crate::async_resolver::resolver_error::ResolverError;

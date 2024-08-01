@@ -1,5 +1,5 @@
 pub mod config;
-pub mod lookup;
+pub mod resolution;
 pub mod lookup_response;
 pub mod resolver_error;
 pub mod server_info;
@@ -8,7 +8,7 @@ pub mod state_block;
 
 use self::lookup_response::LookupResponse;
 use crate::async_resolver::resolver_error::ResolverError;
-use crate::async_resolver::{config::ResolverConfig, lookup::Resolution};
+use crate::async_resolver::{config::ResolverConfig, resolution::Resolution};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::client::client_error::ClientError;
 use crate::domain_name::DomainName;

@@ -8,7 +8,7 @@ pub mod state_block;
 
 use self::lookup_response::LookupResponse;
 use crate::async_resolver::resolver_error::ResolverError;
-use crate::async_resolver::{config::ResolverConfig, lookup::Resolution};
+use crate::async_resolver::{config::ResolverConfig, resolution::Resolution};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::client::client_error::ClientError;
 use crate::domain_name::DomainName;

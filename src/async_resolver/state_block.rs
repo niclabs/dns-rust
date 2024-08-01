@@ -71,4 +71,7 @@ impl StateBlock {
     pub fn get_request_global_counter(&self) -> u32 {
         return self.request_global_counter;
     }
+}/// This struct represent the state of information of a pending request.
+pub struct StateBlock {
+    timestamp: u64,
 }

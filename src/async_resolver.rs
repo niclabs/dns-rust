@@ -7,7 +7,7 @@ pub mod slist;
 
 use self::lookup_response::LookupResponse;
 use crate::async_resolver::resolver_error::ResolverError;
-use crate::async_resolver::{config::ResolverConfig, lookup::LookupStrategy};
+use crate::async_resolver::{config::ResolverConfig, lookup::Resolution};
 use crate::client::client_connection::ConnectionProtocol;
 use crate::client::client_error::ClientError;
 use crate::domain_name::DomainName;
@@ -222,7 +222,7 @@ impl AsyncResolver {
     /// response of the query which can translate the response to different formats.
     ///
     /// This lookup is done asynchronously using the `tokio` runtime. It calls the
-    /// asynchronous method `run()` of the `LookupStrategy` struct. This method
+    /// asynchronous method `run()` of the `Resolution` struct. This method
     /// is used to perform the DNS lookup and return the response of the query.
     ///
     /// If the response has an error, the method returns the corresponding `ResolverError`
@@ -270,7 +270,7 @@ impl AsyncResolver {
             }
         }
 
-        let mut lookup_strategy = LookupStrategy::new(query, self.config.clone());
+        let mut lookup_strategy = Resolution::new(query, self.config.clone());
 
         // TODO: add general timeout
         let lookup_response = lookup_strategy.run().await;

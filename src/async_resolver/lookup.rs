@@ -21,7 +21,7 @@ use crate::async_resolver::config::ResolverConfig;
 /// 
 /// The lookup is done asynchronously after calling the asynchronoyus 
 /// `run` method.
-pub struct LookupStrategy {
+pub struct Resolution {
     query: DnsMessage,
     /// Resolver configuration.
     config: ResolverConfig,
@@ -29,9 +29,9 @@ pub struct LookupStrategy {
     response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
 }
     
-impl LookupStrategy {
+impl Resolution {
 
-    /// Creates a new `LookupStrategy` with the given configuration.
+    /// Creates a new `Resolution` with the given configuration.
     pub fn new(
         query: DnsMessage,
         config: ResolverConfig,
@@ -347,7 +347,7 @@ mod async_resolver_test {
 
         let query = message::create_recursive_query(domain_name, record_type, record_class);
 
-        let lookup_future = LookupStrategy::new(
+        let lookup_future = Resolution::new(
             query,
             config,
         );
@@ -373,7 +373,7 @@ mod async_resolver_test {
         let name_servers = vec![server_info];
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        let lookup_strategy = LookupStrategy::new(
+        let lookup_strategy = Resolution::new(
             message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
@@ -428,7 +428,7 @@ mod async_resolver_test {
         let name_servers = vec![server_info];
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        let lookup_strategy = LookupStrategy::new(
+        let lookup_strategy = Resolution::new(
             message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
@@ -474,7 +474,7 @@ mod async_resolver_test {
         let name_servers = vec![server_info];
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
-        let lookup_strategy = LookupStrategy::new(
+        let lookup_strategy = Resolution::new(
             message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );
@@ -531,7 +531,7 @@ mod async_resolver_test {
         //     query_sate,
         //     tokio::time::Duration::from_secs(3)).await;
 
-        let mut lookup_strategy = LookupStrategy::new(
+        let mut lookup_strategy = Resolution::new(
             message::create_recursive_query(domain_name, record_type, record_class),
             config,
         );

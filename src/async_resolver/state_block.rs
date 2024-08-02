@@ -58,8 +58,8 @@ impl StateBlock {
     /// Decrements the `request_global_counter` of the request.
     /// 
     /// This function should be called each time the resolver performs work on behalf
-    /// of the request. If the counter reaches zero, the resolver must return a 
-    /// response to the client.
+    /// of the request. If the counter passes zero, the request is terminated with a 
+    /// temporary error.
     /// 
     /// # Example
     /// ```
@@ -68,6 +68,8 @@ impl StateBlock {
     /// ```
     pub fn decrement_request_global_counter(&mut self) {
         self.request_global_counter -= 1;
+
+        // TODO: Implement the logic to terminate the request if the counter reaches zero.
     }
 
 }

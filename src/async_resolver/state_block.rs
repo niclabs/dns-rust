@@ -45,16 +45,6 @@ impl StateBlock {
         }
     }
 
-    /// Returns a reference to the `timestamp` of the request.
-    pub fn get_timestamp(&self) -> &Instant {
-        return &self.timestamp;
-    }
-
-    /// Returns a the `request_global_counter` of the request.
-    pub fn get_request_global_counter(&self) -> u32 {
-        return self.request_global_counter;
-    }
-
     /// Decrements the `request_global_counter` of the request.
     /// 
     /// This function should be called each time the resolver performs work on behalf
@@ -72,4 +62,13 @@ impl StateBlock {
         // TODO: Implement the logic to terminate the request if the counter reaches zero.
     }
 
+    /// Returns a reference to the `timestamp` of the request.
+    pub fn get_timestamp(&self) -> &Instant {
+        return &self.timestamp;
+    }
+
+    /// Returns a the `request_global_counter` of the request.
+    pub fn get_request_global_counter(&self) -> u32 {
+        return self.request_global_counter;
+    }
 }

@@ -2036,7 +2036,6 @@ mod async_resolver_test {
 
         resolver.save_negative_answers(dns_response.clone());
 
-        let rrtype_search = Rrtype::A;
         assert_eq!(dns_response.get_answer().len(), 0);
         assert_eq!(dns_response.get_additional().len(), 1);
         assert_eq!(

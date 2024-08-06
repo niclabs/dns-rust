@@ -3,8 +3,6 @@ use crate::client::client_connection::ConnectionProtocol;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
-use std::io::SeekFrom;
-use std::option;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 use super::server_info::ServerInfo;

@@ -1,4 +1,5 @@
 use tokio::time::Instant;
+use crate::async_resolver::server_state::ServerState;
 
 /// This struct represent the state of information of a pending request.
 /// 
@@ -26,6 +27,8 @@ pub struct StateBlock {
     /// the request. If the counter reaches zero, the resolver must
     /// return a response to the client.
     request_global_counter: u32,
+
+    server_state: ServerState,
 }
 
 impl StateBlock {
@@ -42,6 +45,7 @@ impl StateBlock {
         StateBlock {
             timestamp: Instant::now(),
             request_global_counter: request_global_limit,
+            server_state: ServerState::new(vec![]),
         }
     }
 

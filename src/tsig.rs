@@ -140,7 +140,7 @@ fn digest(bytes: Vec<u8>, tsig_algorithm: TsigAlgorithm, key: Vec<u8>) -> Vec<u8
 //RFC 8945, section 5.1
 #[doc = r"This function creates the signature of a DnsMessage with  a  key in bytes and the algName that will be used to encrypt the key."]
 pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm,
-                 fudge: u16, time_signed: u64, key_name: String, mac_request: Vec<u8>) -> Vec<u8> {
+                 fudge: u16, time_signed: u64, key_name: String, mac_request: Vec<u8>) {
     let tsig_rd: TSigRdata;
     let new_query_message = query_msg.clone();
     let original_id = query_msg.get_query_id();
@@ -184,14 +184,12 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
         }
     }
     let rr_len = tsig_rd.to_bytes().len() as u16;
-    let signature = tsig_rd.get_mac();
     let mut new_rr: ResourceRecord = ResourceRecord::new(Rdata::TSIG(tsig_rd));
     new_rr.set_name(DomainName::new_from_string(key_name));
     new_rr.set_rdlength(rr_len);
     let mut vec: Vec<ResourceRecord> = vec![];
     vec.push(new_rr);
     query_msg.add_additionals(vec);
-    return signature;
 }
 
 //Revisa si el nombre de la llave es correcto
@@ -596,7 +594,8 @@ mod tsig_test {
         let tsig_rr = set_tsig_vars(String::from(alg_name.clone()).as_str(), &name, time_signed, fudge);
         let q_for_mac = q.clone();
         //creation of the signature to compare
-        let firma_a_comparar = sign_tsig(&mut q, key, alg_name, fudge, time_signed, name, vec![]);
+        sign_tsig(&mut q, key, alg_name, fudge, time_signed, name, vec![]);
+        let firma_a_comparar = q.get_mac();
         // creation of the signature digest
         let dig_for_mac = get_digest_request(vec![],q_for_mac.to_bytes(), tsig_rr);
         let mut hasher = crypto_hmac::new(Sha1::new(), key);

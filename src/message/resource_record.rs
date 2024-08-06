@@ -86,7 +86,7 @@ impl ResourceRecord {
                 rtype: Rrtype::A,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::A(val),
             },
             Rdata::NS(val) => ResourceRecord {
@@ -94,7 +94,7 @@ impl ResourceRecord {
                 rtype: Rrtype::NS,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::NS(val),
             },
             Rdata::CNAME(val) => ResourceRecord {
@@ -102,7 +102,7 @@ impl ResourceRecord {
                 rtype: Rrtype::CNAME,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::CNAME(val),
             },
             Rdata::SOA(val) => ResourceRecord {
@@ -110,7 +110,7 @@ impl ResourceRecord {
                 rtype: Rrtype::SOA,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::SOA(val),
             },
             Rdata::PTR(val) => ResourceRecord {
@@ -118,7 +118,7 @@ impl ResourceRecord {
                 rtype: Rrtype::PTR,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::PTR(val),
             },
             Rdata::HINFO(val) => ResourceRecord {
@@ -126,7 +126,7 @@ impl ResourceRecord {
                 rtype: Rrtype::HINFO,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::HINFO(val),
             },
             Rdata::MX(val) => ResourceRecord {
@@ -134,7 +134,7 @@ impl ResourceRecord {
                 rtype: Rrtype::MX,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::MX(val),
             },
             Rdata::TXT(val) => ResourceRecord {
@@ -142,7 +142,7 @@ impl ResourceRecord {
                 rtype: Rrtype::TXT,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::TXT(val),
             },
             Rdata::AAAA(val) => ResourceRecord {
@@ -150,7 +150,7 @@ impl ResourceRecord {
                 rtype: Rrtype::AAAA,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::AAAA(val),
             },
             Rdata::OPT(val) => ResourceRecord {
@@ -158,7 +158,7 @@ impl ResourceRecord {
                 rtype: Rrtype::OPT,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::OPT(val),
             },
             Rdata::DS(val) => ResourceRecord {
@@ -166,7 +166,7 @@ impl ResourceRecord {
                 rtype: Rrtype::DS,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::DS(val),
             },
             Rdata::RRSIG(val) => ResourceRecord {
@@ -174,7 +174,7 @@ impl ResourceRecord {
                 rtype: Rrtype::RRSIG,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::RRSIG(val),
             },
             Rdata::NSEC(val) => ResourceRecord {
@@ -182,7 +182,7 @@ impl ResourceRecord {
                 rtype: Rrtype::NSEC,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::NSEC(val),
             },
             Rdata::DNSKEY(val) => ResourceRecord {
@@ -190,7 +190,7 @@ impl ResourceRecord {
                 rtype: Rrtype::DNSKEY,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::DNSKEY(val),
             },
             Rdata::NSEC3(val) => ResourceRecord {
@@ -198,7 +198,7 @@ impl ResourceRecord {
                 rtype: Rrtype::NSEC3,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::NSEC3(val),
             },
             Rdata::NSEC3PARAM(val) => ResourceRecord {
@@ -206,7 +206,7 @@ impl ResourceRecord {
                 rtype: Rrtype::NSEC3PARAM,
                 rclass: Rclass::IN,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::NSEC3PARAM(val),
             },
             Rdata::TSIG(val) => ResourceRecord {
@@ -214,7 +214,7 @@ impl ResourceRecord {
                 rtype: Rrtype::TSIG,
                 rclass: Rclass::ANY,
                 ttl: 0 as u32,
-                rdlength: 0 as u16,
+                rdlength: val.to_bytes().len() as u16,
                 rdata: Rdata::TSIG(val),
             },
             _ => ResourceRecord {

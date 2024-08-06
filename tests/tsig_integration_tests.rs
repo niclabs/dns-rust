@@ -147,7 +147,8 @@ async fn tsig_signature() {
     // se instancia un socket cliente que enviará y  mensajes
     let client_sock = UdpSocket::bind("127.0.0.1:8001").expect("Nothing");
     // El cliente firma el mensaje para enviar al servidor. Se guarda el mac de la firma
-    let mac =  sign_tsig(&mut dns_query_message, key, alg_name, fudge, time_signed, name.to_string(), vec![]);
+    sign_tsig(&mut dns_query_message, key, alg_name, fudge, time_signed, name.to_string(), vec![]);
+    let mac = dns_query_message.get_mac();
     let buf = dns_query_message.to_bytes();
     client_sock.send_to(&buf,"127.0.0.1:8002").unwrap();
     println!("Mensaje enviado");

@@ -15,12 +15,15 @@ use crate::message::question::Question;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::opt_rdata::OptRdata;
+use crate::tsig;
+use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
 use resource_record::ToBytes;
 use core::fmt;
 use std::vec::Vec;
+use std::time::SystemTime;
 
 #[derive(Clone)]
 /// Structs that represents a DNS message.
@@ -286,6 +289,51 @@ impl DnsMessage {
         self.update_header_counters();
     }
 
+    /// Adds Tsig to the message.
+    /// 
+    /// # Example
+    /// ```
+    /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// let key = vec![1, 2, 3, 4, 5, 6, 7, 8];
+    /// let alg_name = TsigAlgorithm::HmacSha1;
+    /// let fudge = 300;
+    /// let key_name = "key".to_string();
+    /// let mac_request = vec![];
+    /// dns_query_message.add_tsig(key, alg_name, fudge, key_name, mac_request);
+    /// ```
+    pub fn add_tsig(&mut self, key: Vec<u8>, alg_name: TsigAlgorithm, 
+        fudge: u16, key_name: String, mac_request: Vec<u8>) {
+        let message = self;
+        let time_signed = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+        tsig::sign_tsig(message, &key, alg_name, 
+                                        fudge, time_signed, key_name, mac_request);
+    }
+
+    /// Gets the MAC from the TSIG RR.
+    /// 
+    /// # Example
+    /// ```
+    /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// let key = vec![1, 2, 3, 4, 5, 6, 7, 8];
+    /// let alg_name = TsigAlgorithm::HmacSha1;
+    /// let fudge = 300;
+    /// let key_name = "key".to_string();
+    /// let mac_request = vec![];
+    /// dns_query_message.add_tsig(key, alg_name, fudge, key_name, mac_request);
+    /// let mac = dns_query_message.get_mac();
+    /// ```
+    pub fn get_mac(&self) -> Vec<u8> {
+        let mut mac = Vec::new();
+        let additional = self.get_additional();
+
+        for rr in additional {
+            if let Rdata::TSIG(tsig_rdata) = rr.get_rdata() {
+                mac = tsig_rdata.get_mac();
+            }
+        }
+
+        mac
+    }
 
     /// Creates a new axfr query message.
     /// 

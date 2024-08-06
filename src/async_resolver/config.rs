@@ -3,6 +3,7 @@ use crate::client::client_connection::ConnectionProtocol;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
+use std::io::SeekFrom;
 use std::option;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
@@ -276,6 +277,21 @@ impl ResolverConfig {
         self.key = key;
         if let Some(algorithm) = algorithm {
             self.algorithm = algorithm;
+        }
+    }
+
+    /// add tsig from the resolver to a dns message
+    /// 
+    /// # Examples
+    /// ```
+    /// let mut resolver_config = ResolverConfig::default();
+    /// resolver_config.add_tsig("keyname".to_string(), b"key".to_vec(), Some(TsigAlgorithm::HmacSha256));
+    /// let message = Message::new();
+    /// resolver_config.add_tsig_to_message(&message, 300, vec![]);
+    /// ```
+    pub fn add_tsig_to_message(&self, message: &mut DnsMessage, fudge: u16, mac_request: Vec<u8>) {
+        if self.tsig {
+            message.add_tsig(self.key.clone(), self.algorithm.clone(), fudge, self.key_name.clone(), mac_request);
         }
     }
 }

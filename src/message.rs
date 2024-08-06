@@ -302,11 +302,11 @@ impl DnsMessage {
     /// dns_query_message.add_tsig(key, alg_name, fudge, key_name, mac_request);
     /// ```
     pub fn add_tsig(&mut self, key: Vec<u8>, alg_name: TsigAlgorithm, 
-        fudge: u16, key_name: String, mac_request: Vec<u8>) {
+        fudge: u16, key_name: Option<String>, mac_request: Vec<u8>) {
         let message = self;
         let time_signed = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
         tsig::sign_tsig(message, &key, alg_name, 
-                                        fudge, time_signed, key_name, mac_request);
+                                        fudge, time_signed, key_name.unwrap_or("".to_string()), mac_request);
     }
 
     /// Gets the MAC from the TSIG RR.

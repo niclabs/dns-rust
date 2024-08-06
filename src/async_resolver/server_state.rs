@@ -28,6 +28,18 @@ impl ServerState {
         }
     }
 
+    /// Increments the `current_server_index` of the request.
+    /// 
+    /// It it used when the resolver must query the next name server in the list.
+    pub fn increment_current_server_index(&mut self) {
+        self.current_server_index = (self.current_server_index + 1)%(self.name_servers.len());
+    }   
+
+    /// Returns a refererece to the current `ServerInfo` of the request.
+    pub fn get_current_server(&self) -> &ServerInfo {
+        return &self.name_servers[self.current_server_index];
+    }
+
     /// Returns a reference to the `name_servers` of the request.
     pub fn get_name_servers(&self) -> &Vec<ServerInfo> {
         return &self.name_servers;

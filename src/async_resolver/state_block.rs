@@ -1,5 +1,7 @@
 use tokio::time::Instant;
+
 use crate::async_resolver::server_state::ServerState;
+use super::server_info::ServerInfo;
 
 /// This struct represent the state of information of a pending request.
 /// 
@@ -26,7 +28,7 @@ pub struct StateBlock {
     /// be decremented each time the resolver performs work on behalf of
     /// the request. If the counter reaches zero, the resolver must
     /// return a response to the client.
-    request_global_counter: u32,
+    work_counter: u32,
 
     server_state: ServerState,
 }
@@ -41,15 +43,15 @@ impl StateBlock {
     /// ```
     /// let state_block = StateBlock::new(Instant::now());
     /// ```
-    pub fn new(request_global_limit: u32) -> StateBlock {
+    pub fn new(request_global_limit: u32, servers: Vec<ServerInfo>) -> StateBlock {
         StateBlock {
             timestamp: Instant::now(),
-            request_global_counter: request_global_limit,
-            server_state: ServerState::new(vec![]),
+            work_counter: request_global_limit,
+            server_state: ServerState::new(servers),
         }
     }
 
-    /// Decrements the `request_global_counter` of the request.
+    /// Decrements the `work_counter` of the request.
     /// 
     /// This function should be called each time the resolver performs work on behalf
     /// of the request. If the counter passes zero, the request is terminated with a 
@@ -58,10 +60,10 @@ impl StateBlock {
     /// # Example
     /// ```
     /// let mut state_block = StateBlock::new(Instant::now());
-    /// state_block.decrement_request_global_counter();
+    /// state_block.decrement_work_counter();
     /// ```
-    pub fn decrement_request_global_counter(&mut self) {
-        self.request_global_counter -= 1;
+    pub fn decrement_work_counter(&mut self) {
+        self.work_counter -= 1;
 
         // TODO: Implement the logic to terminate the request if the counter reaches zero.
     }
@@ -71,8 +73,12 @@ impl StateBlock {
         return &self.timestamp;
     }
 
-    /// Returns a the `request_global_counter` of the request.
-    pub fn get_request_global_counter(&self) -> u32 {
-        return self.request_global_counter;
+    /// Returns a the `work_counter` of the request.
+    pub fn get_work_counter(&self) -> u32 {
+        return self.work_counter;
+    }
+
+    pub fn get_server_state(&self) -> &ServerState {
+        &self.server_state
     }
 }

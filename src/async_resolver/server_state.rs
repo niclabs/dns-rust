@@ -1,4 +1,5 @@
 use crate::async_resolver::server_info::ServerInfo;
+use crate::async_resolver::server_entry::ServerEntry;
 
 /// Struct that holds the state of the queried server for a single request.
 /// 
@@ -6,7 +7,7 @@ use crate::async_resolver::server_info::ServerInfo;
 /// currently trying to query. This structure keeps track of the state of a 
 /// request if it must wait for answers from other name servers.
 pub struct ServerState {
-    name_servers: Vec<ServerInfo>,
+    servers: Vec<ServerEntry>,
     current_server_index: usize,
 }
 
@@ -14,16 +15,16 @@ impl ServerState {
     /// Creates a new ServerState for a request.
     /// 
     /// # Arguments
-    /// * `name_servers` - A vector of ServerInfo structs that represent the name servers to query.
+    /// * `servers` - A vector of ServerInfo structs that represent the name servers to query.
     /// 
     /// # Example
     /// ```
     /// let server_state = ServerState::new(vec![ServerInfo::new("
     /// 
     /// ```
-    pub fn new(name_servers: Vec<ServerInfo>) -> ServerState {
+    pub fn new(servers: Vec<ServerInfo>) -> ServerState {
         ServerState {
-            name_servers: name_servers,
+            servers: servers.into_iter().map(ServerEntry::new).collect(),
             current_server_index: 0,
         }
     }
@@ -32,16 +33,20 @@ impl ServerState {
     /// 
     /// It it used when the resolver must query the next name server in the list.
     pub fn increment_current_server_index(&mut self) {
-        self.current_server_index = (self.current_server_index + 1)%(self.name_servers.len());
+        self.current_server_index = (self.current_server_index + 1)%(self.servers.len());
     }   
 
     /// Returns a refererece to the current `ServerInfo` of the request.
     pub fn get_current_server(&self) -> &ServerInfo {
-        return &self.name_servers[self.current_server_index];
+        return &self.servers[self.current_server_index].get_info();
     }
 
-    /// Returns a reference to the `name_servers` of the request.
-    pub fn get_name_servers(&self) -> &Vec<ServerInfo> {
-        return &self.name_servers;
+    pub fn get_current_server_entry(&mut self) -> &mut ServerEntry {
+        &mut self.servers[self.current_server_index]
+    }
+
+    /// Returns a reference to the `servers` of the request.
+    pub fn get_servers(&self) -> &Vec<ServerEntry> {
+        &self.servers
     }
 }

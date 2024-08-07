@@ -287,9 +287,9 @@ impl ResolverConfig {
     /// let message = Message::new();
     /// resolver_config.add_tsig_to_message(&message, 300, vec![]);
     /// ```
-    pub fn add_tsig_to_message(&self, message: &mut DnsMessage, fudge: u16, mac_request: Vec<u8>) {
+    pub fn add_tsig_to_message(&self, message: &mut DnsMessage, fudge: Option<u16>, mac_request: Vec<u8>) {
         if self.tsig {
-            message.add_tsig(self.key.clone(), self.algorithm.clone(), fudge, self.key_name.clone(), mac_request);
+            message.add_tsig(self.key.clone(), self.algorithm.clone(), fudge.unwrap_or(300), self.key_name.clone(), mac_request);
         }
     }
 }

@@ -365,6 +365,22 @@ impl ResolverConfig {
     pub fn get_ends0_options(&self) -> Vec<u16> {
         self.ends0_options.clone()
     }
+
+    pub fn get_tsig(&self) -> bool {
+        self.tsig
+    }
+
+    pub fn get_key_name(&self) -> Option<String> {
+        self.key_name.clone()
+    }
+
+    pub fn get_key(&self) -> Vec<u8> {
+        self.key.clone()
+    }
+
+    pub fn get_algorithm(&self) -> TsigAlgorithm {
+        self.algorithm.clone()
+    }
 }
 
 ///Setters
@@ -436,6 +452,22 @@ impl ResolverConfig{
 
     pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
         self.ends0_options = ends0_options;
+    }
+
+    pub fn set_tsig(&mut self, tsig: bool) {
+        self.tsig = tsig;
+    }
+
+    pub fn set_key_name(&mut self, key_name: Option<String>) {
+        self.key_name = key_name;
+    }
+
+    pub fn set_key(&mut self, key: Vec<u8>) {
+        self.key = key;
+    }
+
+    pub fn set_algorithm(&mut self, algorithm: TsigAlgorithm) {
+        self.algorithm = algorithm;
     }
 }
 

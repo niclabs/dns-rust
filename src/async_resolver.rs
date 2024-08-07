@@ -313,7 +313,6 @@ impl AsyncResolver {
     /// answer section, it is always preferred.
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
-        let rcode = response.get_header().get_rcode();
         {
             let mut cache = self.cache.lock().unwrap();
             cache.timeout();
@@ -2005,7 +2004,6 @@ mod async_resolver_test {
 
         resolver.save_negative_answers(dns_response.clone());
 
-        let rrtype_search = Rrtype::A;
         assert_eq!(dns_response.get_answer().len(), 0);
         assert_eq!(dns_response.get_additional().len(), 1);
         assert_eq!(

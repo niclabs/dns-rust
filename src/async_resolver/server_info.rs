@@ -76,6 +76,11 @@ impl ServerInfo {
         self.tsig = true;
     }
 
+    /// Function to disable tsig.
+    pub fn disable_tsig(&mut self) {
+        self.tsig = false;
+    }
+
     /// Implements get_ip_address
     /// Returns IpAddr.
     pub fn get_ip_addr(&self) -> IpAddr {
@@ -98,6 +103,11 @@ impl ServerInfo {
         self.port = port;
     }
     
+    /// Get the tsig of the server.
+    pub fn get_tsig(&self) -> bool {
+        self.tsig
+    }
+
     /// Get the key of the server.
     pub fn get_key(&self) -> &str {
         &self.key

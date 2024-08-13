@@ -1,8 +1,8 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
 use crate::message::DnsMessage;
+use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
-use std::option;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 use super::server_info::ServerInfo;
@@ -73,6 +73,14 @@ pub struct ResolverConfig {
     ends0_flags: u16,
     /// edns0 options for the resolver.
     ends0_options: Vec<u16>,
+    /// This is whether tsig is enabled or not.
+    tsig: bool,
+    /// This is the tsig keyname for the resolver.
+    key_name: Option<String>,
+    /// This is the tsig key for the resolver.
+    key: Vec<u8>,
+    /// algorithm for the tsig key
+    algorithm: TsigAlgorithm,
 }
 
 impl ResolverConfig {
@@ -113,6 +121,10 @@ impl ResolverConfig {
             ends0_version: 0,
             ends0_flags: 0,
             ends0_options: Vec::new(),
+            tsig: false,
+            key_name: None,
+            key: Vec::new(),
+            algorithm: TsigAlgorithm::HmacSha256,
         };
         resolver_config
     }
@@ -154,6 +166,10 @@ impl ResolverConfig {
             ends0_version: 0,
             ends0_flags: 0,
             ends0_options: Vec::new(),
+            tsig: false,
+            key_name: None,
+            key: Vec::new(),
+            algorithm: TsigAlgorithm::HmacSha256,
         };
         resolver_config
     }
@@ -245,6 +261,38 @@ impl ResolverConfig {
             message.add_edns0(Some(self.get_max_payload()), self.get_ends0_version(), self.get_ends0_flags(), Some(self.get_ends0_options()));
         }
     }
+
+    /// add tsig to the resolver
+    /// 
+    /// # Examples
+    /// ```
+    /// let mut resolver_config = ResolverConfig::default();
+    /// resolver_config.add_tsig("keyname".to_string(), b"key".to_vec(), Some(TsigAlgorithm::HmacSha256));
+    /// ```
+    pub fn add_tsig(&mut self, key_name: String, key: Vec<u8>, algorithm: Option<TsigAlgorithm>) {
+        self.tsig = true;
+        self.key_name = Some(key_name);
+        self.key = key;
+        if let Some(algorithm) = algorithm {
+            self.algorithm = algorithm;
+        }
+    }
+
+    /// add tsig from the resolver to a dns message
+    /// 
+    /// # Examples
+    /// ```
+    /// let mut resolver_config = ResolverConfig::default();
+    /// resolver_config.add_tsig("keyname".to_string(), b"key".to_vec(), Some(TsigAlgorithm::HmacSha256));
+    /// let message = Message::new();
+    /// resolver_config.add_tsig_to_message(&message, 300, vec![]);
+    /// ```
+    pub fn add_tsig_to_message(&self, message: &mut DnsMessage, fudge: Option<u16>, mac_request: Option<Vec<u8>>) {
+        if self.tsig {
+            message.add_tsig(self.key.clone(), self.algorithm.clone(), 
+            fudge.unwrap_or(300), self.key_name.clone(), mac_request.unwrap_or(Vec::new()));
+        }
+    }
 }
 
 ///Getters
@@ -317,6 +365,22 @@ impl ResolverConfig {
     pub fn get_ends0_options(&self) -> Vec<u16> {
         self.ends0_options.clone()
     }
+
+    pub fn get_tsig(&self) -> bool {
+        self.tsig
+    }
+
+    pub fn get_key_name(&self) -> Option<String> {
+        self.key_name.clone()
+    }
+
+    pub fn get_key(&self) -> Vec<u8> {
+        self.key.clone()
+    }
+
+    pub fn get_algorithm(&self) -> TsigAlgorithm {
+        self.algorithm.clone()
+    }
 }
 
 ///Setters
@@ -388,6 +452,22 @@ impl ResolverConfig{
 
     pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
         self.ends0_options = ends0_options;
+    }
+
+    pub fn set_tsig(&mut self, tsig: bool) {
+        self.tsig = tsig;
+    }
+
+    pub fn set_key_name(&mut self, key_name: Option<String>) {
+        self.key_name = key_name;
+    }
+
+    pub fn set_key(&mut self, key: Vec<u8>) {
+        self.key = key;
+    }
+
+    pub fn set_algorithm(&mut self, algorithm: TsigAlgorithm) {
+        self.algorithm = algorithm;
     }
 }
 

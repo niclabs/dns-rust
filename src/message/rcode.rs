@@ -11,6 +11,9 @@ pub enum Rcode {
     NXDOMAIN,
     NOTIMP,
     REFUSED,
+    BADSIG,
+    BADKEY,
+    BADTIME,
     UNKNOWN(u8),
 }
 
@@ -23,6 +26,9 @@ impl From<u8> for Rcode {
             3 => Rcode::NXDOMAIN,
             4 => Rcode::NOTIMP,
             5 => Rcode::REFUSED,
+            16 => Rcode::BADSIG,
+            17 => Rcode::BADKEY,
+            18 => Rcode::BADTIME,
             _ => Rcode::UNKNOWN(int),
         }
     }
@@ -37,6 +43,9 @@ impl From<Rcode> for u8 {
             Rcode::NXDOMAIN => 3,
             Rcode::NOTIMP => 4,
             Rcode::REFUSED => 5,
+            Rcode::BADSIG => 16,
+            Rcode::BADKEY => 17,
+            Rcode::BADTIME => 18,
             Rcode::UNKNOWN(u8) => u8,
         }
     }
@@ -69,6 +78,9 @@ impl fmt::Display for Rcode {
             Rcode::NXDOMAIN => "NXDOMAIN",
             Rcode::NOTIMP => "NOTIMP",
             Rcode::REFUSED => "REFUSED",
+            Rcode::BADSIG => "BADSIG",
+            Rcode::BADKEY => "BADKEY",
+            Rcode::BADTIME => "BADTIME",
             Rcode::UNKNOWN(_) => "UNKNOWN",
         })
     }

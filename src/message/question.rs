@@ -4,6 +4,8 @@ use crate::message::rclass::Rclass;
 
 use super::rrtype::Rrtype;
 
+use std::fmt;
+
 #[derive(Default, Clone)]
 /// An struct that represents the question section from a dns message
 /// ```text
@@ -27,6 +29,20 @@ pub struct Question {
     rrtype: Rrtype,
     // class of query
     rclass: Rclass,
+}
+
+
+impl fmt::Display for Question {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let name = self.get_qname().get_name();
+        let rtype = self.get_rrtype();
+        let rclass = self.get_rclass();
+                                                                                                  
+        formatter.write_fmt(format_args!(
+            "{}  {}  {} ",
+            name, rclass, rtype
+        ))
+    }
 }
 
 // Methods

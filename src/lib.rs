@@ -5,7 +5,5 @@ pub mod domain_name;
 pub mod message;
 pub mod async_resolver;
 pub mod truncated_dns_message;
-
-
-
-
+pub mod tsig;
+pub mod dnssec;

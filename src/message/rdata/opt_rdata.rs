@@ -53,6 +53,7 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
                 return Err("Format Error");
             }
 
+
             let option_code = OptionCode::from(u16::from_be_bytes([bytes[i], bytes[i + 1]]));
             let option_length = u16::from_be_bytes([bytes[i + 2], bytes[i + 3]]);
 

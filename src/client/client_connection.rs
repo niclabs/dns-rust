@@ -1,8 +1,15 @@
 use crate::message::DnsMessage;
 use std::net::IpAddr;
 use tokio::time::Duration;
-use async_trait::async_trait;
 use super::client_error::ClientError;
+
+use tokio::net::TcpStream;
+use tokio_rustls::rustls::{ClientConfig, ServerName};
+use tokio_rustls::TlsConnector;
+use std::sync::Arc;
+use webpki::DNSNameRef;
+use async_trait::async_trait;
+
 
 #[async_trait]
 pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin 

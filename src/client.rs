@@ -9,6 +9,9 @@ use crate::client::client_connection::ClientConnection;
 use crate::message::DnsMessage;
 use crate::domain_name::DomainName;
 
+
+use rustls::Connection;
+use rustls::ClientConfig;
 use rand::{thread_rng, Rng};
 
 use self::client_error::ClientError;
@@ -42,6 +45,7 @@ impl <T: ClientConnection> Client<T> {
     /// ```
     pub fn new(conn: T) -> Self {
 
+        
         let client = Client {
             conn: conn,
             dns_query:  DnsMessage::new(),

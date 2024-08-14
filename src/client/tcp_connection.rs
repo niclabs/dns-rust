@@ -5,6 +5,7 @@ use crate::message::rdata::a_rdata::ARdata;
 use crate::message::resource_record::ResourceRecord;
 use super::client_error::ClientError;
 use async_trait::async_trait;
+use webpki::DNSNameRef;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
 use tokio::io::AsyncWriteExt;
@@ -14,6 +15,10 @@ use std::net::IpAddr;
 use std::net::SocketAddr;
 use tokio::time::Duration;
 use tokio::time::timeout;
+use tokio_rustls::rustls::ClientConfig;
+use tokio_rustls::TlsConnector;
+use std::sync::Arc;
+use webpki::DnsNameRef;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClientTCPConnection {
@@ -46,7 +51,7 @@ impl ClientConnection for ClientTCPConnection {
         
         let conn_timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
-        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
+        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 853);
 
         // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
         let conn_task = TcpStream::connect(&server_addr);
@@ -60,6 +65,19 @@ impl ClientConnection for ClientTCPConnection {
         let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
         
+        //get domain name
+        let server_name = dns_query.get_question().get_qname().get_name();
+        let dns_name = DnsNameRef::try_from_ascii_str(&server_name);
+        if dns_name.is_err() {
+            return Err(ClientError::Io(IoError::new(ErrorKind::InvalidInput, format!("Error: invalid domain name"))).into());
+        }
+
+        let mut config = ClientConfig::builder();
+        config.root_hint_subjects.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+        let config = Arc::new(config);
+
+        let dns_name = dns_name.unwrap();
+        let connector = TlsConnector::from(Arc::new(config));
         // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
 
         // stream.write(&full_msg)?;

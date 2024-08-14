@@ -3,11 +3,6 @@ use std::net::IpAddr;
 use tokio::time::Duration;
 use super::client_error::ClientError;
 
-use tokio::net::TcpStream;
-use tokio_rustls::rustls::{ClientConfig, ServerName};
-use tokio_rustls::TlsConnector;
-use std::sync::Arc;
-use webpki::DNSNameRef;
 use async_trait::async_trait;
 
 

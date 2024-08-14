@@ -23,6 +23,8 @@ base64 = "0.22.1"
 tokio-tls = "0.3.1"
 lru = "0.12.3"
 rustls = "0.23.12"
-
+openssl = "0.10.66"
+tokio-rustls = "0.26.0"
+webpki = "0.22.4"
 [lib]
 doctest = false

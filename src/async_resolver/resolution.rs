@@ -4,7 +4,10 @@ use crate::message::DnsMessage;
 use crate::client::client_connection::ClientConnection;
 use super::lookup_response::LookupResponse;
 use super::resolver_error::ResolverError;
+use super::{server_entry, server_info, state_block};
 use super::server_info::ServerInfo;
+use super::state_block::StateBlock;
+use std::iter::StepBy;
 use std::sync::{Mutex,Arc};
 use std::time::Instant;
 use crate::client::client_connection::ConnectionProtocol;
@@ -27,6 +30,8 @@ pub struct Resolution {
     config: ResolverConfig,
     /// Reference to the response of the query.
     response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+    // state_block: Arc<Mutex<StateBlock>>,
+    state_block: StateBlock
 }
     
 impl Resolution {
@@ -37,10 +42,14 @@ impl Resolution {
         config: ResolverConfig,
         
     ) -> Self {
+        let request_global_limit = config.get_global_retransmission_limit();
+        let servers = config.get_name_servers();
         Self { 
             query: query,
             config: config,
             response_msg: Arc::new(Mutex::new(Err(ResolverError::EmptyQuery))), 
+            // state_block: Arc::new(Mutex::new(StateBlock::new(request_global_limit, servers))),
+            state_block: StateBlock::new(request_global_limit, servers)
         }
     }
 
@@ -71,21 +80,28 @@ impl Resolution {
 
         let granularity = end.duration_since(start).as_secs_f64() + end.duration_since(start).subsec_nanos() as f64 * 1e-9;
 
-
         // The resolver cycles through servers and at the end of a cycle, backs off 
         // the timeout exponentially.
         let mut iter = 0..upper_limit_of_retransmission_loops;
         'global_cycle: while let Some(_retransmission) = iter.next() {
-            let servers_to_query = config.get_name_servers();  
-            let mut servers_iter = servers_to_query.iter();
+            println!("Retransmission: {}", _retransmission);
+            let number_of_servers = self.state_block.get_server_state().get_servers().len();
 
-            while let Some(server_info) = servers_iter.next() {
+            for _ in 0..number_of_servers {
+                println!("Server retrans");
+                let server_state = self.state_block.get_server_state();
+                let server_entry_clone = server_state.get_current_server_entry().clone();
+                if !server_entry_clone.is_active() { continue; }
+
                 //start timer
                 let start = Instant::now();
+
+                // let server_info = server_entry_.get_info();
                 lookup_response_result = self.transmit_query_to_server(
-                    server_info, 
+                    server_entry_clone.get_info(), 
                     timeout_duration
                 ).await;
+
                 //end timer
                 let end = Instant::now();
 
@@ -93,9 +109,34 @@ impl Resolution {
                 rttvar = (1.0 - 0.25) * rttvar + 0.25 * (rtt.as_secs_f64() - srtt).abs();
                 srtt = (1.0 - 0.125) * srtt + 0.125 * rtt.as_secs_f64();
                 rto = srtt + granularity.max(4.0 * rttvar) ;
-                timeout_duration = tokio::time::Duration::from_secs_f64(rto);
+                timeout_duration = tokio::time::Duration::from_secs_f64(rto);   
+
                 if self.received_appropriate_response() { break 'global_cycle }
+
+                self.state_block.get_server_state().get_current_server_entry().increment_retransmissions();
+                self.state_block.get_server_state().increment_current_server_index();
             }
+
+            // // let mut servers_iter: std::slice::Iter<super::server_entry::ServerEntry> = servers_to_query.iter();
+
+            // while let Some(server_entry) = servers_iter.next() {
+
+            //     //start timer
+            //     let start = Instant::now();
+            //     lookup_response_result = self.transmit_query_to_server(
+            //         server_entry, 
+            //         timeout_duration
+            //     ).await;
+            //     //end timer
+            //     let end = Instant::now();
+
+            //     let rtt = end.duration_since(start);
+            //     rttvar = (1.0 - 0.25) * rttvar + 0.25 * (rtt.as_secs_f64() - srtt).abs();
+            //     srtt = (1.0 - 0.125) * srtt + 0.125 * rtt.as_secs_f64();
+            //     rto = srtt + granularity.max(4.0 * rttvar) ;
+            //     timeout_duration = tokio::time::Duration::from_secs_f64(rto);
+            //     if self.received_appropriate_response() { break 'global_cycle }
+            // }
 
             // Exponencial backoff
 
@@ -234,6 +275,10 @@ impl Resolution {
             |dns_msg| Ok(LookupResponse::new(dns_msg))
         )
     }
+
+    // fn get_state_block(&mut self) -> &StateBlock {
+    //     &self.state_block
+    // }
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.
@@ -358,6 +403,7 @@ mod async_resolver_test {
      
     #[tokio::test]
     async fn transmit_query_to_server_a_response() {
+        println!("transmit_query_to_server_a_response   inittt");
         let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
 
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));

@@ -6,6 +6,7 @@ use crate::async_resolver::server_entry::ServerEntry;
 /// A structure which describes the name servers which the resolver is 
 /// currently trying to query. This structure keeps track of the state of a 
 /// request if it must wait for answers from other name servers.
+#[derive(Clone)]
 pub struct ServerState {
     servers: Vec<ServerEntry>,
     current_server_index: usize,
@@ -36,10 +37,10 @@ impl ServerState {
         self.current_server_index = (self.current_server_index + 1)%(self.servers.len());
     }   
 
-    /// Returns a refererece to the current `ServerInfo` of the request.
-    pub fn get_current_server(&self) -> &ServerInfo {
-        return &self.servers[self.current_server_index].get_info();
-    }
+    // /// Returns a refererece to the current `ServerInfo` of the request.
+    // pub fn get_current_server(&self) -> &ServerInfo {
+    //     return &self.servers[self.current_server_index].get_info();
+    // }
 
     pub fn get_current_server_entry(&mut self) -> &mut ServerEntry {
         &mut self.servers[self.current_server_index]

@@ -13,6 +13,7 @@ use super::server_info::ServerInfo;
 /// 
 /// The key algorithm uses the state information of the request to select the 
 /// next name server address to query.
+#[derive(Clone)]
 pub struct StateBlock {
     /// A timestamp indicating the time the request began.
     /// 
@@ -28,7 +29,7 @@ pub struct StateBlock {
     /// be decremented each time the resolver performs work on behalf of
     /// the request. If the counter reaches zero, the resolver must
     /// return a response to the client.
-    work_counter: u32,
+    work_counter: u16,
 
     server_state: ServerState,
 }
@@ -43,7 +44,7 @@ impl StateBlock {
     /// ```
     /// let state_block = StateBlock::new(Instant::now());
     /// ```
-    pub fn new(request_global_limit: u32, servers: Vec<ServerInfo>) -> StateBlock {
+    pub fn new(request_global_limit: u16, servers: Vec<ServerInfo>) -> StateBlock {
         StateBlock {
             timestamp: Instant::now(),
             work_counter: request_global_limit,
@@ -74,11 +75,11 @@ impl StateBlock {
     }
 
     /// Returns a the `work_counter` of the request.
-    pub fn get_work_counter(&self) -> u32 {
+    pub fn get_work_counter(&self) -> u16 {
         return self.work_counter;
     }
 
-    pub fn get_server_state(&self) -> &ServerState {
-        &self.server_state
+    pub fn get_server_state(&mut self) -> &mut ServerState {
+        &mut self.server_state
     }
 }

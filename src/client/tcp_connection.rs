@@ -84,18 +84,24 @@ impl ClientConnection for ClientTCPConnection {
         let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
         
         //get domain name
-        let server_name = dns_query.get_question().get_qname().get_name();
-        let dns_name = DnsNameRef::try_from_ascii_str(&server_name);
+        let domain_name = dns_query.get_question().get_qname().get_name();
+        let dns_name = DnsNameRef::try_from_ascii_str(&domain_name);
         if dns_name.is_err() {
             return Err(ClientError::Io(IoError::new(ErrorKind::InvalidInput, format!("Error: invalid domain name"))).into());
         }
 
-        let mut config = ClientConfig::builder();
-        config.root_hint_subjects.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-        let config = Arc::new(config);
+        let root_store = rustls::RootCertStore::from_iter(
+            webpki_roots::TLS_SERVER_ROOTS
+                .iter()
+                .cloned(),
+        );
+        let config = rustls::ClientConfig::builder().with_root_certificates(root_store).with_no_client_auth();
+        let rc_config = Arc::new(config);
+       
 
-        let dns_name = dns_name.unwrap();
-        let connector = TlsConnector::from(Arc::new(config));
+        let dns_name = domain_name;
+        let server_name =ServerName::try_from(dns_name).expect("invalid DNS name");
+        let connector = rustls::ClientConnection::new(rc_config, server_name);
         // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
 
         // stream.write(&full_msg)?;

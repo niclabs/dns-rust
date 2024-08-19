@@ -57,7 +57,7 @@ impl ClientConnection for ClientTCPConnection {
     async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError> {
     // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> {
         
-        let conn_timeout: Duration = self.get_timeout();
+        
         let bytes: Vec<u8> = dns_query.to_bytes();
         let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 853);
 
@@ -101,7 +101,13 @@ impl ClientConnection for ClientTCPConnection {
 
         let dns_name = domain_name;
         let server_name =ServerName::try_from(dns_name).expect("invalid DNS name");
-        let connector = rustls::ClientConnection::new(rc_config, server_name);
+        let connector = rustls::ClientConnection::new(rc_config, server_name).unwrap();
+        let conn_timeout: Duration = self.get_timeout();
+        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 853);
+
+        // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
+        let conn_task = TcpStream::connect(&server_addr);
+        let mut stream: TcpStream = Stream::new(&connector, server_addr);
         // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
 
         // stream.write(&full_msg)?;

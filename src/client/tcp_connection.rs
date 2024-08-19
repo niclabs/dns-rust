@@ -5,9 +5,12 @@ use crate::message::rdata::a_rdata::ARdata;
 use crate::message::resource_record::ResourceRecord;
 use super::client_error::ClientError;
 use async_trait::async_trait;
-use webpki::DNSNameRef;
+use rustls::pki_types::ServerName;
+use webpki::DnsNameRef;
+use std::convert::TryFrom;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
+use std::iter::FromIterator;
 use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -18,7 +21,6 @@ use tokio::time::timeout;
 use tokio_rustls::rustls::ClientConfig;
 use tokio_rustls::TlsConnector;
 use std::sync::Arc;
-use webpki::DnsNameRef;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClientTCPConnection {
@@ -66,18 +68,24 @@ impl ClientConnection for ClientTCPConnection {
         let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
         
         //get domain name
-        let server_name = dns_query.get_question().get_qname().get_name();
-        let dns_name = DnsNameRef::try_from_ascii_str(&server_name);
+        let domain_name = dns_query.get_question().get_qname().get_name();
+        let dns_name = DnsNameRef::try_from_ascii_str(&domain_name);
         if dns_name.is_err() {
             return Err(ClientError::Io(IoError::new(ErrorKind::InvalidInput, format!("Error: invalid domain name"))).into());
         }
 
-        let mut config = ClientConfig::builder();
-        config.root_hint_subjects.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-        let config = Arc::new(config);
+        let root_store = rustls::RootCertStore::from_iter(
+            webpki_roots::TLS_SERVER_ROOTS
+                .iter()
+                .cloned(),
+        );
+        let config = rustls::ClientConfig::builder().with_root_certificates(root_store).with_no_client_auth();
+        let rc_config = Arc::new(config);
+       
 
-        let dns_name = dns_name.unwrap();
-        let connector = TlsConnector::from(Arc::new(config));
+        let dns_name = domain_name;
+        let server_name =ServerName::try_from(dns_name).expect("invalid DNS name");
+        let connector = rustls::ClientConnection::new(rc_config, server_name);
         // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
 
         // stream.write(&full_msg)?;

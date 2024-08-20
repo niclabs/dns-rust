@@ -107,7 +107,7 @@ impl ClientConnection for ClientTCPConnection {
 
         // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
         let conn_task = TcpStream::connect(&server_addr);
-        let mut stream: TcpStream = Stream::new(&connector, server_addr);
+        let mut stream: TcpStream = TcpStream::connect(server_addr).await?;
         // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
 
         // stream.write(&full_msg)?;

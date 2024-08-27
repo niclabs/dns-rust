@@ -9,6 +9,7 @@ use futures_util::TryFutureExt;
 use rustls::pki_types::ServerName;
 use rustls::server;
 use rustls::Stream;
+use rustls::RootCertStore;
 use webpki::DnsNameRef;
 use std::convert::TryFrom;
 use std::io::Error as IoError;
@@ -26,7 +27,7 @@ use tokio_rustls::TlsConnector;
 use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ClientTCPConnection {
+pub struct ClientTLSConnection {
     /// Client address
     server_addr: IpAddr,
     /// Read time timeout
@@ -34,11 +35,11 @@ pub struct ClientTCPConnection {
 }
 
 #[async_trait]
-impl ClientConnection for ClientTCPConnection {
+impl ClientConnection for ClientTLSConnection {
 
     /// Creates TCPConnection
     fn new(server_addr:IpAddr, timeout: Duration) -> Self {
-        ClientTCPConnection {
+        ClientTLSConnection {
             server_addr: server_addr,
             timeout: timeout,
         }
@@ -113,7 +114,7 @@ impl ClientConnection for ClientTCPConnection {
 }
 
 //Getters
-impl ClientTCPConnection {
+impl ClientTLSConnection {
 
     pub fn get_server_addr(&self)-> IpAddr {
         return self.server_addr.clone();
@@ -127,7 +128,7 @@ impl ClientTCPConnection {
 }
 
 //Setters
-impl ClientTCPConnection {
+impl ClientTLSConnection {
 
     pub fn set_server_addr(&mut self,addr :IpAddr) {
         self.server_addr = addr;
@@ -140,129 +141,7 @@ impl ClientTCPConnection {
 }
 
 #[cfg(test)]
-mod tcp_connection_test{
-    use super::*;
-    use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
-    use crate::domain_name::DomainName;
-    use crate::message::rrtype::Rrtype;
-    use crate::message::rclass::Rclass;
-
-    #[test]
-    fn create_tcp() {
-
-        // let domain_name = String::from("uchile.cl");
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let _port: u16 = 8088;
-        let timeout = Duration::from_secs(100);
-
-        let _conn_new = ClientTCPConnection::new(ip_addr,timeout);
-
-        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
-        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
-    }
-
-    #[test]
-    fn get_ip_v4(){
-        let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let timeout = Duration::from_secs(100);
-        let connection = ClientTCPConnection::new(ip_address, timeout);
-        //check if the ip is the same
-        assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
-    }
-
-    #[test]
-    fn get_ip_v6(){
-        // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
-        let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
-        let timeout = Duration::from_secs(100);
-        let connection = ClientTCPConnection::new(ip_address, timeout);
-        //check if the ip is the same
-        assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
-    }
-
-    //Setters and Getters test
-    #[test]
-    fn get_server_addr(){
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
-
-        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
-    }
-
-    #[test]
-    fn set_server_addr(){
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
-
-        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
-
-        _conn_new.set_server_addr(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
-
-        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
-    }
-
-    #[test]
-    fn get_timeout(){
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
-
-        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
-    }
-
-    #[test]
-    fn set_timeout(){
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
-
-        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
-
-        _conn_new.set_timeout(Duration::from_secs(200));
-
-        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(200));
-    }
-
-    #[tokio::test]
-    async fn send_query_tcp(){
-
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
-        let _port: u16 = 8088;
-        let timeout = Duration::from_secs(2);
-
-        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
-        let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
-        let dns_query =
-        DnsMessage::new_query_message(
-            domain_name,
-            Rrtype::A,
-            Rclass::IN,
-            0,
-            false,
-            1);
-        let response = conn_new.send(dns_query).await.unwrap();
-        // let (response, _ip) = conn_new.send(dns_query).await.unwrap();
-        
-        assert!(DnsMessage::from_bytes(&response).unwrap().get_answer().len() > 0); 
-        // FIXME:
-    }
-
-    #[tokio::test]
-    async fn send_timeout() {
-        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let _port: u16 = 8088;
-        let timeout = Duration::from_secs(2);
-
-        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
-        let dns_query = DnsMessage::new();
-        let response = conn_new.send(dns_query).await;
-
-        assert!(response.is_err());
-    }
-
-
-
+mod tls_connection_test{
+   
 
 }

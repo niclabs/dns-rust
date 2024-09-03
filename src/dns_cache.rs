@@ -43,7 +43,7 @@ impl DnsCache {
     pub fn new(max_size: Option<NonZeroUsize>) -> Self {
         let cache = DnsCache {
             cache: LruCache::new(max_size.unwrap_or_else(|| NonZeroUsize::new(1667).unwrap())),
-            max_size: max_size.unwrap_or_else(|| NonZeroUsize::new(100).unwrap()),
+            max_size: max_size.unwrap_or_else(|| NonZeroUsize::new(1667).unwrap()),
         };
         cache
     }

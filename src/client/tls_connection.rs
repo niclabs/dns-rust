@@ -54,7 +54,11 @@ impl ClientConnection for ClientTLSConnection {
     /// creates socket tcp, sends query and receive response
     async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError> {
         // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> {
-            
+            let root_store = RootCertStore::empty();
+            let mut roots = rustls::RootCertStore::empty();
+            for cert in rustls_native_certs::load_native_certs().expect("could not load platform certs") {
+                roots.add(cert).unwrap();
+            }
             let conn_timeout: Duration = self.get_timeout();
             let bytes: Vec<u8> = dns_query.to_bytes();
             let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);

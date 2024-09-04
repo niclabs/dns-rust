@@ -27,5 +27,6 @@ openssl = "0.10.66"
 tokio-rustls = "0.26.0"
 webpki = "0.22.4"
 webpki-roots = "0.26.3"
+rustls-native-certs = "0.8.0"
 [lib]
 doctest = false

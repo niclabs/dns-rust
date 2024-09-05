@@ -3,6 +3,7 @@ use crate::message::DnsMessage;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::a_rdata::ARdata;
 use crate::message::resource_record::ResourceRecord;
+use super::client_connection::ConnectionProtocol;
 use super::client_error::ClientError;
 use async_trait::async_trait;
 use futures_util::TryFutureExt;
@@ -59,9 +60,18 @@ impl ClientConnection for ClientTLSConnection {
             for cert in rustls_native_certs::load_native_certs().expect("could not load platform certs") {
                 roots.add(cert).unwrap();
             }
+            let config = ClientConfig::builder()
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
+            // get the domain name to a srting
+            let dns_name_from_message = dns_query.get_question().get_qname().to_string();
+            let server_name = ServerName::try_from(dns_name_from_message).expect("invalid DNS name");
+            let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
             let conn_timeout: Duration = self.get_timeout();
             let bytes: Vec<u8> = dns_query.to_bytes();
-            let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
+            let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 453);
+            let mut tcp_stream = TcpStream::connect(dns_name_from_message).await?;
+            let mut tls = rustls::Stream::new(&mut conn,  &mut tcp_stream);
     
             // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
             let conn_task = TcpStream::connect(&server_addr);

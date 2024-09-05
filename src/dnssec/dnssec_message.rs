@@ -3,7 +3,7 @@ use crate::message::rclass::Rclass;
 use crate::message::DnsMessage;
 use crate::message::rdata::opt_rdata::OptRdata;
 use crate::message::rdata::Rdata;
-use crate::message::resource_record::{ResourceRecord};
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use crate::message::rcode::Rcode;
 use crate::message::rrtype::Rrtype;
 
@@ -31,18 +31,14 @@ fn create_opt_rr(capacity: u16 ,e_rcode :Rcode, version: u8, do_bit: bool) -> Re
     let mut rr = ResourceRecord::new(rdata);
 
     let e_rcode = u8::from(e_rcode); 
-    let e_rcode = u8::from(e_rcode); 
     let do_val: u16 = if do_bit {0x8000} else {0x0};
     let ttl: u32 = (e_rcode as u32) << 24 | (version as u32) << 16| (do_val as u32);
     rr.set_ttl(ttl);
     rr.set_rclass(Rclass::UNKNOWN(capacity));
     //println!("EL ttl es: {:#05x?}", ttl);
-    //println!("EL ttl es: {:#05x?}", ttl);
     rr
 }
 
-fn read_opt_rr(opt_rr: ResourceRecord) -> (u16, Rcode, u8, bool) {
-    let requested_udp_len = u16::from(opt_rr.get_rclass());
 fn read_opt_rr(opt_rr: ResourceRecord) -> (u16, Rcode, u8, bool) {
     let requested_udp_len = u16::from(opt_rr.get_rclass());
     let data = opt_rr.get_ttl().to_be_bytes();
@@ -52,15 +48,26 @@ fn read_opt_rr(opt_rr: ResourceRecord) -> (u16, Rcode, u8, bool) {
     let do_bit = ((z & 0x8000) > 0) as bool ;
     (requested_udp_len, Rcode::from(e_rcode), version, do_bit)
     //format!("OPT PSEUDO-RR\n\trequested_udp_len: {requested_udp_len}\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
-    let do_bit = ((z & 0x8000) > 0) as bool ;
-    (requested_udp_len, Rcode::from(e_rcode), version, do_bit)
-    //format!("OPT PSEUDO-RR\n\trequested_udp_len: {requested_udp_len}\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
 }
 
 /*
    A security-aware resolver MUST include an EDNS ([RFC2671]) OPT
    pseudo-RR with the DO ([RFC3225]) bit set when sending queries.
 */
+fn create_dns_message_with_opt_and_do(mut msg: DnsMessage) -> DnsMessage {
+    // We create a opt rr with the do bit set to 1
+    // with NOERR as rcode and EDNS0
+    let rr = create_opt_rr(REQUESTED_UDP_LEN,
+                            Rcode::from(Rcode::NOERROR).into(),
+                            EDNS_VERSION,
+                            true);
+
+    let vec = vec![rr];
+    msg.add_additionals(vec);
+    msg
+}
+
+
 fn add_opt_record_dns_message(msg: &mut DnsMessage, capacity: u16, e_rcode :Rcode, do_bit: bool) {
     let rr = create_opt_rr(capacity,
         e_rcode,
@@ -73,7 +80,6 @@ fn add_opt_record_dns_message(msg: &mut DnsMessage, capacity: u16, e_rcode :Rcod
 
 #[test]
 fn see_dnssec_message() {
-    let mut query = DnsMessage::new_query_message(
     let mut query = DnsMessage::new_query_message(
         DomainName::new_from_str("example.com"),
         Rrtype::A,

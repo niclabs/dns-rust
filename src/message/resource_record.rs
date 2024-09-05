@@ -612,7 +612,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 1);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        //rdlength should be 4 (because is an A type record)
+        assert_eq!(resource_record.rdlength, 4);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::A(val) => val.get_address(),
@@ -640,7 +641,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 2);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be 10 because its the bytes "4test3com0"
+        assert_eq!(resource_record.rdlength, 10);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::NS(val) => val.get_nsdname().get_name(),
@@ -668,7 +670,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 5);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be 10 because its the bytes "4test3com0"
+        assert_eq!(resource_record.rdlength, 10);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::CNAME(val) => val.get_cname().get_name(),
@@ -703,7 +706,9 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 6);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be "4test3com0" + "5admin7example3com0" + 4*5 
+        // 10+6+8+4+1+4+4+4+4+4
+        assert_eq!(resource_record.rdlength, 49);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::SOA(val) => val.get_mname().get_name(),

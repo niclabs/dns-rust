@@ -179,7 +179,7 @@ impl ResolverCache {
         qtype: Rrtype,
         qclass: Rclass,
     ) -> Option<Vec<ResourceRecord>> {
-        let rr_stored_data = self.cache_answer.get(domain_name, qtype, qclass);
+        let rr_stored_data = self.cache_answer.get(domain_name, Some(qtype), qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
             let mut rr_vec = Vec::new();
@@ -199,7 +199,7 @@ impl ResolverCache {
         qtype: Rrtype,
         qclass: Rclass,
     ) -> Option<Vec<ResourceRecord>> {
-        let rr_stored_data = self.cache_authority.get(domain_name, qtype, qclass);
+        let rr_stored_data = self.cache_authority.get(domain_name, Some(qtype), qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
             let mut rr_vec = Vec::new();
@@ -219,7 +219,7 @@ impl ResolverCache {
         qtype: Rrtype,
         qclass: Rclass,
     ) -> Option<Vec<ResourceRecord>> {
-        let rr_stored_data = self.cache_additional.get(domain_name, qtype, qclass);
+        let rr_stored_data = self.cache_additional.get(domain_name, Some(qtype), qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
             let mut rr_vec = Vec::new();
@@ -238,7 +238,7 @@ impl ResolverCache {
         qtype: Rrtype,
         qclass: Rclass,
     ) -> Option<Rcode> {
-        let rr_stored_data = self.cache_answer.get(domain_name, qtype, qclass);
+        let rr_stored_data = self.cache_answer.get(domain_name, Some(qtype), qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
             Some(rr_stored_data[0].get_rcode())
@@ -515,7 +515,7 @@ mod resolver_cache_test {
 
         let rr = resolver_cache
             .cache_answer
-            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
         assert_eq!(rr[0].get_resource_record(), resource_record);
@@ -547,7 +547,7 @@ mod resolver_cache_test {
 
         let rr = resolver_cache
             .cache_authority
-            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
         assert_eq!(rr[0].get_resource_record(), resource_record);
@@ -579,7 +579,7 @@ mod resolver_cache_test {
 
         let rr = resolver_cache
             .cache_additional
-            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
         assert_eq!(rr[0].get_resource_record(), resource_record);
@@ -647,15 +647,15 @@ mod resolver_cache_test {
 
         let rr_answer = resolver_cache
             .cache_answer
-            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
         let rr_authority = resolver_cache
             .cache_authority
-            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
         let rr_additional = resolver_cache
             .cache_additional
-            .get(domain_name.clone(), Rrtype::A, Rclass::IN)
+            .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
         assert_eq!(rr_answer[0].get_resource_record(), resource_record_1);
@@ -1320,15 +1320,15 @@ mod resolver_cache_test {
 
         let rr_answer = resolver_cache
             .cache_answer
-            .get(domain_name.clone(), Rrtype::A, Rclass::IN);
+            .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
         let rr_authority =
             resolver_cache
                 .cache_authority
-                .get(domain_name.clone(), Rrtype::A, Rclass::IN);
+                .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
         let rr_additional =
             resolver_cache
                 .cache_additional
-                .get(domain_name.clone(), Rrtype::A, Rclass::IN);
+                .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
         assert_eq!(rr_answer, None);
         assert_eq!(rr_authority, None);

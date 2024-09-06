@@ -1,10 +1,9 @@
-use std::str::FromStr;
 use crate::domain_name::DomainName;
 use crate::message::rclass::Rclass;
 use crate::message::DnsMessage;
 use crate::message::rdata::opt_rdata::OptRdata;
 use crate::message::rdata::Rdata;
-use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
+use crate::message::resource_record::{ResourceRecord};
 use crate::message::rcode::Rcode;
 use crate::message::rrtype::Rrtype;
 

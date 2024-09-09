@@ -1,5 +1,6 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
+use crate::message::rcode::Rcode;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
@@ -68,9 +69,9 @@ pub struct ResolverConfig {
     /// Max payload for the resolver.
     max_payload: u16,
     /// Version of endns0.
-    ends0_version: u16,
+    ends0_version: u8,
     /// edns0 flags for the resolver.
-    ends0_flags: u16,
+    ends0_do: bool,
     /// edns0 options for the resolver.
     ends0_options: Vec<u16>,
     /// This is whether tsig is enabled or not.
@@ -119,7 +120,7 @@ impl ResolverConfig {
             ends0: false,
             max_payload: 512,
             ends0_version: 0,
-            ends0_flags: 0,
+            ends0_do: true,
             ends0_options: Vec::new(),
             tsig: false,
             key_name: None,
@@ -164,7 +165,7 @@ impl ResolverConfig {
             ends0: false,
             max_payload: 512,
             ends0_version: 0,
-            ends0_flags: 0,
+            ends0_do: true,
             ends0_options: Vec::new(),
             tsig: false,
             key_name: None,
@@ -234,13 +235,13 @@ impl ResolverConfig {
     /// let mut resolver_config = ResolverConfig::default();
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
     /// ```
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, flags: u16, options: Option<Vec<u16>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<u16>>) {
         self.set_ends0(true);
         if let Some(max_payload) = max_payload {
             self.set_max_payload(max_payload);
         }
         self.set_ends0_version(version);
-        self.set_ends0_flags(flags);
+        self.set_ends0_do(do_bit);
         if let Some(options) =  options {
             self.set_ends0_options(options);
         }
@@ -258,7 +259,12 @@ impl ResolverConfig {
     /// ```
     pub fn add_edns0_to_message(&self, message: &mut DnsMessage) {
         if self.ends0 {
-            message.add_edns0(Some(self.get_max_payload()), self.get_ends0_version(), self.get_ends0_flags(), Some(self.get_ends0_options()));
+            message.add_edns0(
+                Some(self.get_max_payload()),
+                Rcode::NOERROR,
+                self.get_ends0_version(),
+                self.get_ends0_do(),
+                Some(self.get_ends0_options()));
         }
     }
 
@@ -354,12 +360,12 @@ impl ResolverConfig {
         self.max_payload
     }
 
-    pub fn get_ends0_version(&self) -> u16 {
+    pub fn get_ends0_version(&self) -> u8 {
         self.ends0_version
     }
 
-    pub fn get_ends0_flags(&self) -> u16 {
-        self.ends0_flags
+    pub fn get_ends0_do(&self) -> bool {
+        self.ends0_do
     }
 
     pub fn get_ends0_options(&self) -> Vec<u16> {
@@ -442,12 +448,12 @@ impl ResolverConfig{
         self.max_payload = max_payload;
     }
 
-    pub fn set_ends0_version(&mut self, ends0_version: u16) {
+    pub fn set_ends0_version(&mut self, ends0_version: u8) {
         self.ends0_version = ends0_version;
     }
 
-    pub fn set_ends0_flags(&mut self, ends0_flags: u16) {
-        self.ends0_flags = ends0_flags;
+    pub fn set_ends0_do(&mut self, ends0_do: bool) {
+        self.ends0_do = ends0_do;
     }
 
     pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {

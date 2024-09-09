@@ -29,12 +29,12 @@ async fn query_from_ip_with_edns(domain_name: &str,
     response.map(|lookup_response| lookup_response.to_dns_msg())
 }
 
-async fn query_response_edns(domain_name: &str,
-    protocol: &str,
-    qtype: &str,
-    max_payload: Option<u16>,
-    version: u8,
-    do_bit: bool,
+async fn query_response_edns(domain_name: &str, 
+    protocol: &str, 
+    qtype: &str, 
+    max_payload: Option<u16>, 
+    version: u8, 
+    do_bit: bool, 
     option: Option<Vec<u16>>) -> Result<DnsMessage, ClientError> {
 
     let mut config = ResolverConfig::default();

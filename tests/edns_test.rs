@@ -3,6 +3,7 @@ use std::time::Duration;
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
 use dns_rust::async_resolver::server_info::ServerInfo;
 
+<<<<<<< HEAD
 async fn query_from_ip_with_edns(domain_name: &str,
                                  protocol: &str,
                                  qtype: &str,
@@ -34,6 +35,14 @@ async fn query_response_edns(domain_name: &str,
     max_payload: Option<u16>,
     version: u8,
     do_bit: bool,
+=======
+async fn query_response_edns(domain_name: &str, 
+    protocol: &str, 
+    qtype: &str, 
+    max_payload: Option<u16>, 
+    version: u8, 
+    do_bit: bool, 
+>>>>>>> ba752ee (test no pasa)
     option: Option<Vec<u16>>) -> Result<DnsMessage, ClientError> {
 
     let mut config = ResolverConfig::default();
@@ -51,7 +60,11 @@ async fn query_response_edns(domain_name: &str,
 
 #[tokio::test]
 async fn query_a_type_edns() {
+<<<<<<< HEAD
     let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, false, Some(vec![3])).await;
+=======
+    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, true, Some(vec![3])).await;
+>>>>>>> ba752ee (test no pasa)
 
     if let Ok(rrs) = response {
         println!("{}", rrs);

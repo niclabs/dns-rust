@@ -51,7 +51,7 @@ async fn query_response_edns(domain_name: &str,
 
 #[tokio::test]
 async fn query_a_type_edns() {
-    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, true, Some(vec![3])).await;
+    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, false, Some(vec![3])).await;
 
     if let Ok(rrs) = response {
         println!("{}", rrs);

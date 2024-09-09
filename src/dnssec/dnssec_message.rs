@@ -61,20 +61,6 @@ fn read_opt_rr(opt_rr: ResourceRecord) -> (u16, Rcode, u8, bool) {
    A security-aware resolver MUST include an EDNS ([RFC2671]) OPT
    pseudo-RR with the DO ([RFC3225]) bit set when sending queries.
 */
-fn create_dns_message_with_opt_and_do(mut msg: DnsMessage) -> DnsMessage {
-    // We create a opt rr with the do bit set to 1
-    // with NOERR as rcode and EDNS0
-    let rr = create_opt_rr(REQUESTED_UDP_LEN,
-                            Rcode::from(Rcode::NOERROR).into(),
-                            EDNS_VERSION,
-                            true);
-
-    let vec = vec![rr];
-    msg.add_additionals(vec);
-    msg
-}
-
-
 fn add_opt_record_dns_message(msg: &mut DnsMessage, capacity: u16, e_rcode :Rcode, do_bit: bool) {
     let rr = create_opt_rr(capacity,
         e_rcode,

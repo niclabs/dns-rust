@@ -5,12 +5,12 @@ async fn query_response_edns(domain_name: &str,
     protocol: &str, 
     qtype: &str, 
     max_payload: Option<u16>, 
-    version: u16, 
-    flags: u16, 
+    version: u8, 
+    do_bit: bool, 
     option: Option<Vec<u16>>) -> Result<DnsMessage, ClientError> {
 
     let mut config = ResolverConfig::default();
-    config.add_edns0(max_payload, version, flags, option);
+    config.add_edns0(max_payload, version, do_bit, option);
     let mut resolver = AsyncResolver::new(config);
 
     let response = resolver.lookup(
@@ -24,7 +24,7 @@ async fn query_response_edns(domain_name: &str,
 
 #[tokio::test]
 async fn query_a_type_edns() {
-    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, 0, Some(vec![3])).await;
+    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, true, Some(vec![3])).await;
 
     if let Ok(rrs) = response {
         assert_eq!(rrs.get_answer().len(), 1);

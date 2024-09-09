@@ -1,8 +1,7 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
 use crate::message::rrtype::Rrtype;
-use base64::engine::general_purpose;
-use base64::Engine as _;
+use base64;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -144,8 +143,9 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
             signature.push(bytes[i]);
             i += 1;
         }
-        //let signature_b64 = general_purpose::STANDARD.encode(signature);
-        rrsig_rdata.set_signature(signature);
+        let signature_b64 = base64::encode(signature);
+        //let signature = String::from_utf8(signature).unwrap();
+        rrsig_rdata.set_signature(signature_b64);
 
         Ok(rrsig_rdata)
         }

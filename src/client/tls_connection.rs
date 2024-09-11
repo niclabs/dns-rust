@@ -70,7 +70,8 @@ impl ClientConnection for ClientTLSConnection {
             let conn_timeout: Duration = self.get_timeout();
             let bytes: Vec<u8> = dns_query.to_bytes();
             let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 453);
-            let mut tcp_stream = TcpStream::connect(dns_name_from_message).await?;
+            let name= dns_query.get_question().get_qname().to_string();
+            let mut tcp_stream = std::net::TcpStream::connect(name).unwrap();
             let mut tls = rustls::Stream::new(&mut conn,  &mut tcp_stream);
     
             // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;

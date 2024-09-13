@@ -2,7 +2,7 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
 use crate::message::rrtype::Rrtype;
 use base64::engine::general_purpose;
-use base64::{Engine as _};
+use base64::Engine as _;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]

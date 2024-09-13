@@ -125,3 +125,32 @@ async fn query_from_root() {
         ip2req = rdata.get_address();
     }
 }
+
+#[tokio::test]
+async fn query_a_type_with_rrsig_edns() {
+    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, true, Some(vec![3])).await;
+
+    if let Ok(rrs) = response {
+        println!("{}", rrs);
+        assert_eq!(rrs.get_answer().len(), 2);
+        let answers = rrs.get_answer();
+        let answer = &answers[0];
+        let rrsig = &answers[1];
+        if let Rdata::A(ip) = answer.get_rdata() {
+            assert_eq!(ip.get_address(), IpAddr::from_str("93.184.215.14").unwrap());
+        } else {
+            panic!("No ip address");
+        }
+        if let Rdata::RRSIG(sig) = rrsig.get_rdata() {
+            assert_eq!(sig.get_type_covered(), Rrtype::A);
+        } else {
+            panic!("No RRSIG");
+            
+        }
+        let opt = &rrs.get_additional()[0];
+        assert_eq!(opt.get_name(), DomainName::new_from_str(""));
+        assert_eq!(opt.get_rtype(), Rrtype::OPT);
+        assert_eq!(opt.get_rclass(), Rclass::UNKNOWN(512));
+        println!("{:?}", opt);
+    } 
+}

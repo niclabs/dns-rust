@@ -85,12 +85,11 @@ impl Resolution {
         let mut iter = 0..upper_limit_of_retransmission_loops;
         'global_cycle: while let Some(_retransmission) = iter.next() {
             println!("Retransmission: {}", _retransmission);
-            let number_of_servers = self.state_block.get_server_state().get_servers().len();
+            let number_of_servers = self.state_block.get_servers().len();
 
             for _ in 0..number_of_servers {
                 println!("Server retrans");
-                let server_state = self.state_block.get_server_state();
-                let server_entry_clone = server_state.get_current_server_entry().clone();
+                let server_entry_clone = self.state_block.get_current_server_entry().clone();
                 if !server_entry_clone.is_active() { continue; }
 
                 //start timer
@@ -113,8 +112,8 @@ impl Resolution {
 
                 if self.received_appropriate_response() { break 'global_cycle }
 
-                self.state_block.get_server_state().get_current_server_entry().increment_retransmissions();
-                self.state_block.get_server_state().increment_current_server_index();
+                self.state_block.get_current_server_entry().increment_retransmissions();
+                self.state_block.increment_current_server_index();
             }
 
             // // let mut servers_iter: std::slice::Iter<super::server_entry::ServerEntry> = servers_to_query.iter();

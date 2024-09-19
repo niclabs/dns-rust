@@ -5,7 +5,6 @@ pub mod resolver_error;
 pub mod server_info;
 pub mod slist;
 pub mod state_block;
-pub mod server_state;
 pub mod server_entry;
 
 use self::lookup_response::LookupResponse;

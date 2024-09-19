@@ -1,6 +1,5 @@
 use tokio::time::Instant;
 
-use crate::async_resolver::server_state::ServerState;
 use super::{server_entry::ServerEntry, server_info::ServerInfo};
 
 /// This struct represent the state of information of a pending request.
@@ -93,5 +92,9 @@ impl StateBlock {
 
     pub fn get_current_server_entry(&mut self) -> &mut ServerEntry {
         &mut self.servers[self.current_server_index]
+    }
+
+    pub fn get_servers(&self) -> &Vec<ServerEntry> {
+        &self.servers
     }
 }

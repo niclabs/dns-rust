@@ -74,6 +74,13 @@ impl StateBlock {
         // TODO: Implement the logic to terminate the request if the counter reaches zero.
     }
 
+    /// Increments the `current_server_index` of the request.
+    /// 
+    /// It it used when the resolver must query the next name server in the list.
+    pub fn increment_current_server_index(&mut self) {
+        self.current_server_index = (self.current_server_index + 1)%(self.servers.len());
+    }
+
     /// Returns a reference to the `timestamp` of the request.
     pub fn get_timestamp(&self) -> &Instant {
         return &self.timestamp;

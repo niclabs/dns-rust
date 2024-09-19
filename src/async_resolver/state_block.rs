@@ -1,7 +1,7 @@
 use tokio::time::Instant;
 
 use crate::async_resolver::server_state::ServerState;
-use super::server_info::ServerInfo;
+use super::{server_entry::ServerEntry, server_info::ServerInfo};
 
 /// This struct represent the state of information of a pending request.
 /// 
@@ -31,7 +31,11 @@ pub struct StateBlock {
     /// return a response to the client.
     work_counter: u16,
 
-    server_state: ServerState,
+    /// Information about the servers that are being queried.
+    servers: Vec<ServerEntry>,
+
+    /// The index of the current server being queried.
+    current_server_index: usize,
 }
 
 impl StateBlock {
@@ -48,7 +52,8 @@ impl StateBlock {
         StateBlock {
             timestamp: Instant::now(),
             work_counter: request_global_limit,
-            server_state: ServerState::new(servers),
+            servers: servers.into_iter().map(ServerEntry::new).collect(),
+            current_server_index: 0,
         }
     }
 

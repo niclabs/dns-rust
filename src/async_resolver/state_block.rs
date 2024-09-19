@@ -91,7 +91,7 @@ impl StateBlock {
         return self.work_counter;
     }
 
-    pub fn get_server_state(&mut self) -> &mut ServerState {
-        &mut self.server_state
+    pub fn get_current_server_entry(&mut self) -> &mut ServerEntry {
+        &mut self.servers[self.current_server_index]
     }
 }

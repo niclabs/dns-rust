@@ -19,10 +19,13 @@ use crate::message::rcode::Rcode;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::rrtype::Rrtype;
+use crate::tsig;
 use crate::message::{self, DnsMessage};
 use crate::resolver_cache::ResolverCache;
 use std::net::IpAddr;
+use std::time::SystemTime;
 use std::sync::{Arc, Mutex};
+use std::vec;
 
 /// Asynchronous resolver for DNS queries.
 ///
@@ -105,10 +108,13 @@ impl AsyncResolver {
         let response = self
             .inner_lookup(domain_name_struct, Rrtype::A, rclass.into())
             .await;
-
+        
         return self
             .check_error_from_msg(response)
             .and_then(|lookup_response| {
+                if lookup_response.to_dns_msg().get_header().get_tc() {
+                    self.config.set_protocol(ConnectionProtocol::TCP);
+                }
                 let rrs_iter = lookup_response.to_vec_of_rr().into_iter();
                 let ip_addresses: Result<Vec<IpAddr>, _> = rrs_iter
                     .map(|rr| AsyncResolver::from_rr_to_ip(rr))
@@ -168,6 +174,11 @@ impl AsyncResolver {
                 Rclass::from(rclass),
             )
             .await;
+        
+        
+        if self.config.get_tsig(){
+            self.verify_tsig(response.clone());
+        }
 
         return self.check_error_from_msg(response);
     }
@@ -316,13 +327,13 @@ impl AsyncResolver {
     /// answer section, it is always preferred.
     fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
-        let rcode = response.get_header().get_rcode();
         {
             let mut cache = self.cache.lock().unwrap();
             cache.timeout();
             if !truncated {
                 cache.add(response.clone());
             }
+            
         }
     }
 
@@ -409,6 +420,44 @@ impl AsyncResolver {
             return Ok(lookup_response);
         }
         match rcode {
+            Rcode::FORMERR => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
+            Rcode::SERVFAIL => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
+            Rcode::NXDOMAIN => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
+            Rcode::NOTIMP => Err(ClientError::NotImplemented("The name server does not support the requested kind of query."))?,
+            Rcode::REFUSED => Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons."))?,
+            _ => Err(ClientError::ResponseError(rcode.into()))?,
+        }
+    }
+
+    /// Verifies tsig
+    pub fn verify_tsig(&self, 
+        response: Result<LookupResponse, ResolverError>)
+        -> Result<LookupResponse, ClientError> {
+        let lookup_response = match response {
+            Ok(val) => Ok(val),
+            Err(_) => Err(ClientError::TemporaryError("no DNS message found")),
+        };
+
+        let dns_response = lookup_response.unwrap().to_dns_msg();
+
+        let key_bytes = self.config.get_key();
+        let shared_key_name = self.config.get_key_name();
+        let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+        let algorithm = String::from(self.config.get_algorithm());
+        let alg_list = vec![(algorithm, true)];
+        let mac = dns_response.get_mac();
+
+        let (_val, rcode) = tsig::process_tsig(
+            &dns_response,
+            &key_bytes,
+            shared_key_name.clone().unwrap(),
+            time,
+            alg_list,
+            mac,
+        );
+
+        match rcode {
+            Rcode::NOERROR => Ok(LookupResponse::new(dns_response)),
             Rcode::FORMERR => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
             Rcode::SERVFAIL => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
             Rcode::NXDOMAIN => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
@@ -2009,7 +2058,6 @@ mod async_resolver_test {
 
         resolver.save_negative_answers(dns_response.clone());
 
-        let rrtype_search = Rrtype::A;
         assert_eq!(dns_response.get_answer().len(), 0);
         assert_eq!(dns_response.get_additional().len(), 1);
         assert_eq!(

@@ -12,6 +12,8 @@ pub struct ServerInfo {
     ip_addr: IpAddr,
     //The port of the server.
     port: u16,
+    //Tsig is enabled.
+    tsig: bool,
     //The key of the server.
     key: String,
     // The algorithm of the server.
@@ -29,6 +31,7 @@ impl ServerInfo {
         ServerInfo {
             ip_addr,
             port,
+            tsig: false,
             key,
             algorithm,
             udp_connection,
@@ -43,6 +46,7 @@ impl ServerInfo {
         ServerInfo {
             ip_addr,
             port,
+            tsig: false,
             key,
             algorithm,
             udp_connection,
@@ -59,11 +63,22 @@ impl ServerInfo {
         ServerInfo {
             ip_addr,
             port,
+            tsig: false,
             key,
             algorithm,
             udp_connection,
             tcp_connection,
         }
+    }
+
+    /// Function to enable tsig.
+    pub fn enable_tsig(&mut self) {
+        self.tsig = true;
+    }
+
+    /// Function to disable tsig.
+    pub fn disable_tsig(&mut self) {
+        self.tsig = false;
     }
 
     /// Implements get_ip_address
@@ -88,6 +103,11 @@ impl ServerInfo {
         self.port = port;
     }
     
+    /// Get the tsig of the server.
+    pub fn get_tsig(&self) -> bool {
+        self.tsig
+    }
+
     /// Get the key of the server.
     pub fn get_key(&self) -> &str {
         &self.key

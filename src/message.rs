@@ -15,12 +15,15 @@ use crate::message::question::Question;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::opt_rdata::OptRdata;
+use crate::tsig;
+use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
 use resource_record::ToBytes;
 use core::fmt;
 use std::vec::Vec;
+use std::time::SystemTime;
 
 #[derive(Clone)]
 /// Structs that represents a DNS message.
@@ -286,6 +289,51 @@ impl DnsMessage {
         self.update_header_counters();
     }
 
+    /// Adds Tsig to the message.
+    /// 
+    /// # Example
+    /// ```
+    /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// let key = vec![1, 2, 3, 4, 5, 6, 7, 8];
+    /// let alg_name = TsigAlgorithm::HmacSha1;
+    /// let fudge = 300;
+    /// let key_name = "key".to_string();
+    /// let mac_request = vec![];
+    /// dns_query_message.add_tsig(key, alg_name, fudge, key_name, mac_request);
+    /// ```
+    pub fn add_tsig(&mut self, key: Vec<u8>, alg_name: TsigAlgorithm, 
+        fudge: u16, key_name: Option<String>, mac_request: Vec<u8>) {
+        let message = self;
+        let time_signed = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+        tsig::sign_tsig(message, &key, alg_name, 
+                                        fudge, time_signed, key_name.unwrap_or("".to_string()), mac_request);
+    }
+
+    /// Gets the MAC from the TSIG RR.
+    /// 
+    /// # Example
+    /// ```
+    /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// let key = vec![1, 2, 3, 4, 5, 6, 7, 8];
+    /// let alg_name = TsigAlgorithm::HmacSha1;
+    /// let fudge = 300;
+    /// let key_name = "key".to_string();
+    /// let mac_request = vec![];
+    /// dns_query_message.add_tsig(key, alg_name, fudge, key_name, mac_request);
+    /// let mac = dns_query_message.get_mac();
+    /// ```
+    pub fn get_mac(&self) -> Vec<u8> {
+        let mut mac = Vec::new();
+        let additional = self.get_additional();
+
+        for rr in additional {
+            if let Rdata::TSIG(tsig_rdata) = rr.get_rdata() {
+                mac = tsig_rdata.get_mac();
+            }
+        }
+
+        mac
+    }
 
     /// Creates a new axfr query message.
     /// 
@@ -615,6 +663,7 @@ impl DnsMessage {
         let mut msg_answers = self.get_answer();
 
         msg_answers.append(&mut answers);
+        self.header.set_ancount(msg_answers.len() as u16);
         self.set_answer(msg_answers);
     }
 
@@ -640,6 +689,7 @@ impl DnsMessage {
         let mut msg_authorities = self.get_authority();
 
         msg_authorities.append(&mut authorities);
+        self.header.set_nscount(msg_authorities.len() as u16);
         self.set_answer(msg_authorities);
     }
 
@@ -656,6 +706,7 @@ impl DnsMessage {
         let mut msg_additionals = self.get_additional();
 
         msg_additionals.append(&mut additionals);
+        self.header.set_arcount(msg_additionals.len() as u16);
         self.set_additional(msg_additionals);
     }
 
@@ -683,14 +734,17 @@ impl DnsMessage {
 impl fmt::Display for DnsMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::new();
+        let question = self.get_question();
         let answers = self.get_answer().into_iter();
         let authority = self.get_authority().into_iter();
         let additional = self.get_additional().into_iter();
-        result.push_str(&format!("Answer\n"));
+        result.push_str(&format!("Question section\n"));
+        result.push_str(&format!("{}\n", question));
+        result.push_str(&format!("Answer section\n"));
         answers.for_each(|answer| result.push_str(&format!("{}\n", answer)));
-        result.push_str(&format!("Authority\n"));
+        result.push_str(&format!("Authority section\n"));
         authority.for_each(|authority| result.push_str(&format!("{}\n", authority)));
-        result.push_str(&format!("Additional\n"));
+        result.push_str(&format!("Additional section\n"));
         additional.for_each(|additional| result.push_str(&format!("{}\n", additional)));
         write!(f, "{}", result)
     }
@@ -984,7 +1038,7 @@ mod message_test {
         */
         let bytes: [u8; 50] = [
             //test passes with this one
-            0b00100100, 0b10010101, 0b10010010, 0b00000000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
+            0b00100100, 0b10010101, 0b10010010, 0b00100000, 0, 1, 0b00000000, 1, 0, 0, 0, 0, 4, 116,
             101, 115, 116, 3, 99, 111, 109, 0, 0, 16, 0, 1, 3, 100, 99, 99, 2, 99, 108, 0, 0, 16, 0,
             1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];
@@ -1002,7 +1056,10 @@ mod message_test {
         assert_eq!(header.get_qr(), true);
         assert_eq!(header.get_op_code(), 2);
         assert_eq!(header.get_tc(), true);
+
+        assert_eq!(header.get_ad(), true);
         assert_eq!(header.get_rcode(), Rcode::NOERROR);
+
         assert_eq!(header.get_ancount(), 1);
 
         // Question
@@ -1041,7 +1098,10 @@ mod message_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
+
+        header.set_ad(true);
         header.set_rcode(Rcode::UNKNOWN(8));
+
         header.set_ancount(0b0000000000000001);
         header.set_qdcount(1);
 
@@ -1081,7 +1141,7 @@ mod message_test {
         let msg_bytes = &dns_msg.to_bytes();
 
         let real_bytes: [u8; 50] = [
-            0b00100100, 0b10010101, 0b10010010, 0b00001000, 0, 1, 0b00000000, 0b00000001, 0, 0, 0,
+            0b00100100, 0b10010101, 0b10010010, 0b00101000, 0, 1, 0b00000000, 0b00000001, 0, 0, 0,
             0, 4, 116, 101, 115, 116, 3, 99, 111, 109, 0, 0, 5, 0, 2, 3, 100, 99, 99, 2, 99, 108,
             0, 0, 16, 0, 1, 0, 0, 0b00010110, 0b00001010, 0, 6, 5, 104, 101, 108, 108, 111,
         ];

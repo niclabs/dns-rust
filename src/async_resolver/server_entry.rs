@@ -5,7 +5,6 @@ use crate::async_resolver::server_info::ServerInfo;
 pub struct ServerEntry {
     info: ServerInfo,
     retransmissions: u32,
-    is_active: bool,
 }
 
 impl ServerEntry {
@@ -13,7 +12,7 @@ impl ServerEntry {
         ServerEntry {
             info,
             retransmissions: 0,
-            is_active: true,
+            // is_active: true,
         }
     }
 
@@ -31,13 +30,5 @@ impl ServerEntry {
 
     pub fn reset_retransmissions(&mut self) {
         self.retransmissions = 0;
-    }
-
-    pub fn is_active(&self) -> bool {
-        self.is_active
-    }
-
-    pub fn set_active(&mut self, is_active: bool) {
-        self.is_active = is_active;
     }
 }

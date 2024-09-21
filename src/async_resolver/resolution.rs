@@ -30,7 +30,6 @@ pub struct Resolution {
     config: ResolverConfig,
     /// Reference to the response of the query.
     response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
-    // state_block: Arc<Mutex<StateBlock>>,
     state_block: StateBlock
 }
     
@@ -43,13 +42,13 @@ impl Resolution {
         
     ) -> Self {
         let request_global_limit = config.get_global_retransmission_limit();
+        let server_transmission_limit = 1; // TODO: add to config
         let servers = config.get_name_servers();
         Self { 
             query: query,
             config: config,
             response_msg: Arc::new(Mutex::new(Err(ResolverError::EmptyQuery))), 
-            // state_block: Arc::new(Mutex::new(StateBlock::new(request_global_limit, servers))),
-            state_block: StateBlock::new(request_global_limit, servers)
+            state_block: StateBlock::new(request_global_limit, server_transmission_limit, servers)
         }
     }
 
@@ -88,20 +87,23 @@ impl Resolution {
             let number_of_servers = self.state_block.get_servers().len();
 
             for _ in 0..number_of_servers {
-                println!("Server retrans");
                 let server_entry_clone = self.state_block.get_current_server_entry().clone();
                 if !server_entry_clone.get_info().is_active() { continue; }
+                if server_entry_clone.get_work_counter() == 0 { continue; }
+                if self.state_block.get_work_counter() == 0 { break 'global_cycle; }
 
-                //start timer
+                // start timer
                 let start = Instant::now();
 
-                // let server_info = server_entry_.get_info();
                 lookup_response_result = self.transmit_query_to_server(
                     server_entry_clone.get_info(), 
                     timeout_duration
                 ).await;
 
-                //end timer
+                self.state_block.decrement_work_counter();
+                self.state_block.get_current_server_entry().decrement_work_counter();
+
+                // end timer
                 let end = Instant::now();
 
                 let rtt = end.duration_since(start);
@@ -112,36 +114,13 @@ impl Resolution {
 
                 if self.received_appropriate_response() { break 'global_cycle }
 
-                self.state_block.get_current_server_entry().increment_retransmissions();
                 self.state_block.increment_current_server_index();
             }
-
-            // // let mut servers_iter: std::slice::Iter<super::server_entry::ServerEntry> = servers_to_query.iter();
-
-            // while let Some(server_entry) = servers_iter.next() {
-
-            //     //start timer
-            //     let start = Instant::now();
-            //     lookup_response_result = self.transmit_query_to_server(
-            //         server_entry, 
-            //         timeout_duration
-            //     ).await;
-            //     //end timer
-            //     let end = Instant::now();
-
-            //     let rtt = end.duration_since(start);
-            //     rttvar = (1.0 - 0.25) * rttvar + 0.25 * (rtt.as_secs_f64() - srtt).abs();
-            //     srtt = (1.0 - 0.125) * srtt + 0.125 * rtt.as_secs_f64();
-            //     rto = srtt + granularity.max(4.0 * rttvar) ;
-            //     timeout_duration = tokio::time::Duration::from_secs_f64(rto);
-            //     if self.received_appropriate_response() { break 'global_cycle }
-            // }
-
+            
             // Exponencial backoff
-
             rto = (rto * 2.0).min(max_interval as f64);
             timeout_duration = tokio::time::Duration::from_secs_f64(rto);
-            tokio::time::sleep(timeout_duration).await;
+            tokio::time::sleep(timeout_duration).await; // TODO: sleep is probably not the best way to do this
         }
         return lookup_response_result;
     }

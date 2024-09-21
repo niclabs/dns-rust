@@ -22,6 +22,7 @@ pub struct ServerInfo {
     udp_connection: ClientUDPConnection,
     //TCP connection
     tcp_connection: ClientTCPConnection,
+    is_active: bool,
 }
 
 impl ServerInfo {
@@ -36,6 +37,7 @@ impl ServerInfo {
             algorithm,
             udp_connection,
             tcp_connection,
+            is_active: true,
         }
     }
 
@@ -51,6 +53,7 @@ impl ServerInfo {
             algorithm,
             udp_connection,
             tcp_connection,
+            is_active: true,
         }
     }
 
@@ -68,6 +71,7 @@ impl ServerInfo {
             algorithm,
             udp_connection,
             tcp_connection,
+            is_active: true,
         }
     }
 
@@ -152,6 +156,14 @@ impl ServerInfo {
     /// param tcp_connection: ClientTCPConnection
     pub fn set_tcp_connection(&mut self, tcp_connection: ClientTCPConnection) {
         self.tcp_connection = tcp_connection;
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.is_active
+    }
+
+    pub fn set_active(&mut self, is_active: bool) {
+        self.is_active = is_active;
     }
 
 }

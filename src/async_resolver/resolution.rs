@@ -90,7 +90,7 @@ impl Resolution {
             for _ in 0..number_of_servers {
                 println!("Server retrans");
                 let server_entry_clone = self.state_block.get_current_server_entry().clone();
-                if !server_entry_clone.is_active() { continue; }
+                if !server_entry_clone.get_info().is_active() { continue; }
 
                 //start timer
                 let start = Instant::now();

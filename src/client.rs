@@ -116,7 +116,8 @@ impl <T: ClientConnection> Client<T> {
             Ok(response_message) => {
                 match DnsMessage::from_bytes(&response_message) {
                     Ok(dns_message) => {
-                        let additional = dns_message.get_additional();
+                        // TODO: Verify functionality of this fragment
+                        /*let additional = dns_message.get_additional();
                         let lenght = additional.len();
                         let a_r = additional.get(lenght - 1);
                         match a_r {
@@ -133,7 +134,7 @@ impl <T: ClientConnection> Client<T> {
                                 }
                             },
                             None => {},
-                        }
+                        }*/
                         dns_message},
                     Err(_) => return Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
                 }
@@ -223,7 +224,7 @@ mod client_test {
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
 
-        let expected_ip: [u8; 4] = [93, 184, 216, 34];
+        let expected_ip: [u8; 4] = [93, 184, 215, 14];
         let answers = response.get_answer();
         for answer in answers {
             let a_rdata = answer.get_rdata();

@@ -194,8 +194,8 @@ impl ResolverConfig {
     /// assert_eq!(resolver_config.get_name_servers().len(), 2);
     /// ```
     pub fn add_servers(&mut self, addr: IpAddr) {
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout, self.max_payload as usize);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout, self.max_payload as usize);
 
         let server_info = ServerInfo::new_with_ip(addr, conn_udp, conn_tcp);
         self.name_servers.push(server_info);
@@ -516,12 +516,12 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_name_servers().len(), 8);
 
         let addr_1 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let tcp_conn_1 = ClientTCPConnection::new(addr_1, Duration::from_secs(TIMEOUT));
-        let udp_conn_1 = ClientUDPConnection::new(addr_1, Duration::from_secs(TIMEOUT));
+        let tcp_conn_1 = ClientTCPConnection::new(addr_1, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
+        let udp_conn_1 = ClientUDPConnection::new(addr_1, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
 
         let addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
-        let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
-        let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
+        let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
+        let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
         let server_info_1 = server_info::ServerInfo::new_with_ip(addr_1, udp_conn_1, tcp_conn_1);
         let server_info_2 = server_info::ServerInfo::new_with_ip(addr_2, udp_conn_2, tcp_conn_2);
 

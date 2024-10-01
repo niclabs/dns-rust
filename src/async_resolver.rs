@@ -1009,8 +1009,8 @@ mod async_resolver_test {
         let bad_server: IpAddr = IpAddr::V4(Ipv4Addr::new(7, 7, 7, 7));
         let timeout = Duration::from_secs(2);
 
-        let conn_udp: ClientUDPConnection = ClientUDPConnection::new(bad_server, timeout);
-        let conn_tcp: ClientTCPConnection = ClientTCPConnection::new(bad_server, timeout);
+        let conn_udp: ClientUDPConnection = ClientUDPConnection::new_default(bad_server, timeout);
+        let conn_tcp: ClientTCPConnection = ClientTCPConnection::new_default(bad_server, timeout);
         let server_info = ServerInfo::new_with_ip(bad_server, conn_udp, conn_tcp);
         let name_servers = vec![server_info];
         config.set_name_servers(name_servers);

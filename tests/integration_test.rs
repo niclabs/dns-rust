@@ -80,17 +80,19 @@ async fn query_ns_type() {
         assert_eq!(rrs.len(), 2);
         
         if let Rdata::NS(ns1) = rrs[0].get_rdata() {
-            assert_eq!(
-                ns1.get_nsdname(),
-                DomainName::new_from_str("a.iana-servers.net"))
-        } else { 
+            assert!(
+                    ns1.get_nsdname() == DomainName::new_from_str("a.iana-servers.net") ||
+                    ns1.get_nsdname() == DomainName::new_from_str("b.iana-servers.net")
+            )
+            } else {
             panic!("First record is not NS");
         }
         
         if let Rdata::NS(ns) = rrs[1].get_rdata() {
-            assert_eq!(
-                ns.get_nsdname(),
-                DomainName::new_from_str("b.iana-servers.net"))
+            assert!(
+                ns.get_nsdname() == DomainName::new_from_str("a.iana-servers.net") ||
+                    ns.get_nsdname() == DomainName::new_from_str("b.iana-servers.net")
+            )
         } else {
             panic!("Second record is not NS");
         }

@@ -33,6 +33,8 @@ pub struct ClientTCPConnection {
     timeout: tokio::time::Duration,
     /// payload size
     payload_size: usize,
+    /// payload size
+    payload_size: usize,
 }
 
 #[async_trait]
@@ -57,9 +59,9 @@ impl ClientConnection for ClientTCPConnection {
     async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError> {
     // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> {
         
-        
+        let conn_timeout: Duration = self.get_timeout();
         let bytes: Vec<u8> = dns_query.to_bytes();
-        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 853);
+        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
 
         // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
         let conn_task = TcpStream::connect(&server_addr);
@@ -67,47 +69,12 @@ impl ClientConnection for ClientTCPConnection {
             Ok(stream_result) => stream_result?,
             Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
         };
-
-        //Verify that the connected IP matches the expected IP
-        let actual_ip = stream.peer_addr()?.ip();
-        let expected_ip = self.get_server_addr();
-        if actual_ip != expected_ip {
-            return Err(ClientError::Io(IoError::new(
-                ErrorKind::PermissionDenied,
-                format!("IP mismatch: expected {}, got {}", expected_ip, actual_ip),
-            )).into());
-        }
-
+    
         // Add len of message len
         let msg_length: u16 = bytes.len() as u16;
         let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
         let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
         
-        //get domain name
-        let domain_name = dns_query.get_question().get_qname().get_name();
-        let dns_name = DnsNameRef::try_from_ascii_str(&domain_name);
-        if dns_name.is_err() {
-            return Err(ClientError::Io(IoError::new(ErrorKind::InvalidInput, format!("Error: invalid domain name"))).into());
-        }
-
-        let root_store = rustls::RootCertStore::from_iter(
-            webpki_roots::TLS_SERVER_ROOTS
-                .iter()
-                .cloned(),
-        );
-        let config = rustls::ClientConfig::builder().with_root_certificates(root_store).with_no_client_auth();
-        let rc_config = Arc::new(config);
-       
-
-        let dns_name = domain_name;
-        let server_name =ServerName::try_from(dns_name).expect("invalid DNS name");
-        let connector = rustls::ClientConnection::new(rc_config, server_name).unwrap();
-        let conn_timeout: Duration = self.get_timeout();
-        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 853);
-
-        // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
-        let conn_task = TcpStream::connect(&server_addr);
-        let mut stream: TcpStream = TcpStream::connect(server_addr).await?;
         // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
 
         // stream.write(&full_msg)?;

@@ -31,16 +31,19 @@ pub struct ClientTCPConnection {
     server_addr: IpAddr,
     /// Read time timeout
     timeout: tokio::time::Duration,
+    /// payload size
+    payload_size: usize,
 }
 
 #[async_trait]
 impl ClientConnection for ClientTCPConnection {
 
     /// Creates TCPConnection
-    fn new(server_addr:IpAddr, timeout: Duration) -> Self {
+    fn new(server_addr:IpAddr, timeout: Duration, payload_size: usize) -> Self {
         ClientTCPConnection {
             server_addr: server_addr,
             timeout: timeout,
+            payload_size: payload_size,
         }
     }
 
@@ -52,64 +55,68 @@ impl ClientConnection for ClientTCPConnection {
 
     /// creates socket tcp, sends query and receive response
     async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError> {
-        // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> {
-            
-            let conn_timeout: Duration = self.get_timeout();
-            let bytes: Vec<u8> = dns_query.to_bytes();
-            let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
+    // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> {
+        
+        let conn_timeout: Duration = self.get_timeout();
+        let bytes: Vec<u8> = dns_query.to_bytes();
+        let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 53);
+
+        // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
+        let conn_task = TcpStream::connect(&server_addr);
+        let mut stream: TcpStream = match timeout(conn_timeout, conn_task).await {
+            Ok(stream_result) => stream_result?,
+            Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
+        };
     
-            // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
-            let conn_task = TcpStream::connect(&server_addr);
-            let mut stream: TcpStream = match timeout(conn_timeout, conn_task).await {
-                Ok(stream_result) => stream_result?,
+        // Add len of message len
+        let msg_length: u16 = bytes.len() as u16;
+        let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
+        let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
+        
+        // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
+
+        // stream.write(&full_msg)?;
+        stream.write(&full_msg).await?;
+        
+        // Read response
+        let mut msg_size_response: [u8; 2] = [0; 2];
+
+        stream.read_exact(&mut msg_size_response).await?;
+    
+        let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
+        let mut vec_msg: Vec<u8> = Vec::new();
+        let ip = self.get_server_addr();
+        let mut additionals = dns_query.get_additional();
+        let mut ar = ARdata::new();
+        ar.set_address(ip);
+        let a_rdata = Rdata::A(ar);
+        let rr = ResourceRecord::new(a_rdata);
+        additionals.push(rr);
+        
+    
+        while vec_msg.len() < tcp_msg_len as usize {
+            let mut msg = vec![0; self.payload_size];
+            let read_task = stream.read(&mut msg);
+            let number_of_bytes_msg_result = match timeout(conn_timeout, read_task).await {
+                Ok(n) => n,
                 Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
             };
-        
-            // Add len of message len
-            let msg_length: u16 = bytes.len() as u16;
-            let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
-            let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
-            
-            // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
-    
-            // stream.write(&full_msg)?;
-            stream.write(&full_msg).await?;
-            
-            // Read response
-            let mut msg_size_response: [u8; 2] = [0; 2];
-    
-            stream.read_exact(&mut msg_size_response).await?;
-        
-            let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
-            let mut vec_msg: Vec<u8> = Vec::new();
-            let ip = self.get_server_addr();
-            let mut additionals = dns_query.get_additional();
-            let mut ar = ARdata::new();
-            ar.set_address(ip);
-            let a_rdata = Rdata::A(ar);
-            let rr = ResourceRecord::new(a_rdata);
-            additionals.push(rr);
-            
-        
-            while vec_msg.len() < tcp_msg_len as usize {
-                let mut msg = [0; 512];
-                let read_task = stream.read(&mut msg);
-                let number_of_bytes_msg_result = match timeout(conn_timeout, read_task).await {
-                    Ok(n) => n,
-                    Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
-                };
-    
-                let number_of_bytes_msg = match number_of_bytes_msg_result {
-                    Ok(n) if n > 0 => n,
-                    _ => return Err(IoError::new(ErrorKind::Other, format!("Error: no data received "))).map_err(Into::into),
-                    
-                };
-    
-                vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
-            }
-    
-            return Ok(vec_msg);
+
+            let number_of_bytes_msg = match number_of_bytes_msg_result {
+                Ok(n) if n > 0 => n,
+                _ => return Err(IoError::new(ErrorKind::Other, format!("Error: no data received "))).map_err(Into::into),
+                
+            };
+
+            vec_msg.extend_from_slice(&msg[..number_of_bytes_msg]);
         }
+
+        return Ok(vec_msg);
+    }
+
+    fn new_default(server_addr: IpAddr, timeout: Duration) -> Self {
+        Self::new(server_addr, timeout, 512)
+    }
 }
 
 //Getters
@@ -146,7 +153,7 @@ mod tcp_connection_test{
     use crate::domain_name::DomainName;
     use crate::message::rrtype::Rrtype;
     use crate::message::rclass::Rclass;
-
+    const DEFAULT_SIZE: usize = 512;
     #[test]
     fn create_tcp() {
 
@@ -155,7 +162,7 @@ mod tcp_connection_test{
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(100);
 
-        let _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
@@ -165,7 +172,7 @@ mod tcp_connection_test{
     fn get_ip_v4(){
         let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let connection = ClientTCPConnection::new(ip_address, timeout);
+        let connection = ClientTCPConnection::new(ip_address, timeout, DEFAULT_SIZE);
         //check if the ip is the same
         assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
@@ -175,7 +182,7 @@ mod tcp_connection_test{
         // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
         let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
         let timeout = Duration::from_secs(100);
-        let connection = ClientTCPConnection::new(ip_address, timeout);
+        let connection = ClientTCPConnection::new(ip_address, timeout, DEFAULT_SIZE);
         //check if the ip is the same
         assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
     }
@@ -185,7 +192,7 @@ mod tcp_connection_test{
     fn get_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
@@ -194,7 +201,7 @@ mod tcp_connection_test{
     fn set_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
 
@@ -207,7 +214,7 @@ mod tcp_connection_test{
     fn get_timeout(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
     }
@@ -216,7 +223,7 @@ mod tcp_connection_test{
     fn set_timeout(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
 
@@ -232,7 +239,7 @@ mod tcp_connection_test{
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(2);
 
-        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
         let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_query =
         DnsMessage::new_query_message(
@@ -255,7 +262,7 @@ mod tcp_connection_test{
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(2);
 
-        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
         let dns_query = DnsMessage::new();
         let response = conn_new.send(dns_query).await;
 

@@ -227,7 +227,7 @@ impl AsyncResolver {
 
         let config = self.config.clone();
 
-        if config.get_ends0() {
+        if config.get_edns0() {
             config.add_edns0_to_message(&mut query);
         }
 

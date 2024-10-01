@@ -412,7 +412,8 @@ impl AsyncResolver {
         if let Rcode::NOERROR = rcode {
             let answer = lookup_response.to_dns_msg().get_answer();
             if answer.len() == 0 {
-                Err(ClientError::TemporaryError("no answer found"))?;
+                // TODO: ask why no answer is error ?
+                //Err(ClientError::TemporaryError("no answer found"))?;
             }
             return Ok(lookup_response);
         }

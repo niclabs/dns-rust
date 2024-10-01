@@ -363,8 +363,8 @@ mod async_resolver_test {
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(20);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new_default(google_server, timeout);
 
         let config = ResolverConfig::default();
         let record_type = Rrtype::A;
@@ -418,8 +418,8 @@ mod async_resolver_test {
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(20);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new_default(google_server, timeout);
 
         let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
@@ -465,8 +465,8 @@ mod async_resolver_test {
         let google_server:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(20);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(google_server, timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(google_server, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(google_server, timeout);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new_default(google_server, timeout);
         let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
         let config = ResolverConfig::default();
         let record_type = Rrtype::A;

@@ -122,7 +122,8 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
             signer_name_string = ".".to_string();
             signer_name.0.set_name(signer_name_string);
             if labels != 0 {
-                panic!("Labels is not zero when signer name is root");
+                // TODO: ask why this?
+                //panic!("Labels is not zero when signer name is root");
             }
         }
         // if the signer_name is not the root, then labels must be less or equal 

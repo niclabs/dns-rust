@@ -11,7 +11,9 @@ pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin
 
     //Creates a ClientConecction 
     fn new(server_addr:IpAddr,
-        timeout:Duration) -> Self;
+        timeout:Duration, payload_size: usize) -> Self;
+
+    fn new_default(server_addr:IpAddr, timeout:Duration) -> Self;
 
     //Sends query 
     async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>;

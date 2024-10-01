@@ -334,5 +334,32 @@ async fn query_a_type_with_rrsig_edns() {
         assert_eq!(opt.get_rtype(), Rrtype::OPT);
         assert_eq!(opt.get_rclass(), Rclass::UNKNOWN(512));
         println!("{:?}", opt);
-    } 
+    }
+}
+
+#[tokio::test]
+async fn query_from_root() {
+    const ROOTSV1: [u8; 4] = [192,58,128,30];
+
+    let mut ip2req = ROOTSV1.into();
+    let response = query_from_ip_with_edns("example.com",
+                                           "UDP", "A", Some(1024), 0, true,
+                                           Some(vec![3]), ip2req).await;
+    let response = match response {
+        Ok(rrs) => rrs,
+        Err(e) => panic!("{:?}", e),
+    };
+
+    println!("{}", response);
+
+    let additional_rrs = response.get_additional();
+
+    let a_rrs: Vec<_> = additional_rrs.iter()
+        .filter(|arrs|
+            if let Rdata::A(_) = arrs.get_rdata() {true}
+            else {false}).collect();
+
+    if let Rdata::A(rdata) = a_rrs[4].get_rdata() {
+        ip2req = rdata.get_address();
+    }
 }

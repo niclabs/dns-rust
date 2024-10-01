@@ -56,13 +56,14 @@ impl Default for Rclass {
 
 impl fmt::Display for Rclass {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match *self {
-            Rclass::IN => "IN",
-            Rclass::CS => "CS",
-            Rclass::CH => "CH",
-            Rclass::HS => "HS",
-            Rclass::ANY => "ANY",
-            Rclass::UNKNOWN(_) => "UNKNOWN",
-        })
+        let result = match *self {
+            Rclass::IN => "IN".to_string(),
+            Rclass::CS => "CS".to_string(),
+            Rclass::CH => "CH".to_string(),
+            Rclass::HS => "HS".to_string(),
+            Rclass::ANY => "ANY".to_string(),
+            Rclass::UNKNOWN(x) => x.to_string(),
+        };
+        write!(f, "{}", result)
     }
 }

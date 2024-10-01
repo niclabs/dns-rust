@@ -21,16 +21,19 @@ pub struct ClientTCPConnection {
     server_addr: IpAddr,
     /// Read time timeout
     timeout: tokio::time::Duration,
+    /// payload size
+    payload_size: usize,
 }
 
 #[async_trait]
 impl ClientConnection for ClientTCPConnection {
 
     /// Creates TCPConnection
-    fn new(server_addr:IpAddr, timeout: Duration) -> Self {
+    fn new(server_addr:IpAddr, timeout: Duration, payload_size: usize) -> Self {
         ClientTCPConnection {
             server_addr: server_addr,
             timeout: timeout,
+            payload_size: payload_size,
         }
     }
 
@@ -82,7 +85,7 @@ impl ClientConnection for ClientTCPConnection {
         
     
         while vec_msg.len() < tcp_msg_len as usize {
-            let mut msg = [0; 512];
+            let mut msg = vec![0; self.payload_size];
             let read_task = stream.read(&mut msg);
             let number_of_bytes_msg_result = match timeout(conn_timeout, read_task).await {
                 Ok(n) => n,
@@ -99,6 +102,10 @@ impl ClientConnection for ClientTCPConnection {
         }
 
         return Ok(vec_msg);
+    }
+
+    fn new_default(server_addr: IpAddr, timeout: Duration) -> Self {
+        Self::new(server_addr, timeout, 512)
     }
 }
 
@@ -136,7 +143,7 @@ mod tcp_connection_test{
     use crate::domain_name::DomainName;
     use crate::message::rrtype::Rrtype;
     use crate::message::rclass::Rclass;
-
+    const DEFAULT_SIZE: usize = 512;
     #[test]
     fn create_tcp() {
 
@@ -145,7 +152,7 @@ mod tcp_connection_test{
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(100);
 
-        let _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
@@ -155,7 +162,7 @@ mod tcp_connection_test{
     fn get_ip_v4(){
         let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let connection = ClientTCPConnection::new(ip_address, timeout);
+        let connection = ClientTCPConnection::new(ip_address, timeout, DEFAULT_SIZE);
         //check if the ip is the same
         assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
@@ -165,7 +172,7 @@ mod tcp_connection_test{
         // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
         let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
         let timeout = Duration::from_secs(100);
-        let connection = ClientTCPConnection::new(ip_address, timeout);
+        let connection = ClientTCPConnection::new(ip_address, timeout, DEFAULT_SIZE);
         //check if the ip is the same
         assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
     }
@@ -175,7 +182,7 @@ mod tcp_connection_test{
     fn get_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
@@ -184,7 +191,7 @@ mod tcp_connection_test{
     fn set_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
 
@@ -197,7 +204,7 @@ mod tcp_connection_test{
     fn get_timeout(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
     }
@@ -206,7 +213,7 @@ mod tcp_connection_test{
     fn set_timeout(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
 
@@ -222,7 +229,7 @@ mod tcp_connection_test{
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(2);
 
-        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
         let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
         let dns_query =
         DnsMessage::new_query_message(
@@ -245,7 +252,7 @@ mod tcp_connection_test{
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(2);
 
-        let conn_new = ClientTCPConnection::new(ip_addr,timeout);
+        let conn_new = ClientTCPConnection::new(ip_addr,timeout, DEFAULT_SIZE);
         let dns_query = DnsMessage::new();
         let response = conn_new.send(dns_query).await;
 

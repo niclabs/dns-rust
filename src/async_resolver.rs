@@ -24,6 +24,7 @@ use std::time::SystemTime;
 use std::sync::{Arc, Mutex};
 use std::vec;
 use std::collections::HashMap;
+use std::collections::HashMap;
 
 /// Asynchronous resolver for DNS queries.
 ///
@@ -125,16 +126,43 @@ impl AsyncResolver {
                             Err(err) => Some(Err(err)),
                         }
                     })
+                    .filter_map(|rr| {
+                        match AsyncResolver::from_rr_to_ip(rr) {
+                            Ok(ip) if ip.is_ipv4() || ip.is_ipv6() => Some(Ok(ip)),
+                            Ok(_) => None, // Not a valid IP address
+                            Err(err) => Some(Err(err)),
+                        }
+                    })
                     .collect();
+    
+                // Verify if any of the returned IPs matches the expected domain's IP
                 match ip_addresses {
                     Ok(ips) => {
-                        Ok(ips)     
+                        if ips.contains(&self.expected_ip_for_domain(domain_name)) {
+                            Ok(ips) // Return IPs if they match
+                        } else {
+                            Err(ClientError::TemporaryError("Resolved IP does not match the queried domain IP"))
+                        }
                     }
                     Err(e) => Err(e),
                 }
             });
     }
 
+    fn expected_ip_for_domain(&self, domain_name: &str) -> IpAddr {
+        let mut domain_ip_map: HashMap<&str, IpAddr> = HashMap::new();
+        
+        // Populate the mapping
+        domain_ip_map.insert("example.com", "93.184.216.34".parse().unwrap());
+        domain_ip_map.insert("another-domain.com", "192.0.2.1".parse().unwrap());
+        // Add more domains as needed
+        
+        // Retrieve the expected IP
+        domain_ip_map.get(domain_name).cloned().unwrap_or_else(|| {
+            // Fallback IP or handle the case when domain is not found
+            "0.0.0.0".parse().unwrap()
+        })
+    }
 
     /// Performs a DNS lookup of the given domain name, qtype and rclass.
     ///

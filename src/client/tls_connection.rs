@@ -37,6 +37,7 @@ pub struct ClientTLSConnection {
     /// Read time timeout
     timeout: tokio::time::Duration,
     new_default: fn(IpAddr, Duration) -> Self,
+    new_default: fn(IpAddr, Duration) -> Self,
 }
 
 #[async_trait]

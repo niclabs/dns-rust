@@ -1,7 +1,6 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
 use crate::message::rcode::Rcode;
-use crate::message::rcode::Rcode;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
@@ -238,13 +237,11 @@ impl ResolverConfig {
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
     /// ```
     pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<u16>>) {
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<u16>>) {
         self.set_ends0(true);
         if let Some(max_payload) = max_payload {
             self.set_max_payload(max_payload);
         }
         self.set_ends0_version(version);
-        self.set_ends0_do(do_bit);
         self.set_ends0_do(do_bit);
         if let Some(options) =  options {
             self.set_ends0_options(options);

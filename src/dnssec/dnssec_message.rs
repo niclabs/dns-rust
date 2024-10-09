@@ -31,27 +31,20 @@ fn create_opt_rr(capacity: u16 ,e_rcode :Rcode, version: u8, do_bit: bool) -> Re
     let mut rr = ResourceRecord::new(rdata);
 
     let e_rcode = u8::from(e_rcode); 
-    let e_rcode = u8::from(e_rcode); 
     let do_val: u16 = if do_bit {0x8000} else {0x0};
     let ttl: u32 = (e_rcode as u32) << 24 | (version as u32) << 16| (do_val as u32);
     rr.set_ttl(ttl);
     rr.set_rclass(Rclass::UNKNOWN(capacity));
-    //println!("EL ttl es: {:#05x?}", ttl);
     //println!("EL ttl es: {:#05x?}", ttl);
     rr
 }
 
 fn read_opt_rr(opt_rr: ResourceRecord) -> (u16, Rcode, u8, bool) {
     let requested_udp_len = u16::from(opt_rr.get_rclass());
-fn read_opt_rr(opt_rr: ResourceRecord) -> (u16, Rcode, u8, bool) {
-    let requested_udp_len = u16::from(opt_rr.get_rclass());
     let data = opt_rr.get_ttl().to_be_bytes();
     let (e_rcode, version) = (data[0], data[1]);
     let z = u16::from_be_bytes([data[2], data[3]]);
 
-    let do_bit = ((z & 0x8000) > 0) as bool ;
-    (requested_udp_len, Rcode::from(e_rcode), version, do_bit)
-    //format!("OPT PSEUDO-RR\n\trequested_udp_len: {requested_udp_len}\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
     let do_bit = ((z & 0x8000) > 0) as bool ;
     (requested_udp_len, Rcode::from(e_rcode), version, do_bit)
     //format!("OPT PSEUDO-RR\n\trequested_udp_len: {requested_udp_len}\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
@@ -73,7 +66,6 @@ fn add_opt_record_dns_message(msg: &mut DnsMessage, capacity: u16, e_rcode :Rcod
 
 #[test]
 fn see_dnssec_message() {
-    let mut query = DnsMessage::new_query_message(
     let mut query = DnsMessage::new_query_message(
         DomainName::new_from_str("example.com"),
         Rrtype::A,

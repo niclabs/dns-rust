@@ -33,16 +33,26 @@ pub struct ClientTLSConnection {
     server_addr: IpAddr,
     /// Read time timeout
     timeout: tokio::time::Duration,
+    new_default: fn(IpAddr, Duration) -> Self,
 }
 
 #[async_trait]
 impl ClientConnection for ClientTLSConnection {
 
     /// Creates TCPConnection
-    fn new(server_addr:IpAddr, timeout: Duration) -> Self {
+    fn new(server_addr:IpAddr, timeout: Duration, new_default: usize) -> Self {
         ClientTLSConnection {
             server_addr: server_addr,
             timeout: timeout,
+            new_default: ClientTLSConnection::new_default,
+        }
+    }
+
+    fn new_default(server_addr:IpAddr, timeout: Duration) -> Self {
+        ClientTLSConnection {
+            server_addr: server_addr,
+            timeout: timeout,
+            new_default: ClientTLSConnection::new_default,
         }
     }
 

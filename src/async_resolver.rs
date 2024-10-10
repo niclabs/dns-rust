@@ -126,24 +126,15 @@ impl AsyncResolver {
                         }
                     })
                     .collect();
-    
-                // Verify if any of the returned IPs matches the expected domain's IP
                 match ip_addresses {
                     Ok(ips) => {
-                        if ips.contains(&self.expected_ip_for_domain(domain_name)) {
-                            Ok(ips) // Return IPs if they match
-                        } else {
-                            Err(ClientError::TemporaryError("Resolved IP does not match the queried domain IP"))
-                        }
+                        Ok(ips)     
                     }
                     Err(e) => Err(e),
                 }
             });
     }
 
-    fn expected_ip_for_domain(&self, domain_name: &str) -> IpAddr {
-        
-    }
 
     /// Performs a DNS lookup of the given domain name, qtype and rclass.
     ///

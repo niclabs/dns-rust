@@ -506,6 +506,7 @@ mod async_resolver_test {
     static TIMEOUT: u64 = 45;
     use std::num::NonZeroUsize;
     use std::sync::Arc;
+    use crate::message::rdata::ns_rdata::NsRdata;
 
     #[test]
     fn create_async_resolver() {
@@ -774,12 +775,27 @@ mod async_resolver_test {
     async fn lookup_ip_rclass_any() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
+        // for it to be an error, it should be the type ANY
+        // in this case, it just fetches info for ANY CLASS -> INTERNET, CHAOS, HESIOID...
         let rclass = "ANY";
         let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
         println!("RESPONSE : {:?}", ip_addresses);
 
-        assert!(ip_addresses.is_err());
+        assert!(ip_addresses.is_ok());
     }
+    // TODO: check which is the behaviour that rtype ANY MUST HAVE.
+    /*#[tokio::test]
+    async fn lookup_ip_rtype_any() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        // this is with any
+        let rtype = "ANY";
+        let response = resolver.lookup(domain_name, "UDP", rtype, "IN").await.unwrap();
+
+        //println!("RESPONSE : {}", response.to_dns_msg());
+
+        //assert!(ip_addresses.is_err());
+    }*/
 
     #[tokio::test]
     async fn lookup_ch() {
@@ -1981,6 +1997,12 @@ mod async_resolver_test {
         rr_ttl_1.set_ttl(1);
         answer.push(rr_ttl_1);
 
+        // careful, the key is the <qname, qclass, qtype> so it will get the cached data
+        // from ^^^ ttl1
+        let mut nsdata = NsRdata::new();
+        let domain = DomainName::new_from_string("localhost2".to_string());
+        nsdata.set_nsdname(domain);
+        let rdata = Rdata::NS(nsdata);
         let mut rr_ttl_2 = ResourceRecord::new(rdata);
         rr_ttl_2.set_ttl(2);
         answer.push(rr_ttl_2);
@@ -1998,7 +2020,9 @@ mod async_resolver_test {
             0
         );
 
-        resolver.store_data_cache(dns_response);
+        resolver.store_data_cache(dns_response.clone());
+        let q = dns_response.get_question();
+        let key = CacheKey::Primary(q.get_rrtype(), q.get_rclass(), q.get_qname().clone());
         assert_eq!(
             resolver
                 .cache
@@ -2006,6 +2030,8 @@ mod async_resolver_test {
                 .unwrap()
                 .get_cache_answer()
                 .get_cache()
+                .get(&key)
+                .unwrap()
                 .len(),
             2
         );
@@ -2039,8 +2065,20 @@ mod async_resolver_test {
         soa_rdata.set_expire(expire);
         soa_rdata.set_minimum(minimum);
 
+
         let rdata = Rdata::SOA(soa_rdata);
         let mut rr = ResourceRecord::new(rdata);
+        /*
+            7.2. TTLs on SOA RRs (rfc2181)
+               It may be observed that in section 3.2.1 of RFC1035, which defines
+               the format of a Resource Record, that the definition of the TTL field
+               contains a throw away line which states that the TTL of an SOA record
+               should always be sent as zero to prevent caching.  This is mentioned
+               nowhere else, and has not generally been implemented.
+               Implementations should not assume that SOA records will have a TTL of
+               zero, nor are they required to send SOA records with a TTL of zero.
+        */
+        rr.set_ttl(3);
         rr.set_name(domain_name.clone());
 
         // Create dns response

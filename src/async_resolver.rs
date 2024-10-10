@@ -2100,7 +2100,7 @@ mod async_resolver_test {
                 .cache
                 .lock()
                 .unwrap()
-                .get_cache_answer()
+                .get_cache_additional()
                 .get_cache()
                 .len(),
             1

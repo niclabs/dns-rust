@@ -1,9 +1,7 @@
 
 use std::{net::IpAddr, str::FromStr};
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
-
-
-
+use dns_rust::async_resolver::lookup_response::LookupResponse;
 
 // TODO: Change params type to intoDomainName
 async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Result<Vec<ResourceRecord>, ClientError> {
@@ -15,10 +13,16 @@ async fn query_response(domain_name: &str, protocol: &str, qtype: &str) -> Resul
         domain_name,
         protocol,
         qtype,
-
         "IN").await;
-
-    response.map(|lookup_response| lookup_response.to_vec_of_rr())
+    // TODO: a resolver always gets a response ??
+    match response {
+        Ok(lookup_resp) => {
+            Ok(lookup_resp.to_vec_of_rr())
+        }
+        Err(e) => {
+            Err(e)
+        }
+    }
 }
 
 /// 6.2.1 Query test Qtype = A
@@ -108,9 +112,11 @@ async fn mistyped_host_name() {
 
 /// No record test
 #[tokio::test]
+// This test asserts if the resolver does not get an answer the length of the extracted answers should be 0
 async fn no_resource_available() {
     let response =  query_response("example.com", "UDP", "CNAME").await;
-    println!("{:?}", response);
-    assert!(response.is_err());
+    //println!("{:?}", response);
+    let answers = response.unwrap();
+    assert_eq!(answers.len(), 0);
 }
 

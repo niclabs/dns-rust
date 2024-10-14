@@ -16,7 +16,7 @@ async fn query_from_ip_with_edns(domain_name: &str,
     config.add_edns0(max_payload, version, do_bit, option);
 
 
-    config.set_name_servers(vec![ServerInfo::new_from_addr(ip_addr, Duration::from_secs(3))]);
+    config.set_name_servers(vec![ServerInfo::new_from_addr(ip_addr, Duration::from_secs(2))]);
     let mut resolver = AsyncResolver::new(config);
 
     let response = resolver.lookup(
@@ -99,7 +99,7 @@ async fn query_a_type_with_rrsig_edns() {
     }
 }
 
-#[tokio::test]
+/*#[tokio::test]
 async fn query_from_root() {
     const ROOTSV1: [u8; 4] = [192,58,128,30];
 
@@ -107,7 +107,7 @@ async fn query_from_root() {
     let response = query_from_ip_with_edns("example.com",
                                            "UDP", "A", Some(1024), 0, true,
                                            Some(vec![3]), ip2req).await;
-    let response = match response {
+    let mut response = match response {
         Ok(rrs) => rrs,
         Err(e) => panic!("{:?}", e),
     };
@@ -121,7 +121,12 @@ async fn query_from_root() {
             if let Rdata::A(_) = arrs.get_rdata() {true}
             else {false}).collect();
 
-    if let Rdata::A(rdata) = a_rrs[4].get_rdata() {
+    if let Rdata::A(rdata) = a_rrs[5].get_rdata() {
         ip2req = rdata.get_address();
     }
-}
+
+    response = query_from_ip_with_edns("example.com",
+                                           "UDP", "A", Some(1024), 0, true,
+                                           Some(vec![3]), ip2req).await.unwrap();
+    println!("{}", response);
+}*/

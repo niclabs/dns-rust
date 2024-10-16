@@ -2075,8 +2075,8 @@ mod async_resolver_test {
                contains a throw away line which states that the TTL of an SOA record
                should always be sent as zero to prevent caching.  This is mentioned
                nowhere else, and has not generally been implemented.
-               Implementations should not assume that SOA records will have a TTL of
-               zero, nor are they required to send SOA records with a TTL of zero.
+               **Implementations should not assume that SOA records will have a TTL of
+               zero, nor are they required to send SOA records with a TTL of zero.**
         */
         rr.set_ttl(3);
         rr.set_name(domain_name.clone());

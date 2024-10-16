@@ -76,11 +76,20 @@ impl ClientConnection for ClientUDPConnection {
             Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
         };
 
-        match result {
+        let (_, src_addr) = match result {
             Err(e) => return Err(IoError::new(ErrorKind::Other, format!("Error: could not read {}", e))).map_err(Into::into),
-            Ok(_) => (),
+            Ok((n, addr)) => (n, addr),
         };
 
+        // Verify that the response comes from the expected IP
+        let expected_ip = self.get_server_addr();
+        let actual_ip = src_addr.ip();
+        if actual_ip != expected_ip {
+            return Err(ClientError::Io(IoError::new(
+                ErrorKind::PermissionDenied,
+                format!("IP mismatch: expected {}, got {}", expected_ip, actual_ip),
+            )).into());
+        }
         let ip = self.get_server_addr();
         let mut additionals = dns_query.get_additional();
         let mut ar = ARdata::new();

@@ -69,7 +69,17 @@ impl ClientConnection for ClientTCPConnection {
             Ok(stream_result) => stream_result?,
             Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
         };
-    
+
+        //Verify that the connected IP matches the expected IP
+        let actual_ip = stream.peer_addr()?.ip();
+        let expected_ip = self.get_server_addr();
+        if actual_ip != expected_ip {
+            return Err(ClientError::Io(IoError::new(
+                ErrorKind::PermissionDenied,
+                format!("IP mismatch: expected {}, got {}", expected_ip, actual_ip),
+            )).into());
+        }
+
         // Add len of message len
         let msg_length: u16 = bytes.len() as u16;
         let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];

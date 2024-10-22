@@ -16,7 +16,7 @@ async fn query_from_ip_with_edns(domain_name: &str,
     config.add_edns0(max_payload, version, do_bit, option);
 
 
-    config.set_name_servers(vec![ServerInfo::new_from_addr(ip_addr, Duration::from_secs(2))]);
+    config.set_name_servers(vec![ServerInfo::new_from_addr_with_default_size(ip_addr, Duration::from_secs(2))]);
     let mut resolver = AsyncResolver::new(config);
 
     let response = resolver.lookup(

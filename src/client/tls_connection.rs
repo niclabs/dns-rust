@@ -39,7 +39,7 @@ pub struct ClientTLSConnection {
 #[async_trait]
 impl ClientConnection for ClientTLSConnection {
 
-    /// Creates TCPConnection
+    /// Creates TLSConnection
     fn new(server_addr:IpAddr, timeout: Duration, new_default: usize) -> Self {
         ClientTLSConnection {
             server_addr: server_addr,
@@ -96,8 +96,16 @@ impl ClientConnection for ClientTLSConnection {
             let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
             let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
             
-            // stream.set_read_timeout(Some(timeout))?; //-> Se hace con tokio
-    
+            //Verify that the connected IP matches the expected IP
+            let actual_ip = stream.peer_addr()?.ip();
+            let expected_ip = self.get_server_addr();
+            if actual_ip != expected_ip {
+                return Err(ClientError::Io(IoError::new(
+                    ErrorKind::PermissionDenied,
+                    format!("IP mismatch: expected {}, got {}", expected_ip, actual_ip),
+                )).into());
+            }
+
             // stream.write(&full_msg)?;
             stream.write(&full_msg).await?;
             
@@ -106,7 +114,7 @@ impl ClientConnection for ClientTLSConnection {
     
             stream.read_exact(&mut msg_size_response).await?;
         
-            let tcp_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
+            let tls_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
             let mut vec_msg: Vec<u8> = Vec::new();
             let ip = self.get_server_addr();
             let mut additionals = dns_query.get_additional();
@@ -117,7 +125,7 @@ impl ClientConnection for ClientTLSConnection {
             additionals.push(rr);
             
         
-            while vec_msg.len() < tcp_msg_len as usize {
+            while vec_msg.len() < tls_msg_len as usize {
                 let mut msg = [0; 512];
                 let read_task = stream.read(&mut msg);
                 let number_of_bytes_msg_result = match timeout(conn_timeout, read_task).await {
@@ -167,6 +175,100 @@ impl ClientTLSConnection {
 
 #[cfg(test)]
 mod tls_connection_test{
+    use super::*;
+    use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
+    use crate::domain_name::DomainName;
+    use crate::message::rrtype::Rrtype;
+    use crate::message::rclass::Rclass;
+    const DEFAULT_SIZE: usize = 512;
+    #[test]
+    fn create_tcp() {
+
+        // let domain_name = String::from("uchile.cl");
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let _port: u16 = 8088;
+        let timeout = Duration::from_secs(100);
+
+        let _conn_new = ClientTLSConnection::new(ip_addr,timeout, DEFAULT_SIZE);
+
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
+    }
+    #[test]
+    fn get_ip_v4(){
+        let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientTLSConnection::new(ip_address, timeout, DEFAULT_SIZE);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
+    fn get_ip_v6(){
+        // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
+        let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
+        let timeout = Duration::from_secs(100);
+        let connection = ClientTLSConnection::new(ip_address, timeout, DEFAULT_SIZE);
+        //check if the ip is the same
+        assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
+    }
+    #[test]
+    fn get_server_addr(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout, DEFAULT_SIZE);
+
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+    }
+
+    #[test]
+    fn set_server_addr(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout, DEFAULT_SIZE);
+
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
+
+        _conn_new.set_server_addr(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+
+        assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
+    }
+    #[test]
+    fn get_timeout(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout, DEFAULT_SIZE);
+
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
+    }
+
+    #[test]
+    fn set_timeout(){
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let timeout = Duration::from_secs(100);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout, DEFAULT_SIZE);
+
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
+
+        _conn_new.set_timeout(Duration::from_secs(200));
+
+        assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(200));
+    }
+
+    #[tokio::test]
+    async fn send_timeout() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let _port: u16 = 8088;
+        let timeout = Duration::from_secs(2);
+
+        let conn_new = ClientTLSConnection::new(ip_addr,timeout, DEFAULT_SIZE);
+        let dns_query = DnsMessage::new();
+        //let response = conn_new.send(dns_query).await;
+
+        //assert!(response.is_err());
+    }
+
+
    
 
 }

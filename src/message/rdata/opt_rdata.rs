@@ -104,7 +104,7 @@ impl fmt::Display for OptRdata {
             for (option_code, option_length, option_data) in &self.option {
                 result.push_str(&format!("OPTION-CODE: {}\n", option_code));
                 result.push_str(&format!("OPTION-LENGTH: {}\n", option_length));
-                result.push_str(&format!("OPTION-DATA: {:?}\n", option_data));
+                result.push_str(&format!("OPTION-DATA: {:?} (\"{}\")\n", option_data, std::str::from_utf8(option_data).unwrap()));
             }
         }
         else {

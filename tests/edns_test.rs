@@ -72,7 +72,9 @@ async fn query_a_type_edns() {
 
 #[tokio::test]
 async fn query_a_type_with_rrsig_edns() {
-    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, true, Some(vec![3])).await;
+    let response = query_response_edns("example.com",
+                                       "UDP", "A", Some(1024), 0,
+                                       true, Some(vec![3])).await;
 
     if let Ok(rrs) = response {
         println!("{}", rrs);
@@ -91,11 +93,12 @@ async fn query_a_type_with_rrsig_edns() {
             panic!("No RRSIG");
             
         }
+        assert_eq!(answer.get_ttl(), rrsig.get_ttl());
         let opt = &rrs.get_additional()[0];
         assert_eq!(opt.get_name(), DomainName::new_from_str(""));
         assert_eq!(opt.get_rtype(), Rrtype::OPT);
         assert_eq!(opt.get_rclass(), Rclass::UNKNOWN(512));
-        println!("{:?}", opt);
+        //println!("{}", opt);
     }
 }
 

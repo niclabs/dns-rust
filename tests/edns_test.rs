@@ -98,7 +98,12 @@ async fn query_a_type_with_rrsig_edns() {
         assert_eq!(opt.get_name(), DomainName::new_from_str(""));
         assert_eq!(opt.get_rtype(), Rrtype::OPT);
         assert_eq!(opt.get_rclass(), Rclass::UNKNOWN(512));
-        //println!("{}", opt);
+        if let Rdata::OPT(rdata) = opt.get_rdata() {
+            let rdata = rdata.clone();
+            let (_,_,c) = &rdata.get_option()[0];
+            // because the first query option is 8.8.8.8, it redirects to google public dns in scl chile
+            assert_eq!(std::str::from_utf8(c).unwrap(), "gpdns-scl")
+        }
     }
 }
 

@@ -1,185 +1,121 @@
-use crate::message::Rtype;
-use crate::message::Rclass;
-use crate::message::resource_record::ResourceRecord;
-use std::collections::HashSet;
 
-/// Represents a set of resource records (RRset).
-#[derive(Debug)]
+use crate::domain_name::DomainName;
+use crate::message::rclass::Rclass;
+use crate::message::rdata::Rdata;
+use crate::message::resource_record::ToBytes;
+use crate::message::rrtype::Rrtype;
+/*
+RFC 2181
+Resource Records [(RR) with a label, class, type, and data] also have a time to live (TTL).
+It is possible for the RRs in an RRSet [= same label, class, and type; different data] to have different TTLs.
+No uses for this have been found that cannot be better accomplished in other ways.
+This can, however, cause partial replies (not marked "truncated") from a caching server, where the TTLs for some but not all the RRs in the RRSet have expired.
+Consequently the use of **differing TTLs in an RRSet is hereby deprecated**, the TTLs of all RRs in an RRSet MUST be the same.
+*/
 pub struct RRset {
-    /// The name of the domain associated with this RRset.
-    name: String,
-    /// The type of resource record in this RRset.
-    rtype: Rtype,
-    /// The class of resource record in this RRset.
+    name: DomainName,
+    rrtype: Rrtype,
     rclass: Rclass,
-    /// The time to live (TTL) value for records in this RRset.
     ttl: u32,
-    /// The set of resource records belonging to this RRset.
-    records: HashSet<ResourceRecord>,
+    //Pair rdlen, rdata
+    records: Vec<(u16, Rdata)>
+}
+
+impl ToBytes for RRset {
+    // This might be for the digest see https://datatracker.ietf.org/doc/html/rfc4035#section-5.3.1
+    fn to_bytes(&self) -> Vec<u8> {
+        vec![]
+    }
 }
 
 impl RRset {
-    /// Creates a new RRset.
-    pub fn new(name: String, rtype: Rtype, rclass: Rclass, ttl: u32) -> RRset {
+    pub fn new() -> RRset {
         RRset {
-            name,
-            rtype,
-            rclass,
-            ttl,
-            records: HashSet::new(),
+            name: DomainName::new(),
+            rrtype: Rrtype::A,
+            rclass: Rclass::IN,
+            ttl: 0,
+            records: Vec::new()
         }
     }
+    // Getters
 
-    /// Adds a resource record to this RRset.
-    pub fn add_record(&mut self, record: ResourceRecord) {
-        self.records.insert(record);
+    pub fn get_name(&self) -> DomainName {
+        self.name.clone()
     }
-
-    /// Gets the name of the domain associated with this RRset.
-    pub fn get_name(&self) -> &String {
-        &self.name
+    pub fn get_rrtype(&self) -> Rrtype {
+        self.rrtype
     }
-
-    /// Gets the type of resource record in this RRset.
-    pub fn get_type(&self) -> Rtype {
-        self.rtype
-    }
-
-    /// Gets the class of resource record in this RRset.
-    pub fn get_class(&self) -> Rclass {
+    pub fn get_rclass(&self) -> Rclass {
         self.rclass
     }
-
-    /// Gets the time to live (TTL) value for records in this RRset.
     pub fn get_ttl(&self) -> u32 {
         self.ttl
     }
-
-    /// Gets the set of resource records belonging to this RRset.
-    pub fn get_records(&self) -> &HashSet<ResourceRecord> {
-        &self.records
+    pub fn get_records(&self) -> Vec<(u16, Rdata)> {
+        self.records.clone()
     }
 
-    /// Gets the labels of the domain associated with this RRset.
-    pub fn get_labels(&self) -> usize {
-        self.name.split('.').count()
-    }
 
-    /// Serializes the RRset to a byte array for signing.
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        for record in &self.records {
-            bytes.extend(record.to_bytes());  // Assuming ResourceRecord has a to_bytes method
-        }
-        bytes
+    // Setters
+    pub fn set_name(&mut self, name: DomainName) {
+        self.name = name;
     }
+    pub fn set_rrtype(&mut self, rrtype: Rrtype) {
+        self.rrtype = rrtype;
+    }
+    pub fn set_rclass(&mut self, rclass: Rclass) {
+        self.rclass = rclass;
+    }
+    pub fn set_ttl(&mut self, ttl: u32) {
+        self.ttl = ttl;
+    }
+    pub fn set_records(&mut self, records: Vec<(u16, Rdata)>) {
+        self.records = records;
+    }
+    
 }
 
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::message::Rtype;
-    use crate::message::Rclass;
-    use crate::message::resource_record::{ResourceRecord, Rdata, ARdata, NsRdata, CnameRdata};
+mod rrset_test {
     use std::net::IpAddr;
-    use std::collections::HashSet;
-
+    use crate::message::rdata::a_rdata::ARdata;
+    use super::*;
     #[test]
-    fn test_create_rrset() {
-        let name = "example.com".to_string();
-        let rtype = Rtype::A;
-        let rclass = Rclass::IN;
-        let ttl = 3600;
-
-        let rrset = RRset::new(name.clone(), rtype, rclass, ttl);
-
-        assert_eq!(rrset.get_name(), &name);
-        assert_eq!(rrset.get_type(), Rtype::A);
-        assert_eq!(rrset.get_class(), Rclass::IN);
-        assert_eq!(rrset.get_ttl(), 3600);
-        assert_eq!(rrset.get_labels(), 2);
-        assert!(rrset.get_records().is_empty());
+    fn constructor_test() {
+        let rrset = RRset::new();
+        assert_eq!(rrset.name, DomainName::new());
+        assert_eq!(rrset.rrtype, Rrtype::A);
+        assert_eq!(rrset.rclass, Rclass::IN);
+        assert_eq!(rrset.ttl, 0);
+        assert_eq!(rrset.records, Vec::new());
     }
-
     #[test]
-    fn test_add_record() {
-        let name = "example.com".to_string();
-        let rtype = Rtype::A;
-        let rclass = Rclass::IN;
+    fn constructor_test_2(){
+        let mut vec= vec![];
+        let a_data_1 = ARdata::new_from_addr(IpAddr::from([192,168,0,1]));
+        let rdata1 = (4u16, Rdata::A(a_data_1));
+        vec.push(rdata1);
+        let a_data_2 = ARdata::new_from_addr(IpAddr::from([192,168,0,100]));
+        let rdata2 = (4u16, Rdata::A(a_data_2));
+        vec.push(rdata2);
         let ttl = 3600;
-
-        let mut rrset = RRset::new(name.clone(), rtype, rclass, ttl);
-
-        let mut a_rdata = Rdata::A(ARdata::new());
-        match a_rdata {
-            Rdata::A(ref mut val) => val.set_address(IpAddr::from([127, 0, 0, 1])),
-            _ => unreachable!(),
-        }
-
-        let record = ResourceRecord::new(a_rdata);
-        rrset.add_record(record);
-
-        assert_eq!(rrset.get_records().len(), 1);
-    }
-
-    #[test]
-    fn test_get_name() {
-        let name = "example.com".to_string();
-        let rtype = Rtype::A;
+        let domain_name = DomainName::new_from_str("example.com");
+        let rrtype = Rrtype::A;
         let rclass = Rclass::IN;
-        let ttl = 3600;
 
-        let rrset = RRset::new(name.clone(), rtype, rclass, ttl);
+        let mut rrset = RRset::new(
+        );
+        rrset.set_name(domain_name.clone());
+        rrset.set_rrtype(rrtype);
+        rrset.set_rclass(rclass);
+        rrset.set_ttl(ttl);
+        rrset.set_records(vec.clone());
 
-        assert_eq!(rrset.get_name(), &name);
-    }
-
-    #[test]
-    fn test_get_type() {
-        let name = "example.com".to_string();
-        let rtype = Rtype::NS;
-        let rclass = Rclass::IN;
-        let ttl = 3600;
-
-        let rrset = RRset::new(name.clone(), rtype, rclass, ttl);
-
-        assert_eq!(rrset.get_type(), Rtype::NS);
-    }
-
-    #[test]
-    fn test_get_class() {
-        let name = "example.com".to_string();
-        let rtype = Rtype::MX;
-        let rclass = Rclass::CH;
-        let ttl = 3600;
-
-        let rrset = RRset::new(name.clone(), rtype, rclass, ttl);
-
-        assert_eq!(rrset.get_class(), Rclass::CH);
-    }
-
-    #[test]
-    fn test_get_ttl() {
-        let name = "example.com".to_string();
-        let rtype = Rtype::A;
-        let rclass = Rclass::IN;
-        let ttl = 7200;
-
-        let rrset = RRset::new(name.clone(), rtype, rclass, ttl);
-
-        assert_eq!(rrset.get_ttl(), 7200);
-    }
-
-    #[test]
-    fn test_get_labels() {
-        let name = "sub.example.com".to_string();
-        let rtype = Rtype::A;
-        let rclass = Rclass::IN;
-        let ttl = 3600;
-
-        let rrset = RRset::new(name.clone(), rtype, rclass, ttl);
-
-        assert_eq!(rrset.get_labels(), 3);
+        assert_eq!(rrset.get_name(), domain_name);
+        assert_eq!(rrset.get_rrtype(), rrtype);
+        assert_eq!(rrset.get_rclass(), rclass);
+        assert_eq!(rrset.get_ttl(), ttl);
+        assert_eq!(rrset.get_records(), vec);
     }
 }

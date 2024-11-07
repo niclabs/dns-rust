@@ -5,6 +5,7 @@ pub mod resource_record;
 pub mod rrtype;
 pub mod rclass;
 pub mod rcode;
+pub mod rrset;
 
 use crate::message::rclass::Rclass;
 use crate::message::rrtype::Rrtype;

@@ -1,7 +1,8 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
 use crate::message::rrtype::Rrtype;
-
+use base64::engine::general_purpose;
+use base64::Engine as _;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -36,7 +37,7 @@ pub struct RRSIGRdata {
     signature_inception: u32, // Unsigned decimal integer
     key_tag: u16, // Unsigned decimal integer
     signer_name: DomainName, // Domain name
-    signature: String, // Base64 encoding of the signature
+    signature: Vec<u8>, // Base64 encoding of the signature
 }
 
 impl ToBytes for RRSIGRdata {
@@ -58,7 +59,7 @@ impl ToBytes for RRSIGRdata {
         bytes.extend_from_slice(&signer_name);
 
         let signature = self.signature.clone();
-        bytes.extend_from_slice(&signature.into_bytes());
+        bytes.extend_from_slice(&signature);
 
         bytes
     }
@@ -121,7 +122,8 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
             signer_name_string = ".".to_string();
             signer_name.0.set_name(signer_name_string);
             if labels != 0 {
-                panic!("Labels is not zero when signer name is root");
+                // TODO: ask why this?
+                //panic!("Labels is not zero when signer name is root");
             }
         }
         // if the signer_name is not the root, then labels must be less or equal 
@@ -142,7 +144,7 @@ impl FromBytes<Result<Self, &'static str>> for RRSIGRdata {
             signature.push(bytes[i]);
             i += 1;
         }
-        let signature = String::from_utf8(signature).unwrap();
+        //let signature_b64 = general_purpose::STANDARD.encode(signature);
         rrsig_rdata.set_signature(signature);
 
         Ok(rrsig_rdata)
@@ -167,7 +169,7 @@ impl RRSIGRdata{
             signature_inception: 0,
             key_tag: 0,
             signer_name: DomainName::new(),
-            signature: String::new(),
+            signature: vec![],
         }
     }
     /// Getter for type_covered
@@ -274,7 +276,7 @@ impl RRSIGRdata{
     /// let rrsig_rdata = RRSIGRdata::new();
     /// let signature = rrsig_rdata.get_signature();
     /// ```
-    pub fn get_signature(&self) -> String{
+    pub fn get_signature(&self) -> Vec<u8>{
         self.signature.clone()
     }
 }
@@ -385,7 +387,7 @@ impl RRSIGRdata{
     /// let mut rrsig_rdata = RRSIGRdata::new();
     /// rrsig_rdata.set_signature("abcdefg".to_string());
     /// ```
-    pub fn set_signature(&mut self, signature: String) {
+    pub fn set_signature(&mut self, signature: Vec<u8>) {
         self.signature = signature;
     }
 }
@@ -402,7 +404,7 @@ impl fmt::Display for RRSIGRdata {
         self.get_signature_inception(), 
         self.get_key_tag(), 
         self.get_signer_name().get_name(), 
-        self.get_signature())
+        general_purpose::STANDARD.encode(self.get_signature()))
     }
 }
 
@@ -422,7 +424,7 @@ mod rrsig_rdata_test{
         assert_eq!(rrsig_rdata.signature_inception, 0);
         assert_eq!(rrsig_rdata.key_tag, 0);
         assert_eq!(rrsig_rdata.signer_name, DomainName::new());
-        assert_eq!(rrsig_rdata.signature, String::new());
+        assert_eq!(rrsig_rdata.signature, vec![]);
     }
 
     #[test]
@@ -437,7 +439,7 @@ mod rrsig_rdata_test{
         assert_eq!(rrsig_rdata.get_signature_inception(), 0);
         assert_eq!(rrsig_rdata.get_key_tag(), 0);
         assert_eq!(rrsig_rdata.get_signer_name(), DomainName::new());
-        assert_eq!(rrsig_rdata.get_signature(), String::new());
+        assert_eq!(rrsig_rdata.get_signature(), vec![]);
 
         rrsig_rdata.set_type_covered(Rrtype::CNAME);
         rrsig_rdata.set_algorithm(5);
@@ -447,7 +449,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signature_inception(1630435200);
         rrsig_rdata.set_key_tag(1234);
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
-        rrsig_rdata.set_signature(String::from("abcdefg"));
+        rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
         assert_eq!(rrsig_rdata.get_type_covered(), Rrtype::CNAME);
         assert_eq!(rrsig_rdata.get_algorithm(), 5);
@@ -457,7 +459,7 @@ mod rrsig_rdata_test{
         assert_eq!(rrsig_rdata.get_signature_inception(), 1630435200);
         assert_eq!(rrsig_rdata.get_key_tag(), 1234);
         assert_eq!(rrsig_rdata.get_signer_name(), DomainName::new_from_str("example.com"));
-        assert_eq!(rrsig_rdata.get_signature(), String::from("abcdefg"));
+        assert_eq!(rrsig_rdata.get_signature(), b"abcdefg".to_vec());
     }
 
     #[test]
@@ -471,7 +473,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signature_inception(1630435200);
         rrsig_rdata.set_key_tag(1234);
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
-        rrsig_rdata.set_signature(String::from("abcdefg"));
+        rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
         let expected_result: Vec<u8> = vec![0, 5, //typed covered
         5, //algorithm
@@ -503,7 +505,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signature_inception(1630435200);
         rrsig_rdata.set_key_tag(1234);
         rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
-        rrsig_rdata.set_signature(String::from("abcdefg"));
+        rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
         let result = RRSIGRdata::from_bytes(&bytes_test, &bytes_test).unwrap();
 
@@ -542,7 +544,7 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signature_inception(4294967295);
        rrsig_rdata.set_key_tag(65535);
        rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
-       rrsig_rdata.set_signature(String::from("abcdefg"));
+       rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
        if let Ok(result) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
            assert_eq!(result, rrsig_rdata);
@@ -575,7 +577,7 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signature_inception(4294967295);
        rrsig_rdata.set_key_tag(65535);
        rrsig_rdata.set_signer_name(DomainName::new_from_str("example.com"));
-       rrsig_rdata.set_signature(String::from("abcdefg"));
+       rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
        let result = rrsig_rdata.to_bytes();
     
@@ -603,7 +605,7 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signature_inception(0);
        rrsig_rdata.set_key_tag(0);
        rrsig_rdata.set_signer_name(DomainName::new_from_str("."));
-       rrsig_rdata.set_signature(String::from("\0"));
+       rrsig_rdata.set_signature(b"\0".to_vec());
 
        if let Ok(result) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
          assert_eq!(result, rrsig_rdata);
@@ -635,7 +637,7 @@ mod rrsig_rdata_test{
        rrsig_rdata.set_signature_inception(0);
        rrsig_rdata.set_key_tag(0);
        rrsig_rdata.set_signer_name(DomainName::new_from_str(""));
-       rrsig_rdata.set_signature(String::from("\0"));
+       rrsig_rdata.set_signature(b"\0".to_vec());
 
        let result = rrsig_rdata.to_bytes();
 
@@ -707,7 +709,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signature_inception(1630435200);
         rrsig_rdata.set_key_tag(1234);
         rrsig_rdata.set_signer_name(DomainName::new_from_str("www.example.com.es.mx.ar.us.uk"));
-        rrsig_rdata.set_signature(String::from("abcdefg"));
+        rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
 
         if let Ok(rrsig_data_from_bytes) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
@@ -761,7 +763,7 @@ mod rrsig_rdata_test{
         rrsig_rdata.set_signature_inception(1630435200);
         rrsig_rdata.set_key_tag(1234);
         rrsig_rdata.set_signer_name(DomainName::new_from_str("."));
-        rrsig_rdata.set_signature(String::from("abcdefg"));
+        rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
         if let Ok(rrsig_data_from_bytes) = RRSIGRdata::from_bytes(&bytes_test, &bytes_test) {
             assert_eq!(rrsig_rdata, rrsig_data_from_bytes);

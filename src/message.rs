@@ -5,6 +5,7 @@ pub mod resource_record;
 pub mod rrtype;
 pub mod rclass;
 pub mod rcode;
+pub mod rrset;
 
 use crate::message::rclass::Rclass;
 use crate::message::rrtype::Rrtype;
@@ -249,16 +250,15 @@ impl DnsMessage {
         msg
     }
 
-    /// Adds ENDS0 to the message.
+    /// Creates a ENDS0, to be later added to the message
     /// 
     /// # Example
     /// ´´´
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
     /// ´´´
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, z: u16, option_codes: Option<Vec<u16>>){
+    fn create_opt_rr(max_payload: Option<u16> ,e_rcode :Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<u16>>) -> ResourceRecord {
         let mut opt_rdata = OptRdata::new();
-
         let mut option = Vec::new();
 
         if let Some(option_codes) = option_codes {
@@ -267,28 +267,42 @@ impl DnsMessage {
             }
         }
         opt_rdata.set_option(option);
+
         let rdata = Rdata::OPT(opt_rdata);
-
         let rdlength = rdata.to_bytes().len() as u16;
-
         let mut rr = ResourceRecord::new(rdata);
-
+    
+        let e_rcode = u8::from(e_rcode); 
+        let do_val: u16 = if do_bit {0x8000} else {0x0};
+        let extended_flags: u32 = (e_rcode as u32) << 24 | (version as u32) << 16| (do_val as u32);
+        // MUST be 0 (root domain)   
         rr.set_name(DomainName::new_from_string(".".to_string()));
-
+        // OPT (41)    
         rr.set_type_code(Rrtype::OPT);
-
+        // extended RCODE and flags
+        rr.set_ttl(extended_flags);
+        // requestor's UDP payload size
         rr.set_rclass(Rclass::UNKNOWN(max_payload.unwrap_or(512)));
-
-        let ttl = u32::from(version) << 16 | u32::from(z);
-        rr.set_ttl(ttl);
-
+        // length of all RDATA 
         rr.set_rdlength(rdlength);
+        rr
+    }
+    
+    /// Adds ENDS0 to the message.
+    /// 
+    /// # Example
+    /// ´´´
+    /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
+    /// ´´´
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit:bool, option_codes: Option<Vec<u16>>) {
+        let rr = DnsMessage::create_opt_rr(max_payload, e_rcode, version, do_bit, option_codes);
 
         self.add_additionals(vec![rr]);
 
         self.update_header_counters();
     }
-
+    
     /// Adds Tsig to the message.
     /// 
     /// # Example
@@ -1544,7 +1558,7 @@ mod message_test {
                 false,
                 1);
 
-        dns_query_message.add_edns0(None, 0, 32768, Some(vec![12]));
+        dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![12]));
 
         let additional = dns_query_message.get_additional();
 

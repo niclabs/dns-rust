@@ -1,5 +1,6 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
+use crate::message::rcode::Rcode;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
@@ -15,6 +16,7 @@ const OPEN_DNS_PRIMARY_DNS_SERVER: [u8; 4] = [208, 67, 222, 222];
 const OPEN_DNS_SECONDARY_DNS_SERVER: [u8; 4] = [208, 67, 220, 220];
 const QUAD9_PRIMARY_DNS_SERVER: [u8; 4] = [9, 9, 9, 9];
 const QUAD9_SECONDARY_DNS_SERVER: [u8; 4] = [149, 112, 112, 112];
+const RECOMMENDED_MAX_PAYLOAD: usize = 4000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 
@@ -64,15 +66,17 @@ pub struct ResolverConfig {
     // is terminated with a temporary error.
     global_retransmission_limit: u16,
     /// This is whether ends0 is enabled or not.
-    ends0: bool,
-    /// Max payload for the resolver.
+    edns0: bool,
+    /// Max payload supported for the resolver
     max_payload: u16,
+    // buffer size for the connections
+    bufsize: u16,
     /// Version of endns0.
-    ends0_version: u16,
+    edns0_version: u8,
     /// edns0 flags for the resolver.
-    ends0_flags: u16,
+    edns0_do: bool,
     /// edns0 options for the resolver.
-    ends0_options: Vec<u16>,
+    edns0_options: Vec<u16>,
     /// This is whether tsig is enabled or not.
     tsig: bool,
     /// This is the tsig keyname for the resolver.
@@ -116,11 +120,12 @@ impl ResolverConfig {
             max_retry_interval_seconds: 10,
             min_retry_interval_seconds: 1,
             global_retransmission_limit: 30,
-            ends0: false,
-            max_payload: 512,
-            ends0_version: 0,
-            ends0_flags: 0,
-            ends0_options: Vec::new(),
+            edns0: false,
+            max_payload: RECOMMENDED_MAX_PAYLOAD as u16,
+            bufsize: RECOMMENDED_MAX_PAYLOAD as u16,
+            edns0_version: 0,
+            edns0_do: false,
+            edns0_options: Vec::new(),
             tsig: false,
             key_name: None,
             key: Vec::new(),
@@ -137,14 +142,14 @@ impl ResolverConfig {
         let max_retry_interval_seconds = 60;
 
         let mut servers_info = Vec::new();
-        servers_info.push(ServerInfo::new_from_addr(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
 
         // Recommended by RFC 1536: max(4, 5/number_of_server_to_query)
         let number_of_server_to_query = servers_info.len() as u64;
@@ -161,11 +166,12 @@ impl ResolverConfig {
             max_retry_interval_seconds: max_retry_interval_seconds,
             min_retry_interval_seconds: min_retry_interval_seconds,
             global_retransmission_limit: global_retransmission_limit,
-            ends0: false,
-            max_payload: 512,
-            ends0_version: 0,
-            ends0_flags: 0,
-            ends0_options: Vec::new(),
+            edns0: false,
+            max_payload: RECOMMENDED_MAX_PAYLOAD as u16,
+            bufsize: RECOMMENDED_MAX_PAYLOAD as u16,
+            edns0_version: 0,
+            edns0_do: false,
+            edns0_options: Vec::new(),
             tsig: false,
             key_name: None,
             key: Vec::new(),
@@ -193,8 +199,8 @@ impl ResolverConfig {
     /// assert_eq!(resolver_config.get_name_servers().len(), 2);
     /// ```
     pub fn add_servers(&mut self, addr: IpAddr) {
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout, self.bufsize as usize);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout, self.bufsize as usize);
 
         let server_info = ServerInfo::new_with_ip(addr, conn_udp, conn_tcp);
         self.name_servers.push(server_info);
@@ -234,13 +240,13 @@ impl ResolverConfig {
     /// let mut resolver_config = ResolverConfig::default();
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
     /// ```
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u16, flags: u16, options: Option<Vec<u16>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<u16>>) {
         self.set_ends0(true);
         if let Some(max_payload) = max_payload {
             self.set_max_payload(max_payload);
         }
         self.set_ends0_version(version);
-        self.set_ends0_flags(flags);
+        self.set_ends0_do(do_bit);
         if let Some(options) =  options {
             self.set_ends0_options(options);
         }
@@ -257,8 +263,13 @@ impl ResolverConfig {
     /// resolver_config.add_edns0_to_message(&message);
     /// ```
     pub fn add_edns0_to_message(&self, message: &mut DnsMessage) {
-        if self.ends0 {
-            message.add_edns0(Some(self.get_max_payload()), self.get_ends0_version(), self.get_ends0_flags(), Some(self.get_ends0_options()));
+        if self.edns0 {
+            message.add_edns0(
+                Some(self.get_max_payload()),
+                Rcode::NOERROR,
+                self.get_edns0_version(),
+                self.get_edns0_do(),
+                Some(self.get_edns0_options()));
         }
     }
 
@@ -346,24 +357,24 @@ impl ResolverConfig {
         self.global_retransmission_limit
     }
 
-    pub fn get_ends0(&self) -> bool {
-        self.ends0
+    pub fn get_edns0(&self) -> bool {
+        self.edns0
     }
 
     pub fn get_max_payload(&self) -> u16 {
         self.max_payload
     }
 
-    pub fn get_ends0_version(&self) -> u16 {
-        self.ends0_version
+    pub fn get_edns0_version(&self) -> u8 {
+        self.edns0_version
     }
 
-    pub fn get_ends0_flags(&self) -> u16 {
-        self.ends0_flags
+    pub fn get_edns0_do(&self) -> bool {
+        self.edns0_do
     }
 
-    pub fn get_ends0_options(&self) -> Vec<u16> {
-        self.ends0_options.clone()
+    pub fn get_edns0_options(&self) -> Vec<u16> {
+        self.edns0_options.clone()
     }
 
     pub fn get_tsig(&self) -> bool {
@@ -435,23 +446,23 @@ impl ResolverConfig{
     }
 
     pub fn set_ends0(&mut self, ends0: bool) {
-        self.ends0 = ends0;
+        self.edns0 = ends0;
     }
 
     pub fn set_max_payload(&mut self, max_payload: u16) {
         self.max_payload = max_payload;
     }
 
-    pub fn set_ends0_version(&mut self, ends0_version: u16) {
-        self.ends0_version = ends0_version;
+    pub fn set_ends0_version(&mut self, ends0_version: u8) {
+        self.edns0_version = ends0_version;
     }
 
-    pub fn set_ends0_flags(&mut self, ends0_flags: u16) {
-        self.ends0_flags = ends0_flags;
+    pub fn set_ends0_do(&mut self, ends0_do: bool) {
+        self.edns0_do = ends0_do;
     }
 
     pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
-        self.ends0_options = ends0_options;
+        self.edns0_options = ends0_options;
     }
 
     pub fn set_tsig(&mut self, tsig: bool) {
@@ -510,12 +521,12 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_name_servers().len(), 8);
 
         let addr_1 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let tcp_conn_1 = ClientTCPConnection::new(addr_1, Duration::from_secs(TIMEOUT));
-        let udp_conn_1 = ClientUDPConnection::new(addr_1, Duration::from_secs(TIMEOUT));
+        let tcp_conn_1 = ClientTCPConnection::new(addr_1, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
+        let udp_conn_1 = ClientUDPConnection::new(addr_1, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
 
         let addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
-        let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
-        let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT));
+        let tcp_conn_2 = ClientTCPConnection::new(addr_2, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
+        let udp_conn_2 = ClientUDPConnection::new(addr_2, Duration::from_secs(TIMEOUT), resolver_config.max_payload as usize);
         let server_info_1 = server_info::ServerInfo::new_with_ip(addr_1, udp_conn_1, tcp_conn_1);
         let server_info_2 = server_info::ServerInfo::new_with_ip(addr_2, udp_conn_2, tcp_conn_2);
 

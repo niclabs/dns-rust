@@ -35,7 +35,7 @@ impl <T: ClientConnection> Client<T> {
     /// ```text
     /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
     /// let timeout: Duration = Duration::from_secs(2);
-    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
     /// let mut client = Client::new(conn_tcp);
     /// assert_eq!(client.get_conn().get_server_addr(), server_addr);
     /// assert_eq!(client.dns_query.get_question().get_qname().get_name(), String::from(""));
@@ -55,7 +55,7 @@ impl <T: ClientConnection> Client<T> {
     /// ```text
     /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
     /// let timeout: Duration = Duration::from_secs(2);
-    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
     /// let mut client = Client::new(conn_tcp);
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// assert_eq!(dns_query.get_qname().get_name(), String::from("www.test.com"));
@@ -93,7 +93,7 @@ impl <T: ClientConnection> Client<T> {
     /// ```text
     /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
     /// let timeout: Duration = Duration::from_secs(2);
-    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
     /// let mut client = Client::new(conn_tcp);
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// let dns_response = client.send_query();
@@ -111,7 +111,8 @@ impl <T: ClientConnection> Client<T> {
             Ok(response_message) => {
                 match DnsMessage::from_bytes(&response_message) {
                     Ok(dns_message) => {
-                        let additional = dns_message.get_additional();
+                        // TODO: Verify functionality of this fragment
+                        /*let additional = dns_message.get_additional();
                         let lenght = additional.len();
                         let a_r = additional.get(lenght - 1);
                         match a_r {
@@ -128,7 +129,7 @@ impl <T: ClientConnection> Client<T> {
                                 }
                             },
                             None => {},
-                        }
+                        }*/
                         dns_message},
                     Err(_) => return Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
                 }
@@ -144,7 +145,7 @@ impl <T: ClientConnection> Client<T> {
     /// ```text
     /// let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
     /// let timeout: Duration = Duration::from_secs(2);
-    /// let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+    /// let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
     /// let mut client = Client::new(conn_tcp);
     /// let dns_query = client.create_dns_query("www.test.com", "A", "IN");
     /// let dns_response = client.query();
@@ -203,7 +204,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp); //se crea un cliente vacio?
 
         let mut domain_name = DomainName::new();
@@ -218,7 +219,7 @@ mod client_test {
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
 
-        let expected_ip: [u8; 4] = [93, 184, 216, 34];
+        let expected_ip: [u8; 4] = [93, 184, 215, 14];
         let answers = response.get_answer();
         for answer in answers {
             let a_rdata = answer.get_rdata();
@@ -237,7 +238,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -265,7 +266,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -293,7 +294,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -321,7 +322,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -349,7 +350,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -377,7 +378,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -405,7 +406,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -433,7 +434,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -461,7 +462,7 @@ mod client_test {
         let server_addr: IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(server_addr, timeout);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new_default(server_addr, timeout);
         let mut udp_client = Client::new(conn_udp);
 
         let mut domain_name = DomainName::new();
@@ -493,7 +494,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
 
         //create client
         let mut tcp_client = Client::new(conn_tcp);
@@ -526,7 +527,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
         let new_client = Client::new(conn_tcp);
         assert_eq!(new_client.get_conn().get_server_addr(), server_addr);
         assert_eq!(new_client.get_dns_query().get_question().get_qname().get_name(), String::from(""));
@@ -538,7 +539,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_udp:ClientUDPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_udp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("www.test.com"));
@@ -555,7 +556,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("www.test.com"));
@@ -571,7 +572,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("www.u-cursos.cl"));
@@ -586,7 +587,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(171, 18, 0, 1));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_udp:ClientUDPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_udp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("www.u-cursos.cl"));
@@ -601,7 +602,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("?www.u-cursos.cl"));
@@ -618,7 +619,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_udp:ClientUDPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_udp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("?www.u-cursos.cl"));
@@ -636,7 +637,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("nonexisten.comt-domain"));
@@ -651,7 +652,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_tcp:ClientTCPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_tcp:ClientTCPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_tcp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("2www.u-cursos.cl"));
@@ -666,7 +667,7 @@ mod client_test {
         let server_addr:IpAddr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
         let timeout: Duration = Duration::from_secs(2);
 
-        let conn_udp:ClientUDPConnection = ClientConnection::new(server_addr,timeout);
+        let conn_udp:ClientUDPConnection = ClientConnection::new_default(server_addr,timeout);
         let mut new_client = Client::new(conn_udp);
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("2www.u-cursos.cl"));

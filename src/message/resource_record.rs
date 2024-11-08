@@ -612,7 +612,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 1);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        //rdlength should be 4 (because is an A type record)
+        assert_eq!(resource_record.rdlength, 4);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::A(val) => val.get_address(),
@@ -640,7 +641,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 2);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be 10 because its the bytes "4test3com0"
+        assert_eq!(resource_record.rdlength, 10);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::NS(val) => val.get_nsdname().get_name(),
@@ -668,7 +670,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 5);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be 10 because its the bytes "4test3com0"
+        assert_eq!(resource_record.rdlength, 10);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::CNAME(val) => val.get_cname().get_name(),
@@ -703,7 +706,9 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 6);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be "4test3com0" + "5admin7example3com0" + 4*5 
+        // 10+6+8+4+1+4+4+4+4+4
+        assert_eq!(resource_record.rdlength, 49);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::SOA(val) => val.get_mname().get_name(),
@@ -745,7 +750,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 12);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be 1+4+1+3+1
+        assert_eq!(resource_record.rdlength, 1+4+1+3+1);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::PTR(val) => val.get_ptrdname().get_name(),
@@ -776,7 +782,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 13);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        //rd len is 18 because "INTEL-386"\0 + "Windows"\0 = 18
+        assert_eq!(resource_record.rdlength, 18);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::HINFO(val) => val.get_cpu(),
@@ -815,7 +822,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 15);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // preference is 2 bytes and exchange is 1+5+1+7+1+3+1 bytes
+        assert_eq!(resource_record.rdlength, 21);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::MX(val) => val.get_preference(),
@@ -843,7 +851,8 @@ mod resource_record_test {
         assert_eq!(u16::from(resource_record.rtype.clone()), 16);
         assert_eq!(u16::from(resource_record.rclass.clone()), 1);
         assert_eq!(resource_record.ttl, 0);
-        assert_eq!(resource_record.rdlength, 0);
+        // rdlength should be "dcc"\0 + "test"\0 = 9
+        assert_eq!(resource_record.rdlength, 9);
         assert_eq!(
             match resource_record.get_rdata() {
                 Rdata::TXT(val) => val.get_text(),
@@ -945,13 +954,8 @@ mod resource_record_test {
     #[test]
     fn set_and_get_rdlength_test() {
         let txt_rdata = Rdata::TXT(TxtRdata::new(vec!["dcc".to_string()]));
-        let mut resource_record = ResourceRecord::new(txt_rdata);
-        assert_eq!(resource_record.get_rdlength(), 0);
-
-        resource_record.set_rdlength(3 as u16);
-
-        let rdlength = resource_record.get_rdlength();
-        assert_eq!(rdlength, 3 as u16);
+        let resource_record = ResourceRecord::new(txt_rdata);
+        assert_eq!(resource_record.get_rdlength(), 4);
     }
 
     #[test]

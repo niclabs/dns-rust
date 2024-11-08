@@ -90,7 +90,7 @@ pub async fn main() {
         Commands::Client(client_args) => {
 
             let addr = client_args.server.parse::<IpAddr>();
-            let conn = ClientTCPConnection::new(addr.unwrap(), Duration::from_secs(10));
+            let conn = ClientTCPConnection::new_default(addr.unwrap(), Duration::from_secs(10));
             let mut client = Client::new(conn);
 
             let response = client.query(
@@ -110,8 +110,8 @@ pub async fn main() {
             let mut nameservers: Vec<ServerInfo> = Vec::new();
             let timeout = 2;
             for ip_addr in resolver_args.nameserver.clone() {
-                let udp_conn = ClientUDPConnection::new(ip_addr, Duration::from_secs(timeout));
-                let tcp_conn = ClientTCPConnection::new(ip_addr, Duration::from_secs(timeout));
+                let udp_conn = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(timeout));
+                let tcp_conn = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(timeout));
                 let server_info = ServerInfo::new_with_ip(ip_addr, udp_conn, tcp_conn);
                 nameservers.push(server_info);
 

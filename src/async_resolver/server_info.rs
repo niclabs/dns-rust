@@ -57,12 +57,29 @@ impl ServerInfo {
         }
     }
 
-    pub fn new_from_addr(ip_addr: IpAddr, timeout: tokio::time::Duration) -> ServerInfo {
+
+    pub fn new_from_addr(ip_addr: IpAddr, timeout: tokio::time::Duration, buf_size: usize) -> ServerInfo {
         let port = 53;
         let key = String::from("");
         let algorithm = String::from("");
-        let udp_connection = ClientUDPConnection::new(ip_addr, timeout);
-        let tcp_connection = ClientTCPConnection::new(ip_addr, timeout);
+        let udp_connection = ClientUDPConnection::new(ip_addr, timeout, buf_size);
+        let tcp_connection = ClientTCPConnection::new(ip_addr, timeout, buf_size);
+        ServerInfo {
+            ip_addr,
+            port,
+            tsig: false,
+            key,
+            algorithm,
+            udp_connection,
+            tcp_connection,
+        }
+    }
+    pub fn new_from_addr_with_default_size(ip_addr: IpAddr, timeout: tokio::time::Duration) -> ServerInfo {
+        let port = 53;
+        let key = String::from("");
+        let algorithm = String::from("");
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, timeout);
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, timeout);
         ServerInfo {
             ip_addr,
             port,
@@ -181,8 +198,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
@@ -201,8 +218,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
@@ -214,8 +231,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         assert_eq!(server_info.get_port(), 53);
@@ -227,8 +244,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         assert_eq!(server_info.get_key(), "key");
@@ -240,8 +257,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         assert_eq!(server_info.get_algorithm(), "algorithm");
@@ -253,8 +270,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
 
         let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
@@ -268,8 +285,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key"); 
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
 
         let server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
@@ -283,8 +300,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let mut server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         server_info.set_ip_addr(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
@@ -298,8 +315,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let mut server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         server_info.set_port(54);
@@ -313,8 +330,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let mut server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         server_info.set_key(String::from("new_key"));
@@ -328,8 +345,8 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let mut server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
         server_info.set_algorithm(String::from("new_algorithm"));
@@ -343,11 +360,11 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let mut server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
-        let new_udp_connection = ClientUDPConnection::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), Duration::from_secs(200));
+        let new_udp_connection = ClientUDPConnection::new_default(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), Duration::from_secs(200));
 
         server_info.set_udp_connection(new_udp_connection);
 
@@ -361,11 +378,11 @@ mod server_info_tests {
         let port = 53;
         let key = String::from("key");
         let algorithm = String::from("algorithm");
-        let udp_connection = ClientUDPConnection::new(ip_addr, Duration::from_secs(100));
-        let tcp_connection = ClientTCPConnection::new(ip_addr, Duration::from_secs(100));
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
         let mut server_info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
 
-        let new_tcp_connection = ClientTCPConnection::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), Duration::from_secs(200));
+        let new_tcp_connection = ClientTCPConnection::new_default(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), Duration::from_secs(200));
 
         server_info.set_tcp_connection(new_tcp_connection);
 
@@ -375,7 +392,7 @@ mod server_info_tests {
     #[test]
     fn new_from_addr_constructor() {
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let server_info = ServerInfo::new_from_addr(ip_addr, Duration::from_secs(100));
+        let server_info = ServerInfo::new_from_addr_with_default_size(ip_addr, Duration::from_secs(100));
 
         assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(server_info.get_port(), 53);

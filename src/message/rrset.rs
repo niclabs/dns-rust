@@ -205,6 +205,7 @@ mod rrset_test {
         rr.set_rclass(Rclass::IN);
         rr.set_ttl(3600);
         ans_rrs.push(rr);
+
         let ardata = ARdata::new_from_addr(IpAddr::from([93,184,215,15]));
         let rdata = Rdata::A(ardata.clone());
         let mut rr = ResourceRecord::new(rdata);
@@ -212,8 +213,10 @@ mod rrset_test {
         rr.set_name(DomainName::new_from_str("example.com"));
         rr.set_type_code(Rrtype::A);
         rr.set_rclass(Rclass::IN);
+        // This behaviour is deprecated! all the ttls should be the same in an RRset
         rr.set_ttl(2700);
         ans_rrs.push(rr);
+
         // add answer signature
         let mut rrsig_rdata = rrsig_rdata::RRSIGRdata::new();
         rrsig_rdata.set_type_covered(Rrtype::A);

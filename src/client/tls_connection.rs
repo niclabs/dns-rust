@@ -15,6 +15,7 @@ use webpki::DnsNameRef;
 use std::convert::TryFrom;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
+use std::io::Write;
 use std::iter::FromIterator;
 use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
@@ -25,6 +26,7 @@ use tokio::time::Duration;
 use tokio::time::timeout;
 use tokio_rustls::rustls::ClientConfig;
 use tokio_rustls::TlsConnector;
+use tokio_rustls::TlsStream;
 use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -65,37 +67,32 @@ impl ClientConnection for ClientTLSConnection {
     /// creates socket tcp, sends query and receive response
     async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError> {
         // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError> {
-            let root_store = RootCertStore::empty();
+            //let root_store = RootCertStore::empty();
             let mut roots = rustls::RootCertStore::empty();
             for cert in rustls_native_certs::load_native_certs().expect("could not load platform certs") {
                 roots.add(cert).unwrap();
             }
             let config = ClientConfig::builder()
-            .with_root_certificates(root_store)
+            .with_root_certificates(roots)
             .with_no_client_auth();
             // get the domain name to a srting
             let dns_name_from_message = dns_query.get_question().get_qname().to_string();
             let server_name = ServerName::try_from(dns_name_from_message).expect("invalid DNS name");
-            let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
+            let name_server= ServerName::try_from(dns_query.get_question().get_qname().to_string()).expect("invalid DNS name");
+            //let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
+            let mut connector = TlsConnector::from(Arc::new(config));
+            
             let conn_timeout: Duration = self.get_timeout();
-            let bytes: Vec<u8> = dns_query.to_bytes();
+            //let bytes: Vec<u8> = dns_query.to_bytes();
+            
             let server_addr:SocketAddr = SocketAddr::new(self.get_server_addr(), 453);
             let name= dns_query.get_question().get_qname().to_string();
-            let mut tcp_stream = std::net::TcpStream::connect(name).unwrap();
-            let mut tls = rustls::Stream::new(&mut conn,  &mut tcp_stream);
-    
-            // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
-            let conn_task = TcpStream::connect(&server_addr);
-            let mut stream: TcpStream = match timeout(conn_timeout, conn_task).await {
-                Ok(stream_result) => stream_result?,
-                Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),
-            };
-        
-            // Add len of message len
-            let msg_length: u16 = bytes.len() as u16;
-            let tcp_bytes_length: [u8; 2] = [(msg_length >> 8) as u8, msg_length as u8];
-            let full_msg: Vec<u8> = [&tcp_bytes_length, bytes.as_slice()].concat();
+            let stream = TcpStream::connect(server_addr).await;
             
+            let stream = match stream {
+                Ok(stream) => stream,
+                Err(e) => return Err(ClientError::from(e)),
+            };
             //Verify that the connected IP matches the expected IP
             let actual_ip = stream.peer_addr()?.ip();
             let expected_ip = self.get_server_addr();
@@ -105,14 +102,34 @@ impl ClientConnection for ClientTLSConnection {
                     format!("IP mismatch: expected {}, got {}", expected_ip, actual_ip),
                 )).into());
             }
+            let mut tls_stream = connector.connect(server_name, stream).await;
 
-            // stream.write(&full_msg)?;
-            stream.write(&full_msg).await?;
+            //let mut tls = rustls::Stream::new(&mut conn,  &mut stream);
+
+            let bytes = dns_query.to_bytes();
+            let msg_length = bytes.len() as u16;
+            let full_msg = [&msg_length.to_be_bytes(), bytes.as_slice()].concat();
+
             
+            // let mut stream: TcpStream = TcpStream::connect_timeout(&server_addr,timeout)?;
+            //let conn_task = TcpStream::connect(&server_addr).await;
+            
+    
+
+            
+            // Handle the result of the TLS connection
+            let mut tls_stream_result = match tls_stream {
+                Ok(stream) => stream,
+                Err(e) => return Err(ClientError::Io(IoError::new(ErrorKind::Other, format!("TLS connection error: {}", e))).into()),
+            };
+            tls_stream_result.write_all(&full_msg).await?;
             // Read response
             let mut msg_size_response: [u8; 2] = [0; 2];
+            //tls.read_exact(msg_size_response).await?;
+            let response_length = u16::from_be_bytes(msg_size_response) as usize;
+            let mut response = vec![0u8; response_length];
     
-            stream.read_exact(&mut msg_size_response).await?;
+            //tls.read_exact(&mut response);
         
             let tls_msg_len: u16 = (msg_size_response[0] as u16) << 8 | msg_size_response[1] as u16;
             let mut vec_msg: Vec<u8> = Vec::new();
@@ -127,7 +144,7 @@ impl ClientConnection for ClientTLSConnection {
         
             while vec_msg.len() < tls_msg_len as usize {
                 let mut msg = [0; 512];
-                let read_task = stream.read(&mut msg);
+                let read_task = tls_stream_result.read(&mut msg);
                 let number_of_bytes_msg_result = match timeout(conn_timeout, read_task).await {
                     Ok(n) => n,
                     Err(_) => return Err(ClientError::Io(IoError::new(ErrorKind::TimedOut, format!("Error: timeout"))).into()),

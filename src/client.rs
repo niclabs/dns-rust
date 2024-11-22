@@ -1,4 +1,5 @@
 pub mod client_connection;
+pub mod client_security;
 pub mod tcp_connection;
 pub mod tls_connection;
 pub mod udp_connection;

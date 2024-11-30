@@ -72,6 +72,7 @@ impl ServerInfo {
             algorithm,
             udp_connection,
             tcp_connection,
+            is_active: true,
         }
     }
     pub fn new_from_addr_with_default_size(ip_addr: IpAddr, timeout: tokio::time::Duration) -> ServerInfo {

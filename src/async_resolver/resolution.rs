@@ -30,6 +30,7 @@ pub struct Resolution {
     config: ResolverConfig,
     /// Reference to the response of the query.
     response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+    /// Contains information about the state of a pending request.
     state_block: StateBlock
 }
     

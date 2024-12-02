@@ -4,24 +4,24 @@ use crate::client::udp_connection::ClientUDPConnection;
 use std::net::IpAddr;
 
 
-///This struscture is used to represent the information of a server.
-
+/// This struscture is used to represent the information of a server.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ServerInfo {
-    //The IP address of the server.
+    /// The IP address of the server.
     ip_addr: IpAddr,
-    //The port of the server.
+    /// The port of the server.
     port: u16,
-    //Tsig is enabled.
+    /// Tsig is enabled.
     tsig: bool,
-    //The key of the server.
+    /// The key of the server.
     key: String,
-    // The algorithm of the server.
+    /// The algorithm of the server.
     algorithm: String,
-    //UDP connection
+    /// UDP connection
     udp_connection: ClientUDPConnection,
-    //TCP connection
+    /// TCP connection
     tcp_connection: ClientTCPConnection,
+    /// Whether the server is active or not.
     is_active: bool,
 }
 

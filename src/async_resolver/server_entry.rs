@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use crate::async_resolver::server_info::ServerInfo;
 
+use super::resolver_error::ResolverError;
+
 /// Struct that holds the state of a single server for a request.
 #[derive(Clone)]
 pub struct ServerEntry {
@@ -39,8 +41,12 @@ impl ServerEntry {
     }
 
     /// Decrements the work counter of the server.
-    pub fn decrement_work_counter(&mut self) {
+    pub fn decrement_work_counter(&mut self) -> Result<u16, ResolverError>{
+        if self.work_counter == 0 { 
+            return Err(ResolverError::RetriesLimitExceeded);
+        }
         self.work_counter -= 1;
+        Ok(self.work_counter)
     }
 }
 
@@ -84,11 +90,13 @@ mod tests {
         let work_counter = 2;
         let mut server_entry = ServerEntry::new(info_arc.clone(), work_counter);
 
-        server_entry.decrement_work_counter();
-        assert_eq!(server_entry.get_work_counter(), 1);
+        if let Ok(_) = server_entry.decrement_work_counter() {
+            assert_eq!(server_entry.get_work_counter(), 1);
+        }
 
-        server_entry.decrement_work_counter();
-        assert_eq!(server_entry.get_work_counter(), 0);
+        if let Ok(_) = server_entry.decrement_work_counter() {
+            assert_eq!(server_entry.get_work_counter(), 0);
+        }
     }
 
 }

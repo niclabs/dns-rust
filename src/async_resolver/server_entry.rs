@@ -64,10 +64,10 @@ mod tests {
 
         let info_arc = Arc::new(info);
         let work_counter = 2;
-        let server_entry = ServerEntry::new(info_arc, work_counter);
+        let server_entry = ServerEntry::new(info_arc.clone(), work_counter);
 
         assert_eq!(server_entry.get_work_counter(), 2);
-
+        assert_eq!(server_entry.get_info(), info_arc);
     }
 
 }

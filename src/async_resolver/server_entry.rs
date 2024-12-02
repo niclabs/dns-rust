@@ -99,4 +99,27 @@ mod tests {
         }
     }
 
+    #[test]
+    fn decrement_work_counter_error() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
+
+        let info_arc = Arc::new(info);
+        let work_counter = 0;
+        let mut server_entry = ServerEntry::new(info_arc.clone(), work_counter);
+
+        let result = server_entry.decrement_work_counter();
+        
+        if let Err(ResolverError::RetriesLimitExceeded) = result {
+            assert!(true);
+            assert_eq!(server_entry.get_work_counter(), 0);
+        } else {
+            assert!(false);
+        }
+    }
 }

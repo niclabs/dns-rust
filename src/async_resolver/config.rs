@@ -4,6 +4,7 @@ use crate::message::rcode::Rcode;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
+use std::sync::Arc;
 use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
 
 use super::server_info::ServerInfo;
@@ -29,7 +30,7 @@ const RECOMMENDED_MAX_PAYLOAD: usize = 4000;
 /// the chosen transport protocol and the timeout for the connections.
 pub struct ResolverConfig {
     /// Vector of tuples with the UDP and TCP connections to a Name Server.
-    name_servers: Vec<ServerInfo>,
+    name_servers: Vec<Arc<ServerInfo>>,
     /// Socket address of the resolver.
     bind_addr: SocketAddr,
     /// Maximum quantity of queries for each sent query. 
@@ -142,14 +143,14 @@ impl ResolverConfig {
         let max_retry_interval_seconds = 60;
 
         let mut servers_info = Vec::new();
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout)));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout)));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout)));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(QUAD9_PRIMARY_DNS_SERVER.into(), timeout)));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout)));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout)));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout)));
+        servers_info.push(Arc::new(ServerInfo::new_from_addr_with_default_size(QUAD9_SECONDARY_DNS_SERVER.into(), timeout)));
 
         // Recommended by RFC 1536: max(4, 5/number_of_server_to_query)
         let number_of_server_to_query = servers_info.len() as u64;
@@ -203,7 +204,7 @@ impl ResolverConfig {
         let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout, self.bufsize as usize);
 
         let server_info = ServerInfo::new_with_ip(addr, conn_udp, conn_tcp);
-        self.name_servers.push(server_info);
+        self.name_servers.push(Arc::new(server_info));
     }
 
     /// Remove all servers from the list of Name Servers.
@@ -309,8 +310,8 @@ impl ResolverConfig {
 ///Getters
 impl ResolverConfig {
 
-    /// Returns a clone the list of `ServerInfo` representing Name Servers.
-    pub fn get_name_servers(&self) -> Vec<ServerInfo> {
+    /// Returns a clone the list of `Arc<ServerInfo>` representing references to each Name Server.
+    pub fn get_name_servers(&self) -> Vec<Arc<ServerInfo>> {
         self.name_servers.clone()
     }
 
@@ -398,8 +399,14 @@ impl ResolverConfig {
 impl ResolverConfig{
 
     /// Sets the list of Name Servers.
+    /// 
+    /// This creates a new instances of each `ServerInfo` and wraps it in an `Arc`. The vector of 
+    /// these references are then stored in the `ResolverConfig`.
     pub fn set_name_servers(&mut self, list_name_servers: Vec<ServerInfo>) {
-        self.name_servers = list_name_servers;
+        let name_servers_arc: Vec<Arc<ServerInfo>> = list_name_servers.into_iter().map(|info| {
+            Arc::new(info)
+        }).collect();
+        self.name_servers = name_servers_arc;
     }
 
     /// Sets the socket address of the resolver.
@@ -493,6 +500,7 @@ mod tests_resolver_config {
     use crate::client::client_connection::ConnectionProtocol;
     use crate::async_resolver::config::ResolverConfig;
     use std::net::{IpAddr,Ipv4Addr, SocketAddr};
+    use std::sync::Arc;
     use std::time::Duration;
     static TIMEOUT: u64 = 10;
 
@@ -532,8 +540,11 @@ mod tests_resolver_config {
 
         let name_servers = vec![server_info_1, server_info_2];
         resolver_config.set_name_servers(name_servers.clone());
+        let servers_arc: Vec<Arc<server_info::ServerInfo>> = name_servers.into_iter().map(|info| {
+            Arc::new(info)
+        }).collect();
 
-        assert_eq!(resolver_config.get_name_servers(), name_servers);
+        assert_eq!(resolver_config.get_name_servers(), servers_arc);
     }
 
     #[test]

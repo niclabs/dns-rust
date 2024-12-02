@@ -96,6 +96,7 @@ impl Resolution {
                 // start timer
                 let start = Instant::now();
 
+
                 lookup_response_result = self.transmit_query_to_server(
                     server_entry_clone.get_info(), 
                     timeout_duration
@@ -206,7 +207,7 @@ impl Resolution {
     /// ```
     pub async fn transmit_query_to_server(
         &self,
-        server_info: &ServerInfo,
+        server_info: Arc<ServerInfo>,
         timeout_duration: tokio::time::Duration
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.response_msg.clone();
@@ -219,7 +220,7 @@ impl Resolution {
                 timeout_duration,
                 &self.query,
                 protocol,
-                server_info
+                server_info.clone()
             );
             dns_msg_result = tokio::time::timeout(timeout_duration, send_future)
                 .await
@@ -270,7 +271,7 @@ async fn send_query_by_protocol(
     timeout: tokio::time::Duration,
     query: &DnsMessage,
     protocol: ConnectionProtocol,
-    server_info:  &ServerInfo,
+    server_info:  Arc<ServerInfo>,
 ) ->  Result<DnsMessage, ResolverError> {
     let query_id = query.get_query_id();
     let dns_query = query.clone();
@@ -395,7 +396,8 @@ mod async_resolver_test {
         let record_type = Rrtype::A;
         let record_class = Rclass::IN;
         let server_info = server_info::ServerInfo::new_with_ip(google_server,conn_udp, conn_tcp);
-        let name_servers = vec![server_info];
+        let name_servers = vec![Arc::new(server_info)];
+
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = Resolution::new(
@@ -404,7 +406,7 @@ mod async_resolver_test {
         );
 
         let response = lookup_strategy.transmit_query_to_server(
-            name_servers.get(0).unwrap(),
+            name_servers.get(0).unwrap().clone(), // CHANGED: ADEED CLONE
             timeout
         ).await;
 
@@ -450,7 +452,7 @@ mod async_resolver_test {
         let config = ResolverConfig::default();
         let record_type = Rrtype::NS;
         let record_class = Rclass::IN;
-        let name_servers = vec![server_info];
+        let name_servers = vec![Arc::new(server_info)];
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = Resolution::new(
@@ -459,7 +461,7 @@ mod async_resolver_test {
         );
 
         let response = lookup_strategy.transmit_query_to_server(
-            name_servers.get(0).unwrap(),
+            name_servers.get(0).unwrap().clone(), // CHANGED: ADEED CLONE
             timeout
         ).await.unwrap();
 
@@ -496,7 +498,7 @@ mod async_resolver_test {
         let config = ResolverConfig::default();
         let record_type = Rrtype::A;
         let record_class = Rclass::CH;
-        let name_servers = vec![server_info];
+        let name_servers = vec![Arc::new(server_info)];
         // let response_arc: Arc<Mutex<Result<DnsMessage, ResolverError>>> = Arc::new(Mutex::new(Err(ResolverError::EmptyQuery)));
 
         let lookup_strategy = Resolution::new(
@@ -505,7 +507,7 @@ mod async_resolver_test {
         );
 
         let response = lookup_strategy.transmit_query_to_server(
-            name_servers.get(0).unwrap(),
+            name_servers.get(0).unwrap().clone(), // CHANGED: ADEED CLONE
             timeout
         ).await.unwrap();
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use tokio::time::Instant;
 
 use super::{server_entry::ServerEntry, server_info::ServerInfo};
@@ -47,11 +49,13 @@ impl StateBlock {
     /// ```
     /// let state_block = StateBlock::new(Instant::now());
     /// ```
-    pub fn new(request_global_limit: u16, server_transmission_limit: u16, servers: Vec<ServerInfo>) -> StateBlock {
+    pub fn new(request_global_limit: u16, server_transmission_limit: u16, servers: Vec<Arc<ServerInfo>>) -> StateBlock {
         StateBlock {
             timestamp: Instant::now(),
             work_counter: request_global_limit,
-            servers: servers.into_iter().map(|server| ServerEntry::new(server, server_transmission_limit)).collect(),
+            servers: servers.into_iter()
+            .map(|info| ServerEntry::new(info, server_transmission_limit))
+            .collect(), 
             current_server_index: 0,
         }
     }

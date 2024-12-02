@@ -309,7 +309,7 @@ impl ResolverConfig {
 ///Getters
 impl ResolverConfig {
 
-    /// Returns the list of Name Servers.
+    /// Returns a clone the list of `ServerInfo` representing Name Servers.
     pub fn get_name_servers(&self) -> Vec<ServerInfo> {
         self.name_servers.clone()
     }

@@ -108,7 +108,6 @@ mod state_block_tests {
     use std::net::{IpAddr, Ipv4Addr};
     use tokio::time::Duration;
     use crate::client::{client_connection::ClientConnection, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection};
-
     use super::*;
 
     #[test]
@@ -229,5 +228,78 @@ mod state_block_tests {
         let time_difference = now - *state_block.get_timestamp();
         println!("{:?}", time_difference);
         assert!(time_difference.as_millis() < 1);
+    }
+
+    #[test]
+    fn get_current_server_entry() {
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+
+        let ip_addr_1 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let udp_connection_1 = ClientUDPConnection::new_default(ip_addr_1, Duration::from_secs(100));
+        let tcp_connection_1 = ClientTCPConnection::new_default(ip_addr_1, Duration::from_secs(100));
+        let info_1 = ServerInfo::new(ip_addr_1, port, key.clone(), algorithm.clone(), udp_connection_1, tcp_connection_1);
+
+        let ip_addr_2 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2));
+        let udp_connection_2 = ClientUDPConnection::new_default(ip_addr_2, Duration::from_secs(100));
+        let tcp_connection_2 = ClientTCPConnection::new_default(ip_addr_2, Duration::from_secs(100));
+        let info_2 = ServerInfo::new(ip_addr_2, port, key.clone(), algorithm.clone(), udp_connection_2, tcp_connection_2);
+
+        let ip_addr_3 = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 3));
+        let udp_connection_3 = ClientUDPConnection::new_default(ip_addr_3, Duration::from_secs(100));
+        let tcp_connection_3 = ClientTCPConnection::new_default(ip_addr_3, Duration::from_secs(100));
+        let info_3 = ServerInfo::new(ip_addr_3, port, key.clone(), algorithm.clone(), udp_connection_3, tcp_connection_3);
+
+        let info_arc_1 = Arc::new(info_1);
+        let info_arc_2 = Arc::new(info_2);
+        let info_arc_3 = Arc::new(info_3);
+        let servers = vec![info_arc_1, info_arc_2, info_arc_3];
+
+        let mut state_block = StateBlock::new(5, 2, servers);
+        assert_eq!(state_block.get_current_server_index(), 0);
+        let current_server_entry = state_block.get_current_server_entry();
+        assert_eq!(current_server_entry.get_work_counter(), 2);
+        assert_eq!(current_server_entry.get_info().get_ip_addr(), ip_addr_1);
+
+        if let Ok(_) = current_server_entry.decrement_work_counter() {
+            assert_eq!(current_server_entry.get_work_counter(), 1);
+        }
+        else {
+            assert!(false);
+        }
+
+        if let Ok(_) = state_block.decrement_work_counter() {
+            state_block.increment_current_server_index();
+            let current_server_entry: &mut ServerEntry = state_block.get_current_server_entry();
+            assert_eq!(current_server_entry.get_work_counter(), 2);
+            assert_eq!(current_server_entry.get_info().get_ip_addr(), ip_addr_2);
+            assert_eq!(state_block.get_work_counter(), 4);
+        }
+        else {
+            assert!(false);
+        }
+
+        if let Ok(_) = state_block.decrement_work_counter() {
+            state_block.increment_current_server_index();
+            let current_server_entry: &mut ServerEntry = state_block.get_current_server_entry();
+            assert_eq!(current_server_entry.get_work_counter(), 2);
+            assert_eq!(current_server_entry.get_info().get_ip_addr(), ip_addr_3);
+            assert_eq!(state_block.get_work_counter(), 3);
+        }
+        else {
+            assert!(false);
+        }
+
+        if let Ok(_) = state_block.decrement_work_counter() {
+            state_block.increment_current_server_index();
+            let current_server_entry: &mut ServerEntry = state_block.get_current_server_entry();
+            assert_eq!(current_server_entry.get_work_counter(), 1);
+            assert_eq!(current_server_entry.get_info().get_ip_addr(), ip_addr_1);
+            assert_eq!(state_block.get_work_counter(), 2);
+        }
+        else {
+            assert!(false);
+        }
     }
 }

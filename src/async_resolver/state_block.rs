@@ -90,6 +90,9 @@ impl StateBlock {
     }
 
     /// Returns a mutable reference to the `ServerEntry` of the current server being queried.
+    /// 
+    /// This function is used to access the information of the server being queried. The mutable
+    /// reference is used to decrement the `work_counter` of that specific server.
     pub fn get_current_server_entry(&mut self) -> &mut ServerEntry {
         &mut self.servers[self.current_server_index]
     }

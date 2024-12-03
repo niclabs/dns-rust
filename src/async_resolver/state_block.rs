@@ -41,6 +41,15 @@ pub struct StateBlock {
 
 impl StateBlock {
     /// Creates a new StateBlock for a request.
+    /// 
+    /// The `request_global_limit` is the global per-request counter to limit work on a single request. 
+    /// This value will be used to initialize the `work_counter` of the request. 
+    /// 
+    /// The `server_transmission_limit` is the maximum number of simultaneous queries that can be sent
+    /// to a single server. This value will be used to initialize the `work_counter` of each of the servers
+    /// in `servers`. That information will be stored in the `ServerEntry` struct for each server.
+    /// 
+    /// The field `current_server_index` is initialized to zero.
     pub fn new(request_global_limit: u16, server_transmission_limit: u16, servers: Vec<Arc<ServerInfo>>) -> StateBlock {
         StateBlock {
             timestamp: Instant::now(),
@@ -94,6 +103,7 @@ impl StateBlock {
         &self.servers
     }
 
+    /// Returns the index of the current server being queried.
     pub fn get_current_server_index(&self) -> usize {
         self.current_server_index
     }

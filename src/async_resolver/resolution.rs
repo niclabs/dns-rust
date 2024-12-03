@@ -85,7 +85,7 @@ impl Resolution {
             let initial_server_index = self.state_block.get_current_server_index();
             loop {
                 let server_entry = self.state_block.get_current_server_entry();
-                if !server_entry.get_info().is_active() { 
+                if !server_entry.get_info().is_active() || server_entry.get_work_counter() == 0 { 
                     self.state_block.increment_current_server_index();
                     if self.state_block.get_current_server_index() == initial_server_index {
                         break; 

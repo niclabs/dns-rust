@@ -59,7 +59,6 @@ impl Resolution {
         &mut self,
     ) -> Result<LookupResponse, ResolverError> {
         let config: &ResolverConfig = &self.config;
-        let upper_limit_of_retransmission_loops: u16 = config.get_retransmission_loop_attempts();
         let max_interval: u64 = config.get_max_retry_interval_seconds(); 
         let initial_rto = 1.0;
         let mut rto = initial_rto;
@@ -80,28 +79,30 @@ impl Resolution {
 
         // The resolver cycles through servers and at the end of a cycle, backs off 
         // the timeout exponentially.
-        let mut iter = 0..upper_limit_of_retransmission_loops;
-        'global_cycle: while let Some(_retransmission) = iter.next() {
-            println!("Retransmission: {}", _retransmission);
-            let number_of_servers = self.state_block.get_servers().len();
 
-            for _ in 0..number_of_servers {
-                let server_entry_clone = self.state_block.get_current_server_entry().clone();
-                if !server_entry_clone.get_info().is_active() { continue; }
-                if server_entry_clone.get_work_counter() == 0 { continue; }
-                if self.state_block.get_work_counter() == 0 { break 'global_cycle; }
+        // TODO: check if the correct number of retransmissions is being done
+        'global_cycle: while let Ok(_) = self.state_block.decrement_work_counter() {
+            let initial_server_index = self.state_block.get_current_server_index();
+            loop {
+                let server_entry = self.state_block.get_current_server_entry();
+                if !server_entry.get_info().is_active() { 
+                    self.state_block.increment_current_server_index();
+                    if self.state_block.get_current_server_index() == initial_server_index {
+                        break; 
+                    }
+                    continue; 
+                }
 
                 // start timer
                 let start = Instant::now();
 
-
+                let server_info_arc = server_entry.get_info().clone();
                 lookup_response_result = self.transmit_query_to_server(
-                    server_entry_clone.get_info(), 
+                    server_info_arc, 
                     timeout_duration
                 ).await;
 
-                self.state_block.decrement_work_counter()?;
-                self.state_block.get_current_server_entry().decrement_work_counter()?;
+                self.state_block.get_current_server_entry().decrement_work_counter()?; 
 
                 // end timer
                 let end = Instant::now();
@@ -115,6 +116,9 @@ impl Resolution {
                 if self.received_appropriate_response() { break 'global_cycle }
 
                 self.state_block.increment_current_server_index();
+                if self.state_block.get_current_server_index() == initial_server_index {
+                    break;
+                }
             }
             
             // Exponencial backoff
@@ -253,10 +257,6 @@ impl Resolution {
             |dns_msg| Ok(LookupResponse::new(dns_msg))
         )
     }
-
-    // fn get_state_block(&mut self) -> &StateBlock {
-    //     &self.state_block
-    // }
 }
 
 ///  Sends a DNS query to a resolver using the specified connection protocol.

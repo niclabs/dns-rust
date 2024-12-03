@@ -179,4 +179,29 @@ mod state_block_tests {
             assert_eq!(state_block.get_work_counter(), 0);
         }
     }
+
+    #[test]
+    fn increment_current_server_index() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
+        let info_clone = info.clone();
+
+        let info_arc_1 = Arc::new(info);
+        let info_arc_2 = Arc::new(info_clone);
+        let servers = vec![info_arc_1, info_arc_2];
+
+        let mut state_block = StateBlock::new(5, 2, servers);
+        assert_eq!(state_block.get_current_server_index(), 0);
+
+        state_block.increment_current_server_index();
+        assert_eq!(state_block.get_current_server_index(), 1);
+
+        state_block.increment_current_server_index();
+        assert_eq!(state_block.get_current_server_index(), 0);
+    }
 }

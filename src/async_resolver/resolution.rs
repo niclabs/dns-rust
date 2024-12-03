@@ -7,7 +7,7 @@ use super::resolver_error::ResolverError;
 use super::server_info::ServerInfo;
 use super::state_block::StateBlock;
 use std::sync::{Mutex,Arc};
-use std::time::Instant;
+use tokio::time::Instant;
 use crate::client::client_connection::ConnectionProtocol;
 use crate::async_resolver::config::ResolverConfig;
 
@@ -61,7 +61,7 @@ impl Resolution {
         let config: &ResolverConfig = &self.config;
         let max_interval: u64 = config.get_max_retry_interval_seconds(); 
         let initial_rto = 1.0;
-        let mut rto = initial_rto;
+        let mut rto: f64 = initial_rto;
         let mut srtt = rto;
         let mut rttvar = rto/2.0;
 

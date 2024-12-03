@@ -1,7 +1,5 @@
 use std::sync::Arc;
-
 use tokio::time::Instant;
-
 use super::{server_entry::ServerEntry, server_info::ServerInfo};
 
 /// This struct represent the state of information of a pending request.

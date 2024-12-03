@@ -89,10 +89,12 @@ impl StateBlock {
         return self.work_counter;
     }
 
+    /// Returns a mutable reference to the `ServerEntry` of the current server being queried.
     pub fn get_current_server_entry(&mut self) -> &mut ServerEntry {
         &mut self.servers[self.current_server_index]
     }
 
+    /// Returns a reference to the `servers` of the request.
     pub fn get_servers(&self) -> &Vec<ServerEntry> {
         &self.servers
     }

@@ -41,14 +41,6 @@ pub struct StateBlock {
 
 impl StateBlock {
     /// Creates a new StateBlock for a request.
-    /// 
-    /// # Arguments
-    /// * `timestamp` - A Instant that represents the time the request began.
-    /// 
-    /// # Example
-    /// ```
-    /// let state_block = StateBlock::new(Instant::now());
-    /// ```
     pub fn new(request_global_limit: u16, server_transmission_limit: u16, servers: Vec<Arc<ServerInfo>>) -> StateBlock {
         StateBlock {
             timestamp: Instant::now(),
@@ -101,4 +93,39 @@ impl StateBlock {
     pub fn get_servers(&self) -> &Vec<ServerEntry> {
         &self.servers
     }
+
+    pub fn get_current_server_index(&self) -> usize {
+        self.current_server_index
+    }
+}
+
+#[cfg(test)]
+mod state_block_tests {
+    use std::net::{IpAddr, Ipv4Addr};
+    use tokio::time::Duration;
+    use crate::client::{client_connection::ClientConnection, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection};
+
+    use super::*;
+
+    #[test]
+    fn constructor() {
+        let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+        let port = 53;
+        let key = String::from("key");
+        let algorithm = String::from("algorithm");
+        let udp_connection = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let tcp_connection = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(100));
+        let info = ServerInfo::new(ip_addr, port, key, algorithm, udp_connection, tcp_connection);
+
+        let info_arc = Arc::new(info);
+        let servers = vec![info_arc];
+        let state_block = StateBlock::new(5, 2, servers);
+
+        assert_eq!(state_block.get_work_counter(), 5);
+        assert_eq!(state_block.get_servers().len(), 1);
+        assert_eq!(state_block.get_current_server_index(), 0);
+    }
+
+
+
 }

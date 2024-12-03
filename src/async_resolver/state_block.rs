@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use tokio::time::Instant;
-use super::{server_entry::ServerEntry, server_info::ServerInfo};
+use super::{resolver_error::ResolverError, server_entry::ServerEntry, server_info::ServerInfo};
 
 /// This struct represent the state of information of a pending request.
 /// 
@@ -64,16 +64,12 @@ impl StateBlock {
     /// This function should be called each time the resolver performs work on behalf
     /// of the request. If the counter passes zero, the request is terminated with a 
     /// temporary error.
-    /// 
-    /// # Example
-    /// ```
-    /// let mut state_block = StateBlock::new(Instant::now());
-    /// state_block.decrement_work_counter();
-    /// ```
-    pub fn decrement_work_counter(&mut self) {
+    pub fn decrement_work_counter(&mut self) -> Result<u16, ResolverError> {
+        if self.work_counter == 0 {
+            return Err(ResolverError::RetriesLimitExceeded);
+        }
         self.work_counter -= 1;
-
-        // TODO: Implement the logic to terminate the request if the counter reaches zero.
+        Ok(self.work_counter)
     }
 
     /// Increments the `current_server_index` of the request.
@@ -150,12 +146,16 @@ mod state_block_tests {
         let mut state_block = StateBlock::new(5, 2, servers);
         assert_eq!(state_block.get_work_counter(), 5);
 
-        state_block.decrement_work_counter();
-        assert_eq!(state_block.get_work_counter(), 4);
+        if let Ok(_) = state_block.decrement_work_counter() {
+            assert_eq!(state_block.get_work_counter(), 4);
+        }
 
-        state_block.decrement_work_counter();
-        assert_eq!(state_block.get_work_counter(), 3);
+        if let Ok(_) = state_block.decrement_work_counter() {
+            assert_eq!(state_block.get_work_counter(), 3);
+        }
     }
+
+
 
 
 

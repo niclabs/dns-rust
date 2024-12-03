@@ -51,7 +51,7 @@ impl ServerEntry {
 }
 
 #[cfg(test)]
-mod tests {
+mod server_entry_tests {
     use std::net::{IpAddr, Ipv4Addr};
     use tokio::time::Duration;
     use crate::client::{client_connection::ClientConnection, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection};

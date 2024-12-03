@@ -1,7 +1,5 @@
 use std::sync::Arc;
-
 use crate::async_resolver::server_info::ServerInfo;
-
 use super::resolver_error::ResolverError;
 
 /// Struct that holds the state of a single server for a request.
@@ -55,7 +53,6 @@ mod server_entry_tests {
     use std::net::{IpAddr, Ipv4Addr};
     use tokio::time::Duration;
     use crate::client::{client_connection::ClientConnection, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection};
-
     use super::*;
 
     #[test]

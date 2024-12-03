@@ -102,8 +102,8 @@ impl Resolution {
                     timeout_duration
                 ).await;
 
-                self.state_block.decrement_work_counter();
-                self.state_block.get_current_server_entry().decrement_work_counter();
+                self.state_block.decrement_work_counter()?;
+                self.state_block.get_current_server_entry().decrement_work_counter()?;
 
                 // end timer
                 let end = Instant::now();

@@ -96,7 +96,7 @@ impl Resolution {
                 // start timer
                 let start = Instant::now();
 
-                let server_info_arc = server_entry.get_info().clone();
+                let server_info_arc = server_entry.get_info();
                 lookup_response_result = self.transmit_query_to_server(
                     server_info_arc, 
                     timeout_duration

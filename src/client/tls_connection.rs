@@ -17,7 +17,6 @@ use std::convert::TryFrom;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
 use std::io::Write;
-use std::io::Write;
 use std::iter::FromIterator;
 use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
@@ -37,7 +36,6 @@ pub struct ClientTLSConnection {
     server_addr: IpAddr,
     /// Read time timeout
     timeout: tokio::time::Duration,
-    new_default: fn(IpAddr, Duration) -> Self,
     new_default: fn(IpAddr, Duration) -> Self,
 }
 

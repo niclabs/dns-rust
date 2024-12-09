@@ -24,7 +24,6 @@ use std::time::SystemTime;
 use std::sync::{Arc, Mutex};
 use std::vec;
 use std::collections::HashMap;
-use std::collections::HashMap;
 
 /// Asynchronous resolver for DNS queries.
 ///

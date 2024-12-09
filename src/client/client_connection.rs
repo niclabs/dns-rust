@@ -2,15 +2,6 @@ use crate::message::DnsMessage;
 use std::net::IpAddr;
 use tokio::time::Duration;
 use super::client_error::ClientError;
-
-<<<<<<< HEAD
-=======
-use tokio::net::TcpStream;
-use tokio_rustls::rustls::{ClientConfig, ServerName};
-use tokio_rustls::TlsConnector;
-use std::sync::Arc;
-use webpki::DNSNameRef;
->>>>>>> 260d4ce (add: tokio_tls dependencies)
 use async_trait::async_trait;
 
 

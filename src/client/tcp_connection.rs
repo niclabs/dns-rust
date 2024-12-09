@@ -32,9 +32,7 @@ pub struct ClientTCPConnection {
     /// Read time timeout
     timeout: tokio::time::Duration,
     /// payload size
-    payload_size: usize,
-    /// payload size
-    payload_size: usize,
+    payload_size: usize
 }
 
 #[async_trait]

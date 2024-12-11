@@ -65,15 +65,6 @@ fn add_opt_record_dns_message(msg: &mut DnsMessage, capacity: u16, e_rcode :Rcod
 }
 
 
-fn add_opt_record_dns_message(msg: &mut DnsMessage, capacity: u16, e_rcode :Rcode, do_bit: bool) {
-    let rr = create_opt_rr(capacity,
-        e_rcode,
-        EDNS_VERSION,
-        do_bit);
-    
-    msg.add_additionals(vec![rr]);
-    msg.update_header_counters();
-}
 
 #[test]
 fn see_dnssec_message() {

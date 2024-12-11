@@ -126,13 +126,6 @@ impl AsyncResolver {
                             Err(err) => Some(Err(err)),
                         }
                     })
-                    .filter_map(|rr| {
-                        match AsyncResolver::from_rr_to_ip(rr) {
-                            Ok(ip) if ip.is_ipv4() || ip.is_ipv6() => Some(Ok(ip)),
-                            Ok(_) => None, // Not a valid IP address
-                            Err(err) => Some(Err(err)),
-                        }
-                    })
                     .collect();
                 match ip_addresses {
                     Ok(ips) => {

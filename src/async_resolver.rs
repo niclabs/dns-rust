@@ -241,7 +241,7 @@ impl AsyncResolver {
                                                                              // return the error, it should go to the next part of the code
             };
             if let Some(cache_lookup) = cache.clone().get(query.clone()) {
-                let new_lookup_response = LookupResponse::new(cache_lookup.clone());
+                let new_lookup_response = LookupResponse::new(cache_lookup.clone(), cache_lookup.to_bytes());
 
                 return Ok(new_lookup_response);
             }
@@ -436,7 +436,8 @@ impl AsyncResolver {
             Err(_) => Err(ClientError::TemporaryError("no DNS message found")),
         };
 
-        let dns_response = lookup_response.unwrap().to_dns_msg();
+        let lookup_response = lookup_response.expect("error!");
+        let dns_response = lookup_response.to_dns_msg();
 
         let key_bytes = self.config.get_key();
         let shared_key_name = self.config.get_key_name();
@@ -455,7 +456,7 @@ impl AsyncResolver {
         );
 
         match rcode {
-            Rcode::NOERROR => Ok(LookupResponse::new(dns_response)),
+            Rcode::NOERROR => Ok(LookupResponse::new(dns_response, lookup_response.get_bytes())),
             Rcode::FORMERR => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
             Rcode::SERVFAIL => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
             Rcode::NXDOMAIN => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
@@ -909,7 +910,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1138,7 +1139,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::FORMERR);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1185,7 +1186,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::SERVFAIL);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1231,7 +1232,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::NXDOMAIN);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1278,7 +1279,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::NOTIMP);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1325,7 +1326,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::REFUSED);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1372,7 +1373,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1411,7 +1412,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1450,7 +1451,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1489,7 +1490,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1528,7 +1529,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1567,7 +1568,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1606,7 +1607,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1645,7 +1646,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1684,7 +1685,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1723,7 +1724,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1762,7 +1763,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1801,7 +1802,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1840,7 +1841,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1879,7 +1880,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1918,7 +1919,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {

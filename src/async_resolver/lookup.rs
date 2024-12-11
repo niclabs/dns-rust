@@ -26,7 +26,7 @@ pub struct LookupStrategy {
     /// Resolver configuration.
     config: ResolverConfig,
     /// Reference to the response of the query.
-    response_msg: Arc<std::sync::Mutex<Result<DnsMessage, ResolverError>>>,
+    response_msg: Arc<std::sync::Mutex<Result<(DnsMessage, Vec<u8>), ResolverError>>>,
 }
     
 impl LookupStrategy {
@@ -115,7 +115,7 @@ impl LookupStrategy {
     //  appropriate response to its caller.
     pub fn received_appropriate_response(&self) -> bool {
         let response_arc = self.response_msg.lock().unwrap();
-        if let Ok(dns_msg) = response_arc.as_ref() {
+        if let Ok((dns_msg, bytes)) = response_arc.as_ref() {
             match dns_msg.get_header().get_rcode().into() {
                 Rcode::SERVFAIL => return false,
                 Rcode::NOTIMP => return false,
@@ -191,7 +191,7 @@ impl LookupStrategy {
     ) -> Result<LookupResponse, ResolverError>  {
         let response_arc=  self.response_msg.clone();
         let protocol = self.config.get_protocol();
-        let mut dns_msg_result: Result<DnsMessage, ResolverError>;
+        let mut dns_msg_result: Result<(DnsMessage, Vec<u8>), ResolverError>;
         {
             // Guard reference to modify the response
             let mut response_guard = response_arc.lock().unwrap(); // TODO: add error handling
@@ -205,12 +205,16 @@ impl LookupStrategy {
                 .await
                 .unwrap_or_else(
                     |_| {Err(ResolverError::Message("Execute Strategy Timeout Error".into()))}
-                );  
+                );
             *response_guard = dns_msg_result.clone();
+            //*response_guard = dns_msg_result.clone();
         }
         if self.received_appropriate_response() {
             return dns_msg_result.and_then(
-                |dns_msg| Ok(LookupResponse::new(dns_msg))
+                |dns_msg| {
+                        let (dns_msg, bytes) = dns_msg;
+                        Ok(LookupResponse::new(dns_msg, bytes))
+                    }
             )
         }
         if let ConnectionProtocol::UDP = protocol {
@@ -231,7 +235,10 @@ impl LookupStrategy {
             *response_guard = dns_msg_result.clone();
         }
         dns_msg_result.and_then(
-            |dns_msg| Ok(LookupResponse::new(dns_msg))
+            |dns_msg| {
+                let (dns_msg, bytes) = dns_msg;
+                Ok(LookupResponse::new(dns_msg, bytes))
+            }
         )
     }
 }
@@ -247,7 +254,7 @@ async fn send_query_by_protocol(
     query: &DnsMessage,
     protocol: ConnectionProtocol,
     server_info:  &ServerInfo,
-) ->  Result<DnsMessage, ResolverError> {
+) ->  Result<(DnsMessage, Vec<u8>), ResolverError> {
     let query_id = query.get_query_id();
     let dns_query = query.clone();
     let dns_msg_result;
@@ -257,16 +264,17 @@ async fn send_query_by_protocol(
             udp_connection.set_timeout(timeout);
             let response_result = udp_connection.send(dns_query).await;
             dns_msg_result = parse_response(response_result, query_id);
+            dns_msg_result
         }
         ConnectionProtocol::TCP => {
             let mut tcp_connection = server_info.get_tcp_connection().clone();
             tcp_connection.set_timeout(timeout);
             let response_result = tcp_connection.send(dns_query).await;
             dns_msg_result = parse_response(response_result, query_id);
+            dns_msg_result
         }
-        _ => {dns_msg_result = Err(ResolverError::Message("Invalid Protocol".into()))}, // TODO: specific add error handling
-    }; 
-    dns_msg_result
+        _ =>  Err(ResolverError::Message("Invalid Protocol".into())), // TODO: specific add error handling
+    }
 }
 
 /// Parse the received response datagram to a `DnsMessage`.
@@ -288,17 +296,18 @@ async fn send_query_by_protocol(
 ///      excessively long TTL, say greater than 1 week, either discard
 ///      the whole response, or limit all TTLs in the response to 1
 ///      week.
-fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -> Result<DnsMessage, ResolverError> {
-    let dns_msg = response_result.map_err(Into::into)
-        .and_then(|response_message| {
-            DnsMessage::from_bytes(&response_message)
-                .map_err(|_| ResolverError::Parse("The name server was unable to interpret the query.".to_string()))
-        })?;
+fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -> Result<(DnsMessage, Vec<u8>), ResolverError> {
+    let response_msg = response_result.map_err(Into::<ResolverError>::into)?;
+
+    let dns_msg = DnsMessage::from_bytes(&response_msg).
+        map_err(|_| ResolverError::Parse("The name server was unable to interpret the query.".to_string()))?;
+
     let header = dns_msg.get_header();
     
     // check Header
-    header.format_check()
-    .map_err(|e| ResolverError::Parse(format!("Error formated Header: {}", e)))?;
+    header
+        .format_check()
+        .map_err(|e| ResolverError::Parse(format!("Error formated Header: {}", e)))?;
 
     // Check ID
     if dns_msg.get_query_id() != query_id {
@@ -306,7 +315,7 @@ fn parse_response(response_result: Result<Vec<u8>, ClientError>, query_id:u16) -
     }
 
     if header.get_qr() {
-        return Ok(dns_msg);
+        return Ok((dns_msg, response_msg));
     }
     Err(ResolverError::Parse("Message is a query. A response was expected.".to_string()))
 }
@@ -555,7 +564,7 @@ mod async_resolver_test {
         let response_dns_msg = parse_response(response_result,query_id);
         println!("[###############] {:?}",response_dns_msg);
         assert!(response_dns_msg.is_ok());
-        if let Ok(dns_msg) = response_dns_msg {
+        if let Ok((dns_msg,_)) = response_dns_msg {
             assert_eq!(dns_msg.get_header().get_qr(), true); // response (1)
             assert_eq!(dns_msg.get_header().get_ancount(), 1);
             assert_eq!(dns_msg.get_header().get_rcode(), Rcode::NOERROR);

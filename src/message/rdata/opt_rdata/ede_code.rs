@@ -1,5 +1,7 @@
-#[derive(Debug, PartialEq)]
-enum EdeCode {
+use crate::message::resource_record::ToBytes;
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum EdeCode {
     OtherErr,           // 0
     UnsupDnskeyAlg,     // 1
     UnsupDsDigest,      // 2
@@ -58,5 +60,11 @@ impl From<EdeCode> for u16 {
             EdeCode::InvalidData        => 24,
             EdeCode::Unknown(val)  => val,
         }
+    }
+}
+
+impl ToBytes for EdeCode {
+    fn to_bytes(&self) -> Vec<u8> {
+        u16::from(self).to_be_bytes().to_vec()
     }
 }

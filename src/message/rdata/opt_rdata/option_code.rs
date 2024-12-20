@@ -8,6 +8,8 @@ pub enum OptionCode {
     // added for rfc6975
     DAU,
     DHU,
+    // added for rf8914
+    EDE,
     N3U
 }
 
@@ -19,6 +21,7 @@ impl From<OptionCode> for u16 {
             OptionCode::DHU => 6,
             OptionCode::N3U => 7,
             OptionCode::PADDING => 12,
+            OptionCode::EDE => 14,
             OptionCode::UNKNOWN(val) => val,
         }
     }
@@ -32,6 +35,7 @@ impl From<u16> for OptionCode {
             6 => OptionCode::DHU,
             7 => OptionCode::N3U,
             12 => OptionCode::PADDING,
+            15 => OptionCode::EDE,
             _ => OptionCode::UNKNOWN(val),
         }
     }
@@ -44,6 +48,7 @@ impl From<&str> for OptionCode {
             "DAU" => OptionCode::DAU,
             "DHU" => OptionCode::DHU,
             "N3U" => OptionCode::N3U,
+            "EDE" => OptionCode::EDE,
             "PADDING" => OptionCode::PADDING,
             _ => OptionCode::UNKNOWN(0),
         }
@@ -63,6 +68,7 @@ impl fmt::Display for OptionCode {
             OptionCode::DAU => "DAU",
             OptionCode::DHU => "DHU",
             OptionCode::N3U => "N3U",
+            OptionCode::EDE => "EDE",
             OptionCode::PADDING => "PADDING",
             OptionCode::UNKNOWN(_) => "UNKNOWN",
         })

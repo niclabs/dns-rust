@@ -1,9 +1,14 @@
 pub mod option_code;
+pub mod ede_code;
+pub mod ede_optdata;
+pub mod optoption;
+pub mod option_data;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use std::fmt;
-
+use crate::message::rdata::opt_rdata::option_data::OptionData;
+use crate::message::rdata::opt_rdata::optoption::OptOption;
 
 #[derive(Clone, Debug, PartialEq)]
 /// Struct for OPT Rdata
@@ -20,7 +25,7 @@ use std::fmt;
 /// +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
 
 pub struct OptRdata {
-    pub option: Vec<(OptionCode, u16, Vec<u8>)> // (OPTION-CODE, OPTION-LENGTH, OPTION-DATA)
+    pub option: Vec<OptOption> // (OPTION-CODE, OPTION-LENGTH, OPTION-DATA)
 }
 
 impl ToBytes for OptRdata {
@@ -28,8 +33,11 @@ impl ToBytes for OptRdata {
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
 
-        for (option_code, option_length, option_data) in &self.option {
-            bytes.extend(u16::from(*option_code).to_be_bytes());
+        for option in &self.option {
+            let option_code = option.get_option_code();
+            let option_length = option.get_option_len();
+            let option_data = option.get_opt_data().to_bytes();
+            bytes.extend(u16::from(option_code).to_be_bytes());
             bytes.extend(&option_length.to_be_bytes());
             bytes.extend(option_data);
         }
@@ -67,7 +75,11 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
 
             i += option_length as usize;
 
-            opt_rdata.option.push((option_code, option_length, option_data));
+            let option_data = OptionData::from_with_opt(option_data, option_code);
+
+            let option = OptOption::new(option_code, option_length, option_data);
+
+            opt_rdata.option.push(option);
         }
 
         Ok(opt_rdata)
@@ -82,15 +94,15 @@ impl OptRdata {
         }
     }
 
-    pub fn get_option(&self) -> Vec<(OptionCode, u16, Vec<u8>)> {
+    pub fn get_option(&self) -> Vec<(OptOption)> {
         self.option.clone()
     }
 }
 
 /// Setters for OptRdata
 impl OptRdata {
-    pub fn set_option(&mut self, option: Vec<(OptionCode, u16, Vec<u8>)>) {
-        self.option= option;
+    pub fn set_option(&mut self, option: Vec<OptOption>) {
+        self.option = option;
     }
 }
 
@@ -101,10 +113,13 @@ impl fmt::Display for OptRdata {
         let mut result = String::new();
         
         if !self.option.is_empty() {
-            for (option_code, option_length, option_data) in &self.option {
+            for option in &self.option {
+                let option_code = option.get_option_code();
+                let option_length = option.get_option_len();
+                let option_data = option.get_opt_data().to_bytes();
                 result.push_str(&format!("OPTION-CODE: {}\n", option_code));
                 result.push_str(&format!("OPTION-LENGTH: {}\n", option_length));
-                result.push_str(&format!("OPTION-DATA: {:?} (\"{}\")\n", option_data, std::str::from_utf8(option_data).unwrap()));
+                result.push_str(&format!("OPTION-DATA: {:?} \n", option_data));
             }
         }
         else {
@@ -116,13 +131,15 @@ impl fmt::Display for OptRdata {
 
 #[cfg(test)]
 mod opt_rdata_test{
+    use crate::message::rdata::opt_rdata::option_data::OptionData;
     use super::*;
 
     #[test]
     fn test_opt_rdata_to_bytes() {
         let mut opt_rdata = OptRdata::new();
 
-        opt_rdata.option.push((OptionCode::from(1), 2 as u16, vec![0x06, 0x04]));
+        let option = OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
+        opt_rdata.option.push(option);
 
         let result = opt_rdata.to_bytes();
 
@@ -134,8 +151,8 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_from_bytes() {
         let mut opt_rdata = OptRdata::new();
-
-        opt_rdata.option.push((OptionCode::from(1), 2 as u16, vec![0x06, 0x04]));
+        let option = OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
+        opt_rdata.option.push(option);
 
         let bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
 
@@ -157,8 +174,8 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_setters_and_getters() {
         let mut opt_rdata = OptRdata::new();
-        
-        let option: Vec<(OptionCode, u16, Vec<u8>)> = vec![(OptionCode::from(1), 2 as u16, vec![0x06, 0x04])];
+
+        let option = vec![OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]))];
 
         opt_rdata.set_option(option.clone());
 

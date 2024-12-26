@@ -50,22 +50,40 @@ async fn QTYPE_A_TEST_AUTH_ANSWER() {
 
 
 // Testing with QTYPE=A on a non authoritative server for example.com
-//fn QTYPE_A_TEST() {
-//    let addr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
-//    let conn = ClientUDPConnection::new_default(addr.unwrap(), Duration::from_secs(10));
-//   let mut client = Client::new(conn);
+#[tokio::test]
+async fn QTYPE_A_TEST() {
+    let addr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
+    let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+   let mut client = Client::new(conn);
 
-//    let response = client.query(
-//        DomainName::new_from_string("example.com".to_string), 
-//        "A".to_string, 
-//        "IN".to_string
-//    );
-//    if let Ok(resp) = response {
- //       // comparar header
-//           assert!(response.header.qr)
+    let response = client.query(
+        DomainName::new_from_string("example.com".to_string()), 
+        "A", 
+        "IN"
+    ).await;
+    if let Ok(resp) = response {
+       // header
+       assert!(resp.get_header().get_qr());
+       assert!(!resp.get_header().get_aa());
 
-//    } else {
-//        panic!();
-//    }
-//}
+       // question
+       assert_eq!(resp.get_question(), client.get_dns_query().get_question());
+
+       // answer
+       let RR = &resp.get_answer()[0];
+       assert_eq!(RR.get_name(), DomainName::new_from_string("example.com".to_string()));
+       assert_eq!(RR.get_rtype(), "A".into());
+       assert_eq!(RR.get_rclass(), "IN".into());
+       assert_eq!(RR.get_rdlength(), 4);
+       assert_eq!(RR.get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(93, 184, 216, 34)))));
+
+       // authority
+       assert!(resp.get_authority().is_empty());
+
+       // additional
+       assert!(resp.get_additional().is_empty());
+    } else {
+        panic!();
+    }
+}
 

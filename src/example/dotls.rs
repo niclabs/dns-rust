@@ -1,9 +1,7 @@
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr};
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use crate::client::client_connection::ClientConnection;
 use crate::client::client_security::ClientSecurity;
-use crate::client::tcp_connection::ClientTCPConnection;
 use crate::client::tls_connection::ClientTLSConnection;
 use crate::domain_name::DomainName;
 use crate::message::rclass::Rclass;
@@ -24,7 +22,7 @@ fn main() -> Result<(), ClientError> {
     Rclass::IN,
     0,
     false,
-    1);;
+    1);
 
     rt.block_on(async {
         match tls_connection.send(dns_query).await {

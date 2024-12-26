@@ -1,23 +1,15 @@
-use crate::client::ClientConnection;
+
 use crate::message::DnsMessage;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::a_rdata::ARdata;
 use crate::message::resource_record::ResourceRecord;
-use super::client_connection::ConnectionProtocol;
 use super::client_error::ClientError;
 use super::client_security::ClientSecurity;
 use async_trait::async_trait;
-use futures_util::TryFutureExt;
 use rustls::pki_types::ServerName;
-use rustls::server;
-use rustls::Stream;
-use rustls::RootCertStore;
-use webpki::DnsNameRef;
 use std::convert::TryFrom;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
-use std::io::Write;
-use std::iter::FromIterator;
 use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -27,7 +19,6 @@ use tokio::time::Duration;
 use tokio::time::timeout;
 use tokio_rustls::rustls::ClientConfig;
 use tokio_rustls::TlsConnector;
-use tokio_rustls::TlsStream;
 use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

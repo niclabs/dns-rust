@@ -36,7 +36,7 @@ async fn QTYPE_A_TEST_AUTH_ANSWER() {
         assert_eq!(RR.get_rtype(), "A".into());
         assert_eq!(RR.get_rclass(), "IN".into());
         assert_eq!(RR.get_rdlength(), 4);
-        assert_eq!(RR.get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(93, 184, 216, 34)))));
+        assert_eq!(RR.get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(93, 184, 215, 14)))));
 
         // authority
         assert!(resp.get_authority().is_empty());
@@ -75,7 +75,7 @@ async fn QTYPE_A_TEST() {
        assert_eq!(RR.get_rtype(), "A".into());
        assert_eq!(RR.get_rclass(), "IN".into());
        assert_eq!(RR.get_rdlength(), 4);
-       assert_eq!(RR.get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(93, 184, 216, 34)))));
+       assert_eq!(RR.get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(93, 184, 215, 14)))));
 
        // authority
        assert!(resp.get_authority().is_empty());
@@ -86,4 +86,24 @@ async fn QTYPE_A_TEST() {
         panic!();
     }
 }
+
+
+// RFC 1034 6.2.2
+
+
+// RFC 1034 6.2.3 
+// Testing with QTYPE=MX
+
+
+// RFC 1034 6.2.4 
+// Testing with QTYPE=NS 
+
+// RFC 1034 6.2.5 
+
+// RFC 1034 6.2.6 
+
+// RFC 1034 6.2.7 
+
+// RFC 1034 6.2.8
+
 

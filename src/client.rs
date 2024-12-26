@@ -176,7 +176,7 @@ impl <T: ClientConnection> Client<T> {
         &self.conn
     }
 
-    fn get_dns_query(&self)-> DnsMessage {
+    pub fn get_dns_query(&self)-> DnsMessage {
         return self.dns_query.clone();
     }
 }

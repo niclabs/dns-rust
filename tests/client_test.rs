@@ -6,7 +6,7 @@ mod client_test {
                 config::ResolverConfig, resolver_error::ResolverError, AsyncResolver, server_info::ServerInfo
             }, client::{
             client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, 
-            message::{resource_record::ResourceRecord, rdata::{a_rdata::ARdata, Rdata, mx_rdata::MxRdata, ns_rdata::NsRdata}}};
+            message::{resource_record::ResourceRecord, rdata::{a_rdata::ARdata, Rdata, mx_rdata::MxRdata, ns_rdata::NsRdata, soa_rdata::SoaRdata}}};
 
 
 
@@ -303,8 +303,20 @@ mod client_test {
             assert_eq!(authority.get_rtype(), "SOA".into());
             assert_eq!(authority.get_rclass(), "IN".into());
             assert_eq!(authority.get_ttl(), 3600);
-            // TODO
-            // example.com  IN  SOA  3600  ns.icann.org noc.dns.icann.org 2024081477 7200 3600 1209600 3600
+            
+            // this is for the rdata of the authority
+            let rdata = authority.get_rdata();
+            if let Rdata::SOA(data) = rdata{
+                assert_eq!(data.get_mname(), DomainName::new_from_string("ns.icann.org".to_string()));
+                assert_eq!(data.get_rname(), DomainName::new_from_string("noc.dns.icann.org".to_string()));
+                assert_eq!(data.get_serial(), 2024081477);
+                assert_eq!(data.get_refresh(), 7200);
+                assert_eq!(data.get_retry(), 3600);
+                assert_eq!(data.get_expire(), 1209600);
+                assert_eq!(data.get_minimum(), 3600);
+            } else{
+                panic!("wrong rdata");
+            }
 
             // additional
             assert!(resp.get_additional().is_empty());

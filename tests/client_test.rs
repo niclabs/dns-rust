@@ -233,27 +233,40 @@ mod client_test {
             // question
             assert_eq!(resp.get_question(), client.get_dns_query().get_question());
 
-            // answer
-            let RR = &resp.get_answer()[0];
-            assert_eq!(RR.get_name(), DomainName::new_from_string("example.com".to_string()));
-            assert_eq!(RR.get_rtype(), "NS".into());
-            assert_eq!(RR.get_rclass(), "IN".into());
-            assert_eq!(RR.get_ttl(), 86400);
-
+            // answer 1
+            let RR1 = &resp.get_answer()[0];
+            assert_eq!(RR1.get_name(), DomainName::new_from_string("example.com".to_string()));
+            assert_eq!(RR1.get_rtype(), "NS".into());
+            assert_eq!(RR1.get_rclass(), "IN".into());
+            assert_eq!(RR1.get_ttl(), 86400);
             // FIX
-            //assert_eq!(RR.get_rdlength(), 3);
-            
-            // TODO
-            //data = Rdata::NS(NsRdata::rr_from_master_file(
+            //assert_eq!(RR1.get_rdlength(), );            
 
-            //));
-            //assert_eq!(RR.get_rdata(), data);
+            let mut nsdata = NsRdata::new();
+            nsdata.set_nsdname(DomainName::new_from_string("a.iana-servers.net".to_string()));
+            let data0 = Rdata::NS(nsdata);
+            assert_eq!(RR1.get_rdata(), data0);
+
+            // answer 2
+            let RR2 = &resp.get_answer()[1];
+            assert_eq!(RR2.get_name(), DomainName::new_from_string("example.com".to_string()));
+            assert_eq!(RR2.get_rtype(), "NS".into());
+            assert_eq!(RR2.get_rclass(), "IN".into());
+            assert_eq!(RR2.get_ttl(), 86400);
+            // FIX
+            //assert_eq!(RR2.get_rdlength(), );            
+
+            nsdata = NsRdata::new();
+            nsdata.set_nsdname(DomainName::new_from_string("b.iana-servers.net".to_string()));
+            let data1 = Rdata::NS(nsdata);
+            assert_eq!(RR2.get_rdata(), data1);
 
             // authority
             assert!(resp.get_authority().is_empty());
 
             // additional
             assert!(resp.get_additional().is_empty());
+
         } else {
             panic!("response error");
         }
@@ -261,6 +274,7 @@ mod client_test {
 
 
     // RFC 1034 6.2.5 
+    // testing QTYPE=A with a mistyped host name
 
     // RFC 1034 6.2.6 
 

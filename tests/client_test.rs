@@ -326,6 +326,57 @@ mod client_test {
     }
 
     // RFC 1034 6.2.6 
+    #[tokio::test]
+    async fn QTYPE_A_REFERRAL() {
+        let addr = IpAddr::V4(Ipv4Addr::new(198, 41, 0, 4)); // a.root-servers.net ip
+        let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+        let mut client = Client::new(conn);
+
+        let response = client.query(
+            DomainName::new_from_string("example.com".to_string()), 
+            "A", 
+            "IN"
+        ).await;
+        if let Ok(resp) = response {
+            // header
+            assert!(resp.get_header().get_qr());
+
+            // question
+            assert_eq!(resp.get_question(), client.get_dns_query().get_question());
+
+            // answer
+            assert!(resp.get_answer().is_empty());
+
+            // authority
+            let authority = &resp.get_authority();
+            for auth in authority{
+                assert_eq!(auth.get_name(), DomainName::new_from_string("com".to_string()));
+                assert_eq!(auth.get_rtype(), "NS".into());
+                assert_eq!(auth.get_rclass(), "IN".into());
+                assert_eq!(auth.get_ttl(), 172800);
+                
+                // Ensure that all RDATAs are of type NS
+                if let Rdata::NS(ns_name) = auth.get_rdata() {
+                } else {
+                    panic!("NS rdata was expected");
+                }
+
+            }
+            // Verify the first rdata
+            let rdata = &authority[0].get_rdata();
+            if let Rdata::NS(data) = rdata{
+                assert_eq!(data.get_nsdname(), DomainName::new_from_string("l.gtld-servers.net".to_string()));
+            } else{
+                panic!("wrong rdata");
+            }
+
+            // additional
+
+
+        } else {
+            panic!("response error");
+        }
+    }
 
     // RFC 1034 6.2.7 
 

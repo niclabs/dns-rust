@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod client_test {
-    use std::{net::{IpAddr, Ipv4Addr}, str::FromStr, time::Duration};
+    use std::{net::{IpAddr, Ipv4Addr, Ipv6Addr}, str::FromStr, time::Duration};
     use dns_rust::{
         async_resolver::{
                 config::ResolverConfig, resolver_error::ResolverError, AsyncResolver, server_info::ServerInfo
             }, client::{
             client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, 
-            message::{resource_record::ResourceRecord, rdata::{a_rdata::ARdata, Rdata, mx_rdata::MxRdata, ns_rdata::NsRdata, soa_rdata::SoaRdata}}};
+            message::{resource_record::ResourceRecord, rdata::{a_rdata::ARdata, Rdata, mx_rdata::MxRdata, ns_rdata::NsRdata, soa_rdata::SoaRdata, aaaa_rdata::AAAARdata}}};
 
 
 
@@ -356,7 +356,7 @@ mod client_test {
                 assert_eq!(auth.get_ttl(), 172800);
                 
                 // Ensure that all RDATAs are of type NS
-                if let Rdata::NS(ns_name) = auth.get_rdata() {
+                if let Rdata::NS(_ns_name) = auth.get_rdata() {
                 } else {
                     panic!("NS rdata was expected");
                 }
@@ -371,7 +371,41 @@ mod client_test {
             }
 
             // additional
+            let additional = &resp.get_additional();
+            let mut i = 0;
+            for addi in additional {
+                assert_eq!(addi.get_rclass(), "IN".into());
+                assert_eq!(addi.get_ttl(), 172800);
 
+                // test for the rdata type
+                if i==0 {
+                    if let Rdata::A(_data) = addi.get_rdata() {
+                        i = 1;
+                    } else {
+                        panic!("wrong rdata type");
+                    }
+                } else {
+                    if let Rdata::AAAA(_data) = addi.get_rdata() {
+                        i = 0;
+                    } else {
+                        panic!("wrong rdata type");
+                    }
+                }
+            } 
+            // Verify the first rdata
+            let rdata1 = &additional[0].get_rdata();
+            if let Rdata::A(data) = rdata1{
+                assert_eq!(data.get_address(), IpAddr::V4(Ipv4Addr::new(192, 41, 162, 30)));
+            } else{
+                panic!("wrong rdata type");
+            }
+            // Verify the second rdata
+            let rdata2 = &additional[1].get_rdata();
+            if let Rdata::AAAA(data) = rdata2{
+                assert_eq!(data.get_address(), IpAddr::V6(Ipv6Addr::new(0x2001, 0x500, 0xd937, 0, 0, 0, 0, 0x30)));
+            } else{
+                panic!("wrong rdata type");
+            }
 
         } else {
             panic!("response error");

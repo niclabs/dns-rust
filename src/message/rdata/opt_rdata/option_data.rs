@@ -26,15 +26,17 @@ impl ToBytes for OptionData {
 }
 
 impl OptionData {
-    pub fn from_with_opt_type(bytes: Vec<u8>, opt_t: OptionCode) -> OptionData {
+    pub fn from_with_opt_type(bytes: Vec<u8>, opt_t: OptionCode) -> Result<OptionData, &'static str> {
         match opt_t {
             OptionCode::NSID => {
-                OptionData::NSID(String::from_utf8(bytes).unwrap())
+                let nsid = String::from_utf8(bytes).map_err(|_| "Error parsing NSID")?;
+                Ok(OptionData::NSID(nsid))
             },
             OptionCode::EDE => {
-                OptionData::EDE(EdeOptData::from_bytes(&bytes).unwrap())
+                let ede = EdeOptData::from_bytes(&bytes).map_err(|_| "Error parsing EDE")?;
+                Ok(OptionData::EDE(ede))
             },
-            _ => OptionData::Unknown(bytes)
+            _ => Ok(OptionData::Unknown(bytes))
         }
     }
 }

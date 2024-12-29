@@ -63,8 +63,41 @@ impl From<EdeCode> for u16 {
     }
 }
 
+impl From<u16> for EdeCode {
+    fn from(val: u16) -> EdeCode {
+        match val {
+            0  => EdeCode::OtherErr,
+            1  => EdeCode::UnsupDnskeyAlg,
+            2  => EdeCode::UnsupDsDigest,
+            3  => EdeCode::StaleAns,
+            4  => EdeCode::ForgedAns,
+            5  => EdeCode::DnssecIndet,
+            6  => EdeCode::DnssecBogus,
+            7  => EdeCode::SigExpired,
+            8  => EdeCode::SigNotYetValid,
+            9  => EdeCode::DnskeyMissing,
+            10 => EdeCode::RrsigsMissing,
+            11 => EdeCode::NoZoneKeyBit,
+            12 => EdeCode::NsecMissing,
+            13 => EdeCode::CachedErr,
+            14 => EdeCode::NotReady,
+            15 => EdeCode::Blocked,
+            16 => EdeCode::Censored,
+            17 => EdeCode::Filtered,
+            18 => EdeCode::Prohibited,
+            19 => EdeCode::StaleNxDomainAns,
+            20 => EdeCode::NotAuth,
+            21 => EdeCode::NotSupported,
+            22 => EdeCode::NoReachableAuth,
+            23 => EdeCode::NetErr,
+            24 => EdeCode::InvalidData,
+            val => EdeCode::Unknown(val),
+        }
+    }
+}
+
 impl ToBytes for EdeCode {
     fn to_bytes(&self) -> Vec<u8> {
-        u16::from(self).to_be_bytes().to_vec()
+        u16::from(*self).to_be_bytes().to_vec()
     }
 }

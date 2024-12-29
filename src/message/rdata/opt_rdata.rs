@@ -281,7 +281,6 @@ mod opt_rdata_test{
         let msg = "Some unknown EDE error".to_string();
         let mut ede_data = EdeOptData::new(code, msg);
 
-        // Use your EdeOptData's setters (if you have them)
         ede_data.set_err_code(EdeCode::Unknown(1000));
         ede_data.set_err_message("Modified unknown EDE".to_string());
 

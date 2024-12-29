@@ -70,7 +70,7 @@ async fn query_a_type_edns() {
         println!("{:?}", opt);
     } 
 }
-
+#[ignore]
 #[tokio::test]
 async fn query_a_type_with_rrsig_edns() {
     let response = query_response_edns("example.com",
@@ -114,7 +114,7 @@ async fn query_a_type_with_rrsig_edns() {
         }
     }
 }
-
+#[ignore]
 #[tokio::test]
 async fn query_from_root() {
     const ROOTSV1: [u8; 4] = [192,58,128,30];

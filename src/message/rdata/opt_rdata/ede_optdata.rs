@@ -1,6 +1,19 @@
 use crate::message::rdata::opt_rdata::ede_code::EdeCode;
 use crate::message::resource_record::{FromBytes, ToBytes};
 
+/*
+                                             1   1   1   1   1   1
+     0   1   2   3   4   5   6   7   8   9   0   1   2   3   4   5
+   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+0: |                            OPTION-CODE                        |
+   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+2: |                           OPTION-LENGTH                       |
+   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+4: | INFO-CODE                                                     |
+   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+6: / EXTRA-TEXT ...                                                /
+   +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+*/
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct EdeStruct {
     err_code: EdeCode,
@@ -16,6 +29,11 @@ impl EdeStruct {
     }
     pub fn get_err_message(&self) -> String {
         self.err_message.clone()
+    }
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        let err_code = EdeCode::from_bytes(&bytes[0..2]).expect("Error parsing EdeCode");
+        let err_message = String::from_utf8(bytes[2..].to_vec()).unwrap();
+        Ok(EdeStruct::new(err_code, err_message))
     }
 }
 
@@ -33,9 +51,4 @@ impl ToBytes for EdeStruct {
     }
 }
 
-impl FromBytes<Result<Self, &'static str>> for EdeStruct {
-    fn from_bytes(bytes: Result<Self, &'static str>) -> Result<Self, &'static str> {
-
-    }
-}
 

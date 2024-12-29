@@ -100,9 +100,10 @@ async fn query_a_type_with_rrsig_edns() {
         assert_eq!(opt.get_rtype(), Rrtype::OPT);
         assert_eq!(opt.get_rclass(), Rclass::UNKNOWN(512));
         if let Rdata::OPT(rdata) = opt.get_rdata() {
+            println!("{:?}", rdata);
             let rdata = rdata.clone();
             let option = &rdata.get_option()[0];
-            if let OptionData::NSID(c) = option {
+            if let OptionData::NSID(c) = option.get_opt_data() {
                 println!("{}", c);
                 assert_eq!(c, "gpdns-scl")
             }

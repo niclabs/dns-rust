@@ -75,7 +75,7 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
 
             i += option_length as usize;
 
-            let option_data = OptionData::from_with_opt(option_data, option_code);
+            let option_data = OptionData::from_with_opt_type(option_data, option_code);
 
             let option = OptOption::new(option_code, option_length, option_data);
 

@@ -21,7 +21,7 @@ impl From<OptionCode> for u16 {
             OptionCode::DHU => 6,
             OptionCode::N3U => 7,
             OptionCode::PADDING => 12,
-            OptionCode::EDE => 14,
+            OptionCode::EDE => 15,
             OptionCode::UNKNOWN(val) => val,
         }
     }

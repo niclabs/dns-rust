@@ -105,11 +105,11 @@ async fn query_a_type_with_rrsig_edns() {
             let option = &rdata.get_option()[0];
             if let OptionData::NSID(c) = option.get_opt_data() {
                 println!("{}", c);
+                // because the first query option is 8.8.8.8, it redirects to google public dns in scl chile
                 assert_eq!(c, "gpdns-scl")
             }
             //let (_,_,c) = &rdata.get_option()[0];
             //println!("{}", std::str::from_utf8(c).unwrap(),);
-            // because the first query option is 8.8.8.8, it redirects to google public dns in scl chile
             // assert_eq!(std::str::from_utf8(c).unwrap(), "gpdns-scl")
         }
     }

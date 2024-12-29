@@ -382,6 +382,8 @@ impl fmt::Display for Rdata {
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
     use crate::message::rdata::opt_rdata::option_code::OptionCode;
+    use crate::message::rdata::opt_rdata::option_data::OptionData;
+    use crate::message::rdata::opt_rdata::optoption::OptOption;
     use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
     use crate::message::rrtype::Rrtype;
@@ -642,7 +644,9 @@ mod resolver_query_tests {
     fn to_bytes_opt_rdata(){
         let mut opt_rdata = OptRdata::new();
 
-        opt_rdata.option.push((OptionCode::UNKNOWN(1), 2 as u16, vec![0x06, 0x04]));
+        let option = OptOption::new(OptionCode::UNKNOWN(1), 2 as u16, OptionData::Unknown(vec![0x06, 0x04]));
+
+        opt_rdata.option.push(option);
 
         let expected_bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
 
@@ -1009,9 +1013,10 @@ mod resolver_query_tests {
             0, 1, 0, 2, 6, 4, 0, 41, 0, 1
         ];
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let expected_option = OptOption::new(OptionCode::UNKNOWN(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
         match rdata {
             Rdata::OPT(val) => {
-                assert_eq!(val.option[0], (OptionCode::UNKNOWN(1), 2, vec![0x06, 0x04]));
+                assert_eq!(val.option[0], expected_option);
             }
             _ => {}
         }

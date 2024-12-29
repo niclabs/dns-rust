@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use crate::message::rdata::opt_rdata::ede_optdata::EdeStruct;
 use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use crate::message::resource_record::ToBytes;
@@ -27,13 +26,13 @@ impl ToBytes for OptionData {
 }
 
 impl OptionData {
-    fn from_with_opt(bytes: Vec<u8>, opt_t: OptionCode) -> OptionData {
+    pub fn from_with_opt_type(bytes: Vec<u8>, opt_t: OptionCode) -> OptionData {
         match opt_t {
             OptionCode::NSID => {
-                OptionData::NSID(bytes.try_into().unwrap())
+                OptionData::NSID(String::from_utf8(bytes).unwrap())
             },
             OptionCode::EDE => {
-                EdeStruct::from()
+                OptionData::EDE(EdeStruct::from_bytes(&bytes).unwrap())
             },
             _ => OptionData::Unknown(bytes)
         }

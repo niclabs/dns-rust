@@ -1,6 +1,6 @@
 use crate::message::resource_record::ToBytes;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EdeCode {
     OtherErr,           // 0
     UnsupDnskeyAlg,     // 1
@@ -96,8 +96,20 @@ impl From<u16> for EdeCode {
     }
 }
 
-impl ToBytes for EdeCode {
-    fn to_bytes(&self) -> Vec<u8> {
+
+impl EdeCode {
+
+    pub fn to_u16(&self) -> u16 {
+        u16::from(*self)
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        if bytes.len() < 2 {
+            return Err("EdeCode must be 2 bytes long");
+        }
+        Ok(EdeCode::from(u16::from_be_bytes([bytes[0], bytes[1]])))
+    }
+    pub fn to_bytes(&self) -> Vec<u8> {
         u16::from(*self).to_be_bytes().to_vec()
     }
 }

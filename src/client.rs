@@ -1,13 +1,16 @@
 pub mod client_connection;
+pub mod client_security;
 pub mod tcp_connection;
+pub mod tls_connection;
 pub mod udp_connection;
 pub mod client_error;
 
-use crate::message::rdata::Rdata;
 use crate::message::rrtype::Rrtype;
 use crate::client::client_connection::ClientConnection;
 use crate::message::DnsMessage;
 use crate::domain_name::DomainName;
+
+
 
 use rand::{thread_rng, Rng};
 
@@ -42,6 +45,7 @@ impl <T: ClientConnection> Client<T> {
     /// ```
     pub fn new(conn: T) -> Self {
 
+        
         let client = Client {
             conn: conn,
             dns_query:  DnsMessage::new(),

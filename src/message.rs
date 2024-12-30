@@ -270,7 +270,6 @@ impl DnsMessage {
             }
         }
         opt_rdata.set_option(options);
-
         let rdata = Rdata::OPT(opt_rdata);
         let rdlength = rdata.to_bytes().len() as u16;
         let mut rr = ResourceRecord::new(rdata);

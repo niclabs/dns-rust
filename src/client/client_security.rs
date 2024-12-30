@@ -7,11 +7,11 @@ use async_trait::async_trait;
 
 
 #[async_trait]
-pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin 
+pub trait ClientSecurity: Copy {//: 'static + Sized + Send + Sync + Unpin 
 
     //Creates a ClientConecction 
     fn new(server_addr:IpAddr,
-        timeout:Duration, payload_size: usize) -> Self;
+        timeout:Duration) -> Self;
 
     fn new_default(server_addr:IpAddr, timeout:Duration) -> Self;
 
@@ -23,8 +23,8 @@ pub trait ClientConnection: Copy {//: 'static + Sized + Send + Sync + Unpin
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ConnectionProtocol {
-    UDP,
-    TCP,
+    DTLS,
+    TLS,
     UNKNOWN,
 }
 
@@ -33,8 +33,8 @@ impl From<&str> for ConnectionProtocol {
     // from_str_to_connection_type
     fn from(conn: &str) -> ConnectionProtocol {
         match conn {
-            "UDP" => ConnectionProtocol::UDP,
-            "TCP" => ConnectionProtocol::TCP,
+            "DTLS" => ConnectionProtocol::DTLS,
+            "TLS" => ConnectionProtocol::TLS,
             _ => ConnectionProtocol::UNKNOWN,
         }
     } 

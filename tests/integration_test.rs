@@ -1,4 +1,3 @@
-
 use std::{net::IpAddr, str::FromStr};
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
 use dns_rust::async_resolver::lookup_response::LookupResponse;
@@ -119,4 +118,5 @@ async fn no_resource_available() {
     let answers = response.unwrap();
     assert_eq!(answers.len(), 0);
 }
+
 

@@ -68,8 +68,10 @@ impl DnsCache {
         }
 
         let mut cache_data = self.get_cache();
+        let mut rr_cache_vec_opt = cache_data.get_mut(&key).
+            map(|rr_cache_vec| rr_cache_vec.clone());
 
-        if let Some(rr_cache_vec) = cache_data.get_mut(&key) {
+        if let Some(rr_cache_vec) = rr_cache_vec_opt.as_mut() {
             let mut val_exist = false;
             for rr in rr_cache_vec.iter_mut() {
                 if rr.get_resource_record().get_rdata() == rr_cache.get_resource_record().get_rdata() {
@@ -80,6 +82,7 @@ impl DnsCache {
             }
             if !val_exist {
                 rr_cache_vec.push(rr_cache);
+                cache_data.put(key, rr_cache_vec.clone());
             }
         } else {
             let mut rr_cache_vec = Vec::new();

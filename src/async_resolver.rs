@@ -255,7 +255,7 @@ impl AsyncResolver {
                                                                              // return the error, it should go to the next part of the code
             };
             if let Some(cache_lookup) = cache.clone().get(query.clone()) {
-                let new_lookup_response = LookupResponse::new(cache_lookup.clone());
+                let new_lookup_response = LookupResponse::new(cache_lookup.clone(), cache_lookup.to_bytes());
 
                 return Ok(new_lookup_response);
             }
@@ -450,7 +450,8 @@ impl AsyncResolver {
             Err(_) => Err(ClientError::TemporaryError("no DNS message found")),
         };
 
-        let dns_response = lookup_response.unwrap().to_dns_msg();
+        let lookup_response = lookup_response.expect("error!");
+        let dns_response = lookup_response.to_dns_msg();
 
         let key_bytes = self.config.get_key();
         let shared_key_name = self.config.get_key_name();
@@ -469,7 +470,7 @@ impl AsyncResolver {
         );
 
         match rcode {
-            Rcode::NOERROR => Ok(LookupResponse::new(dns_response)),
+            Rcode::NOERROR => Ok(LookupResponse::new(dns_response, lookup_response.get_bytes())),
             Rcode::FORMERR => Err(ClientError::FormatError("The name server was unable to interpret the query."))?,
             Rcode::SERVFAIL => Err(ClientError::ServerFailure("The name server was unable to process this query due to a problem with the name server."))?,
             Rcode::NXDOMAIN => Err(ClientError::NameError("The domain name referenced in the query does not exist."))?,
@@ -520,6 +521,7 @@ mod async_resolver_test {
     static TIMEOUT: u64 = 45;
     use std::num::NonZeroUsize;
     use std::sync::Arc;
+    use crate::message::rdata::ns_rdata::NsRdata;
 
     #[test]
     fn create_async_resolver() {
@@ -788,12 +790,27 @@ mod async_resolver_test {
     async fn lookup_ip_rclass_any() {
         let mut resolver = AsyncResolver::new(ResolverConfig::default());
         let domain_name = "example.com";
+        // for it to be an error, it should be the type ANY
+        // in this case, it just fetches info for ANY CLASS -> INTERNET, CHAOS, HESIOID...
         let rclass = "ANY";
         let ip_addresses = resolver.lookup_ip(domain_name,rclass).await;
         println!("RESPONSE : {:?}", ip_addresses);
 
-        assert!(ip_addresses.is_err());
+        assert!(ip_addresses.is_ok());
     }
+    // TODO: check which is the behaviour that rtype ANY MUST HAVE.
+    /*#[tokio::test]
+    async fn lookup_ip_rtype_any() {
+        let mut resolver = AsyncResolver::new(ResolverConfig::default());
+        let domain_name = "example.com";
+        // this is with any
+        let rtype = "ANY";
+        let response = resolver.lookup(domain_name, "UDP", rtype, "IN").await.unwrap();
+
+        //println!("RESPONSE : {}", response.to_dns_msg());
+
+        //assert!(ip_addresses.is_err());
+    }*/
 
     #[tokio::test]
     async fn lookup_ch() {
@@ -907,7 +924,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1136,7 +1153,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::FORMERR);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1183,7 +1200,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::SERVFAIL);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1229,7 +1246,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::NXDOMAIN);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1276,7 +1293,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::NOTIMP);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1323,7 +1340,7 @@ mod async_resolver_test {
         header.set_qr(true);
         header.set_rcode(Rcode::REFUSED);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1370,7 +1387,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1409,7 +1426,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_lookup = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_lookup {
@@ -1448,7 +1465,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1487,7 +1504,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1526,7 +1543,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1565,7 +1582,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1604,7 +1621,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1643,7 +1660,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1682,7 +1699,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1721,7 +1738,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1760,7 +1777,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1799,7 +1816,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1838,7 +1855,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1877,7 +1894,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1916,7 +1933,7 @@ mod async_resolver_test {
         let mut header = dns_response.get_header();
         header.set_qr(true);
         dns_response.set_header(header);
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         let result_vec_rr = resolver.check_error_from_msg(Ok(lookup_response));
 
         if let Ok(lookup_response) = result_vec_rr {
@@ -1995,6 +2012,12 @@ mod async_resolver_test {
         rr_ttl_1.set_ttl(1);
         answer.push(rr_ttl_1);
 
+        // careful, the key is the <qname, qclass, qtype> so it will get the cached data
+        // from ^^^ ttl1
+        let mut nsdata = NsRdata::new();
+        let domain = DomainName::new_from_string("localhost2".to_string());
+        nsdata.set_nsdname(domain);
+        let rdata = Rdata::NS(nsdata);
         let mut rr_ttl_2 = ResourceRecord::new(rdata);
         rr_ttl_2.set_ttl(2);
         answer.push(rr_ttl_2);
@@ -2012,7 +2035,9 @@ mod async_resolver_test {
             0
         );
 
-        resolver.store_data_cache(dns_response);
+        resolver.store_data_cache(dns_response.clone());
+        let q = dns_response.get_question();
+        let key = CacheKey::Primary(q.get_rrtype(), q.get_rclass(), q.get_qname().clone());
         assert_eq!(
             resolver
                 .cache
@@ -2020,6 +2045,8 @@ mod async_resolver_test {
                 .unwrap()
                 .get_cache_answer()
                 .get_cache()
+                .get(&key)
+                .unwrap()
                 .len(),
             2
         );
@@ -2053,8 +2080,20 @@ mod async_resolver_test {
         soa_rdata.set_expire(expire);
         soa_rdata.set_minimum(minimum);
 
+
         let rdata = Rdata::SOA(soa_rdata);
         let mut rr = ResourceRecord::new(rdata);
+        /*
+            7.2. TTLs on SOA RRs (rfc2181)
+               It may be observed that in section 3.2.1 of RFC1035, which defines
+               the format of a Resource Record, that the definition of the TTL field
+               contains a throw away line which states that the TTL of an SOA record
+               should always be sent as zero to prevent caching.  This is mentioned
+               nowhere else, and has not generally been implemented.
+               **Implementations should not assume that SOA records will have a TTL of
+               zero, nor are they required to send SOA records with a TTL of zero.**
+        */
+        rr.set_ttl(3);
         rr.set_name(domain_name.clone());
 
         // Create dns response
@@ -2076,7 +2115,7 @@ mod async_resolver_test {
                 .cache
                 .lock()
                 .unwrap()
-                .get_cache_answer()
+                .get_cache_additional()
                 .get_cache()
                 .len(),
             1

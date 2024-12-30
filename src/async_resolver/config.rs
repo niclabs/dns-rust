@@ -67,8 +67,10 @@ pub struct ResolverConfig {
     global_retransmission_limit: u16,
     /// This is whether ends0 is enabled or not.
     edns0: bool,
-    /// Max payload for the resolver.
+    /// Max payload supported for the resolver
     max_payload: u16,
+    // buffer size for the connections
+    bufsize: u16,
     /// Version of endns0.
     edns0_version: u8,
     /// edns0 flags for the resolver.
@@ -120,6 +122,7 @@ impl ResolverConfig {
             global_retransmission_limit: 30,
             edns0: false,
             max_payload: RECOMMENDED_MAX_PAYLOAD as u16,
+            bufsize: RECOMMENDED_MAX_PAYLOAD as u16,
             edns0_version: 0,
             edns0_do: false,
             edns0_options: Vec::new(),
@@ -139,14 +142,14 @@ impl ResolverConfig {
         let max_retry_interval_seconds = 60;
 
         let mut servers_info = Vec::new();
-        servers_info.push(ServerInfo::new_from_addr(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
 
         // Recommended by RFC 1536: max(4, 5/number_of_server_to_query)
         let number_of_server_to_query = servers_info.len() as u64;
@@ -164,7 +167,8 @@ impl ResolverConfig {
             min_retry_interval_seconds: min_retry_interval_seconds,
             global_retransmission_limit: global_retransmission_limit,
             edns0: false,
-            max_payload: 512,
+            max_payload: RECOMMENDED_MAX_PAYLOAD as u16,
+            bufsize: RECOMMENDED_MAX_PAYLOAD as u16,
             edns0_version: 0,
             edns0_do: false,
             edns0_options: Vec::new(),
@@ -195,8 +199,8 @@ impl ResolverConfig {
     /// assert_eq!(resolver_config.get_name_servers().len(), 2);
     /// ```
     pub fn add_servers(&mut self, addr: IpAddr) {
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout, self.max_payload as usize);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout, self.max_payload as usize);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout, self.bufsize as usize);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout, self.bufsize as usize);
 
         let server_info = ServerInfo::new_with_ip(addr, conn_udp, conn_tcp);
         self.name_servers.push(server_info);

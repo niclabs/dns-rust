@@ -85,6 +85,12 @@ impl ResolverCache {
         qclass: Rclass,
         rcode: Option<Rcode>,
     ) {
+        /*
+        The meaning of the TTL field is a time limit on how long an RR can be
+        kept in a cache.  This limit does not apply to authoritative data in
+        zones; it is also timed out, but by the refreshing policies for the
+        zone.
+        */
         if resource_record.get_ttl() > 0 {
             self.cache_authority
                 .add(domain_name, resource_record, qtype, qclass, rcode);
@@ -100,7 +106,10 @@ impl ResolverCache {
         qclass: Rclass,
         rcode: Option<Rcode>,
     ) {
-        if resource_record.get_ttl() > 0 {
+        // Seems like SOA is a special record
+        // Nope! it should be in authority
+        // TODO: add this to auth (ttl rules does not apply in that section)
+        if resource_record.get_ttl() > 0 || resource_record.get_rtype() == Rrtype::SOA {
             if resource_record.get_rtype() != Rrtype::OPT {
                 self.cache_additional
                     .add(domain_name, resource_record, qtype, qclass, rcode);

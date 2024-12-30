@@ -5,6 +5,7 @@ pub mod resource_record;
 pub mod rrtype;
 pub mod rclass;
 pub mod rcode;
+pub mod rrset;
 
 use crate::message::rclass::Rclass;
 use crate::message::rrtype::Rrtype;
@@ -20,6 +21,8 @@ use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
+use rdata::opt_rdata::option_data::OptionData;
+use rdata::opt_rdata::optoption::OptOption;
 use resource_record::ToBytes;
 use core::fmt;
 use std::vec::Vec;
@@ -258,15 +261,15 @@ impl DnsMessage {
     /// ´´´
     fn create_opt_rr(max_payload: Option<u16> ,e_rcode :Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<u16>>) -> ResourceRecord {
         let mut opt_rdata = OptRdata::new();
-        let mut option = Vec::new();
+        let mut options = Vec::new();
 
         if let Some(option_codes) = option_codes {
             for code in option_codes {
-                option.push((OptionCode::from(code), 0, Vec::new()));
+                let option_to_add = OptOption::new(OptionCode::from(code), 0, OptionData::Unknown(Vec::new()));
+                options.push(option_to_add);
             }
         }
-        opt_rdata.set_option(option);
-
+        opt_rdata.set_option(options);
         let rdata = Rdata::OPT(opt_rdata);
         let rdlength = rdata.to_bytes().len() as u16;
         let mut rr = ResourceRecord::new(rdata);
@@ -1580,8 +1583,9 @@ mod message_test {
         match rdata {
             Rdata::OPT(opt) => {
                 let options = opt.get_option();
+                let expected_option  = OptOption::new(OptionCode::PADDING, 0, OptionData::Unknown(Vec::new()));
                 for option in options {
-                    assert_eq!(option, (OptionCode::PADDING, 0, Vec::new()));
+                    assert_eq!(option, expected_option);
                 }
             },
             _ => {}

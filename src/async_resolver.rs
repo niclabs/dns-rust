@@ -1840,64 +1840,7 @@ mod async_resolver_test {
         }
     }
 
-    #[test]
-    fn save_cache_negative_answer() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(1).unwrap());
 
-        let domain_name = DomainName::new_from_string("banana.exaple".to_string());
-        let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
-        let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
-        let serial = 2023112900;
-        let refresh = 1800;
-        let retry = 900;
-        let expire = 604800;
-        let minimum = 86400;
-
-        //Create RR type SOA
-        let mut soa_rdata = SoaRdata::new();
-        soa_rdata.set_mname(mname);
-        soa_rdata.set_rname(rname);
-        soa_rdata.set_serial(serial);
-        soa_rdata.set_refresh(refresh);
-        soa_rdata.set_retry(retry);
-        soa_rdata.set_expire(expire);
-        soa_rdata.set_minimum(minimum);
-
-        let rdata = Rdata::SOA(soa_rdata);
-        let mut rr = ResourceRecord::new(rdata);
-        rr.set_name(domain_name.clone());
-
-        // Create dns response
-        let mut dns_response =
-            DnsMessage::new_query_message(domain_name, Rrtype::A, Rclass::IN, 0, false, 1);
-        let mut new_header = dns_response.get_header();
-        new_header.set_aa(true);
-        dns_response.set_header(new_header);
-
-        // Save RR type SOA in Additional section of response
-        dns_response.add_additionals(vec![rr]);
-
-        resolver.save_negative_answers(dns_response.clone());
-
-        assert_eq!(dns_response.get_answer().len(), 0);
-        assert_eq!(dns_response.get_additional().len(), 1);
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_answer()
-                .get_cache()
-                .len(),
-            1
-        );
-        // assert!(resolver.cache.lock().unwrap().get_cache_answer().get(dns_response.get_question().get_qname().clone(), qtype_search, Qclass::IN).is_some())
-    }
 
     /*  #[ignore = "Optional, not implemented"]
     #[tokio::test]

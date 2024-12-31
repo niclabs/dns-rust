@@ -41,7 +41,7 @@ use std::collections::HashMap;
 #[derive(Clone)]
 pub struct AsyncResolver {
     /// Cache for the resolver
-    cache: Arc<Mutex<ResolverCache>>,
+    pub cache: Arc<Mutex<ResolverCache>>,
     /// Configuration for the resolver.
     config: ResolverConfig,
 }
@@ -233,7 +233,7 @@ impl AsyncResolver {
     /// assert!(response.is_ok());
     /// ```
     /// TODO: Refactor to use the three caches
-    async fn inner_lookup(
+    pub async fn inner_lookup(
         &self,
         domain_name: DomainName,
         rrtype: Rrtype,
@@ -338,7 +338,7 @@ impl AsyncResolver {
     /// in the response or the cache is preferred, but the two should never be
     /// combined.  If the data in the response is from authoritative data in the
     /// answer section, it is always preferred.
-    fn store_data_cache(&self, response: DnsMessage) {
+    pub fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
         {
             let mut cache = self.cache.lock().unwrap();
@@ -381,7 +381,7 @@ impl AsyncResolver {
     /// the SOA controls the length of time that the negative result may be
     /// cached.
     #[allow(unused)]
-    fn save_negative_answers(&self, response: DnsMessage) {
+    pub fn save_negative_answers(&self, response: DnsMessage) {
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_rrtype();
         let qclass = response.get_question().get_rclass();

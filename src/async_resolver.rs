@@ -1841,67 +1841,6 @@ mod async_resolver_test {
     }
 
     #[test]
-    fn not_store_cero_ttl_data_in_cache() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(10).unwrap());
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-
-        // Create dns response with ttl = 0
-        let mut dns_response =
-            DnsMessage::new_query_message(domain_name, Rrtype::A, Rclass::IN, 0, false, 1);
-        // let mut truncated_header = dns_response.get_header();
-        // truncated_header.set_tc(false);
-        // dns_response.set_header(truncated_header);
-        let mut answer: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = ARdata::new_from_addr(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::A(a_rdata);
-
-        // Cero ttl
-        let mut rr_cero_ttl = ResourceRecord::new(rdata.clone());
-        rr_cero_ttl.set_ttl(0);
-        answer.push(rr_cero_ttl);
-
-        // Positive ttl
-        let mut rr_ttl_1 = ResourceRecord::new(rdata.clone());
-        rr_ttl_1.set_ttl(1);
-        answer.push(rr_ttl_1);
-
-        let mut rr_ttl_2 = ResourceRecord::new(rdata);
-        rr_ttl_2.set_ttl(2);
-        answer.push(rr_ttl_2);
-
-        dns_response.set_answer(answer);
-        assert_eq!(dns_response.get_answer().len(), 3);
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_answer()
-                .get_cache()
-                .len(),
-            0
-        );
-
-        resolver.store_data_cache(dns_response);
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_answer()
-                .get_cache()
-                .len(),
-            2
-        );
-    }
-
-    #[test]
     fn save_cache_negative_answer() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
         resolver

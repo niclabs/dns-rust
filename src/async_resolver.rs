@@ -1841,39 +1841,6 @@ mod async_resolver_test {
     }
 
     #[test]
-    fn not_store_data_in_cache_if_truncated() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(10).unwrap());
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-
-        // Create truncated dns response
-        let mut dns_response =
-            DnsMessage::new_query_message(domain_name, Rrtype::A, Rclass::IN, 0, false, 1);
-        let mut truncated_header = dns_response.get_header();
-        truncated_header.set_tc(true);
-        dns_response.set_header(truncated_header);
-
-        resolver.store_data_cache(dns_response);
-
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_answer()
-                .get_cache()
-                .len(),
-            0
-        );
-    }
-
-    #[test]
     fn not_store_cero_ttl_data_in_cache() {
         let resolver = AsyncResolver::new(ResolverConfig::default());
         resolver

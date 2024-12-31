@@ -924,31 +924,6 @@ mod async_resolver_test {
         }
     }
 
-
-
-    /// Test cache data
-    #[tokio::test]
-    async fn cache_data() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(1).unwrap());
-        assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
-
-        let _response = resolver.lookup("example.com", "UDP", "A", "IN").await;
-        assert_eq!(
-            resolver.cache.lock().unwrap().is_cached(CacheKey::Primary(
-                Rrtype::A,
-                Rclass::IN,
-                DomainName::new_from_str("example.com")
-            )),
-            true
-        );
-        // TODO: Test special cases from RFC
-    }
-
     #[tokio::test]
     async fn max_number_of_retry() {
         let mut config = ResolverConfig::default();

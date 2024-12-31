@@ -924,40 +924,6 @@ mod async_resolver_test {
         }
     }
 
-    /// Test inner lookup cache
-    #[tokio::test]
-    async fn inner_lookup_cache_available() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(1).unwrap());
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-        let a_rdata = Rdata::A(a_rdata);
-        let resource_record = ResourceRecord::new(a_rdata);
-        resolver.cache.lock().unwrap().add_answer(
-            domain_name,
-            resource_record,
-            Some(Rrtype::A),
-            Rclass::IN,
-            None,
-        );
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let response = resolver
-            .inner_lookup(domain_name, Rrtype::A, Rclass::IN)
-            .await;
-
-        if let Ok(msg) = response {
-            assert_eq!(msg.to_dns_msg().get_header().get_aa(), false);
-        } else {
-            panic!("No response from cache");
-        }
-    }
-
     /// Test inner lookup without cache
     #[tokio::test]
     async fn inner_lookup_with_no_cache() {

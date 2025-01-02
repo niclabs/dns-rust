@@ -237,8 +237,7 @@ mod client_test {
             assert_eq!(RR1.get_rtype(), "NS".into());
             assert_eq!(RR1.get_rclass(), "IN".into());
             assert_eq!(RR1.get_ttl(), 86400);
-            // FIX
-            //assert_eq!(RR1.get_rdlength(), );            
+            assert_eq!(RR1.get_rdlength(), 20);            
 
             let mut nsdata = NsRdata::new();
             nsdata.set_nsdname(DomainName::new_from_string("a.iana-servers.net".to_string()));
@@ -517,7 +516,7 @@ mod client_test {
             // authority
 
             // additional
-            
+
         } else {
             panic!("response error");
         }

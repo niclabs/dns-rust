@@ -39,7 +39,7 @@ use std::vec;
 #[derive(Clone)]
 pub struct AsyncResolver {
     /// Cache for the resolver
-    cache: Arc<Mutex<ResolverCache>>,
+    pub cache: Arc<Mutex<ResolverCache>>,
     /// Configuration for the resolver.
     config: ResolverConfig,
 }
@@ -231,7 +231,7 @@ impl AsyncResolver {
     /// assert!(response.is_ok());
     /// ```
     /// TODO: Refactor to use the three caches
-    async fn inner_lookup(
+    pub async fn inner_lookup(
         &self,
         domain_name: DomainName,
         rrtype: Rrtype,
@@ -336,7 +336,7 @@ impl AsyncResolver {
     /// in the response or the cache is preferred, but the two should never be
     /// combined.  If the data in the response is from authoritative data in the
     /// answer section, it is always preferred.
-    fn store_data_cache(&self, response: DnsMessage) {
+    pub fn store_data_cache(&self, response: DnsMessage) {
         let truncated = response.get_header().get_tc();
         {
             let mut cache = self.cache.lock().unwrap();
@@ -379,7 +379,7 @@ impl AsyncResolver {
     /// the SOA controls the length of time that the negative result may be
     /// cached.
     #[allow(unused)]
-    fn save_negative_answers(&self, response: DnsMessage) {
+    pub fn save_negative_answers(&self, response: DnsMessage) {
         let qname = response.get_question().get_qname();
         let qtype = response.get_question().get_rrtype();
         let qclass = response.get_question().get_rclass();
@@ -937,99 +937,6 @@ mod async_resolver_test {
         } else {
             panic!("Error parsing response");
         }
-    }
-
-    /// Test inner lookup cache
-    #[tokio::test]
-    async fn inner_lookup_cache_available() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(1).unwrap());
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-        let a_rdata = Rdata::A(a_rdata);
-        let resource_record = ResourceRecord::new(a_rdata);
-        resolver.cache.lock().unwrap().add_answer(
-            domain_name,
-            resource_record,
-            Some(Rrtype::A),
-            Rclass::IN,
-            None,
-        );
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let response = resolver
-            .inner_lookup(domain_name, Rrtype::A, Rclass::IN)
-            .await;
-
-        if let Ok(msg) = response {
-            assert_eq!(msg.to_dns_msg().get_header().get_aa(), false);
-        } else {
-            panic!("No response from cache");
-        }
-    }
-
-    /// Test inner lookup without cache
-    #[tokio::test]
-    async fn inner_lookup_with_no_cache() {
-        let mut config = ResolverConfig::default();
-        config.set_cache_enabled(false);
-
-        let resolver = AsyncResolver::new(config);
-        {
-            let mut cache = resolver.cache.lock().unwrap();
-            cache.set_max_size(NonZeroUsize::new(1).unwrap());
-
-            let domain_name = DomainName::new_from_string("example.com".to_string());
-            let a_rdata = ARdata::new_from_addr(IpAddr::from_str("93.184.216.34").unwrap());
-            let a_rdata = Rdata::A(a_rdata);
-            let resource_record = ResourceRecord::new(a_rdata);
-            cache.add_answer(
-                domain_name,
-                resource_record,
-                Some(Rrtype::A),
-                Rclass::IN,
-                None,
-            );
-        }
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-        let response = resolver
-            .inner_lookup(domain_name, Rrtype::A, Rclass::IN)
-            .await;
-
-        if let Ok(msg) = response {
-            assert_eq!(msg.to_dns_msg().get_header().get_aa(), false);
-        } else {
-            panic!("No response from nameserver");
-        }
-    }
-
-    /// Test cache data
-    #[tokio::test]
-    async fn cache_data() {
-        let mut resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(1).unwrap());
-        assert_eq!(resolver.cache.lock().unwrap().is_empty(), true);
-
-        let _response = resolver.lookup("example.com", "UDP", "A", "IN").await;
-        assert_eq!(
-            resolver.cache.lock().unwrap().is_cached(CacheKey::Primary(
-                Rrtype::A,
-                Rclass::IN,
-                DomainName::new_from_str("example.com")
-            )),
-            true
-        );
-        // TODO: Test special cases from RFC
     }
 
     #[tokio::test]
@@ -1948,180 +1855,7 @@ mod async_resolver_test {
         }
     }
 
-    #[test]
-    fn not_store_data_in_cache_if_truncated() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
 
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(10).unwrap());
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-
-        // Create truncated dns response
-        let mut dns_response =
-            DnsMessage::new_query_message(domain_name, Rrtype::A, Rclass::IN, 0, false, 1);
-        let mut truncated_header = dns_response.get_header();
-        truncated_header.set_tc(true);
-        dns_response.set_header(truncated_header);
-
-        resolver.store_data_cache(dns_response);
-
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_answer()
-                .get_cache()
-                .len(),
-            0
-        );
-    }
-
-    #[test]
-    fn not_store_cero_ttl_data_in_cache() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(10).unwrap());
-
-        let domain_name = DomainName::new_from_string("example.com".to_string());
-
-        // Create dns response with ttl = 0
-        let mut dns_response =
-            DnsMessage::new_query_message(domain_name, Rrtype::A, Rclass::IN, 0, false, 1);
-        // let mut truncated_header = dns_response.get_header();
-        // truncated_header.set_tc(false);
-        // dns_response.set_header(truncated_header);
-        let mut answer: Vec<ResourceRecord> = Vec::new();
-        let a_rdata = ARdata::new_from_addr(IpAddr::from([127, 0, 0, 1]));
-        let rdata = Rdata::A(a_rdata);
-
-        // Cero ttl
-        let mut rr_cero_ttl = ResourceRecord::new(rdata.clone());
-        rr_cero_ttl.set_ttl(0);
-        answer.push(rr_cero_ttl);
-
-        // Positive ttl
-        let mut rr_ttl_1 = ResourceRecord::new(rdata.clone());
-        rr_ttl_1.set_ttl(1);
-        answer.push(rr_ttl_1);
-
-        // careful, the key is the <qname, qclass, qtype> so it will get the cached data
-        // from ^^^ ttl1
-        let mut nsdata = NsRdata::new();
-        let domain = DomainName::new_from_string("localhost2".to_string());
-        nsdata.set_nsdname(domain);
-        let rdata = Rdata::NS(nsdata);
-        let mut rr_ttl_2 = ResourceRecord::new(rdata);
-        rr_ttl_2.set_ttl(2);
-        answer.push(rr_ttl_2);
-
-        dns_response.set_answer(answer);
-        assert_eq!(dns_response.get_answer().len(), 3);
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_answer()
-                .get_cache()
-                .len(),
-            0
-        );
-
-        resolver.store_data_cache(dns_response.clone());
-        let q = dns_response.get_question();
-        let key = CacheKey::Primary(q.get_rrtype(), q.get_rclass(), q.get_qname().clone());
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_answer()
-                .get_cache()
-                .get(&key)
-                .unwrap()
-                .len(),
-            2
-        );
-    }
-
-    #[test]
-    fn save_cache_negative_answer() {
-        let resolver = AsyncResolver::new(ResolverConfig::default());
-        resolver
-            .cache
-            .lock()
-            .unwrap()
-            .set_max_size(NonZeroUsize::new(1).unwrap());
-
-        let domain_name = DomainName::new_from_string("banana.exaple".to_string());
-        let mname = DomainName::new_from_string("a.root-servers.net.".to_string());
-        let rname = DomainName::new_from_string("nstld.verisign-grs.com.".to_string());
-        let serial = 2023112900;
-        let refresh = 1800;
-        let retry = 900;
-        let expire = 604800;
-        let minimum = 86400;
-
-        //Create RR type SOA
-        let mut soa_rdata = SoaRdata::new();
-        soa_rdata.set_mname(mname);
-        soa_rdata.set_rname(rname);
-        soa_rdata.set_serial(serial);
-        soa_rdata.set_refresh(refresh);
-        soa_rdata.set_retry(retry);
-        soa_rdata.set_expire(expire);
-        soa_rdata.set_minimum(minimum);
-
-
-        let rdata = Rdata::SOA(soa_rdata);
-        let mut rr = ResourceRecord::new(rdata);
-        /*
-            7.2. TTLs on SOA RRs (rfc2181)
-               It may be observed that in section 3.2.1 of RFC1035, which defines
-               the format of a Resource Record, that the definition of the TTL field
-               contains a throw away line which states that the TTL of an SOA record
-               should always be sent as zero to prevent caching.  This is mentioned
-               nowhere else, and has not generally been implemented.
-               **Implementations should not assume that SOA records will have a TTL of
-               zero, nor are they required to send SOA records with a TTL of zero.**
-        */
-        rr.set_ttl(3);
-        rr.set_name(domain_name.clone());
-
-        // Create dns response
-        let mut dns_response =
-            DnsMessage::new_query_message(domain_name, Rrtype::A, Rclass::IN, 0, false, 1);
-        let mut new_header = dns_response.get_header();
-        new_header.set_aa(true);
-        dns_response.set_header(new_header);
-
-        // Save RR type SOA in Additional section of response
-        dns_response.add_additionals(vec![rr]);
-
-        resolver.save_negative_answers(dns_response.clone());
-
-        assert_eq!(dns_response.get_answer().len(), 0);
-        assert_eq!(dns_response.get_additional().len(), 1);
-        assert_eq!(
-            resolver
-                .cache
-                .lock()
-                .unwrap()
-                .get_cache_additional()
-                .get_cache()
-                .len(),
-            1
-        );
-        // assert!(resolver.cache.lock().unwrap().get_cache_answer().get(dns_response.get_question().get_qname().clone(), qtype_search, Qclass::IN).is_some())
-    }
 
     /*  #[ignore = "Optional, not implemented"]
     #[tokio::test]

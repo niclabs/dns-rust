@@ -414,6 +414,74 @@ mod client_test {
 
     // RFC 1034 6.2.8
 
+    // Instructions for running test on a Debian-Based Linux System
+
+    // Step 1: Install BIND9
+    // ----------------------------------------
+    // BIND9 is a DNS server that allows the configuration of custom DNS zones for testing purposes.
+    // 
+    // sudo apt install bind9
+
+    // Step 2: Configure the Zone File
+    // ----------------------------------------
+    // 1. Open a new zone file for `uchile.cl` using a text editor:
+    // 
+    // sudo nano /etc/bind/db.uchile.cl
+    //
+    // 2. Copy the following content into the file:
+    // 
+    // $TTL 3600
+    // @   IN  SOA VENERA. Action\.domains (
+    //         20     ; SERIAL
+    //         7200   ; REFRESH
+    //         600    ; RETRY
+    //         3600000; EXPIRE
+    //         60 )   ; MINIMUM
+    //     NS      A.ISI.EDU.
+    //     NS      VENERA
+    //     NS      VAXA
+    //     MX      10      VENERA
+    //     MX      20      VAXA
+    // 
+    // dcc    IN  A   192.80.24.11
+    // 
+    // test   IN  CNAME no-test.com.
+    // 
+    // delegation IN NS ns.delegation.uchile.cl.
+    // delegation IN NS ns2.test.com.
+    // 
+    // ; Glue records
+    // ns.delegation IN A 127.0.0.1
+    // VENERA        IN A 192.168.99.12
+    // VAXA          IN A 192.168.99.13
+
+    // Step 3: Configure the Named Configuration File
+    // ----------------------------------------
+    // 1. Edit the `named.conf.local` file to include the zone configuration:
+    // 
+    // sudo nano /etc/bind/named.conf.local
+    // 
+    // 2. Add the following configuration:
+    // 
+    // zone "uchile.cl" {
+    //    type master;
+    //    file "/etc/bind/db.uchile.cl";
+    // };
+
+    // Step 4: Validate the Zone Configuration
+    // ----------------------------------------
+    // 1. Validate your zone file with the following command:
+    // 
+    // named-checkzone uchile.cl /etc/bind/db.uchile.cl
+    // 
+    // 2. If the output states "OK," the configuration is correct.
+
+    // Step 5: Restart the DNS Server
+    // ----------------------------------------
+    // Restart the BIND9 service to apply the changes:
+    // 
+    // sudo systemctl restart bind9
+
     #[tokio::test]
     async fn QTYPE_CNAME(){
         let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)); // localhost
@@ -449,6 +517,7 @@ mod client_test {
             // authority
 
             // additional
+            
         } else {
             panic!("response error");
         }

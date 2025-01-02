@@ -1,12 +1,10 @@
 #[cfg(test)]
 mod client_test {
-    use std::{net::{IpAddr, Ipv4Addr, Ipv6Addr}, str::FromStr, time::Duration};
+    use std::{net::{IpAddr, Ipv4Addr, Ipv6Addr}, time::Duration};
     use dns_rust::{
-        async_resolver::{
-                config::ResolverConfig, resolver_error::ResolverError, AsyncResolver, server_info::ServerInfo
-            }, client::{
-            client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, 
-            message::{resource_record::ResourceRecord, rdata::{a_rdata::ARdata, Rdata, mx_rdata::MxRdata, ns_rdata::NsRdata, soa_rdata::SoaRdata, aaaa_rdata::AAAARdata}}};
+        client::{
+            client_connection::ClientConnection,  udp_connection::ClientUDPConnection, Client}, domain_name::DomainName,
+            message::{rdata::{a_rdata::ARdata, Rdata, mx_rdata::MxRdata, ns_rdata::NsRdata}}};
 
 
 
@@ -309,8 +307,6 @@ mod client_test {
             if let Rdata::SOA(data) = rdata{
                 assert_eq!(data.get_mname(), DomainName::new_from_string("ns.icann.org".to_string()));
                 assert_eq!(data.get_rname(), DomainName::new_from_string("noc.dns.icann.org".to_string()));
-                // FIX
-                // assert_eq!(data.get_serial(), 2024081477);
                 assert_eq!(data.get_refresh(), 7200);
                 assert_eq!(data.get_retry(), 3600);
                 assert_eq!(data.get_expire(), 1209600);
@@ -415,7 +411,52 @@ mod client_test {
 
     // RFC 1034 6.2.7 
 
+
     // RFC 1034 6.2.8
+
+    #[tokio::test]
+    async fn QTYPE_CNAME(){
+        let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)); // localhost
+        let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+        let mut client = Client::new(conn);
+
+        let response = client.query(
+            DomainName::new_from_string("test.uchile.cl".to_string()),
+            "CNAME", 
+            "IN"
+        ).await;
+        if let Ok(resp) = response {
+            // header
+            assert!(resp.get_header().get_qr());
+            assert!(resp.get_header().get_aa());
+
+            // question
+            assert_eq!(resp.get_question(), client.get_dns_query().get_question());
+
+            // answer
+            let RR = &resp.get_answer()[0];
+            assert_eq!(RR.get_name(), DomainName::new_from_string("test.uchile.cl".to_string()));
+            assert_eq!(RR.get_rtype(), "CNAME".into());
+            assert_eq!(RR.get_rclass(), "IN".into());
+            assert_eq!(RR.get_ttl(), 3600);
+            assert_eq!(RR.get_rdlength(), 13);
+            if let Rdata::CNAME(data) = RR.get_rdata() {
+                assert_eq!(data.get_cname(), DomainName::new_from_string("no-test.com".to_string()))
+            } else {
+                panic!("wrong rdata type")
+            }
+
+            // authority
+
+            // additional
+        } else {
+            panic!("response error");
+        }
+    }
+
+    
+    
+
 
 
 }

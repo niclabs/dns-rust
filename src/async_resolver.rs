@@ -60,7 +60,7 @@ impl AsyncResolver {
     pub fn new(config: ResolverConfig) -> Self {
         let async_resolver = AsyncResolver {
             cache: Arc::new(Mutex::new(ResolverCache::new(None))),
-            config: config,
+            config,
         };
         async_resolver
     }

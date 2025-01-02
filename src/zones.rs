@@ -1,79 +1,110 @@
-/*
-All RRs have the same top level format shown below:
-                                    1  1  1  1  1  1
-      0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                                               |
-    /                                               /
-    /                      NAME                     /
-    |                                               |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                      TYPE                     |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                     CLASS                     |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                      TTL                      |
-    |                                               |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-    |                   RDLENGTH                    |
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--|
-    /                     RDATA                     /
-    /                                               /
-    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-
-where:
-
-NAME            an owner name, i.e., the name of the node to which this
-                resource record pertains.
-
-TYPE            two octets containing one of the RR TYPE codes.
-
-CLASS           two octets containing one of the RR CLASS codes.
-
-TTL             a 32 bit signed integer that specifies the time interval
-                that the resource record may be cached before the source
-                of the information should again be consulted.  Zero
-                values are interpreted to mean that the RR can only be
-                used for the transaction in progress, and should not be
-                cached.  For example, SOA records are always distributed
-                with a zero TTL to prohibit caching.  Zero values can
-                also be used for extremely volatile data.
-
-RDLENGTH        an unsigned 16 bit integer that specifies the length in
-                octets of the RDATA field.
-
-RDATA           a variable length string of octets that describes the
-                resource.  The format of this information varies
-                according to the TYPE and CLASS of the resource record.
-*/
-
-pub struct Zone {
-    domain: String,                    // Nombre del dominio de la zona.
-    records: Vec<ResourceRecord>,      // Registros DNS de la zona.
-    soa: SoaRecord,                    // Registro SOA (Start of Authority) para la zona.
-    delegation: Vec<NsRecord>,         // Delegación a otros NameServers si aplica.
+/// Structure to represent a DNS zone
+#[derive(Debug)]
+struct DnsZone {
+    name: String,           // Name of the zone (e.g., "example.com")
+    ttl: u32,               // Default time to live (in seconds)
+    soa: SoaRecord,         // SOA (Start of Authority) record
+    ns_records: Vec<String>,// List of name servers (NS)
+    a_records: Vec<ARecord>,// List of A records
+    mx_records: Vec<MxRecord>, // List of MX records
+    other_records: Vec<DnsRecord>, // Other records (CNAME, PTR, etc.)
 }
 
-pub fn new(
-    domain: String,
-    soa: SoaRecord,
-    records: Vec<ResourceRecord>,
-    delegation: Vec<NsRecord>,
-) -> Self {
-    Zone {
-        domain,
-        records,
-        soa,
-        delegation,
+/// Structure to represent an SOA record
+#[derive(Debug)]
+struct SoaRecord {
+    primary_ns: String,      // Primary name server (MNAME)
+    admin_email: String,     // Administrator's email (RNAME)
+    serial: u32,             // Serial number
+    refresh: u32,            // Refresh interval (in seconds)
+    retry: u32,              // Retry interval (in seconds)
+    expire: u32,             // Expiration time (in seconds)
+    minimum_ttl: u32,        // Minimum TTL for zone records
+}
+
+impl SoaRecord {
+    /// Create a new SOA record
+    fn new(primary_ns: &str, admin_email: &str, serial: u32, refresh: u32, retry: u32, expire: u32, minimum_ttl: u32) -> Self {
+        SoaRecord {
+            primary_ns: primary_ns.to_string(),
+            admin_email: admin_email.to_string(),
+            serial,
+            refresh,
+            retry,
+            expire,
+            minimum_ttl,
+        }
     }
 }
 
-
-pub fn add_record(&mut self, record: ResourceRecord) {
-    self.records.push(record);
+/// Structure for an A record (IPv4 address)
+#[derive(Debug)]
+struct ARecord {
+    name: String,            // Subdomain name (e.g., "www")
+    ip: String,              // IPv4 address (e.g., "192.0.2.1")
 }
 
+/// Structure for an MX record (mail server)
+#[derive(Debug)]
+struct MxRecord {
+    priority: u16,           // Mail server priority
+    mail_server: String,     // Mail server address
+}
 
-pub fn get_records(&self, rrtype: Rrtype) -> Vec<ResourceRecord> {
-    self.records.iter().filter(|r| r.rrtype == rrtype).cloned().collect()
+/// Generic structure for other records (e.g., CNAME, PTR, TXT)
+#[derive(Debug)]
+struct DnsRecord {
+    record_type: String,     // Record type (e.g., "CNAME", "TXT")
+    name: String,            // Domain/subdomain name
+    value: String,           // Value associated with the record
+}
+
+impl DnsZone {
+    /// Create a new DNS zone
+    fn new(name: &str, ttl: u32, soa: SoaRecord) -> Self {
+        DnsZone {
+            name: name.to_string(),
+            ttl,
+            soa,
+            ns_records: Vec::new(),
+            a_records: Vec::new(),
+            mx_records: Vec::new(),
+            other_records: Vec::new(),
+        }
+    }
+
+    /// Add an NS record
+    fn add_ns_record(&mut self, ns: &str) {
+        self.ns_records.push(ns.to_string());
+    }
+
+    /// Add an A record
+    fn add_a_record(&mut self, name: &str, ip: &str) {
+        self.a_records.push(ARecord {
+            name: name.to_string(),
+            ip: ip.to_string(),
+        });
+    }
+
+    /// Add an MX record
+    fn add_mx_record(&mut self, priority: u16, mail_server: &str) {
+        self.mx_records.push(MxRecord {
+            priority,
+            mail_server: mail_server.to_string(),
+        });
+    }
+
+    /// Add a generic record
+    fn add_generic_record(&mut self, record_type: &str, name: &str, value: &str) {
+        self.other_records.push(DnsRecord {
+            record_type: record_type.to_string(),
+            name: name.to_string(),
+            value: value.to_string(),
+        });
+    }
+
+    /// Get complete zone information
+    fn get_info(&self) -> String {
+        format!("{:#?}", self)
+    }
 }

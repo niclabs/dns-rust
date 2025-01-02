@@ -481,6 +481,7 @@ mod client_test {
     // 
     // sudo systemctl restart bind9
 
+    #[ignore]
     #[tokio::test]
     async fn QTYPE_CNAME(){
         let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)); // localhost

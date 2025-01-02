@@ -402,6 +402,11 @@ impl ResolverConfig{
         self.name_servers = list_name_servers;
     }
 
+    // Adds a Name Server to the list of Name Servers.
+    pub fn add_name_server(&mut self, server_info: ServerInfo) {
+        self.name_servers.push(server_info);
+    }
+
     /// Sets the socket address of the resolver.
     pub fn set_ddr(&mut self,addr:SocketAddr) {
         self.bind_addr = addr;

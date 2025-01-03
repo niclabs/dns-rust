@@ -22,7 +22,7 @@ use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
 use rdata::opt_rdata::option_data::OptionData;
-use rdata::opt_rdata::optoption::OptOption;
+use crate::edns::opt_option::OptOption;
 use resource_record::ToBytes;
 use core::fmt;
 use std::vec::Vec;

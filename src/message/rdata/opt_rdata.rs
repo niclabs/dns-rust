@@ -1,14 +1,14 @@
 pub mod option_code;
 pub mod ede_code;
 pub mod ede_optdata;
-pub mod optoption;
+pub mod opt_option;
 pub mod option_data;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::message::rdata::opt_rdata::option_code::OptionCode;
 use std::fmt;
 use crate::message::rdata::opt_rdata::option_data::OptionData;
-use crate::message::rdata::opt_rdata::optoption::OptOption;
+use crate::message::rdata::opt_rdata::opt_option::OptOption;
 
 #[derive(Clone, Debug, PartialEq)]
 /// Struct for OPT Rdata

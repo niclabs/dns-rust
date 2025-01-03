@@ -1,5 +1,5 @@
 use crate::message::rdata::opt_rdata::option_code::OptionCode;
-use crate::message::rdata::opt_rdata::option_data::OptionData;
+use crate::edns::opt_option::option_data::OptionData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OptOption {
@@ -28,8 +28,8 @@ impl OptOption {
     }
 }
 
-mod option_data {
-    use crate::edns::opt_option;
+pub mod option_data {
+    use crate::edns::options::ede::ede_optdata::EdeOptData;
     use crate::message::rdata::opt_rdata::option_code::OptionCode;
     use crate::message::resource_record::ToBytes;
 

@@ -2,7 +2,7 @@ use std::{net::IpAddr, str::FromStr};
 use std::time::Duration;
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
 use dns_rust::async_resolver::server_info::ServerInfo;
-use dns_rust::message::rdata::opt_rdata::option_data::OptionData;
+use dns_rust::edns::opt_option::option_data::OptionData;
 
 async fn query_from_ip_with_edns(domain_name: &str,
                                  protocol: &str,

@@ -1,5 +1,5 @@
 
-mod ede_code {
+pub mod ede_code {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     pub enum EdeCode {
         OtherErr,           // 0

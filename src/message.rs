@@ -18,7 +18,7 @@ use crate::message::rdata::Rdata;
 use crate::message::rdata::opt_rdata::OptRdata;
 use crate::tsig;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
-use crate::message::rdata::opt_rdata::option_code::OptionCode;
+use crate::edns::opt_option::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
 use crate::edns::opt_option::option_data::OptionData;

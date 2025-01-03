@@ -381,7 +381,7 @@ impl fmt::Display for Rdata {
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
-    use crate::message::rdata::opt_rdata::option_code::OptionCode;
+    use crate::edns::opt_option::option_code::OptionCode;
     use crate::edns::opt_option::option_data::OptionData;
     use crate::edns::opt_option::OptOption;
     use crate::message::resource_record::{ToBytes, FromBytes};

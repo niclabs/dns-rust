@@ -1,7 +1,6 @@
-pub mod option_code;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
-use crate::message::rdata::opt_rdata::option_code::OptionCode;
+use crate::edns::opt_option::option_code::OptionCode;
 use std::fmt;
 use crate::edns::opt_option::option_data::OptionData;
 use crate::edns::opt_option::OptOption;
@@ -134,7 +133,7 @@ impl fmt::Display for OptRdata {
 #[cfg(test)]
 mod opt_rdata_test{
     use crate::edns::opt_option::option_data::OptionData;
-    use crate::message::rdata::opt_rdata::option_code::OptionCode;
+    use crate::edns::opt_option::option_code::OptionCode;
     use crate::edns::options::ede::ede_code::EdeCode;
     use crate::edns::options::ede::ede_optdata::EdeOptData;
 

@@ -83,7 +83,10 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
 
             let option_data = option_data.unwrap();
 
-            let option = OptOption::new(option_code, option_length, option_data);
+            let mut option = OptOption::new(option_code);
+
+            option.set_option_len(option_length);
+            option.set_opt_data(option_data);
 
             opt_rdata.option.push(option);
         }
@@ -148,7 +151,9 @@ mod opt_rdata_test{
     fn test_opt_rdata_to_bytes() {
         let mut opt_rdata = OptRdata::new();
 
-        let option = OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
+        let mut option = OptOption::new(OptionCode::from(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
         opt_rdata.option.push(option);
 
         let result = opt_rdata.to_bytes();
@@ -161,7 +166,9 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_from_bytes() {
         let mut opt_rdata = OptRdata::new();
-        let option = OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
+        let mut option = OptOption::new(OptionCode::from(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
         opt_rdata.option.push(option);
 
         let bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
@@ -184,15 +191,18 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_setters_and_getters() {
         let mut opt_rdata = OptRdata::new();
+        let mut option = OptOption::new(OptionCode::from(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
 
-        let option = vec![OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]))];
+        let options = vec![option];
 
-        opt_rdata.set_option(option.clone());
+        opt_rdata.set_option(options.clone());
 
-        assert_eq!(opt_rdata.get_option(), option);
-        opt_rdata.set_option(option.clone());
+        assert_eq!(opt_rdata.get_option(), options);
+        opt_rdata.set_option(options.clone());
 
-        assert_eq!(opt_rdata.get_option(), option);
+        assert_eq!(opt_rdata.get_option(), options);
     }
 
     #[test]
@@ -211,7 +221,9 @@ mod opt_rdata_test{
         let option_len = option_data_bytes.len() as u16;
 
         // Build an OptOption with OptionCode::EDE
-        let option = OptOption::new(OptionCode::EDE, option_len, option_data);
+        let mut option = OptOption::new(OptionCode::EDE);
+        option.set_option_len(option_len);
+        option.set_opt_data(option_data);
         opt_rdata.option.push(option);
 
         // Round-trip: to_bytes -> from_bytes
@@ -249,7 +261,9 @@ mod opt_rdata_test{
         let option_data_bytes = option_data.to_bytes();
         let option_len = option_data_bytes.len() as u16;
 
-        let option = OptOption::new(OptionCode::EDE, option_len, option_data);
+        let mut option = OptOption::new(OptionCode::EDE);
+        option.set_option_len(option_len);
+        option.set_opt_data(option_data);
         opt_rdata.option.push(option);
 
         let serialized = opt_rdata.to_bytes();
@@ -288,7 +302,9 @@ mod opt_rdata_test{
         let option_data_bytes = option_data.to_bytes();
         let option_len = option_data_bytes.len() as u16;
 
-        let option = OptOption::new(OptionCode::EDE, option_len, option_data);
+        let mut option = OptOption::new(OptionCode::EDE);
+        option.set_option_len(option_len);
+        option.set_opt_data(option_data);
         opt_rdata.option.push(option);
 
         // Serialize

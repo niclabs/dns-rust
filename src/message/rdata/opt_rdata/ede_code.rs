@@ -1,5 +1,3 @@
-use crate::message::resource_record::ToBytes;
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EdeCode {
     OtherErr,           // 0

@@ -109,7 +109,7 @@ impl <T: ClientConnection> Client<T> {
 
         let client_query = self.get_dns_query();
         let conn: &T = &self.get_conn();
-        let ip_addr = conn.get_ip();
+        let _ = conn.get_ip();
 
         let dns_response: DnsMessage = match conn.send(client_query).await {
             Ok(response_message) => {

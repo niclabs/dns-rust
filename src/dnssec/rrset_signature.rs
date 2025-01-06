@@ -5,7 +5,6 @@ use base64::encode;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::dnskey_rdata::DnskeyRdata;
 use crate::message::rdata::rrsig_rdata::RRSIGRdata;
-use crate::message::rrtype::Rrtype;
 use crate::message::resource_record::{ResourceRecord, ToBytes};
 use crate::client::client_error::ClientError;
 

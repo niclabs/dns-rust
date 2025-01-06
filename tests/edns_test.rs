@@ -1,7 +1,6 @@
 use std::{net::IpAddr, str::FromStr};
 use std::time::Duration;
 use dns_rust::message::rdata::opt_rdata::option_code::OptionCode;
-use dns_rust::message::rdata::opt_rdata::optoption::OptOption;
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
 use dns_rust::async_resolver::server_info::ServerInfo;
 use dns_rust::message::rdata::opt_rdata::option_data::OptionData;
@@ -134,5 +133,5 @@ async fn query_from_root() {
     let aa = DnsMessage::from_bytes(&xd).unwrap();
     assert_eq!(aa, response);
 
-    let additional_rrs = response.get_additional();
+    let _ = response.get_additional();
 }

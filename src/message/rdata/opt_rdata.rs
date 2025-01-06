@@ -103,7 +103,7 @@ impl OptRdata {
         }
     }
 
-    pub fn get_option(&self) -> Vec<(OptOption)> {
+    pub fn get_option(&self) -> Vec<OptOption> {
         self.option.clone()
     }
 }

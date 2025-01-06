@@ -644,8 +644,9 @@ mod resolver_query_tests {
     fn to_bytes_opt_rdata(){
         let mut opt_rdata = OptRdata::new();
 
-        let option = OptOption::new(OptionCode::UNKNOWN(1), 2 as u16, OptionData::Unknown(vec![0x06, 0x04]));
-
+        let mut option = OptOption::new(OptionCode::UNKNOWN(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
         opt_rdata.option.push(option);
 
         let expected_bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
@@ -1013,7 +1014,9 @@ mod resolver_query_tests {
             0, 1, 0, 2, 6, 4, 0, 41, 0, 1
         ];
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
-        let expected_option = OptOption::new(OptionCode::UNKNOWN(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
+        let mut expected_option = OptOption::new(OptionCode::UNKNOWN(1));
+        expected_option.set_option_len(2);
+        expected_option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
         match rdata {
             Rdata::OPT(val) => {
                 assert_eq!(val.option[0], expected_option);

@@ -4,13 +4,13 @@ use std::fmt;
 pub enum OptionCode {
     NSID,
     PADDING,
-    UNKNOWN(u16),
     // added for rfc6975
     DAU,
     DHU,
     // added for rf8914
     EDE,
-    N3U
+    N3U,
+    UNKNOWN(u16),
 }
 
 impl From<OptionCode> for u16 {

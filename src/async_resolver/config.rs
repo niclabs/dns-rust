@@ -1,6 +1,8 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
 use crate::message::rcode::Rcode;
+use crate::message::rdata::opt_rdata::option_code::OptionCode;
+use crate::message::rdata::opt_rdata::optoption::OptOption;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
@@ -76,7 +78,7 @@ pub struct ResolverConfig {
     /// edns0 flags for the resolver.
     edns0_do: bool,
     /// edns0 options for the resolver.
-    edns0_options: Vec<u16>,
+    edns0_options: Vec<OptionCode>,
     /// This is whether tsig is enabled or not.
     tsig: bool,
     /// This is the tsig keyname for the resolver.
@@ -240,7 +242,7 @@ impl ResolverConfig {
     /// let mut resolver_config = ResolverConfig::default();
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
     /// ```
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<u16>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<OptionCode>>) {
         self.set_ends0(true);
         if let Some(max_payload) = max_payload {
             self.set_max_payload(max_payload);
@@ -373,7 +375,7 @@ impl ResolverConfig {
         self.edns0_do
     }
 
-    pub fn get_edns0_options(&self) -> Vec<u16> {
+    pub fn get_edns0_options(&self) -> Vec<OptionCode> {
         self.edns0_options.clone()
     }
 
@@ -461,7 +463,7 @@ impl ResolverConfig{
         self.edns0_do = ends0_do;
     }
 
-    pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
+    pub fn set_ends0_options(&mut self, ends0_options: Vec<OptionCode>) {
         self.edns0_options = ends0_options;
     }
 

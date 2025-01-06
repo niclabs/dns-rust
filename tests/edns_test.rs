@@ -1,5 +1,7 @@
 use std::{net::IpAddr, str::FromStr};
 use std::time::Duration;
+use dns_rust::edns::opt_option::option_code::OptionCode;
+use dns_rust::edns::opt_option::OptOption;
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
 use dns_rust::async_resolver::server_info::ServerInfo;
 use dns_rust::edns::opt_option::option_data::OptionData;
@@ -10,7 +12,7 @@ async fn query_from_ip_with_edns(domain_name: &str,
                                  max_payload: Option<u16>,
                                  version: u8,
                                  do_bit: bool,
-                                 option: Option<Vec<u16>>,
+                                 option: Option<Vec<OptionCode>>,
                                  ip_addr: IpAddr) -> Result<DnsMessage, ClientError> {
 
     let mut config = ResolverConfig::default();
@@ -30,12 +32,12 @@ async fn query_from_ip_with_edns(domain_name: &str,
 }
 
 async fn query_response_edns(domain_name: &str,
-    protocol: &str,
-    qtype: &str,
-    max_payload: Option<u16>,
-    version: u8,
-    do_bit: bool,
-    option: Option<Vec<u16>>) -> Result<DnsMessage, ClientError> {
+                             protocol: &str,
+                             qtype: &str,
+                             max_payload: Option<u16>,
+                             version: u8,
+                             do_bit: bool,
+                             option: Option<Vec<OptionCode>>) -> Result<DnsMessage, ClientError> {
 
     let mut config = ResolverConfig::default();
     config.add_edns0(max_payload, version, do_bit, option);
@@ -52,7 +54,7 @@ async fn query_response_edns(domain_name: &str,
 
 #[tokio::test]
 async fn query_a_type_edns() {
-    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, false, Some(vec![3])).await;
+    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, false, Some(vec![OptionCode::NSID])).await;
 
     if let Ok(rrs) = response {
         println!("{}", rrs);
@@ -68,14 +70,13 @@ async fn query_a_type_edns() {
         assert_eq!(opt.get_rtype(), Rrtype::OPT);
         assert_eq!(opt.get_rclass(), Rclass::UNKNOWN(512));
         println!("{:?}", opt);
-    } 
+    }
 }
-#[ignore]
 #[tokio::test]
 async fn query_a_type_with_rrsig_edns() {
     let response = query_response_edns("example.com",
                                        "UDP", "A", Some(1024), 0,
-                                       true, Some(vec![3])).await;
+                                       true, Some(vec![OptionCode::NSID])).await;
 
     if let Ok(rrs) = response {
         println!("{}", rrs);
@@ -92,7 +93,7 @@ async fn query_a_type_with_rrsig_edns() {
             assert_eq!(sig.get_type_covered(), Rrtype::A);
         } else {
             panic!("No RRSIG");
-            
+
         }
         assert_eq!(answer.get_ttl(), rrsig.get_ttl());
         let opt = &rrs.get_additional()[0];
@@ -105,8 +106,8 @@ async fn query_a_type_with_rrsig_edns() {
             let option = &rdata.get_option()[0];
             if let OptionData::NSID(c) = option.get_opt_data() {
                 println!("{}", c);
-                // because the first query option is 8.8.8.8, it redirects to google public dns in scl chile
-                assert_eq!(c, "gpdns-scl")
+                // because the first query option is 8.8.8.8, it redirects to google public dns.
+                assert!(c.starts_with("gpdns"))
             }
             //let (_,_,c) = &rdata.get_option()[0];
             //println!("{}", std::str::from_utf8(c).unwrap(),);

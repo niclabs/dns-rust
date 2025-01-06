@@ -1,6 +1,8 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
 use crate::message::rcode::Rcode;
+use crate::edns::opt_option::option_code::OptionCode;
+use crate::edns::opt_option::OptOption;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
@@ -21,37 +23,37 @@ const RECOMMENDED_MAX_PAYLOAD: usize = 4000;
 #[derive(Clone, Debug, PartialEq, Eq)]
 
 /// Configuration for the resolver.
-/// 
+///
 /// This struct contains all the necessary configurations to create a new
 /// resolver. This includes a list of connections to Name Servers, the socket
 /// address of the resolver, the quantity of retries before the resolver
-/// panic in a Temporary Error, availability of cache and recursive queries, 
+/// panic in a Temporary Error, availability of cache and recursive queries,
 /// the chosen transport protocol and the timeout for the connections.
 pub struct ResolverConfig {
     /// Vector of tuples with the UDP and TCP connections to a Name Server.
     name_servers: Vec<ServerInfo>,
     /// Socket address of the resolver.
     bind_addr: SocketAddr,
-    /// Maximum quantity of queries for each sent query. 
-    /// 
-    /// If this number is surpassed, the resolver is expected to panic in 
+    /// Maximum quantity of queries for each sent query.
+    ///
+    /// If this number is surpassed, the resolver is expected to panic in
     /// a Temporary Error.
     retransmission_loop_attempts: u16,
     /// Activation of cache in this resolver.
-    /// 
+    ///
     /// This is whether the resolver uses cache or not.
     cache_enabled: bool,
     /// Availability of recursive queries in this resolver.
-    /// 
+    ///
     /// This is whether the resolver uses recursive queries or not.
     recursive_available: bool,
     /// Transport protocol for queries.
-    /// 
+    ///
     /// This is the transport protocol used by the resolver to send queries
     /// and corresponds to `ConnectionProtocol` enum type.
     protocol: ConnectionProtocol,
     /// Timeout for connections.
-    /// 
+    ///
     /// This corresponds a `Duration` type.
     timeout: Duration,
     max_retry_interval_seconds: u64,
@@ -76,7 +78,7 @@ pub struct ResolverConfig {
     /// edns0 flags for the resolver.
     edns0_do: bool,
     /// edns0 options for the resolver.
-    edns0_options: Vec<u16>,
+    edns0_options: Vec<OptionCode>,
     /// This is whether tsig is enabled or not.
     tsig: bool,
     /// This is the tsig keyname for the resolver.
@@ -89,15 +91,15 @@ pub struct ResolverConfig {
 
 impl ResolverConfig {
     /// Creates a ResolverConfig with the given address, protocol and timeout.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
     /// let protocol = ConnectionProtocol::UDP;
     /// let timeout = Duration::from_secs(TIMEOUT);
@@ -105,10 +107,10 @@ impl ResolverConfig {
     /// assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 53));
     /// ```
     pub fn new(
-        resolver_addr: IpAddr, 
-        protocol: ConnectionProtocol, 
+        resolver_addr: IpAddr,
+        protocol: ConnectionProtocol,
         timeout: Duration,
-        ) -> Self {
+    ) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),
             bind_addr: SocketAddr::new(resolver_addr, 53),
@@ -133,7 +135,7 @@ impl ResolverConfig {
         };
         resolver_config
     }
-    
+
     pub fn default()-> Self {
         // FIXME: these are examples values
         let retransmission_loop_attempts = 3;
@@ -181,18 +183,18 @@ impl ResolverConfig {
     }
 
     /// Adds a new Name Server to the list of Name Servers.
-    /// 
+    ///
     /// This corresponds to a tuple of UDP and TCP connections to a Name Server
     /// of the type `(ClientUDPConnection, ClientTCPConnection)`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let mut resolver_config = ResolverConfig::default();
     /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
     /// resolver_config.add_servers(addr);
@@ -207,15 +209,15 @@ impl ResolverConfig {
     }
 
     /// Remove all servers from the list of Name Servers.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let mut resolver_config = ResolverConfig::default();
     /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
     /// resolver_config.add_servers(addr);
@@ -228,19 +230,19 @@ impl ResolverConfig {
     }
 
     /// add edns0 to the resolver
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let mut resolver_config = ResolverConfig::default();
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
     /// ```
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<u16>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<OptionCode>>) {
         self.set_ends0(true);
         if let Some(max_payload) = max_payload {
             self.set_max_payload(max_payload);
@@ -253,9 +255,9 @@ impl ResolverConfig {
     }
 
     /// add edns0 from the resolver to a dns message
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut resolver_config = ResolverConfig::default();
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
@@ -274,7 +276,7 @@ impl ResolverConfig {
     }
 
     /// add tsig to the resolver
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let mut resolver_config = ResolverConfig::default();
@@ -290,7 +292,7 @@ impl ResolverConfig {
     }
 
     /// add tsig from the resolver to a dns message
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let mut resolver_config = ResolverConfig::default();
@@ -300,8 +302,8 @@ impl ResolverConfig {
     /// ```
     pub fn add_tsig_to_message(&self, message: &mut DnsMessage, fudge: Option<u16>, mac_request: Option<Vec<u8>>) {
         if self.tsig {
-            message.add_tsig(self.key.clone(), self.algorithm.clone(), 
-            fudge.unwrap_or(300), self.key_name.clone(), mac_request.unwrap_or(Vec::new()));
+            message.add_tsig(self.key.clone(), self.algorithm.clone(),
+                             fudge.unwrap_or(300), self.key_name.clone(), mac_request.unwrap_or(Vec::new()));
         }
     }
 }
@@ -337,7 +339,7 @@ impl ResolverConfig {
 
     /// Returns the transport protocol for queries.
     pub fn get_protocol(&self) -> ConnectionProtocol {
-        self.protocol  
+        self.protocol
     }
 
     /// Returns the timeout for connections.
@@ -373,7 +375,7 @@ impl ResolverConfig {
         self.edns0_do
     }
 
-    pub fn get_edns0_options(&self) -> Vec<u16> {
+    pub fn get_edns0_options(&self) -> Vec<OptionCode> {
         self.edns0_options.clone()
     }
 
@@ -466,7 +468,7 @@ impl ResolverConfig{
         self.edns0_do = ends0_do;
     }
 
-    pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
+    pub fn set_ends0_options(&mut self, ends0_options: Vec<OptionCode>) {
         self.edns0_options = ends0_options;
     }
 

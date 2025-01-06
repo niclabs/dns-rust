@@ -4,7 +4,6 @@ use crate::edns::opt_option::option_code::OptionCode;
 use std::fmt;
 use crate::edns::opt_option::option_data::OptionData;
 use crate::edns::opt_option::OptOption;
-
 #[derive(Clone, Debug, PartialEq)]
 /// Struct for OPT Rdata
 /// [RFC 6891](https://tools.ietf.org/html/rfc6891#section-6.1.2)
@@ -49,7 +48,7 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
         let mut opt_rdata = OptRdata::new();
 
         let mut i = 0;
-        
+
         while i < bytes_len {
 
             if i + 4 > bytes_len {
@@ -70,7 +69,7 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
 
             i += option_length as usize;
 
-            let option_data = OptionData::from_with_opt_type(option_data, option_code);
+            let option_data = OptionData::from_bytes_with_opt_type(option_data, option_code);
 
             if let Err(_) = option_data {
                 return Err("Format Error");
@@ -78,7 +77,10 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
 
             let option_data = option_data.unwrap();
 
-            let option = OptOption::new(option_code, option_length, option_data);
+            let mut option = OptOption::new(option_code);
+
+            option.set_option_len(option_length);
+            option.set_opt_data(option_data);
 
             opt_rdata.option.push(option);
         }
@@ -112,7 +114,7 @@ impl fmt::Display for OptRdata {
     /// Formats the record data for display
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = String::new();
-        
+
         if !self.option.is_empty() {
             for option in &self.option {
                 let option_code = option.get_option_code();
@@ -134,8 +136,8 @@ impl fmt::Display for OptRdata {
 mod opt_rdata_test{
     use crate::edns::opt_option::option_data::OptionData;
     use crate::edns::opt_option::option_code::OptionCode;
-    use crate::edns::options::ede::ede_code::EdeCode;
     use crate::edns::options::ede::ede_optdata::EdeOptData;
+    use crate::edns::options::ede::ede_code::EdeCode;
 
     use super::*;
 
@@ -143,7 +145,9 @@ mod opt_rdata_test{
     fn test_opt_rdata_to_bytes() {
         let mut opt_rdata = OptRdata::new();
 
-        let option = OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
+        let mut option = OptOption::new(OptionCode::from(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
         opt_rdata.option.push(option);
 
         let result = opt_rdata.to_bytes();
@@ -156,7 +160,9 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_from_bytes() {
         let mut opt_rdata = OptRdata::new();
-        let option = OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]));
+        let mut option = OptOption::new(OptionCode::from(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
         opt_rdata.option.push(option);
 
         let bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
@@ -179,15 +185,18 @@ mod opt_rdata_test{
     #[test]
     fn test_opt_rdata_setters_and_getters() {
         let mut opt_rdata = OptRdata::new();
+        let mut option = OptOption::new(OptionCode::from(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
 
-        let option = vec![OptOption::new(OptionCode::from(1), 2, OptionData::Unknown(vec![0x06, 0x04]))];
+        let options = vec![option];
 
-        opt_rdata.set_option(option.clone());
+        opt_rdata.set_option(options.clone());
 
-        assert_eq!(opt_rdata.get_option(), option);
-        opt_rdata.set_option(option.clone());
+        assert_eq!(opt_rdata.get_option(), options);
+        opt_rdata.set_option(options.clone());
 
-        assert_eq!(opt_rdata.get_option(), option);
+        assert_eq!(opt_rdata.get_option(), options);
     }
 
     #[test]
@@ -206,7 +215,9 @@ mod opt_rdata_test{
         let option_len = option_data_bytes.len() as u16;
 
         // Build an OptOption with OptionCode::EDE
-        let option = OptOption::new(OptionCode::EDE, option_len, option_data);
+        let mut option = OptOption::new(OptionCode::EDE);
+        option.set_option_len(option_len);
+        option.set_opt_data(option_data);
         opt_rdata.option.push(option);
 
         // Round-trip: to_bytes -> from_bytes
@@ -224,8 +235,8 @@ mod opt_rdata_test{
         // Now confirm the EDE contents
         match retrieved_option.get_opt_data() {
             OptionData::EDE(ede) => {
-                assert_eq!(ede.get_err_code(), EdeCode::StaleAns);
-                assert_eq!(ede.get_err_message(), msg);
+                assert_eq!(ede.get_info_code(), EdeCode::StaleAns);
+                assert_eq!(ede.get_extra_text(), msg);
             }
             _ => panic!("Expected OptionData::EDE, got something else!"),
         }
@@ -244,7 +255,9 @@ mod opt_rdata_test{
         let option_data_bytes = option_data.to_bytes();
         let option_len = option_data_bytes.len() as u16;
 
-        let option = OptOption::new(OptionCode::EDE, option_len, option_data);
+        let mut option = OptOption::new(OptionCode::EDE);
+        option.set_option_len(option_len);
+        option.set_opt_data(option_data);
         opt_rdata.option.push(option);
 
         let serialized = opt_rdata.to_bytes();
@@ -259,8 +272,8 @@ mod opt_rdata_test{
 
         match retrieved_option.get_opt_data() {
             OptionData::EDE(ede) => {
-                assert_eq!(ede.get_err_code(), EdeCode::DnssecBogus);
-                assert_eq!(ede.get_err_message(), msg);
+                assert_eq!(ede.get_info_code(), EdeCode::DnssecBogus);
+                assert_eq!(ede.get_extra_text(), msg);
             }
             _ => panic!("Expected OptionData::EDE, got something else!"),
         }
@@ -276,14 +289,16 @@ mod opt_rdata_test{
         let msg = "Some unknown EDE error".to_string();
         let mut ede_data = EdeOptData::new(code, msg);
 
-        ede_data.set_err_code(EdeCode::Unknown(1000));
-        ede_data.set_err_message("Modified unknown EDE".to_string());
+        ede_data.set_info_code(EdeCode::Unknown(1000));
+        ede_data.set_extra_text("Modified unknown EDE".to_string());
 
         let option_data = OptionData::EDE(ede_data);
         let option_data_bytes = option_data.to_bytes();
         let option_len = option_data_bytes.len() as u16;
 
-        let option = OptOption::new(OptionCode::EDE, option_len, option_data);
+        let mut option = OptOption::new(OptionCode::EDE);
+        option.set_option_len(option_len);
+        option.set_opt_data(option_data);
         opt_rdata.option.push(option);
 
         // Serialize
@@ -300,8 +315,8 @@ mod opt_rdata_test{
 
         match retrieved_option.get_opt_data() {
             OptionData::EDE(ede) => {
-                assert_eq!(ede.get_err_code(), EdeCode::Unknown(1000));
-                assert_eq!(ede.get_err_message(), "Modified unknown EDE");
+                assert_eq!(ede.get_info_code(), EdeCode::Unknown(1000));
+                assert_eq!(ede.get_extra_text(), "Modified unknown EDE");
             }
             _ => panic!("Expected OptionData::EDE, got something else!"),
         }

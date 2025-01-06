@@ -30,7 +30,7 @@ use std::time::SystemTime;
 
 #[derive(Clone)]
 /// Structs that represents a DNS message.
-/// 
+///
 /// ```text
 /// +---------------------+
 /// |        Header       |
@@ -57,7 +57,7 @@ impl DnsMessage {
     /// Creates a new query message.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let dns_query_message =
     /// DnsMessage::new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
@@ -107,9 +107,9 @@ impl DnsMessage {
         dns_message
     }
     /// Creates a new message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let msg = DnsMessage::new();
     /// ```
@@ -126,9 +126,9 @@ impl DnsMessage {
     }
 
     /// Creates a new response message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let new_response = DnsMessage::new_response_message(String::from("test.com"), String::from("NS"), String::from("IN"), 1, true, 1);
     /// let header = new_response.get_header();
@@ -140,7 +140,7 @@ impl DnsMessage {
     /// let qname = question.get_qname().get_name();
     /// let rrtype = question.get_rrtype();
     /// let rclass = question.get_rclass();
-    /// 
+    ///
     /// assert_eq!(id, 1);
     /// assert_eq!(op_code, 1);
     /// assert!(rd);
@@ -199,18 +199,18 @@ impl DnsMessage {
 
     //     msg
     // }
-    
+
 
     /// Creates a new error message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let error_msg = DnsMessage::format_error_msg();
     /// let header = error_msg.get_header();
     /// let rcode = header.get_rcode();
     /// let qr = header.get_qr();
-    /// 
+    ///
     /// assert_eq!(rcode, 1);
     /// assert!(qr);
     /// ```
@@ -227,16 +227,16 @@ impl DnsMessage {
 
 
     /// Creates a new not found error message.
-    /// 
+    ///
     /// # Example
-    /// 
-    /// ``` 
+    ///
+    /// ```
     /// let error_msg = DnsMessage::data_not_found_error_msg();
     /// let header = error_msg.get_header();
     /// let rcode = header.get_rcode();
     /// let qr = header.get_qr();
     /// let aa = header.get_aa();
-    /// 
+    ///
     /// assert_eq!(rcode, 3);
     /// assert!(qr);
     /// assert!(aa);
@@ -253,19 +253,19 @@ impl DnsMessage {
     }
 
     /// Creates a ENDS0, to be later added to the message
-    /// 
+    ///
     /// # Example
     /// ´´´
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
     /// ´´´
-    fn create_opt_rr(max_payload: Option<u16> ,e_rcode :Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<u16>>) -> ResourceRecord {
+    fn create_opt_rr(max_payload: Option<u16> ,e_rcode :Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<OptionCode>>) -> ResourceRecord {
         let mut opt_rdata = OptRdata::new();
         let mut options = Vec::new();
 
         if let Some(option_codes) = option_codes {
             for code in option_codes {
-                let option_to_add = OptOption::new(OptionCode::from(code), 0, OptionData::Unknown(Vec::new()));
+                let option_to_add = OptOption::new(code);
                 options.push(option_to_add);
             }
         }
@@ -273,40 +273,40 @@ impl DnsMessage {
         let rdata = Rdata::OPT(opt_rdata);
         let rdlength = rdata.to_bytes().len() as u16;
         let mut rr = ResourceRecord::new(rdata);
-    
-        let e_rcode = u8::from(e_rcode); 
+
+        let e_rcode = u8::from(e_rcode);
         let do_val: u16 = if do_bit {0x8000} else {0x0};
         let extended_flags: u32 = (e_rcode as u32) << 24 | (version as u32) << 16| (do_val as u32);
-        // MUST be 0 (root domain)   
+        // MUST be 0 (root domain)
         rr.set_name(DomainName::new_from_string(".".to_string()));
-        // OPT (41)    
+        // OPT (41)
         rr.set_type_code(Rrtype::OPT);
         // extended RCODE and flags
         rr.set_ttl(extended_flags);
         // requestor's UDP payload size
         rr.set_rclass(Rclass::UNKNOWN(max_payload.unwrap_or(512)));
-        // length of all RDATA 
+        // length of all RDATA
         rr.set_rdlength(rdlength);
         rr
     }
-    
+
     /// Adds ENDS0 to the message.
-    /// 
+    ///
     /// # Example
     /// ´´´
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
     /// ´´´
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit:bool, option_codes: Option<Vec<u16>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit:bool, option_codes: Option<Vec<OptionCode>>) {
         let rr = DnsMessage::create_opt_rr(max_payload, e_rcode, version, do_bit, option_codes);
 
         self.add_additionals(vec![rr]);
 
         self.update_header_counters();
     }
-    
+
     /// Adds Tsig to the message.
-    /// 
+    ///
     /// # Example
     /// ```
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
@@ -317,16 +317,16 @@ impl DnsMessage {
     /// let mac_request = vec![];
     /// dns_query_message.add_tsig(key, alg_name, fudge, key_name, mac_request);
     /// ```
-    pub fn add_tsig(&mut self, key: Vec<u8>, alg_name: TsigAlgorithm, 
-        fudge: u16, key_name: Option<String>, mac_request: Vec<u8>) {
+    pub fn add_tsig(&mut self, key: Vec<u8>, alg_name: TsigAlgorithm,
+                    fudge: u16, key_name: Option<String>, mac_request: Vec<u8>) {
         let message = self;
         let time_signed = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
-        tsig::sign_tsig(message, &key, alg_name, 
-                                        fudge, time_signed, key_name.unwrap_or("".to_string()), mac_request);
+        tsig::sign_tsig(message, &key, alg_name,
+                        fudge, time_signed, key_name.unwrap_or("".to_string()), mac_request);
     }
 
     /// Gets the MAC from the TSIG RR.
-    /// 
+    ///
     /// # Example
     /// ```
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
@@ -352,9 +352,9 @@ impl DnsMessage {
     }
 
     /// Creates a new axfr query message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let axfr_msg = DnsMessage::axfr_query_message(String::from("test.com"));
     /// let header = axfr_msg.get_header();
@@ -363,12 +363,12 @@ impl DnsMessage {
     /// let opcode = header.get_op_code();
     /// let rd = header.get_rd();
     /// let qdcount = header.get_qdcount();
-    /// 
+    ///
     /// let question = axfr_msg.get_question();
     /// let qname = question.get_qname().get_name();
     /// let rrtype = question.get_rrtype();
     /// let rclass = question.get_rclass();
-    /// 
+    ///
     /// assert_eq!(id, 1);
     /// assert!(qr);
     /// assert_eq!(opcode, 0);
@@ -389,15 +389,15 @@ impl DnsMessage {
 
 
     /// Creates a new not implemented error message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let error_msg = DnsMessage::not_implemented_msg();
     /// let header = error_msg.get_header();
     /// let rcode = header.get_rcode();
     /// let qr = header.get_qr();
-    /// 
+    ///
     /// assert_eq!(rcode, 4);
     /// assert!(qr);
     /// ```
@@ -413,9 +413,9 @@ impl DnsMessage {
     }
 
     /// Creates a DnsMessage from an array of bytes.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let bytes = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 ,0];
     /// let msg = DnsMessage::from_bytes(&bytes);
@@ -433,7 +433,7 @@ impl DnsMessage {
     /// let ancount = header.get_ancount();
     /// let nscount = header.get_nscount();
     /// let arcount = header.get_arcount();
-    /// 
+    ///
     /// assert_eq!(id, 1);
     /// assert!(!qr);
     /// assert_eq!(opcode, 0);
@@ -555,9 +555,9 @@ impl DnsMessage {
     }
 
     /// Creates a DnsMessage from an array of bytes.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let bytes = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 ,0];
     /// let msg = DnsMessage::from_bytes(&bytes);
@@ -575,7 +575,7 @@ impl DnsMessage {
     /// let ancount = header.get_ancount();
     /// let nscount = header.get_nscount();
     /// let arcount = header.get_arcount();
-    /// 
+    ///
     /// assert_eq!(id, 1);
     /// assert!(!qr);
     /// assert_eq!(opcode, 0);
@@ -621,9 +621,9 @@ impl DnsMessage {
     }
 
     /// Updates the header counters.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut header = Header::new();
@@ -638,7 +638,7 @@ impl DnsMessage {
     /// let ancount = header.get_ancount();
     /// let nscount = header.get_nscount();
     /// let arcount = header.get_arcount();
-    /// 
+    ///
     /// assert_eq!(qdcount, 1);
     /// assert_eq!(ancount, 0);
     /// assert_eq!(nscount, 0);
@@ -658,9 +658,9 @@ impl DnsMessage {
     }
 
     /// Adds a answers to the message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut rr = ResourceRecord::new();
@@ -672,7 +672,7 @@ impl DnsMessage {
     /// rr.set_rdata(vec![1]);
     /// msg.add_answers(vec![rr]);
     /// let answers = msg.get_answer();
-    /// 
+    ///
     /// assert_eq!(answers.len(), 1);
     /// ```
     pub fn add_answers(&mut self, mut answers: Vec<ResourceRecord>) {
@@ -684,9 +684,9 @@ impl DnsMessage {
     }
 
     /// Adds a authorities to the message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut rr = ResourceRecord::new();
@@ -698,7 +698,7 @@ impl DnsMessage {
     /// rr.set_rdata(vec![1]);
     /// msg.add_authorities(vec![rr]);
     /// let authorities = msg.get_authority();
-    /// 
+    ///
     /// assert_eq!(authorities.len(), 1);
     /// ```
     pub fn add_authorities(&mut self, mut authorities: Vec<ResourceRecord>) {
@@ -710,9 +710,9 @@ impl DnsMessage {
     }
 
     /// Adds a additionals to the message.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let mut msg = DnsMessage::new();
     /// let mut rr = ResourceRecord::new();
@@ -845,7 +845,7 @@ impl DnsMessage {
 /// that allows the response to be matched up with the query. The `rd` (Recursion Desired) field is set to `true`,
 /// indicating to the DNS server that it should perform a recursive query if necessary to fulfill the request.
 ///
-/// This function does not perform the DNS query itself; it merely constructs the `DnsMessage` that 
+/// This function does not perform the DNS query itself; it merely constructs the `DnsMessage` that
 /// represents the query.
 pub fn create_recursive_query(
     name: DomainName,
@@ -1343,7 +1343,7 @@ mod message_test {
                 0,
                 false,
                 1);
-                
+
         let mut new_additional = Vec::<ResourceRecord>::new();
         let a_rdata5 = Rdata::A(ARdata::new());
         let rr5 = ResourceRecord::new(a_rdata5);
@@ -1544,7 +1544,7 @@ mod message_test {
 
         assert_eq!(response.get_question().get_qname(), name);
         assert_eq!(response.get_question().get_rrtype(), record_type);
-        assert_eq!(response.get_question().get_rclass(), record_class);    
+        assert_eq!(response.get_question().get_rclass(), record_class);
         assert_eq!(response.get_header().get_rcode(), Rcode::SERVFAIL);
         assert!(response.get_header().get_qr());
     }
@@ -1560,7 +1560,7 @@ mod message_test {
                 false,
                 1);
 
-        dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![12]));
+        dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![OptionCode::PADDING]));
 
         let additional = dns_query_message.get_additional();
 
@@ -1583,7 +1583,7 @@ mod message_test {
         match rdata {
             Rdata::OPT(opt) => {
                 let options = opt.get_option();
-                let expected_option  = OptOption::new(OptionCode::PADDING, 0, OptionData::Unknown(Vec::new()));
+                let expected_option  = OptOption::new(OptionCode::PADDING);
                 for option in options {
                     assert_eq!(option, expected_option);
                 }

@@ -54,7 +54,24 @@ impl ServerInfo {
         }
     }
 
-    pub fn new_from_addr(ip_addr: IpAddr, timeout: tokio::time::Duration) -> ServerInfo {
+
+    pub fn new_from_addr(ip_addr: IpAddr, timeout: tokio::time::Duration, buf_size: usize) -> ServerInfo {
+        let port = 53;
+        let key = String::from("");
+        let algorithm = String::from("");
+        let udp_connection = ClientUDPConnection::new(ip_addr, timeout, buf_size);
+        let tcp_connection = ClientTCPConnection::new(ip_addr, timeout, buf_size);
+        ServerInfo {
+            ip_addr,
+            port,
+            tsig: false,
+            key,
+            algorithm,
+            udp_connection,
+            tcp_connection,
+        }
+    }
+    pub fn new_from_addr_with_default_size(ip_addr: IpAddr, timeout: tokio::time::Duration) -> ServerInfo {
         let port = 53;
         let key = String::from("");
         let algorithm = String::from("");
@@ -363,7 +380,7 @@ mod server_info_tests {
     #[test]
     fn new_from_addr_constructor() {
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
-        let server_info = ServerInfo::new_from_addr(ip_addr, Duration::from_secs(100));
+        let server_info = ServerInfo::new_from_addr_with_default_size(ip_addr, Duration::from_secs(100));
 
         assert_eq!(server_info.get_ip_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(server_info.get_port(), 53);

@@ -179,16 +179,14 @@ impl DomainName {
         // Absolute host name
         if end_dot == true {
             // name.remove(name.len() - 1);
-            return DomainName { name: name };
+            return DomainName::new_from_string(name);
         } else {
             // Add the origin host_name
             let mut full_host_name = name.clone();
             full_host_name.push_str(".");
             full_host_name.push_str(&host_name);
 
-            return DomainName {
-                name: full_host_name,
-            };
+            return DomainName::new_from_string(full_host_name);
         }
     }
 }

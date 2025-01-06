@@ -6,6 +6,22 @@ use crate::message::resource_record::ToBytes;
 pub enum OptionData {
     NSID(String),
     EDE(EdeOptData),
+    /*
+    Padding is just a sequence of bytes that MUST BE set to 0
+    The figure below specifies the structure of the option in the RDATA
+    of the OPT RR:
+
+                0                       8                      16
+                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+                |                  OPTION-CODE                  |
+                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+                |                 OPTION-LENGTH                 |
+                +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+                |        (PADDING) ...        (PADDING) ...     /
+                +-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+
+                                 Figure 1 */
+    Padding(Vec<u8>),
     Unknown(Vec<u8>),
 }
 
@@ -17,6 +33,9 @@ impl ToBytes for OptionData {
             },
             OptionData::EDE(ede) => {
                 ede.to_bytes()
+            },
+            OptionData::Padding(data) => {
+                data.clone()
             },
             OptionData::Unknown(data) => {
                 data.to_vec()
@@ -35,6 +54,9 @@ impl OptionData {
             OptionCode::EDE => {
                 let ede = EdeOptData::from_bytes(&bytes).map_err(|_| "Error parsing EDE")?;
                 Ok(OptionData::EDE(ede))
+            },
+            OptionCode::PADDING => {
+                Ok(OptionData::Padding(bytes))
             },
             _ => Ok(OptionData::Unknown(bytes))
         }

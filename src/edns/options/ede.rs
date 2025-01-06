@@ -181,83 +181,83 @@ pub mod ede_optdata {
             res
         }
     }
+}
 
+#[cfg(test)]
+mod edetests {
+    use crate::edns::options::ede::{ede_code::EdeCode, ede_optdata::EdeOptData};
+    use crate::message::resource_record::{FromBytes, ToBytes};
 
-    #[cfg(test)]
-    mod edetests {
-        use super::*;
+    #[test]
+    fn test_to_from_bytes_othererr() {
+        let code = EdeCode::OtherErr;
+        let msg = "Mensaje de prueba para OtherErr".to_string();
 
-        #[test]
-        fn test_to_from_bytes_othererr() {
-            let code = EdeCode::OtherErr;
-            let msg = "Mensaje de prueba para OtherErr".to_string();
+        let ede = EdeOptData::new(code, msg.clone());
+        let serialized = ede.to_bytes();
 
-            let ede = EdeOptData::new(code, msg.clone());
-            let serialized = ede.to_bytes();
+        let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
+        assert_eq!(deserialized.get_err_code(), code);
+        assert_eq!(deserialized.get_err_message(), msg);
+    }
 
-            let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
-            assert_eq!(deserialized.get_err_code(), code);
-            assert_eq!(deserialized.get_err_message(), msg);
-        }
+    #[test]
+    fn test_to_from_bytes_unsupdnskeyalg() {
+        let code = EdeCode::UnsupDnskeyAlg;
+        let msg = "Clave DNS no soportada".to_string();
 
-        #[test]
-        fn test_to_from_bytes_unsupdnskeyalg() {
-            let code = EdeCode::UnsupDnskeyAlg;
-            let msg = "Clave DNS no soportada".to_string();
+        let ede = EdeOptData::new(code, msg.clone());
+        let serialized = ede.to_bytes();
 
-            let ede = EdeOptData::new(code, msg.clone());
-            let serialized = ede.to_bytes();
+        let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
+        assert_eq!(deserialized.get_err_code(), code);
+        assert_eq!(deserialized.get_err_message(), msg);
+    }
 
-            let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
-            assert_eq!(deserialized.get_err_code(), code);
-            assert_eq!(deserialized.get_err_message(), msg);
-        }
+    #[test]
+    fn test_to_from_bytes_staleans() {
+        let code = EdeCode::StaleAns;
+        let msg = "Respuesta obsoleta".to_string();
 
-        #[test]
-        fn test_to_from_bytes_staleans() {
-            let code = EdeCode::StaleAns;
-            let msg = "Respuesta obsoleta".to_string();
+        let ede = EdeOptData::new(code, msg.clone());
+        let serialized = ede.to_bytes();
 
-            let ede = EdeOptData::new(code, msg.clone());
-            let serialized = ede.to_bytes();
+        let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
+        assert_eq!(deserialized.get_err_code(), code);
+        assert_eq!(deserialized.get_err_message(), msg);
+    }
 
-            let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
-            assert_eq!(deserialized.get_err_code(), code);
-            assert_eq!(deserialized.get_err_message(), msg);
-        }
+    #[test]
+    fn test_to_from_bytes_forgedans() {
+        let code = EdeCode::ForgedAns;
+        let msg = "Respuesta falsificada".to_string();
 
-        #[test]
-        fn test_to_from_bytes_forgedans() {
-            let code = EdeCode::ForgedAns;
-            let msg = "Respuesta falsificada".to_string();
+        let ede = EdeOptData::new(code, msg.clone());
+        let serialized = ede.to_bytes();
 
-            let ede = EdeOptData::new(code, msg.clone());
-            let serialized = ede.to_bytes();
+        let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
+        assert_eq!(deserialized.get_err_code(), code);
+        assert_eq!(deserialized.get_err_message(), msg);
+    }
 
-            let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
-            assert_eq!(deserialized.get_err_code(), code);
-            assert_eq!(deserialized.get_err_message(), msg);
-        }
+    #[test]
+    fn test_to_from_bytes_unknown() {
+        // Probamos con un valor fuera de los enumerados estándar.
+        let code = EdeCode::Unknown(999);
+        let msg = "Error genérico".to_string();
 
-        #[test]
-        fn test_to_from_bytes_unknown() {
-            // Probamos con un valor fuera de los enumerados estándar.
-            let code = EdeCode::Unknown(999);
-            let msg = "Error genérico".to_string();
+        let mut ede = EdeOptData::new(code, msg.clone());
+        ede.set_err_code(EdeCode::Unknown(1000));
+        ede.set_err_message("Mensaje modificado".to_string());
 
-            let mut ede = EdeOptData::new(code, msg.clone());
-            ede.set_err_code(EdeCode::Unknown(1000));
-            ede.set_err_message("Mensaje modificado".to_string());
+        assert_eq!(ede.get_err_code(), EdeCode::Unknown(1000));
+        assert_eq!(ede.get_err_message(), "Mensaje modificado");
 
-            assert_eq!(ede.get_err_code(), EdeCode::Unknown(1000));
-            assert_eq!(ede.get_err_message(), "Mensaje modificado");
+        let serialized = ede.to_bytes();
 
-            let serialized = ede.to_bytes();
+        let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
 
-            let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
-
-            assert_eq!(deserialized.get_err_code(), EdeCode::Unknown(1000));
-            assert_eq!(deserialized.get_err_message(), "Mensaje modificado");
-        }
+        assert_eq!(deserialized.get_err_code(), EdeCode::Unknown(1000));
+        assert_eq!(deserialized.get_err_message(), "Mensaje modificado");
     }
 }

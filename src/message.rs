@@ -259,13 +259,13 @@ impl DnsMessage {
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
     /// ´´´
-    fn create_opt_rr(max_payload: Option<u16> ,e_rcode :Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<u16>>) -> ResourceRecord {
+    fn create_opt_rr(max_payload: Option<u16> ,e_rcode :Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<OptionCode>>) -> ResourceRecord {
         let mut opt_rdata = OptRdata::new();
         let mut options = Vec::new();
 
         if let Some(option_codes) = option_codes {
             for code in option_codes {
-                let option_to_add = OptOption::new(OptionCode::from(code), 0, OptionData::Unknown(Vec::new()));
+                let option_to_add = OptOption::new(code);
                 options.push(option_to_add);
             }
         }
@@ -297,7 +297,7 @@ impl DnsMessage {
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
     /// ´´´
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit:bool, option_codes: Option<Vec<u16>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit:bool, option_codes: Option<Vec<OptionCode>>) {
         let rr = DnsMessage::create_opt_rr(max_payload, e_rcode, version, do_bit, option_codes);
 
         self.add_additionals(vec![rr]);
@@ -1560,7 +1560,7 @@ mod message_test {
                 false,
                 1);
 
-        dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![12]));
+        dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![OptionCode::PADDING]));
 
         let additional = dns_query_message.get_additional();
 
@@ -1583,7 +1583,7 @@ mod message_test {
         match rdata {
             Rdata::OPT(opt) => {
                 let options = opt.get_option();
-                let expected_option  = OptOption::new(OptionCode::PADDING, 0, OptionData::Unknown(Vec::new()));
+                let expected_option  = OptOption::new(OptionCode::PADDING);
                 for option in options {
                     assert_eq!(option, expected_option);
                 }

@@ -75,7 +75,7 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
 
             i += option_length as usize;
 
-            let option_data = OptionData::from_with_opt_type(option_data, option_code);
+            let option_data = OptionData::from_bytes_with_opt_type(option_data, option_code);
 
             if let Err(_) = option_data {
                 return Err("Format Error");

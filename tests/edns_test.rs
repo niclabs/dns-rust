@@ -1,5 +1,7 @@
 use std::{net::IpAddr, str::FromStr};
 use std::time::Duration;
+use dns_rust::message::rdata::opt_rdata::option_code::OptionCode;
+use dns_rust::message::rdata::opt_rdata::optoption::OptOption;
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
 use dns_rust::async_resolver::server_info::ServerInfo;
 use dns_rust::message::rdata::opt_rdata::option_data::OptionData;
@@ -10,7 +12,7 @@ async fn query_from_ip_with_edns(domain_name: &str,
                                  max_payload: Option<u16>,
                                  version: u8,
                                  do_bit: bool,
-                                 option: Option<Vec<u16>>,
+                                 option: Option<Vec<OptionCode>>,
                                  ip_addr: IpAddr) -> Result<DnsMessage, ClientError> {
 
     let mut config = ResolverConfig::default();
@@ -35,7 +37,7 @@ async fn query_response_edns(domain_name: &str,
     max_payload: Option<u16>,
     version: u8,
     do_bit: bool,
-    option: Option<Vec<u16>>) -> Result<DnsMessage, ClientError> {
+    option: Option<Vec<OptionCode>>) -> Result<DnsMessage, ClientError> {
 
     let mut config = ResolverConfig::default();
     config.add_edns0(max_payload, version, do_bit, option);
@@ -52,7 +54,7 @@ async fn query_response_edns(domain_name: &str,
 
 #[tokio::test]
 async fn query_a_type_edns() {
-    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, false, Some(vec![3])).await;
+    let response = query_response_edns("example.com", "UDP", "A", Some(1024), 0, false, Some(vec![OptionCode::NSID])).await;
 
     if let Ok(rrs) = response {
         println!("{}", rrs);
@@ -75,7 +77,7 @@ async fn query_a_type_edns() {
 async fn query_a_type_with_rrsig_edns() {
     let response = query_response_edns("example.com",
                                        "UDP", "A", Some(1024), 0,
-                                       true, Some(vec![3])).await;
+                                       true, Some(vec![OptionCode::NSID])).await;
 
     if let Ok(rrs) = response {
         println!("{}", rrs);

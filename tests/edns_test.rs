@@ -72,7 +72,6 @@ async fn query_a_type_edns() {
         println!("{:?}", opt);
     } 
 }
-#[ignore]
 #[tokio::test]
 async fn query_a_type_with_rrsig_edns() {
     let response = query_response_edns("example.com",
@@ -107,8 +106,8 @@ async fn query_a_type_with_rrsig_edns() {
             let option = &rdata.get_option()[0];
             if let OptionData::NSID(c) = option.get_opt_data() {
                 println!("{}", c);
-                // because the first query option is 8.8.8.8, it redirects to google public dns in scl chile
-                assert_eq!(c, "gpdns-scl")
+                // because the first query option is 8.8.8.8, it redirects to google public dns.
+                assert!(c.starts_with("gpdns"))
             }
             //let (_,_,c) = &rdata.get_option()[0];
             //println!("{}", std::str::from_utf8(c).unwrap(),);

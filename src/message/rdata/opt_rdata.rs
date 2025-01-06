@@ -241,8 +241,8 @@ mod opt_rdata_test{
         // Now confirm the EDE contents
         match retrieved_option.get_opt_data() {
             OptionData::EDE(ede) => {
-                assert_eq!(ede.get_err_code(), EdeCode::StaleAns);
-                assert_eq!(ede.get_err_message(), msg);
+                assert_eq!(ede.get_info_code(), EdeCode::StaleAns);
+                assert_eq!(ede.get_extra_text(), msg);
             }
             _ => panic!("Expected OptionData::EDE, got something else!"),
         }
@@ -278,8 +278,8 @@ mod opt_rdata_test{
 
         match retrieved_option.get_opt_data() {
             OptionData::EDE(ede) => {
-                assert_eq!(ede.get_err_code(), EdeCode::DnssecBogus);
-                assert_eq!(ede.get_err_message(), msg);
+                assert_eq!(ede.get_info_code(), EdeCode::DnssecBogus);
+                assert_eq!(ede.get_extra_text(), msg);
             }
             _ => panic!("Expected OptionData::EDE, got something else!"),
         }
@@ -295,8 +295,8 @@ mod opt_rdata_test{
         let msg = "Some unknown EDE error".to_string();
         let mut ede_data = EdeOptData::new(code, msg);
 
-        ede_data.set_err_code(EdeCode::Unknown(1000));
-        ede_data.set_err_message("Modified unknown EDE".to_string());
+        ede_data.set_info_code(EdeCode::Unknown(1000));
+        ede_data.set_extra_text("Modified unknown EDE".to_string());
 
         let option_data = OptionData::EDE(ede_data);
         let option_data_bytes = option_data.to_bytes();
@@ -321,8 +321,8 @@ mod opt_rdata_test{
 
         match retrieved_option.get_opt_data() {
             OptionData::EDE(ede) => {
-                assert_eq!(ede.get_err_code(), EdeCode::Unknown(1000));
-                assert_eq!(ede.get_err_message(), "Modified unknown EDE");
+                assert_eq!(ede.get_info_code(), EdeCode::Unknown(1000));
+                assert_eq!(ede.get_extra_text(), "Modified unknown EDE");
             }
             _ => panic!("Expected OptionData::EDE, got something else!"),
         }

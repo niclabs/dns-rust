@@ -261,4 +261,22 @@ mod edetests {
         assert_eq!(deserialized.get_info_code(), EdeCode::Unknown(1000));
         assert_eq!(deserialized.get_extra_text(), "Mensaje modificado");
     }
+
+    #[test]
+    fn test_set_get_info_code(){
+        let mut ede = EdeOptData::new(EdeCode::Unknown(1000), "".to_string());
+        assert_eq!(ede.get_info_code(), EdeCode::Unknown(1000));
+
+        ede.set_info_code(EdeCode::OtherErr);
+        assert_eq!(ede.get_info_code(), EdeCode::OtherErr);
+    }
+
+    #[test]
+    fn test_set_get_extra_text(){
+        let mut ede = EdeOptData::new(EdeCode::Unknown(1000), "".to_string());
+        assert_eq!(ede.get_extra_text(), "".to_string());
+
+        ede.set_extra_text("extra text".to_string());
+        assert_eq!(ede.get_extra_text(), "extra text".to_string());
+    }
 }

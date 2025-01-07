@@ -1,36 +1,32 @@
-pub mod zones;
+pub mod DnsZone;
 
-
-
+/// Structure to represent a Name Server
 #[derive (PartialEq, Debug)]
 pub struct NameServer {
-    zones: HashMap<String, Zone>, // Cada zona está asociada a un dominio.
-    forwarders: Vec<String>, // Lista de servidores a los que se pueden delegar consultas.
+    zones: HashMap<DomainName, DnsZone>, // Each zone is associated with a domain.
 }
 
-
-pub fn new(forwarders: Vec<String>) -> Self {
-    NameServer {
-        zones: HashMap::new(),
-        forwarders,
+impl NameServer {
+    /// Constructor to initialize an empty NameServer
+    pub fn new(forwarders: Vec<String>) -> Self {
+        NameServer {
+            zones: HashMap::new(),
+        }
     }
-}
-
-
-pub fn add_zone(&mut self, zone: Zone) {
-    self.zones.insert(zone.domain.clone(), zone);
-}
-
-
-pub fn resolve(&self, query: &Question) -> Option<Vec<ResourceRecord>> {
-    // Buscar en las zonas locales
-    if let Some(zone) = self.zones.get(&query.qname.get_name()) {
-        return Some(zone.get_records(query.rrtype));
+    /// Adds a new zone to the NameServer
+    pub fn add_zone(&mut self, zone: Zone) {
+        self.zones.insert(zone.domain.clone(), zone);
     }
-
-    // Delegar a forwarders si no se encuentra
-    self.forwarders.iter().find_map(|forwarder| {
-        // Implementar consulta a forwarders
-        None // Placeholder para forwarders
-    })
+    /// Removes a zone by its domain name
+    pub fn remove_zone(&mut self, domain: &str) -> bool {
+        self.zones.remove(domain).is_some()
+    }
+    /// Lists the domains managed by this server
+    pub fn list_zones(&self) -> Vec<String> {
+        self.zones.keys().cloned().collect()
+    }
+    /// Returns the number of managed zones
+    pub fn zone_count(&self) -> usize {
+        self.zones.len()
+    }
 }

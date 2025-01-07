@@ -223,6 +223,7 @@ mod option_data_tests {
     use crate::edns::options::ede::ede_optdata::EdeOptData;
     use crate::edns::options::ede::ede_code::EdeCode;
     use crate::edns::opt_option::option_code::OptionCode;
+    use crate::edns::opt_option::OptOption;
     use crate::message::resource_record::ToBytes;
     #[test]
     fn test_option_data_nsid() {
@@ -270,5 +271,32 @@ mod option_data_tests {
             .expect("Unknown reconstruction failed");
         assert_eq!(option_data, rebuilt);
         assert_eq!(serialized.len(), 4);
+    }
+
+    #[test]
+    fn test_set_get_option_code() {
+        let mut opt = OptOption::new(OptionCode::NSID);
+        assert_eq!(opt.get_option_code(), OptionCode::NSID);
+
+        opt.set_option_code(OptionCode::EDE);
+        assert_eq!(opt.get_option_code(), OptionCode::EDE);
+    }
+
+    #[test]
+    fn test_set_get_option_len() {
+        let mut opt = OptOption::new(OptionCode::NSID);
+        assert_eq!(opt.get_option_len(), 0);
+
+        opt.set_option_len(8);
+        assert_eq!(opt.get_option_len(), 8);
+    }
+
+    #[test]
+    fn test_set_get_opt_data() {
+        let mut opt = OptOption::new(OptionCode::NSID);
+        assert_eq!(opt.get_opt_data(), OptionData::NSID(String::new()));
+
+        opt.set_opt_data(OptionData::NSID("example".to_string()));
+        assert_eq!(opt.get_opt_data(), OptionData::NSID("example".to_string()));
     }
 }

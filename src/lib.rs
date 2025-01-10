@@ -12,5 +12,6 @@ pub mod edns{
     pub mod opt_option;
     pub mod options {
         pub mod ede;
+        pub mod zoneversion;
     }
 }

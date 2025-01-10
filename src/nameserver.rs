@@ -1,4 +1,8 @@
-pub mod DnsZone;
+use std::collections::HashMap;
+use crate::domain_name::DomainName;
+
+pub mod zones;
+mod server_connection;
 
 /// Structure to represent a Name Server
 #[derive (PartialEq, Debug)]

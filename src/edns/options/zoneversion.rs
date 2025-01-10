@@ -1,4 +1,15 @@
 
+/// A structure representing an opaque string.
+///
+/// This struct is designed to hold a sequence of bytes (`Vec<u8>`),
+/// which can represent any kind of binary or textual data.
+#[derive(Debug, PartialEq, Eq, Clone)]
+struct OpaqueString {
+    /// The underlying byte data for the opaque string.
+    data: Vec<u8>,
+}
+
+
 /*
                 +0 (MSB)                       +1 (LSB)
    +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
@@ -12,6 +23,7 @@
 pub struct ZoneversionOptData {
     label_count: u8,
     type_: u8,
+    version: OpaqueString,
 }
 
 impl ZoneversionOptData {

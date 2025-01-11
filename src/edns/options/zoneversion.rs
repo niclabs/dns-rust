@@ -1,3 +1,4 @@
+use crate::message::resource_record::ToBytes;
 
 /// A structure representing an opaque string.
 ///
@@ -27,6 +28,12 @@ impl OpaqueString {
     }
 }
 
+impl ToBytes for OpaqueString {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+}
+
 
 /*
                 +0 (MSB)                       +1 (LSB)
@@ -45,7 +52,6 @@ pub struct ZoneversionOptData {
 }
 
 impl ZoneversionOptData {
-
     pub fn new(label_count: u8, type_: u8, version: OpaqueString) -> Self {
         ZoneversionOptData { label_count, type_, version }
     }
@@ -86,5 +92,21 @@ impl ZoneversionOptData {
             .map_err(|_| "Error parsing version")?;
 
         Ok(ZoneversionOptData { label_count, type_, version })
+    }
+}
+
+impl ToBytes for ZoneversionOptData {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut res = vec![];
+        let label_count: u8 = self.label_count;
+        res.push(label_count);
+
+        let type_: u8 = self.type_;
+        res.push(type_);
+
+        let mut version  = self.version.to_bytes();
+        res.append(&mut version);
+
+        res
     }
 }

@@ -18,6 +18,13 @@ impl OpaqueString {
     pub fn set_data(&mut self, data: Vec<u8>) {
         self.data = data;
     }
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        if bytes.is_empty() {
+            return Err("Not enough bytes to parse an OpaqueString");
+        }
+        Ok(OpaqueString { data: bytes.to_vec() })
+    }
 }
 
 
@@ -67,5 +74,17 @@ impl ZoneversionOptData {
 
     fn set_version(&mut self, version: OpaqueString) {
         self.version = version;
+    }
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        if bytes.len() < 3 {
+            return Err("Not enough bytes to parse ZoneVersion");
+        }
+        let label_count = bytes[0];
+        let type_ = bytes[1];
+        let version = OpaqueString::from_bytes(&bytes[2..])
+            .map_err(|_| "Error parsing version")?;
+
+        Ok(ZoneversionOptData { label_count, type_, version })
     }
 }

@@ -39,6 +39,10 @@ pub struct ZoneversionOptData {
 
 impl ZoneversionOptData {
 
+    pub fn new(label_count: u8, type_: u8, version: OpaqueString) -> Self {
+        ZoneversionOptData { label_count, type_, version }
+    }
+
     // getters
     pub fn get_label_count(&self) -> u8 {
         self.label_count.clone()

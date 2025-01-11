@@ -110,3 +110,29 @@ impl ToBytes for ZoneversionOptData {
         res
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_bytes_from_bytes () {
+        let label_count:u8 = 0x0a;
+        let type_:u8 = 0x00;
+        let version :OpaqueString = OpaqueString::from_bytes(&[0x12, 0x34, 0x56, 0x78]).unwrap();
+        let data = version.get_data();
+        let version_bytes = version.to_bytes();
+
+        let zone_version = ZoneversionOptData::new(label_count, type_, version);
+        let serialized = zone_version.to_bytes();
+
+        assert_eq!(serialized[0], label_count);
+        assert_eq!(serialized[1], type_);
+        assert_eq!(serialized[2..], data);
+        assert_eq!(serialized[2..], version_bytes);
+
+        let deserialized: ZoneversionOptData = ZoneversionOptData::from_bytes(&serialized).unwrap();
+        assert_eq!(deserialized, zone_version);
+
+    }
+}

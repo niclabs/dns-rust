@@ -1,8 +1,11 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-pub mod SoaRdata;
-pub mod ResourceRecord;
+use crate::message::rdata::soa_rdata::SoaRdata;
+use crate::message::rdata::rdata::{Rdata, TxtRdata, MxRdata};
+use crate::message::domain_name::DomainName;
+use crate::message::resource_record::{ResourceRecord, Rrtype, Rclass};
+
 /*
 The following entries are defined:
     <blank>[<comment>]
@@ -246,38 +249,41 @@ impl DnsZone {
             resource_records,
         })
     }
+}
 
-    /// Returns a formatted string with all the DNS zone's information.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let soa = SoaRdata::new(
-    ///     "ns1.example.com.",
-    ///     "admin.example.com.",
-    ///     20240101,
-    ///     3600,
-    ///     1800,
-    ///     1209600,
-    ///     3600,
-    /// );
-    ///
-    /// let dns_zone = DnsZone::new("example.com.", 3600, soa);
-    ///
-    /// let info = dns_zone.get_info();
-    /// assert!(info.contains("example.com."));
-    /// assert!(info.contains("ns1.example.com."));
-    /// assert!(info.contains("admin.example.com."));
-    /// ```
-    fn get_info(&self) -> String {
-        format!("{:#?}", self)
+/// Getters
+impl DnsZone {
+    /// Gets the name of the zone.
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
+
+    /// Gets the default TTL of the zone.
+    pub fn get_ttl(&self) -> u32 {
+        self.ttl
+    }
+
+    /// Gets the SOA (Start of Authority) record of the zone.
+    pub fn get_soa(&self) -> &SoaRdata {
+        &self.soa
+    }
+
+    /// Gets the list of name servers (NS) for the zone.
+    pub fn get_ns_records(&self) -> &Vec<String> {
+        &self.ns_records
+    }
+
+    /// Gets the list of resource records for the zone.
+    pub fn get_resource_records(&self) -> &Vec<ResourceRecord> {
+        &self.resource_records
     }
 }
 
 
 #[cfg(test)]
 mod dns_zone_tests {
-    use super::*; // Importar la estructura y métodos de DnsZone
+    use super::*;
+    use std::path::Path;
 
     #[test]
     fn test_new() {
@@ -346,5 +352,72 @@ mod dns_zone_tests {
 
         assert_eq!(dns_zone.resource_records.len(), 1);
         assert_eq!(dns_zone.resource_records[0].rdata.unwrap().get_text(),String::from("dcc"));
+    }
+
+    #[test]
+    fn test_from_master_file_edu() {
+        // Master file for the EDU domain.
+        let masterfile_path = "1034-scenario-6.1-edu.txt";
+
+        // Verify that the file exists before continuing
+        assert!(Path::new(masterfile_path).exists(), "EDU master file not found.");
+
+        // Create the zone from the master file
+        let dns_zone = DnsZone::from_master_file(masterfile_path).unwrap();
+
+        // Validate main properties of the zone
+        assert_eq!(dns_zone.name, "EDU.".to_string());
+        assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file
+        assert_eq!(dns_zone.soa.mname.get_name(), "SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.rname.get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.serial, 870729);
+        assert_eq!(dns_zone.soa.refresh, 1800);
+        assert_eq!(dns_zone.soa.retry, 300);
+        assert_eq!(dns_zone.soa.expire, 604800);
+        assert_eq!(dns_zone.soa.minimum, 86400);
+
+        // Validate name server records
+        assert_eq!(dns_zone.ns_records.len(), 2);
+        assert!(dns_zone.ns_records.contains(&"SRI-NIC.ARPA.".to_string()));
+        assert!(dns_zone.ns_records.contains(&"C.ISI.EDU.".to_string()));
+
+        // Validate resource records
+        assert_eq!(dns_zone.resource_records.len(), 14); // Count A, NS, etc. records
+        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "ICS.UCI" && matches!(rr.rdata, Rdata::A(_))));
+        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "YALE.EDU." && matches!(rr.rdata, Rdata::NS(_))));
+    }
+
+    #[test]
+    fn test_from_master_file_root() {
+        // Master file for the root zone.
+        let masterfile_path = "1034-scenario-6.1-root.txt";
+
+        // Verify that the file exists before continuing
+        assert!(Path::new(masterfile_path).exists(), "Root master file not found.");
+
+        // Create the zone from the master file
+        let dns_zone = DnsZone::from_master_file(masterfile_path).unwrap();
+
+        // Validate main properties of the zone
+        assert_eq!(dns_zone.name, ".".to_string());
+        assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file
+        assert_eq!(dns_zone.soa.mname.get_name(), "SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.rname.get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.serial, 870611);
+        assert_eq!(dns_zone.soa.refresh, 1800);
+        assert_eq!(dns_zone.soa.retry, 300);
+        assert_eq!(dns_zone.soa.expire, 604800);
+        assert_eq!(dns_zone.soa.minimum, 86400);
+
+        // Validate name server records
+        assert_eq!(dns_zone.ns_records.len(), 3);
+        assert!(dns_zone.ns_records.contains(&"A.ISI.EDU.".to_string()));
+        assert!(dns_zone.ns_records.contains(&"C.ISI.EDU.".to_string()));
+        assert!(dns_zone.ns_records.contains(&"SRI-NIC.ARPA.".to_string()));
+
+        // Validate resource records
+        assert_eq!(dns_zone.resource_records.len(), 14); // Count A, MX, HINFO, etc. records
+        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "MIL." && matches!(rr.rdata, Rdata::NS(_))));
+        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "A.ISI.EDU" && matches!(rr.rdata, Rdata::A(_))));
     }
 }

@@ -46,40 +46,40 @@ impl ToBytes for OpaqueString {
  */
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ZoneversionOptData {
-    label_count: u8,
-    type_: u8,
-    version: OpaqueString,
+    label_count: Option<u8>,
+    type_: Option<u8>,
+    version: Option<OpaqueString>,
 }
 
 impl ZoneversionOptData {
-    pub fn new(label_count: u8, type_: u8, version: OpaqueString) -> Self {
-        ZoneversionOptData { label_count, type_, version }
+    pub fn new_from(label_count: u8, type_: u8, version: OpaqueString) -> Self {
+        ZoneversionOptData { label_count: Some(label_count), type_: Some(type_), version: Some(version) }
     }
 
     // getters
-    pub fn get_label_count(&self) -> u8 {
+    pub fn get_label_count(&self) -> Option<u8> {
         self.label_count.clone()
     }
 
-    pub fn get_type_(&self) -> u8 {
+    pub fn get_type_(&self) -> Option<u8> {
         self.type_.clone()
     }
 
-    pub fn get_version(&self) -> OpaqueString {
+    pub fn get_version(&self) -> Option<OpaqueString> {
         self.version.clone()
     }
 
     // setters
     fn set_label_count(&mut self, label_count: u8) {
-        self.label_count = label_count;
+        self.label_count = Option::from(label_count);
     }
 
     fn set_type_(&mut self, type_: u8) {
-        self.type_ = type_;
+        self.type_ = Option::from(type_);
     }
 
     fn set_version(&mut self, version: OpaqueString) {
-        self.version = version;
+        self.version = Option::from(version);
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
@@ -91,20 +91,29 @@ impl ZoneversionOptData {
         let version = OpaqueString::from_bytes(&bytes[2..])
             .map_err(|_| "Error parsing version")?;
 
-        Ok(ZoneversionOptData { label_count, type_, version })
+        Ok(ZoneversionOptData {
+            label_count: Some(label_count),
+            type_: Some(type_),
+            version: Some(version)
+        })
     }
 }
 
 impl ToBytes for ZoneversionOptData {
     fn to_bytes(&self) -> Vec<u8> {
         let mut res = vec![];
-        let label_count: u8 = self.label_count;
+
+        if self.label_count.is_none() {
+            return res;
+        }
+
+        let label_count: u8 = self.label_count.unwrap();
         res.push(label_count);
 
-        let type_: u8 = self.type_;
+        let type_: u8 = self.type_.unwrap();
         res.push(type_);
 
-        let mut version  = self.version.to_bytes();
+        let mut version  = self.version.clone().unwrap().to_bytes();
         res.append(&mut version);
 
         res
@@ -123,7 +132,7 @@ mod tests {
         let data = version.get_data();
         let version_bytes = version.to_bytes();
 
-        let zone_version = ZoneversionOptData::new(label_count, type_, version);
+        let zone_version = ZoneversionOptData::new_from(label_count, type_, version);
         let serialized = zone_version.to_bytes();
 
         assert_eq!(serialized[0], label_count);

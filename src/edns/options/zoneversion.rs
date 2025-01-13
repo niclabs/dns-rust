@@ -90,7 +90,10 @@ impl ZoneversionOptData {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
-        if bytes.len() < 3 {
+        if bytes.is_empty() {
+            return Ok(ZoneversionOptData::new());
+        }
+        else if bytes.len() < 3 {
             return Err("Not enough bytes to parse ZoneVersion");
         }
         let label_count = bytes[0];

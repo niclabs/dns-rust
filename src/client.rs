@@ -105,7 +105,7 @@ impl <T: ClientConnection> Client<T> {
     /// assert_eq!(dns_response.get_question().get_rrtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
     /// ```
-    async fn send_query(&self) -> Result<DnsMessage, ClientError> {
+    pub async fn send_query(&self) -> Result<DnsMessage, ClientError> {
 
         let client_query = self.get_dns_query();
         let conn: &T = &self.get_conn();
@@ -187,7 +187,7 @@ impl <T: ClientConnection> Client<T>{
         self.conn = conn;
     }
 
-    fn set_dns_query(&mut self,dns_query: DnsMessage) {
+    pub fn set_dns_query(&mut self,dns_query: DnsMessage) {
         self.dns_query = dns_query;
     }
 

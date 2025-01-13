@@ -89,7 +89,7 @@ impl ZoneversionOptData {
         self.version = Option::from(version);
     }
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+    pub(crate) fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
         if bytes.is_empty() {
             return Ok(ZoneversionOptData::new());
         }

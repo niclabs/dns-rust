@@ -74,6 +74,7 @@ impl OptOption {
 pub mod option_data {
     use crate::edns::options::ede::ede_optdata::EdeOptData;
     use crate::edns::opt_option::option_code::OptionCode;
+    use crate::edns::options::zoneversion::ZoneversionOptData;
     use crate::message::resource_record::ToBytes;
 
     #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,6 +97,7 @@ pub mod option_data {
 
                                      Figure 1 */
         Padding(Vec<u8>),
+        ZoneVersion(ZoneversionOptData),
         Unknown(Vec<u8>),
     }
 
@@ -110,6 +112,9 @@ pub mod option_data {
                 },
                 OptionData::Padding(data) => {
                     data.clone()
+                },
+                OptionData::ZoneVersion(zoneversion) => {
+                    zoneversion.to_bytes()
                 },
                 OptionData::Unknown(data) => {
                     data.to_vec()
@@ -131,6 +136,10 @@ pub mod option_data {
                 },
                 OptionCode::PADDING => {
                     Ok(OptionData::Padding(bytes))
+                },
+                OptionCode::ZONEVERSION => {
+                    let zoneversion = ZoneversionOptData::from_bytes(&bytes).map_err(|_| "Error parsing EDE")?;
+                    Ok(OptionData::ZoneVersion(zoneversion))
                 },
                 _ => Ok(OptionData::Unknown(bytes))
             }

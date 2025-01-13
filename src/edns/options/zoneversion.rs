@@ -5,7 +5,7 @@ use crate::message::resource_record::ToBytes;
 /// This struct is designed to hold a sequence of bytes (`Vec<u8>`),
 /// which can represent any kind of binary or textual data.
 #[derive(Debug, PartialEq, Eq, Clone)]
-struct OpaqueString {
+pub struct OpaqueString {
     /// The underlying byte data for the opaque string.
     data: Vec<u8>,
 }
@@ -20,7 +20,7 @@ impl OpaqueString {
         self.data = data;
     }
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
         if bytes.is_empty() {
             return Err("Not enough bytes to parse an OpaqueString");
         }

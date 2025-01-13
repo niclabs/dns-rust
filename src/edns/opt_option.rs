@@ -247,6 +247,7 @@ mod option_data_tests {
     use crate::edns::opt_option::option_code::OptionCode;
     use crate::edns::opt_option::OptOption;
     use crate::message::resource_record::ToBytes;
+    use crate::edns::options::zoneversion::{OpaqueString, ZoneversionOptData};
     #[test]
     fn test_option_data_nsid() {
         let nsid_string = "testNSID".to_string();
@@ -284,6 +285,21 @@ mod option_data_tests {
         assert_eq!(option_data, rebuilt);
         assert_eq!(serialized.len(), 4);
     }
+    #[test]
+    fn test_option_data_zoneversion() {
+        let label_count:u8 = 2;
+        let type_:u8 = 0;
+        let version:OpaqueString = OpaqueString::from_bytes(&[0x12, 0x34, 0x56]).unwrap();
+        let zoneversion = ZoneversionOptData::new_from(label_count, type_, version);
+        let option_data = OptionData::ZoneVersion(zoneversion);
+        let serialized = option_data.to_bytes();
+        let rebuilt = OptionData::from_bytes_with_opt_type(serialized.clone(), OptionCode::ZONEVERSION)
+            .expect("ZONEVERSION reconstruction failed");
+        assert_eq!(option_data, rebuilt);
+        assert_eq!(serialized.len(), 5);
+
+    }
+
     #[test]
     fn test_option_data_unknown() {
         let unknown_bytes = vec![0xde, 0xad, 0xbe, 0xef];

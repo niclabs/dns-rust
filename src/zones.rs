@@ -147,28 +147,29 @@ impl DnsZone {
     /// assert!(!dns_zone.resource_records.is_empty());
     /// ```
     pub fn from_master_file(file_path: &str) -> io::Result<Self> {
-        // Abrir el archivo
+        // Open the file
         let path = Path::new(file_path);
         let file = File::open(&path)?;
         let reader = io::BufReader::new(file);
 
-        // Variables para la zona
+        // Variables for the zone
         let mut name = String::new();
-        let mut ttl = 3600; // Valor predeterminado
+        let mut ttl = 3600; // Default value
         let mut soa: Option<SoaRdata> = None;
         let mut ns_records = Vec::new();
         let mut resource_records = Vec::new();
 
+        // Read the file line by line
         for line in reader.lines() {
             let line = line?;
             let line = line.trim();
 
-            // Ignorar líneas vacías y comentarios
+            // Ignore empty lines and comments
             if line.is_empty() || line.starts_with(';') {
                 continue;
             }
 
-            // Procesar directivas
+            // Process directives
             if line.starts_with("$ORIGIN") {
                 name = line.split_whitespace().nth(1).unwrap_or("").to_string();
                 continue;
@@ -178,10 +179,10 @@ impl DnsZone {
                 continue;
             }
 
-            // Procesar registros
+            // Process records
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() < 4 {
-                continue; // Línea mal formada
+                continue; // Malformed line
             }
 
             let record_name = parts[0];
@@ -236,11 +237,78 @@ impl DnsZone {
 
                     resource_records.push(resource_record);
                 }
-                _ => {}
-            }
+                "NSEC3PARAM" => {
+                    if parts.len() >= 7 {
+                        let rdata = Rdata::NSEC3PARAM {
+                            algorithm: parts[3].parse().unwrap_or(0),
+                            flags: parts[4].parse().unwrap_or(0),
+                            iterations: parts[5].parse().unwrap_or(0),
+                            salt: parts[6].to_string(),
+                        };
+
+                        let resource_record = ResourceRecord {
+                            name: DomainName::new_from_str(record_name.to_string()),
+                            rtype: Rrtype::NSEC3PARAM,
+                            rclass: Rclass::IN,
+                            ttl,
+                            rdlength: rdata.to_bytes().len() as u16,
+                            rdata,
+                        };
+
+                        resource_records.push(resource_record);
+                    }
+                }
+                "DNSKEY" => {
+                    if parts.len() >= 7 {
+                        let rdata = Rdata::DNSKEY {
+                            flags: parts[3].parse().unwrap_or(0),
+                            protocol: parts[4].parse().unwrap_or(0),
+                            algorithm: parts[5].parse().unwrap_or(0),
+                            public_key: parts[6..].join(" "), // Combina la clave pública.
+                        };
+
+                        let resource_record = ResourceRecord {
+                            name: DomainName::new_from_str(record_name.to_string()),
+                            rtype: Rrtype::DNSKEY,
+                            rclass: Rclass::IN,
+                            ttl,
+                            rdlength: rdata.to_bytes().len() as u16,
+                            rdata,
+                        };
+
+                        resource_records.push(resource_record);
+                    }
+                }
+                "RRSIG" => {
+                    if parts.len() >= 10 {
+                        let rdata = Rdata::RRSIG {
+                            type_covered: parts[3].to_string(),
+                            algorithm: parts[4].parse().unwrap_or(0),
+                            labels: parts[5].parse().unwrap_or(0),
+                            original_ttl: parts[6].parse().unwrap_or(0),
+                            expiration: parts[7].to_string(),
+                            inception: parts[8].to_string(),
+                            key_tag: parts[9].parse().unwrap_or(0),
+                            signer_name: parts[10].to_string(),
+                            signature: parts[11..].join(" "), // Combina la firma.
+                        };
+
+                        let resource_record = ResourceRecord {
+                            name: DomainName::new_from_str(record_name.to_string()),
+                            rtype: Rrtype::RRSIG,
+                            rclass: Rclass::IN,
+                            ttl,
+                            rdlength: rdata.to_bytes().len() as u16,
+                            rdata,
+                        };
+
+                        resource_records.push(resource_record);
+                    }
+                }
+                _ => {} // Here is where ZONEMD and other unknow types should be processed
         }
 
-        // Validar y construir la zona
+        // Validate and construct the zone
         Ok(DnsZone {
             name,
             ttl,
@@ -249,7 +317,6 @@ impl DnsZone {
             resource_records,
         })
     }
-}
 
 /// Getters
 impl DnsZone {

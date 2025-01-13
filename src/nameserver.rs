@@ -7,7 +7,7 @@ use crate::message::domain_name::DomainName;
 /// Structure to represent a Name Server
 #[derive (PartialEq, Debug)]
 pub struct NameServer {
-    zones: HashMap<DomainName, DnsZone>, // Each zone is associated with a domain.
+    zones: HashMap<String, DnsZone>, // Each zone is associated with a domain.
 }
 
 impl NameServer {

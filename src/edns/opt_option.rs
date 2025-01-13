@@ -151,6 +151,7 @@ pub mod option_code {
         // added for rf8914
         EDE,
         N3U,
+        ZONEVERSION,
         UNKNOWN(u16),
     }
 
@@ -163,6 +164,7 @@ pub mod option_code {
                 OptionCode::N3U => 7,
                 OptionCode::PADDING => 12,
                 OptionCode::EDE => 15,
+                OptionCode::ZONEVERSION => 19,
                 OptionCode::UNKNOWN(val) => val,
             }
         }
@@ -177,6 +179,7 @@ pub mod option_code {
                 7 => OptionCode::N3U,
                 12 => OptionCode::PADDING,
                 15 => OptionCode::EDE,
+                19 => OptionCode::ZONEVERSION,
                 _ => OptionCode::UNKNOWN(val),
             }
         }
@@ -191,6 +194,7 @@ pub mod option_code {
                 "N3U" => OptionCode::N3U,
                 "EDE" => OptionCode::EDE,
                 "PADDING" => OptionCode::PADDING,
+                "ZONEVERSION" => OptionCode::ZONEVERSION,
                 _ => OptionCode::UNKNOWN(0),
             }
         }
@@ -211,6 +215,7 @@ pub mod option_code {
                 OptionCode::N3U => "N3U",
                 OptionCode::EDE => "EDE",
                 OptionCode::PADDING => "PADDING",
+                OptionCode::ZONEVERSION => "ZONEVERSION",
                 OptionCode::UNKNOWN(_) => "UNKNOWN",
             })
         }

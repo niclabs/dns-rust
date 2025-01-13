@@ -52,6 +52,13 @@ pub struct ZoneversionOptData {
 }
 
 impl ZoneversionOptData {
+
+    // RFC 9660: A DNS client MAY signal its support and desire for zone version information by including
+    // an empty ZONEVERSION option in the EDNS(0) OPT pseudo-RR of a query to an authoritative name server.
+    pub fn new() -> Self {
+        ZoneversionOptData{ label_count: None, type_: None, version: None }
+    }
+
     pub fn new_from(label_count: u8, type_: u8, version: OpaqueString) -> Self {
         ZoneversionOptData { label_count: Some(label_count), type_: Some(type_), version: Some(version) }
     }

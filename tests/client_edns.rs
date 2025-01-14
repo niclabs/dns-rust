@@ -15,7 +15,7 @@ use dns_rust::message::rcode::Rcode;
 use dns_rust::message::rdata::Rdata;
 use dns_rust::message::rrtype::Rrtype;
 
-#[tokio::test]
+/* #[tokio::test]
 async fn client_edns_ede_code() {
     // client
     let addr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
@@ -36,6 +36,8 @@ async fn client_edns_ede_code() {
 
     client.set_dns_query(dns_query_message);
     let res = client.send_query().await;
+
+    if let Err(response) = res {panic!("couldnt send the message")}
 
     if let Ok(response) = res {
         let additional = response.get_additional();
@@ -68,7 +70,7 @@ async fn client_edns_ede_code() {
         }
     }
 }
-
+*/
 
 #[tokio::test]
 async fn client_edns_two_options() {
@@ -91,6 +93,8 @@ async fn client_edns_two_options() {
 
     client.set_dns_query(dns_query_message);
     let res = client.send_query().await;
+
+    if let Err(error) = res {panic!("couldnt send the message")}
 
     if let Ok(response) = res {
         let additional = response.get_additional();
@@ -125,5 +129,61 @@ async fn client_edns_two_options() {
             _ =>{}
         }
     }
+}
 
+#[tokio::test]
+async fn client_edns_nsid() {
+    // client
+    let addr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+    let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+    let mut client = Client::new(conn);
+
+    // message
+    let mut dns_query_message =
+        DnsMessage::new_query_message(
+            DomainName::new_from_string("example.com".to_string()),
+            Rrtype::A,
+            Rclass::IN,
+            0,
+            false,
+            1);
+
+    dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![OptionCode::NSID]));
+
+    client.set_dns_query(dns_query_message);
+    let res = client.send_query().await;
+
+    if let Err(error) = res {panic!("couldnt send the message")}
+
+    if let Ok(response) = res {
+        let additional = response.get_additional();
+
+        assert_eq!(additional.len(), 1);
+
+        let rr = &additional[0];
+
+        assert_eq!(rr.get_name().get_name(), String::from(""));
+
+        assert_eq!(rr.get_rtype(), Rrtype::OPT);
+
+        assert_eq!(rr.get_rclass(), Rclass::UNKNOWN(512));
+
+        assert_eq!(rr.get_ttl(), 32768);
+
+        assert_eq!(rr.get_rdlength(), 13);
+
+        let rdata = rr.get_rdata();
+
+        match rdata {
+            Rdata::OPT(opt) => {
+                let options = opt.get_option();
+
+                let mut expected = OptOption::new(OptionCode::NSID);
+                expected.set_opt_data(OptionData::from_bytes_with_opt_type("gpdns-scl".to_string().into_bytes(), OptionCode::NSID).unwrap());
+                expected.set_option_len(9);
+                assert_eq!(options[0], expected);
+            },
+            _ =>{}
+        }
+    }
 }

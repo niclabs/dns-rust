@@ -134,28 +134,31 @@ pub mod ede_optdata {
     */
     #[derive(Debug, PartialEq, Eq, Clone)]
     pub struct EdeOptData {
-        info_code: EdeCode,
+        info_code: Option<EdeCode>,
         extra_text: String,
     }
 
     impl EdeOptData {
-        pub fn new(err_code: EdeCode, err_message: String) -> Self {
-            EdeOptData { info_code: err_code, extra_text: err_message }
+        pub fn new() -> Self {
+            EdeOptData { info_code: None, extra_text: "".to_string() }
         }
         pub fn get_info_code(&self) -> EdeCode {
-            self.info_code.clone()
+            self.info_code.unwrap().clone()
         }
         pub fn get_extra_text(&self) -> String {
             self.extra_text.clone()
+
         }
         pub fn set_info_code(&mut self, err_code: EdeCode) {
-            self.info_code = err_code;
+            self.info_code = Option::from(err_code);
         }
         pub fn set_extra_text(&mut self, err_message: String) {
             self.extra_text = err_message;
         }
 
         pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+            if bytes.len() == 0 {return Ok(EdeOptData {info_code: None, extra_text: "".to_string() })}
+
             if bytes.len() < 2 {
                 return Err("Not enough bytes to parse EdeCode");
             }
@@ -165,7 +168,7 @@ pub mod ede_optdata {
             let err_message = String::from_utf8(bytes[2..].to_vec())
                 .map_err(|_| "Error parsing UTF-8 for err_message")?;
 
-            Ok(EdeOptData::new(err_code, err_message))
+            Ok(EdeOptData {info_code: Option::from(err_code), extra_text: err_message })
         }
     }
 
@@ -173,7 +176,11 @@ pub mod ede_optdata {
         fn to_bytes(&self) -> Vec<u8> {
             let mut res = vec![];
 
-            let mut err_code_bytes = self.info_code.to_bytes();
+            if self.info_code.is_none() {
+                return res;
+            }
+
+            let mut err_code_bytes = self.info_code.unwrap().to_bytes();
             res.append(&mut err_code_bytes);
 
             let mut msg_bytes = self.extra_text.as_bytes().to_vec();

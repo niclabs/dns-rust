@@ -25,7 +25,7 @@ impl OptOption {
                 OptOption {
                     option_code,
                     option_len: 0,
-                    opt_data: OptionData::EDE(EdeOptData::new(EdeCode::Blocked, String::new()))
+                    opt_data: OptionData::EDE(EdeOptData::new())
                 }
 
             },

@@ -262,7 +262,10 @@ mod option_data_tests {
     fn test_option_data_ede() {
         let code = EdeCode::StaleAns;
         let msg = "Stale Answer".to_string();
-        let ede_data = EdeOptData::new(code, msg.clone());
+        let mut ede_data = EdeOptData::new();
+        ede_data.set_info_code(code);
+        ede_data.set_extra_text(msg.clone());
+
         let option_data = OptionData::EDE(ede_data.clone());
         let serialized = option_data.to_bytes();
         let rebuilt = OptionData::from_bytes_with_opt_type(serialized.clone(), OptionCode::EDE)

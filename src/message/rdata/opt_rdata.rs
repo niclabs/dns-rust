@@ -206,7 +206,9 @@ mod opt_rdata_test{
         // Create EDE data
         let code = EdeCode::StaleAns;
         let msg = "Stale Answer".to_string();
-        let ede_data = EdeOptData::new(code, msg.clone());
+        let mut ede_data = EdeOptData::new();
+        ede_data.set_info_code(code);
+        ede_data.set_extra_text(msg.clone());
 
         // Wrap it in OptionData::EDE
         let option_data = OptionData::EDE(ede_data);
@@ -249,7 +251,9 @@ mod opt_rdata_test{
 
         let code = EdeCode::DnssecBogus;
         let msg = "DNSSEC Bogus".to_string();
-        let ede_data = EdeOptData::new(code, msg.clone());
+        let mut ede_data = EdeOptData::new();
+        ede_data.set_info_code(code);
+        ede_data.set_extra_text(msg.clone());
 
         let option_data = OptionData::EDE(ede_data);
         let option_data_bytes = option_data.to_bytes();
@@ -287,7 +291,9 @@ mod opt_rdata_test{
         // Start with an unknown code
         let code = EdeCode::Unknown(999);
         let msg = "Some unknown EDE error".to_string();
-        let mut ede_data = EdeOptData::new(code, msg);
+        let mut ede_data = EdeOptData::new();
+        ede_data.set_info_code(code);
+        ede_data.set_extra_text(msg.clone());
 
         ede_data.set_info_code(EdeCode::Unknown(1000));
         ede_data.set_extra_text("Modified unknown EDE".to_string());

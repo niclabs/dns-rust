@@ -201,7 +201,9 @@ mod edetests {
         let code = EdeCode::OtherErr;
         let msg = "Mensaje de prueba para OtherErr".to_string();
 
-        let ede = EdeOptData::new(code, msg.clone());
+        let mut ede = EdeOptData::new();
+        ede.set_info_code(code);
+        ede.set_extra_text(msg.clone());
         let serialized = ede.to_bytes();
 
         let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
@@ -214,7 +216,9 @@ mod edetests {
         let code = EdeCode::UnsupDnskeyAlg;
         let msg = "Clave DNS no soportada".to_string();
 
-        let ede = EdeOptData::new(code, msg.clone());
+        let mut ede = EdeOptData::new();
+        ede.set_info_code(code);
+        ede.set_extra_text(msg.clone());
         let serialized = ede.to_bytes();
 
         let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
@@ -227,7 +231,9 @@ mod edetests {
         let code = EdeCode::StaleAns;
         let msg = "Respuesta obsoleta".to_string();
 
-        let ede = EdeOptData::new(code, msg.clone());
+        let mut ede = EdeOptData::new();
+        ede.set_info_code(code);
+        ede.set_extra_text(msg.clone());
         let serialized = ede.to_bytes();
 
         let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
@@ -240,7 +246,9 @@ mod edetests {
         let code = EdeCode::ForgedAns;
         let msg = "Respuesta falsificada".to_string();
 
-        let ede = EdeOptData::new(code, msg.clone());
+        let mut ede = EdeOptData::new();
+        ede.set_info_code(code);
+        ede.set_extra_text(msg.clone());
         let serialized = ede.to_bytes();
 
         let deserialized = EdeOptData::from_bytes(&serialized).unwrap();
@@ -254,7 +262,9 @@ mod edetests {
         let code = EdeCode::Unknown(999);
         let msg = "Error genérico".to_string();
 
-        let mut ede = EdeOptData::new(code, msg.clone());
+        let mut ede = EdeOptData::new();
+        ede.set_info_code(code);
+        ede.set_extra_text(msg.clone());
         ede.set_info_code(EdeCode::Unknown(1000));
         ede.set_extra_text("Mensaje modificado".to_string());
 
@@ -271,7 +281,8 @@ mod edetests {
 
     #[test]
     fn test_set_get_info_code(){
-        let mut ede = EdeOptData::new(EdeCode::Unknown(1000), "".to_string());
+        let mut ede = EdeOptData::new();
+        ede.set_info_code(EdeCode::Unknown(1000));
         assert_eq!(ede.get_info_code(), EdeCode::Unknown(1000));
 
         ede.set_info_code(EdeCode::OtherErr);
@@ -280,7 +291,7 @@ mod edetests {
 
     #[test]
     fn test_set_get_extra_text(){
-        let mut ede = EdeOptData::new(EdeCode::Unknown(1000), "".to_string());
+        let mut ede = EdeOptData::new();
         assert_eq!(ede.get_extra_text(), "".to_string());
 
         ede.set_extra_text("extra text".to_string());

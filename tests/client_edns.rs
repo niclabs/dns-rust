@@ -257,3 +257,62 @@ async fn client_edns_padding() {
     }
 }
 
+
+// This test serves as a template for verifying EDNS support with the ZONEVERSION option.
+// The current values are placeholders and should be adjusted based on the actual DNS server configuration
+// and test expectations.
+#[ignore]
+#[tokio::test]
+async fn client_edns_zoneversion() {
+    // check all test parameters
+
+    // client
+    let addr = IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8));
+    let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+    let mut client = Client::new(conn);
+    // message
+    let mut dns_query_message =
+        DnsMessage::new_query_message(
+            DomainName::new_from_string("example.com".to_string()),
+            Rrtype::A,
+            Rclass::IN,
+            0,
+            false,
+            1);
+    dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true, Some(vec![OptionCode::ZONEVERSION]));
+    client.set_dns_query(dns_query_message);
+    let res = client.send_query().await;
+    if let Err(_) = res { panic!("couldnt send the message") }
+
+    if let Ok(response) = res {
+        let additional = response.get_additional();
+
+        assert_eq!(additional.len(), 1);
+
+        let rr = &additional[0];
+
+        assert_eq!(rr.get_name().get_name(), String::from(""));
+
+        assert_eq!(rr.get_rtype(), Rrtype::OPT);
+
+        assert_eq!(rr.get_rclass(), Rclass::UNKNOWN(512));
+
+        assert_eq!(rr.get_ttl(), 32768);
+
+        assert_eq!(rr.get_rdlength(), 428);
+
+        let rdata = rr.get_rdata();
+
+        match rdata {
+            Rdata::OPT(opt) => {
+                let options = opt.get_option();
+
+                let mut expected = OptOption::new(OptionCode::ZONEVERSION);
+                expected.set_opt_data(OptionData::from_bytes_with_opt_type(vec![0x00; 10], OptionCode::ZONEVERSION).unwrap());
+                expected.set_option_len(10);
+                assert_eq!(options[0], expected);
+            },
+            _ =>{}
+        }
+    }
+}

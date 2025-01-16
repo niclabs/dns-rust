@@ -11,15 +11,20 @@ pub struct OpaqueString {
 }
 impl OpaqueString {
 
-    // getter
+    /// Returns a clone of the opaque string's data.
     pub fn get_data(&self) -> Vec<u8> {
         self.data.clone()
     }
-    // setter
+    /// Sets new data for the opaque string.
     pub fn set_data(&mut self, data: Vec<u8>) {
         self.data = data;
     }
 
+    /// Constructs a new `OpaqueString` from a slice of bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the provided byte slice is empty.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
         if bytes.is_empty() {
             return Err("Not enough bytes to parse an OpaqueString");
@@ -29,6 +34,7 @@ impl OpaqueString {
 }
 
 impl ToBytes for OpaqueString {
+    /// Converts the `OpaqueString` into a vector of bytes.
     fn to_bytes(&self) -> Vec<u8> {
         self.data.clone()
     }
@@ -44,6 +50,11 @@ impl ToBytes for OpaqueString {
    /                                                               /
    +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
  */
+
+/// Represents the ZONEVERSION EDNS(0) option data as defined in RFC 9660.
+///
+/// The ZONEVERSION option is used by DNS clients to request zone version
+/// information from authoritative name servers.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ZoneversionOptData {
     label_count: Option<u8>,
@@ -52,43 +63,60 @@ pub struct ZoneversionOptData {
 }
 
 impl ZoneversionOptData {
-
-    // RFC 9660: A DNS client MAY signal its support and desire for zone version information by including
-    // an empty ZONEVERSION option in the EDNS(0) OPT pseudo-RR of a query to an authoritative name server.
+    /// Constructs a new, empty `ZoneversionOptData`.
+    ///
+    /// # Notes
+    /// RFC 9660: A DNS client MAY signal its support and desire for zone version information by including
+    /// an empty ZONEVERSION option in the EDNS(0) OPT pseudo-RR of a query to an authoritative name server.
     pub fn new() -> Self {
         ZoneversionOptData{ label_count: None, type_: None, version: None }
     }
 
+    /// Constructs a new `ZoneversionOptData` with the specified fields.
     pub fn new_from(label_count: u8, type_: u8, version: OpaqueString) -> Self {
         ZoneversionOptData { label_count: Some(label_count), type_: Some(type_), version: Some(version) }
     }
 
     // getters
+
+    /// Returns the label count, if set.
     pub fn get_label_count(&self) -> Option<u8> {
         self.label_count.clone()
     }
 
+    /// Returns the type, if set.
     pub fn get_type_(&self) -> Option<u8> {
         self.type_.clone()
     }
 
+    /// Returns the version, if set.
     pub fn get_version(&self) -> Option<OpaqueString> {
         self.version.clone()
     }
 
     // setters
+
+    /// Sets the label count.
     fn set_label_count(&mut self, label_count: u8) {
         self.label_count = Option::from(label_count);
     }
 
+    /// Sets the type.
     fn set_type_(&mut self, type_: u8) {
         self.type_ = Option::from(type_);
     }
 
+    /// Sets the version.
     fn set_version(&mut self, version: OpaqueString) {
         self.version = Option::from(version);
     }
 
+    /// Parses a `ZoneversionOptData` from a slice of bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the byte slice is insufficient to parse
+    /// the required fields.
     pub(crate) fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
         if bytes.is_empty() {
             return Ok(ZoneversionOptData::new());
@@ -110,6 +138,7 @@ impl ZoneversionOptData {
 }
 
 impl ToBytes for ZoneversionOptData {
+    /// Converts the `ZoneversionOptData` into a vector of bytes.
     fn to_bytes(&self) -> Vec<u8> {
         let mut res = vec![];
 

@@ -81,19 +81,21 @@ mod test_name_server {
             zones: HashMap::new(),
         };
 
+        // Create the SOA RData for the zone
+        let mut soa_data = SoaRdata::new();
+        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
+        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_serial(20240101);
+        soa_data.set_refresh(3600);
+        soa_data.set_retry(1800);
+        soa_data.set_expire(1209600);
+        soa_data.set_minimum(3600);
+
         // Create a new zone to add
         let zone = DnsZone::new(
             "example.com.",
             3600,
-            SoaRdata {
-                mname: DomainName::new_from_str("ns1.example.com.".to_string()),
-                rname: DomainName::new_from_str("admin.example.com.".to_string()),
-                serial: 20240101,
-                refresh: 3600,
-                retry: 1800,
-                expire: 1209600,
-                minimum: 3600,
-            },
+            soa_data,
         );
 
         // Add the zone to the server
@@ -109,19 +111,21 @@ mod test_name_server {
             zones: HashMap::new(),
         };
 
+        // Create the SOA RData for the zone
+        let mut soa_data = SoaRdata::new();
+        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
+        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_serial(20240101);
+        soa_data.set_refresh(3600);
+        soa_data.set_retry(1800);
+        soa_data.set_expire(1209600);
+        soa_data.set_minimum(3600);
+
         // Create and add a zone
         let zone = DnsZone::new(
             "example.com.",
             3600,
-            SoaRdata {
-                mname: DomainName::new_from_str("ns1.example.com.".to_string()),
-                rname: DomainName::new_from_str("admin.example.com.".to_string()),
-                serial: 20240101,
-                refresh: 3600,
-                retry: 1800,
-                expire: 1209600,
-                minimum: 3600,
-            },
+            soa_data,
         );
 
         name_server.add_zone(zone);
@@ -140,33 +144,38 @@ mod test_name_server {
             zones: HashMap::new(),
         };
 
+
+        // Create the SOA RData for the zone
+        let mut soa_data1 = SoaRdata::new();
+        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
+        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_serial(20240101);
+        soa_data.set_refresh(3600);
+        soa_data.set_retry(1800);
+        soa_data.set_expire(1209600);
+        soa_data.set_minimum(3600);
+
         // Create and add two zones
         let zone1 = DnsZone::new(
             "example.com.",
             3600,
-            SoaRdata {
-                mname: DomainName::new_from_str("ns1.example.com.".to_string()),
-                rname: DomainName::new_from_str("admin.example.com.".to_string()),
-                serial: 20240101,
-                refresh: 3600,
-                retry: 1800,
-                expire: 1209600,
-                minimum: 3600,
-            },
+            soa_data1,
         );
+
+        let mut soa_data2 = SoaRdata::new();
+        soa_data.set_name_server(DomainName::new_from_str("ns1.example.org.".to_string()));
+        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.org.".to_string()));
+        soa_data.set_serial(20240102);
+        soa_data.set_refresh(3600);
+        soa_data.set_retry(1800);
+        soa_data.set_expire(1209600);
+        soa_data.set_minimum(3600);
+
 
         let zone2 = DnsZone::new(
             "example.org.",
             3600,
-            SoaRdata {
-                mname: DomainName::new_from_str("ns1.example.org.".to_string()),
-                rname: DomainName::new_from_str("admin.example.org.".to_string()),
-                serial: 20240102,
-                refresh: 3600,
-                retry: 1800,
-                expire: 1209600,
-                minimum: 3600,
-            },
+            soa_data2,
         );
 
         name_server.add_zone(zone1);
@@ -190,19 +199,22 @@ mod test_name_server {
         // Validate that initially there are no zones
         assert_eq!(name_server.get_zone_count(), 0);
 
+
+        // Create the SOA RData for the zone
+        let mut soa_data = SoaRdata::new();
+        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
+        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_serial(20240101);
+        soa_data.set_refresh(3600);
+        soa_data.set_retry(1800);
+        soa_data.set_expire(1209600);
+        soa_data.set_minimum(3600);
+
         // Add a zone and validate the count
         let zone = DnsZone::new(
             "example.com.",
             3600,
-            SoaRdata {
-                mname: DomainName::new_from_str("ns1.example.com.".to_string()),
-                rname: DomainName::new_from_str("admin.example.com.".to_string()),
-                serial: 20240101,
-                refresh: 3600,
-                retry: 1800,
-                expire: 1209600,
-                minimum: 3600,
-            },
+            soa_data,
         );
 
         name_server.add_zone(zone);

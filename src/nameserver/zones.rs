@@ -146,7 +146,7 @@ impl DnsZone {
     /// assert!(!dns_zone.ns_records.is_empty());
     /// assert!(!dns_zone.resource_records.is_empty());
     /// ```
-    pub fn from_master_file(file_path: &str) -> io::Result<Self> {
+    pub fn from_master_file(file_path: &str) -> io::Result<Self> { // Result<Self, io::Error> is the same as io::Result<Self>
         // Open the file
         let path = Path::new(file_path);
         let file = File::open(&path)?;
@@ -190,15 +190,16 @@ impl DnsZone {
             match record_type {
                 "SOA" => {
                     if parts.len() >= 7 {
-                        soa = Some(SoaRdata {
-                            mname: DomainName::new_from_str(parts[3].to_string()),
-                            rname: DomainName::new_from_str(parts[4].to_string()),
-                            serial: parts[5].parse().unwrap_or(0),
-                            refresh: parts[6].parse().unwrap_or(3600),
-                            retry: parts.get(7).unwrap_or(&"1800").parse().unwrap_or(1800),
-                            expire: parts.get(8).unwrap_or(&"1209600").parse().unwrap_or(1209600),
-                            minimum: parts.get(9).unwrap_or(&"3600").parse().unwrap_or(3600),
-                        });
+                        // Crear un SoaRdata vacío y completarlo con setters
+                        let mut soa_data = SoaRdata::new();
+                        soa_data.set_mname(DomainName::new_from_str(parts[3].to_string()));
+                        soa_data.set_rname(DomainName::new_from_str(parts[4].to_string()));
+                        soa_data.set_serial(parts[5].parse().unwrap_or(0));
+                        soa_data.set_refresh(parts[6].parse().unwrap_or(3600));
+                        soa_data.set_retry(parts.get(7).unwrap_or(&"1800").parse().unwrap_or(1800));
+                        soa_data.set_expire(parts.get(8).unwrap_or(&"1209600").parse().unwrap_or(1209600));
+                        soa_data.set_minimum(parts.get(9).unwrap_or(&"3600").parse().unwrap_or(3600));
+                        soa = Some(soa_data);
                     }
                 }
                 "NS" => {
@@ -218,22 +219,10 @@ impl DnsZone {
                         _ => continue,
                     };
 
-                    let resource_record = ResourceRecord {
-                        name: DomainName::new_from_str(record_name.to_string()),
-                        rtype: match record_type {
-                            "A" => Rrtype::A,
-                            "AAAA" => Rrtype::AAAA,
-                            "CNAME" => Rrtype::CNAME,
-                            "MX" => Rrtype::MX,
-                            "TXT" => Rrtype::TXT,
-                            "PTR" => Rrtype::PTR,
-                            _ => Rrtype::UNKNOWN(0),
-                        },
-                        rclass: Rclass::IN,
-                        ttl,
-                        rdlength: rdata.to_bytes().len() as u16,
-                        rdata,
-                    };
+                    let mut resource_record = ResourceRecord::new(rdata);
+
+                    resource_record.set_name(DomainName::new_from_str(record_name.to_string()));
+                    resource_record.set_ttl(ttl);
 
                     resource_records.push(resource_record);
                 }
@@ -305,7 +294,12 @@ impl DnsZone {
                         resource_records.push(resource_record);
                     }
                 }
-                _ => {} // Here is where ZONEMD and other unknow types should be processed
+                _ => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("Registro de recurso desconocido: {}", record_type),
+                        ));
+                } // Here is where ZONEMD and other unknow types should be processed
         }
 
         // Validate and construct the zone
@@ -315,8 +309,10 @@ impl DnsZone {
             soa: soa.ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "SOA record missing"))?,
             ns_records,
             resource_records,
-        })
-    }
+            })
+        }
+    }   
+}
 
 /// Getters
 impl DnsZone {

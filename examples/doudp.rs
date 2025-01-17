@@ -14,7 +14,7 @@ fn main() -> Result<(), ClientError> {
     let rt = Runtime::new().unwrap();
 
     // Dirección IP del servidor DNS
-    let server_ip = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
+    let server_ip = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
     // Tiempo de espera para la conexión
     let timeout = Duration::from_secs(5);
 

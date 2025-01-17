@@ -1,13 +1,13 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use crate::client::client_connection::ClientConnection;
-use crate::client::udp_connection::ClientUDPConnection;
-use crate::domain_name::DomainName;
-use crate::message::rclass::Rclass;
-use crate::message::rrtype::Rrtype;
-use crate::message::DnsMessage;
-use crate::client::client_error::ClientError;
+use dns_rust::client::client_connection::ClientConnection;
+use dns_rust::client::udp_connection::ClientUDPConnection;
+use dns_rust::domain_name::DomainName;
+use dns_rust::message::rclass::Rclass;
+use dns_rust::message::rrtype::Rrtype;
+use dns_rust::message::DnsMessage;
+use dns_rust::client::client_error::ClientError;
 
 fn main() -> Result<(), ClientError> {
     // Crear una instancia de Runtime para ejecutar tareas asincrónicas

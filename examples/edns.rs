@@ -8,7 +8,6 @@ use dns_rust::domain_name::DomainName;
 use dns_rust::message::rclass::Rclass;
 use dns_rust::message::rrtype::Rrtype;
 use dns_rust::message::DnsMessage;
-use dns_rust::client::client_error::ClientError;
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::message::rcode::Rcode;
 

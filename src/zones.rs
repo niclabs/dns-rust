@@ -352,10 +352,10 @@ mod dns_zone_tests {
 
         assert_eq!(dns_zone.name, "example.com.".to_string());
         assert_eq!(dns_zone.ttl, 3600);
-        assert_eq!(dns_zone.soa.mname.get_name(), "ns1.example.com.".to_string());
-        assert_eq!(dns_zone.soa.serial, 20240101);
-        assert!(dns_zone.ns_records.is_empty());
-        assert!(dns_zone.resource_records.is_empty());
+        assert_eq!(dns_zone.soa.get_mname().get_name(), "ns1.example.com.".to_string());
+        assert_eq!(dns_zone.soa.get_serial(), 20240101);
+        assert!(dns_zone.get_ns_records().is_empty());
+        assert!(dns_zone.get_resource_records().is_empty());
     }
 
     #[test]
@@ -378,8 +378,8 @@ mod dns_zone_tests {
 
         dns_zone.add_ns_record("ns2.example.com.");
 
-        assert_eq!(dns_zone.ns_records.len(), 1);
-        assert_eq!(dns_zone.ns_records[0], "ns2.example.com.".to_string());
+        assert_eq!(dns_zone.get_ns_records().len(), 1);
+        assert_eq!(dns_zone.get_ns_records()[0], "ns2.example.com.".to_string());
     }
 
     #[test]
@@ -404,8 +404,8 @@ mod dns_zone_tests {
 
         dns_zone.add_resource_record(resource_record);
 
-        assert_eq!(dns_zone.resource_records.len(), 1);
-        assert_eq!(dns_zone.resource_records[0].rdata.unwrap().get_text(),String::from("dcc"));
+        assert_eq!(dns_zone.get_resource_records().len(), 1);
+        assert_eq!(dns_zone.get_resource_records()[0].rdata.unwrap().get_text(),String::from("dcc"));
     }
 
     #[test]
@@ -422,23 +422,23 @@ mod dns_zone_tests {
         // Validate main properties of the zone
         assert_eq!(dns_zone.name, "EDU.".to_string());
         assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file
-        assert_eq!(dns_zone.soa.mname.get_name(), "SRI-NIC.ARPA.".to_string());
-        assert_eq!(dns_zone.soa.rname.get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
-        assert_eq!(dns_zone.soa.serial, 870729);
-        assert_eq!(dns_zone.soa.refresh, 1800);
-        assert_eq!(dns_zone.soa.retry, 300);
-        assert_eq!(dns_zone.soa.expire, 604800);
-        assert_eq!(dns_zone.soa.minimum, 86400);
+        assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.get_serial(), 870729);
+        assert_eq!(dns_zone.soa.get_refresh(), 1800);
+        assert_eq!(dns_zone.soa.get_retry(), 300);
+        assert_eq!(dns_zone.soa.get_expire(), 604800);
+        assert_eq!(dns_zone.soa.get_minimum(), 86400);
 
         // Validate name server records
-        assert_eq!(dns_zone.ns_records.len(), 2);
-        assert!(dns_zone.ns_records.contains(&"SRI-NIC.ARPA.".to_string()));
-        assert!(dns_zone.ns_records.contains(&"C.ISI.EDU.".to_string()));
+        assert_eq!(dns_zone.get_ns_records().len(), 2);
+        assert!(dns_zone.get_ns_records().contains(&"SRI-NIC.ARPA.".to_string()));
+        assert!(dns_zone.get_ns_records().contains(&"C.ISI.EDU.".to_string()));
 
         // Validate resource records
-        assert_eq!(dns_zone.resource_records.len(), 14); // Count A, NS, etc. records
-        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "ICS.UCI" && matches!(rr.rdata, Rdata::A(_))));
-        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "YALE.EDU." && matches!(rr.rdata, Rdata::NS(_))));
+        assert_eq!(dns_zone.get_resource_records().len(), 14); // Count A, NS, etc. records
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "ICS.UCI" && matches!(rr.rdata, Rdata::A(_))));
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "YALE.EDU." && matches!(rr.rdata, Rdata::NS(_))));
     }
 
     #[test]
@@ -455,23 +455,23 @@ mod dns_zone_tests {
         // Validate main properties of the zone
         assert_eq!(dns_zone.name, ".".to_string());
         assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file
-        assert_eq!(dns_zone.soa.mname.get_name(), "SRI-NIC.ARPA.".to_string());
-        assert_eq!(dns_zone.soa.rname.get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
-        assert_eq!(dns_zone.soa.serial, 870611);
-        assert_eq!(dns_zone.soa.refresh, 1800);
-        assert_eq!(dns_zone.soa.retry, 300);
-        assert_eq!(dns_zone.soa.expire, 604800);
-        assert_eq!(dns_zone.soa.minimum, 86400);
+        assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.get_serial(), 870611);
+        assert_eq!(dns_zone.soa.get_refresh(), 1800);
+        assert_eq!(dns_zone.soa.get_retry(), 300);
+        assert_eq!(dns_zone.soa.get_expire(), 604800);
+        assert_eq!(dns_zone.soa.get_minimum(), 86400);
 
         // Validate name server records
         assert_eq!(dns_zone.ns_records.len(), 3);
-        assert!(dns_zone.ns_records.contains(&"A.ISI.EDU.".to_string()));
-        assert!(dns_zone.ns_records.contains(&"C.ISI.EDU.".to_string()));
-        assert!(dns_zone.ns_records.contains(&"SRI-NIC.ARPA.".to_string()));
+        assert!(dns_zone.get_ns_records().contains(&"A.ISI.EDU.".to_string()));
+        assert!(dns_zone.get_ns_records().contains(&"C.ISI.EDU.".to_string()));
+        assert!(dns_zone.get_ns_records().contains(&"SRI-NIC.ARPA.".to_string()));
 
         // Validate resource records
-        assert_eq!(dns_zone.resource_records.len(), 14); // Count A, MX, HINFO, etc. records
-        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "MIL." && matches!(rr.rdata, Rdata::NS(_))));
-        assert!(dns_zone.resource_records.iter().any(|rr| rr.name.get_name() == "A.ISI.EDU" && matches!(rr.rdata, Rdata::A(_))));
+        assert_eq!(dns_zone.get_resource_records().len(), 14); // Count A, MX, HINFO, etc. records
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "MIL." && matches!(rr.rdata, Rdata::NS(_))));
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "A.ISI.EDU" && matches!(rr.rdata, Rdata::A(_))));
     }
 }

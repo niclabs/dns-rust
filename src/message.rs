@@ -259,7 +259,7 @@ impl DnsMessage {
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
     /// ´´´
-    fn create_opt_rr(max_payload: Option<u16> ,e_rcode :Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<OptionCode>>) -> ResourceRecord {
+    fn create_opt_rr(max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<OptionCode>>) -> ResourceRecord {
         let mut opt_rdata = OptRdata::new();
         let mut options = Vec::new();
 
@@ -275,8 +275,8 @@ impl DnsMessage {
         let mut rr = ResourceRecord::new(rdata);
 
         let e_rcode = u8::from(e_rcode);
-        let do_val: u16 = if do_bit {0x8000} else {0x0};
-        let extended_flags: u32 = (e_rcode as u32) << 24 | (version as u32) << 16| (do_val as u32);
+        let do_val: u16 = if do_bit { 0x8000 } else { 0x0 };
+        let extended_flags: u32 = (e_rcode as u32) << 24 | (version as u32) << 16 | (do_val as u32);
         // MUST be 0 (root domain)
         rr.set_name(DomainName::new_from_string(".".to_string()));
         // OPT (41)
@@ -297,7 +297,7 @@ impl DnsMessage {
     /// let dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
     /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
     /// ´´´
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit:bool, option_codes: Option<Vec<OptionCode>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, e_rcode: Rcode, version: u8, do_bit: bool, option_codes: Option<Vec<OptionCode>>) {
         let rr = DnsMessage::create_opt_rr(max_payload, e_rcode, version, do_bit, option_codes);
 
         self.add_additionals(vec![rr]);
@@ -736,15 +736,36 @@ impl DnsMessage {
     /// msg.set_header(header);
     /// let result = msg.check_op_code();
     /// ```
-    pub fn check_op_code(&self) -> Result<(), &'static str>{
+    pub fn check_op_code(&self) -> Result<(), &'static str> {
         let header = self.get_header();
         let op_code = header.get_op_code();
         match op_code {
-            1 => Err("IQuery not Implemented") ,
+            1 => Err("IQuery not Implemented"),
             _ => Ok(())
         }
     }
 
+    ///Checks the RR OPT of a message
+    ///
+    /// # Example
+    /// ```
+    /// let mut dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
+    ///
+    /// result = dns_query_message.has_rr_opt();
+    /// ```
+    fn has_rr_opt(&self) -> bool {
+        let addi = self.get_additional();
+        for opt in addi.iter() {
+            match opt.get_rdata() {
+                Rdata::OPT(opt) => {
+                    return true
+                },
+                _ => {}
+            }
+        }
+        false
+    }
 }
 
 impl fmt::Display for DnsMessage {

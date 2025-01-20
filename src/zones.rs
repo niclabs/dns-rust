@@ -159,6 +159,9 @@ impl DnsZone {
         let mut ns_records = Vec::new();
         let mut resource_records = Vec::new();
 
+        // Variable to check multiples zones
+        let mut origin_count = 0;
+
         // Read the file line by line
         for line in reader.lines() {
             let line = line?;
@@ -171,6 +174,14 @@ impl DnsZone {
 
             // Process directives
             if line.starts_with("$ORIGIN") {
+                origin_count += 1;
+                if origin_count > 1 {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "Multiple $ORIGIN directives found",
+                    ));
+                }
+
                 name = line.split_whitespace().nth(1).unwrap_or("").to_string();
                 continue;
             }
@@ -287,7 +298,7 @@ impl DnsZone {
                         io::ErrorKind::InvalidData,
                         format!("Registro de recurso desconocido: {}", record_type),
                         ));
-                } // Here is where ZONEMD and other unknow types should be processed
+                } // Here is where ZONEMD and other unknow types should be entered.
         }
 
         // Validate and construct the zone
@@ -473,5 +484,14 @@ mod dns_zone_tests {
         assert_eq!(dns_zone.get_resource_records().len(), 14); // Count A, MX, HINFO, etc. records
         assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "MIL." && matches!(rr.rdata, Rdata::NS(_))));
         assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "A.ISI.EDU" && matches!(rr.rdata, Rdata::A(_))));
+    }
+
+    #[test]
+    fn test_err_two_zone() {
+        let masterfile_path = "two_zones-example.txt";
+
+        let result = DnsZone::from_master_file(masterfile_path);
+
+        assert!(result.is_err());
     }
 }

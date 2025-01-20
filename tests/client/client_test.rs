@@ -31,13 +31,21 @@ mod client_test {
             assert_eq!(resp.get_question(), client.get_dns_query().get_question());
 
             // answer
-            let RR = &resp.get_answer()[0];
-            assert_eq!(RR.get_name(), DomainName::new_from_string("example.com".to_string()));
-            assert_eq!(RR.get_rtype(), "A".into());
-            assert_eq!(RR.get_rclass(), "IN".into());
-            assert_eq!(RR.get_ttl(), 3600);
-            assert_eq!(RR.get_rdlength(), 4);
-            assert_eq!(RR.get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(93, 184, 215, 14)))));
+            let answer = &resp.get_answer();
+            for ans in answer {
+                assert_eq!(ans.get_name(), DomainName::new_from_string("example.com".to_string()));
+                assert_eq!(ans.get_rtype(), "A".into());
+                assert_eq!(ans.get_rclass(), "IN".into());
+                assert_eq!(ans.get_ttl(), 300);
+                assert_eq!(ans.get_rdlength(), 4);
+            }
+
+            assert_eq!((&answer[0]).get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 80)))));
+            assert_eq!((&answer[1]).get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 84)))));
+            assert_eq!((&answer[2]).get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 136)))));
+            assert_eq!((&answer[3]).get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 138)))));
+            assert_eq!((&answer[4]).get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 175)))));
+            assert_eq!((&answer[5]).get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 198)))));
 
             // authority
             assert!(resp.get_authority().is_empty());

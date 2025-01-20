@@ -34,14 +34,59 @@ impl NameServer {
 
         Ok(NameServer { zones })
     }
+
+    /// Searches for a zone by its domain name
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let name_server = NameServer::new("masterfile.txt").unwrap();
+    /// let domain = DomainName::new_from_str("example.com.".to_string());
+    /// let zone = name_server.search_zone(&domain);
+    /// 
+    /// assert!(zone.is_some());
+    /// ```
+    pub fn search_zone(&self, domain: &DomainName) -> Option<&DnsZone> {
+        self.zones.get(&domain.to_string())
+    } 
+
     /// Adds a new zone to the NameServer
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut name_server = NameServer::new("masterfile.txt").unwrap();
+    /// let domain = DomainName::new_from_str("example.com.".to_string());
+    /// let zone = DnsZone::new("example.com.", 3600, SoaRdata::new());
+    /// name_server.add_zone(zone);
+    /// 
+    /// assert!(name_server.zones.contains_key(&domain));
+    /// ```
     pub fn add_zone(&mut self, zone: Zone) {
         self.zones.insert(zone.domain.clone(), zone);
     }
     /// Removes a zone by its domain name
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let mut name_server = NameServer::new("masterfile.txt").unwrap();
+    /// let domain = DomainName::new_from_str("example.com.".to_string());
+    /// let zone = DnsZone::new("example.com.", 3600, SoaRdata::new());
+    /// name_server.add_zone(zone);
+    /// 
+    /// let removed = name_server.remove_zone("example.com.");
+    /// assert!(removed);
+    /// 
+    /// assert!(!name_server.get_zones().contains_key(&domain));
+    /// ```
     pub fn remove_zone(&mut self, domain: &str) -> bool {
         self.zones.remove(domain).is_some()
     }
+}
+
+/// Getters
+impl NameServer {
     /// Lists the domains managed by this server
     pub fn get_list_zones(&self) -> Vec<String> {
         self.zones.keys().cloned().collect()
@@ -73,6 +118,39 @@ mod test_name_server {
         // Validate that the zone was added correctly
         let domain_name = DomainName::new_from_str("EDU.".to_string());
         assert!(name_server.zones.contains_key(&domain_name));
+    }
+
+    #[test]
+    fn test_search_zone(){
+        let mut name_server = NameServer {
+            zones: HashMap::new(),
+        };
+
+        // Create the SOA RData for the zone
+        let mut soa_data = SoaRdata::new();
+        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
+        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_serial(20240101);
+        soa_data.set_refresh(3600);
+        soa_data.set_retry(1800);
+        soa_data.set_expire(1209600);
+        soa_data.set_minimum(3600);
+
+        // Create and add a zone
+        let zone = DnsZone::new(
+            "example.com.",
+            3600,
+            soa_data,
+        );
+
+        name_server.add_zone(zone);
+
+        // Search for the zone by its domain name
+        let domain = DomainName::new_from_str("example.com.".to_string());
+        let found_zone = name_server.search_zone(&domain);
+
+        // Validate that the zone was found
+        assert!(found_zone.is_some());
     }
 
     #[test]

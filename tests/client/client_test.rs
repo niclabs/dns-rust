@@ -58,7 +58,7 @@ mod client_test {
     }
 
 
-    // Testing with QTYPE=A on a non authoritative server for example.com
+    // Testing with QTYPE=A on a non-authoritative server for example.com
     #[tokio::test]
     async fn QTYPE_A_TEST() {
         let addr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
@@ -71,26 +71,37 @@ mod client_test {
             "IN"
         ).await;
         if let Ok(resp) = response {
-        // header
-        assert!(resp.get_header().get_qr());
-        assert!(!resp.get_header().get_aa());
+            // header
+            assert!(resp.get_header().get_qr());
+            assert!(!resp.get_header().get_aa());
 
-        // question
-        assert_eq!(resp.get_question(), client.get_dns_query().get_question());
+            // question
+            assert_eq!(resp.get_question(), client.get_dns_query().get_question());
 
-        // answer
-        let RR = &resp.get_answer()[0];
-        assert_eq!(RR.get_name(), DomainName::new_from_string("example.com".to_string()));
-        assert_eq!(RR.get_rtype(), "A".into());
-        assert_eq!(RR.get_rclass(), "IN".into());
-        assert_eq!(RR.get_rdlength(), 4);
-        assert_eq!(RR.get_rdata(), Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(93, 184, 215, 14)))));
+            // answer
+            let answer = &resp.get_answer();
+            for ans in answer {
+                assert_eq!(ans.get_name(), DomainName::new_from_string("example.com".to_string()));
+                assert_eq!(ans.get_rtype(), "A".into());
+                assert_eq!(ans.get_rclass(), "IN".into());
+                assert_eq!(ans.get_rdlength(), 4);
+            }
+            let data = vec![(&answer[0]).get_rdata(), (&answer[1]).get_rdata(),
+                            (&answer[2]).get_rdata(), (&answer[3]).get_rdata(),
+                            (&answer[4]).get_rdata(), (&answer[5]).get_rdata()];
 
-        // authority
-        assert!(resp.get_authority().is_empty());
+            assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 80))))));
+            assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 84))))));
+            assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 136))))));
+            assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 138))))));
+            assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 175))))));
+            assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 198))))));
 
-        // additional
-        assert!(resp.get_additional().is_empty());
+            // authority
+            assert!(resp.get_authority().is_empty());
+
+            // additional
+            assert!(resp.get_additional().is_empty());
         } else {
             panic!();
         }

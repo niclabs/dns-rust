@@ -1613,4 +1613,22 @@ mod message_test {
 
         }
     }
+
+    #[test]
+    fn has_rr_opt(){
+        let mut dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Rrtype::A,
+                Rclass::IN,
+                0,
+                false,
+                1);
+
+        assert!(!dns_query_message.has_rr_opt());
+
+        dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![OptionCode::PADDING]));
+
+        assert!(dns_query_message.has_rr_opt());
+    }
 }

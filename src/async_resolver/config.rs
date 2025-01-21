@@ -6,8 +6,9 @@ use crate::edns::opt_option::OptOption;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
-use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
-
+use std::{io, net::{IpAddr, SocketAddr, Ipv4Addr}, time::Duration};
+use std::fs::File;
+use std::io::BufRead;
 use super::server_info::ServerInfo;
 
 const GOOGLE_PRIMARY_DNS_SERVER: [u8; 4] = [8, 8, 8, 8];
@@ -29,7 +30,7 @@ const RECOMMENDED_MAX_PAYLOAD: usize = 4000;
 /// address of the resolver, the quantity of retries before the resolver
 /// panic in a Temporary Error, availability of cache and recursive queries,
 /// the chosen transport protocol and the timeout for the connections.
-pub struct ResolverConfig {
+pub struct  ResolverConfig {
     /// Vector of tuples with the UDP and TCP connections to a Name Server.
     name_servers: Vec<ServerInfo>,
     /// Socket address of the resolver.
@@ -305,6 +306,53 @@ impl ResolverConfig {
             message.add_tsig(self.key.clone(), self.algorithm.clone(),
                              fudge.unwrap_or(300), self.key_name.clone(), mac_request.unwrap_or(Vec::new()));
         }
+    }
+
+    /// Create a resolver configuration based on the `/etc/resolv.conf` file.
+    ///
+    /// # examples
+    /// ```
+    /// let resolver_config = ResolverConfig::linux_config();
+    /// ```
+    pub fn linux_config() -> Self {
+        let path = "/etc/resolv.conf";
+        let mut name_servers = Vec::new();
+        let mut edns0 = false;
+
+        if let Ok(file) = File::open(path) {
+            for line in io::BufReader::new(file).lines() {
+                if let Ok(line) = line {
+                    let trimmed = line.trim();
+                    // nameserver
+                    if trimmed.starts_with("nameserver") {
+                        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                        if parts.len() > 1 {
+                            if let Ok(ip) = parts[1].parse::<IpAddr>() {
+                                let server_info = ServerInfo::new_from_addr_with_default_size(
+                                    ip,
+                                    Duration::from_secs(5),
+                                );
+                                name_servers.push(server_info);
+                            }
+                        }
+                    // options
+                    } else if trimmed.starts_with("options") {
+                        let options = trimmed["options".len()..].trim();
+                        for opt in options.split_whitespace() {
+                            if opt == "edns0" {
+                                edns0 = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Build the final configuration
+        let mut config = ResolverConfig::default();
+        config.set_name_servers(name_servers);
+        config.set_ends0(edns0);
+        config
     }
 }
 

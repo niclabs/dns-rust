@@ -700,4 +700,18 @@ mod tests_resolver_config {
 
         assert_eq!(resolver_config.get_global_retransmission_limit(), 40);
     }
+
+    // run on linux
+    #[ignore]
+    #[test]
+    fn linux_config_test() {
+        let resolver_config = ResolverConfig::linux_config();
+        let nameserver = server_info::ServerInfo::new_from_addr_with_default_size(
+            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 53)),
+            Duration::from_secs(5)
+        );
+        assert_eq!(resolver_config.get_name_servers(), vec![nameserver]);
+        assert_eq!(resolver_config.get_name_servers().len(), 1);
+        assert_eq!(resolver_config.get_edns0(), true);
+    }
 }

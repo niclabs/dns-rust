@@ -480,6 +480,15 @@ impl AsyncResolver {
         }
     }
 
+    /// Creates a new `AsyncResolver` based on the operating system of the current environment.
+    ///
+    /// # Panics
+    /// This function panics if the operating system is neither "linux" nor "windows".
+    ///
+    /// # Examples
+    /// ```
+    /// let resolver = AsyncResolver::from_os();
+    /// ```
     pub fn from_os() -> Self {
         let os = env::consts::OS;
         match os {

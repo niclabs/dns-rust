@@ -363,7 +363,7 @@ impl ResolverConfig {
     ///
     /// # examples
     /// ```
-    /// let resolver_config = ResolverConfig::linux_config();
+    /// let resolver_config = ResolverConfig::windows_config();
     /// ```
     #[cfg(target_os = "windows")]
     pub fn windows_config() -> Self {
@@ -371,13 +371,15 @@ impl ResolverConfig {
 
         if let Ok(adapters) = ipconfig::get_adapters() {
             for adapter in adapters {
-                if adapter.oper_status() == ipconfig::OperStatus::IfUp {
+                if adapter.oper_status() == ipconfig::OperStatus::IfOperStatusUp {
                     for server in adapter.dns_servers(){
-                        let server_info = ServerInfo::new_from_addr_with_default_size(
-                            server,
-                            Duration::from_secs(5),
-                        );
-                        name_servers.push(server_info);
+                        if let IpAddr::V4(_) = *server {
+                            let server_info = ServerInfo::new_from_addr_with_default_size(
+                                *server,
+                                Duration::from_secs(5),
+                            );
+                            name_servers.push(server_info);
+                        }
                     }
                 }
             }

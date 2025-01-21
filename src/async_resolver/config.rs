@@ -315,10 +315,10 @@ impl ResolverConfig {
     ///
     /// # examples
     /// ```
-    /// let resolver_config = ResolverConfig::linux_config();
+    /// let resolver_config = ResolverConfig::os_config();
     /// ```
     #[cfg(target_os = "linux")]
-    pub fn linux_config() -> Self {
+    pub fn os_config() -> Self {
         let path = "/etc/resolv.conf";
         let mut name_servers = Vec::new();
         let mut edns0 = false;
@@ -364,10 +364,10 @@ impl ResolverConfig {
     ///
     /// # examples
     /// ```
-    /// let resolver_config = ResolverConfig::windows_config();
+    /// let resolver_config = ResolverConfig::os_config();
     /// ```
     #[cfg(target_os = "windows")]
-    pub fn windows_config() -> Self {
+    pub fn os_config() -> Self {
         let mut name_servers = Vec::new();
 
         if let Ok(adapters) = ipconfig::get_adapters() {
@@ -743,7 +743,7 @@ mod tests_resolver_config {
     #[cfg(target_os = "linux")]
     #[test]
     fn linux_config_test() {
-        let resolver_config = ResolverConfig::linux_config();
+        let resolver_config = ResolverConfig::os_config();
         let nameserver = server_info::ServerInfo::new_from_addr_with_default_size(
             IpAddr::V4(Ipv4Addr::new(127, 0, 0, 53)),
             Duration::from_secs(5)
@@ -757,7 +757,7 @@ mod tests_resolver_config {
     #[cfg(target_os = "windows")]
     #[test]
     fn windows_config_test() {
-        let resolver_config = ResolverConfig::windows_config();
+        let resolver_config = ResolverConfig::os_config();
         let nameserver1 = server_info::ServerInfo::new_from_addr_with_default_size(
             IpAddr::V4(Ipv4Addr::new(200,28,4,130)),
             Duration::from_secs(5)

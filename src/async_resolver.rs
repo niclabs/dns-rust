@@ -480,7 +480,7 @@ impl AsyncResolver {
         }
     }
 
-    fn from_os() -> Self {
+    pub fn from_os() -> Self {
         let os = env::consts::OS;
         match os {
             "linux" | "windows" => {
@@ -506,7 +506,7 @@ impl AsyncResolver {
 #[cfg(test)]
 mod async_resolver_test {
     use super::lookup_response::LookupResponse;
-    use super::AsyncResolver;
+    use super::{config, AsyncResolver};
     use crate::async_resolver::config::ResolverConfig;
     use crate::async_resolver::resolver_error::ResolverError;
     use crate::async_resolver::server_info::ServerInfo;
@@ -1943,4 +1943,20 @@ mod async_resolver_test {
             resolver_2.inner_lookup(domain_name.clone(), rrtype.clone(), rclass.clone())
         );
     }
+
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    #[test]
+    fn from_os_supported_test () {
+        let resolver = AsyncResolver::from_os();
+        let config = resolver.config;
+        let expected_config = config::ResolverConfig::os_config();
+        assert_eq!(config, expected_config);
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    #[should_panic(expected = "Unsupported operating system:")]
+    fn from_os_unsupported_test() {
+        let resolver = AsyncResolver::from_os();
+    }
+
 }

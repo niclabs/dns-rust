@@ -317,6 +317,7 @@ impl ResolverConfig {
     /// ```
     /// let resolver_config = ResolverConfig::linux_config();
     /// ```
+    #[cfg(target_os = "linux")]
     pub fn linux_config() -> Self {
         let path = "/etc/resolv.conf";
         let mut name_servers = Vec::new();
@@ -739,7 +740,7 @@ mod tests_resolver_config {
     }
 
     // run on linux
-    #[ignore]
+    #[cfg(target_os = "linux")]
     #[test]
     fn linux_config_test() {
         let resolver_config = ResolverConfig::linux_config();
@@ -750,5 +751,22 @@ mod tests_resolver_config {
         assert_eq!(resolver_config.get_name_servers(), vec![nameserver]);
         assert_eq!(resolver_config.get_name_servers().len(), 1);
         assert_eq!(resolver_config.get_edns0(), true);
+    }
+
+    // run on windows
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_config_test() {
+        let resolver_config = ResolverConfig::windows_config();
+        let nameserver1 = server_info::ServerInfo::new_from_addr_with_default_size(
+            IpAddr::V4(Ipv4Addr::new(200,28,4,130)),
+            Duration::from_secs(5)
+        );
+        let nameserver2 = server_info::ServerInfo::new_from_addr_with_default_size(
+            IpAddr::V4(Ipv4Addr::new(200,28,4,129)),
+            Duration::from_secs(5)
+        );
+        assert_eq!(resolver_config.get_name_servers(), vec![nameserver1, nameserver2]);
+        assert_eq!(resolver_config.get_name_servers().len(), 2);
     }
 }

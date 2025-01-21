@@ -8,13 +8,13 @@ use dns_rust::{
 
 use clap::{Args, Parser, Subcommand};
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 enum Commands {
     /// Runs a client
     Client(ClientArgs),
@@ -89,16 +89,19 @@ pub async fn main() {
         }
 
         Commands::Resolver(resolver_args) => {
-            let mut config = ResolverConfig::default();
+            let mut config = ResolverConfig::os_config();
 
             let timeout = 2;
-            for ip_addr in resolver_args.nameserver.clone() {
-                let udp_conn = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(timeout));
-                let tcp_conn = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(timeout));
-                let server_info = ServerInfo::new_with_ip(ip_addr, udp_conn, tcp_conn);
-                config.add_name_server(server_info);
+            if resolver_args.nameserver.len() > 0 {
+                let mut nameservers = Vec::new();
+                for ip_addr in resolver_args.nameserver.clone() {
+                    let udp_conn = ClientUDPConnection::new_default(ip_addr, Duration::from_secs(timeout));
+                    let tcp_conn = ClientTCPConnection::new_default(ip_addr, Duration::from_secs(timeout));
+                    let server_info = ServerInfo::new_with_ip(ip_addr, udp_conn, tcp_conn);
+                    nameservers.push(server_info);
+                }
+                config.set_name_servers(nameservers);
             }
-
             println!("Resolver pre loaded with nameservers: {:?}", config.get_name_servers().iter().map(|server| server.get_ip_addr()).collect::<Vec<IpAddr>>());
             let mut resolver = AsyncResolver::new(config);
             let response = resolver.lookup(
@@ -112,3 +115,7 @@ pub async fn main() {
         }
     }  
 }
+
+
+
+

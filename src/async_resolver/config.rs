@@ -11,6 +11,9 @@ use std::fs::File;
 use std::io::BufRead;
 use super::server_info::ServerInfo;
 
+#[cfg(target_os = "windows")]
+use ipconfig;
+
 const GOOGLE_PRIMARY_DNS_SERVER: [u8; 4] = [8, 8, 8, 8];
 const GOOGLE_SECONDARY_DNS_SERVER: [u8; 4] = [8, 8, 4, 4];
 const CLOUDFLARE_PRIMARY_DNS_SERVER: [u8; 4] = [1, 1, 1, 1];
@@ -352,6 +355,38 @@ impl ResolverConfig {
         let mut config = ResolverConfig::default();
         config.set_name_servers(name_servers);
         config.set_ends0(edns0);
+        config
+    }
+
+    /// Create a resolver configuration based on the network adapters and DNS servers
+    ///  configured on a Windows system.
+    ///
+    /// # examples
+    /// ```
+    /// let resolver_config = ResolverConfig::linux_config();
+    /// ```
+    #[cfg(target_os = "windows")]
+    pub fn windows_config() -> Self {
+        let mut name_servers = Vec::new();
+
+        if let Ok(adapters) = ipconfig::get_adapters() {
+            for adapter in adapters {
+                if adapter.oper_status() == ipconfig::OperStatus::IfUp {
+                    for server in adapter.dns_servers(){
+                        let server_info = ServerInfo::new_from_addr_with_default_size(
+                            server,
+                            Duration::from_secs(5),
+                        );
+                        name_servers.push(server_info);
+                    }
+                }
+            }
+        } else {
+            panic!("No adapters found");
+        }
+
+        let mut config = ResolverConfig::default();
+        config.set_name_servers(name_servers);
         config
     }
 }

@@ -6,7 +6,7 @@ use crate::edns::opt_option::OptOption;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
-use std::{io, net::{IpAddr, SocketAddr, Ipv4Addr}, time::Duration};
+use std::{env, io, net::{IpAddr, SocketAddr, Ipv4Addr}, time::Duration};
 use std::fs::File;
 use std::io::BufRead;
 use super::server_info::ServerInfo;
@@ -317,9 +317,14 @@ impl ResolverConfig {
     /// ```
     /// let resolver_config = ResolverConfig::os_config();
     /// ```
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     pub fn os_config() -> Self {
-        let path = "/etc/resolv.conf";
+        let mut path = "";
+        if env::consts::OS == "macos" {
+            path = "var/run/resolv.conf";
+        } else {
+            path = "/etc/resolv.conf";
+        }
         let mut name_servers = Vec::new();
         let mut edns0 = false;
 

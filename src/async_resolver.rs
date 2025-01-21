@@ -492,7 +492,7 @@ impl AsyncResolver {
     pub fn from_os() -> Self {
         let os = env::consts::OS;
         match os {
-            "linux" | "windows" => {
+            "linux" | "windows" | "macos" => {
                 let conf = ResolverConfig::os_config();
                 AsyncResolver::new(conf)
             },
@@ -1953,7 +1953,7 @@ mod async_resolver_test {
         );
     }
 
-    #[cfg(any(target_os = "linux", target_os = "windows"))]
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
     #[test]
     fn from_os_supported_test () {
         let resolver = AsyncResolver::from_os();
@@ -1962,7 +1962,7 @@ mod async_resolver_test {
         assert_eq!(config, expected_config);
     }
 
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
     #[should_panic(expected = "Unsupported operating system:")]
     fn from_os_unsupported_test() {
         let resolver = AsyncResolver::from_os();

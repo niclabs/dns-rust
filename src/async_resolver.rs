@@ -22,7 +22,7 @@ use crate::resolver_cache::ResolverCache;
 use std::net::IpAddr;
 use std::time::SystemTime;
 use std::sync::{Arc, Mutex};
-use std::vec;
+use std::{env, vec};
 /// Asynchronous resolver for DNS queries.
 ///
 /// This struct contains a cache and a configuration for the resolver.
@@ -477,6 +477,17 @@ impl AsyncResolver {
             Rcode::NOTIMP => Err(ClientError::NotImplemented("The name server does not support the requested kind of query."))?,
             Rcode::REFUSED => Err(ClientError::Refused("The name server refuses to perform the specified operation for policy reasons."))?,
             _ => Err(ClientError::ResponseError(rcode.into()))?,
+        }
+    }
+
+    fn from_os() -> Self {
+        let os = env::consts::OS;
+        match os {
+            "linux" | "windows" => {
+                let conf = ResolverConfig::os_config();
+                AsyncResolver::new(conf)
+            },
+            _ => { panic!("Unsupported operating system: {}. Please use either 'linux' or 'windows'.", os)},
         }
     }
 }

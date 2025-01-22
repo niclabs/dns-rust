@@ -90,7 +90,7 @@ impl NameServer {
     /// let removed = name_server.remove_zone("example.com.");
     /// assert!(removed);
     /// 
-    /// assert!(!name_server.get_zones().contains_key(&domain));
+    /// assert!(!name_server.get_list_zones().contains_key(&domain));
     /// ```
     pub fn remove_zone(&mut self, domain: &str) -> bool {
         self.zones.remove(domain).is_some()
@@ -117,19 +117,37 @@ mod test_name_server {
     use crate::message::resource_record::ResourceRecord;
 
     #[test]
-    fn test_new() {
+    fn test_new_one_zone() {
         // Masterfile path to initialize the NameServer
-        let masterfile_path = "1034-scenario-6.1-edu.txt";
+        let masterfile_path1 = "1034-scenario-6.1-edu.txt";
 
         // Verify that the file exists before continuing
         assert!(Path::new(masterfile_path).exists(), "Masterfile not found.");
 
         // Create a NameServer from the masterfile
-        let name_server = NameServer::new(masterfile_path).unwrap();
+        let name_server = NameServer::new(vec![masterfile_path]).unwrap();
 
         // Validate that the zone was added correctly
         let domain_name = DomainName::new_from_str("EDU.".to_string());
-        assert!(name_server.zones.contains_key(&domain_name));
+        assert!(name_server.get_list_zones().contains_key(&domain_name));
+    }
+
+    #[test]
+    fn test_new_two_zone(){
+        // Masterfile path to initialize the NameServer
+        let masterfile_path1 = "1034-scenario-6.1-root.txt";
+        // Verify that the file exists before continuing
+        assert!(Path::new(masterfile_path1).exists(), "Masterfile not found.");
+        // Master file for the root zone.
+        let masterfile_path2 = "1034-scenario-6.1-edu.txt";
+        // Verify that the file exists before continuing
+        assert!(Path::new(masterfile_path2).exists(), "Masterfile not found.");
+
+        // Create a NameServer from the masterfile
+        let name_server = NameServer::new(vec![masterfile_path1,masterfile_path2]).unwrap();
+
+        assert!(name_server.get_list_zones().contains_key(&DomainName::new_from_str("ROOT.".to_string())));
+        assert!(name_server.get_list_zones().contains_key(&DomainName::new_from_str("EDU.".to_string()))); 
     }
 
     #[test]
@@ -192,7 +210,7 @@ mod test_name_server {
         name_server.add_zone(zone.clone());
 
         // Validate that the zone was added correctly
-        assert!(name_server.zones.contains_key(&DomainName::new_from_str("example.com.".to_string())));
+        assert!(name_server.get_list_zones().contains_key(&DomainName::new_from_str("example.com.".to_string())));
     }
 
     #[test]
@@ -225,7 +243,7 @@ mod test_name_server {
         assert!(removed);
 
         // Verify that the zone was removed
-        assert!(!name_server.zones.contains_key(&DomainName::new_from_str("example.com.".to_string())));
+        assert!(!name_server.get_list_zones().contains_key(&DomainName::new_from_str("example.com.".to_string())));
     }
 
     #[test]

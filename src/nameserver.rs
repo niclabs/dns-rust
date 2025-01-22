@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use std::io;
 use crate::zones::DnsZone;
-use crate::message::domain_name::DomainName;
+use crate::domain_name::DomainName;
 
 
 /// Structure to represent a Name Server
-#[derive (PartialEq, Debug)]
 pub struct NameServer {
     zones: HashMap<String, DnsZone>, // Each zone is associated with a domain.
 }
@@ -32,15 +31,15 @@ impl NameServer {
             // Create a new zone from the masterfile
             let dns_zone = DnsZone::from_master_file(path)?;
             // Check if the zone already exists
-            if zones.contains_key(&dns_zone.name) {
+            if zones.contains_key(dns_zone.get_name()) {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("Zona duplicada encontrada: {}", dns_zone.name),
+                    format!("Zona duplicada encontrada: {}", dns_zone.get_name()),
                 ));
             }
             else { // If the zone does not exist 
                 // Insert the zone into the hashmap            
-                zones.insert(dns_zone.name.clone(), dns_zone);
+                zones.insert(dns_zone.get_name().clone(), dns_zone);
             }
         }
 
@@ -53,7 +52,7 @@ impl NameServer {
     /// 
     /// ```
     /// let name_server = NameServer::new("masterfile.txt").unwrap();
-    /// let domain = DomainName::new_from_str("example.com.".to_string());
+    /// let domain = DomainName::new_from_str("example.com.".);
     /// let zone = name_server.search_zone(&domain);
     /// 
     /// assert!(zone.is_some());
@@ -68,14 +67,14 @@ impl NameServer {
     /// 
     /// ```
     /// let mut name_server = NameServer::new("masterfile.txt").unwrap();
-    /// let domain = DomainName::new_from_str("example.com.".to_string());
+    /// let domain = DomainName::new_from_str("example.com.".);
     /// let zone = DnsZone::new("example.com.", 3600, SoaRdata::new());
     /// name_server.add_zone(zone);
     /// 
     /// assert!(name_server.zones.contains_key(&domain));
     /// ```
-    pub fn add_zone(&mut self, zone: Zone) {
-        self.zones.insert(zone.domain.clone(), zone);
+    pub fn add_zone(&mut self, zone: DnsZone) {
+        self.zones.insert(zone.get_name().clone(), zone);
     }
     /// Removes a zone by its domain name
     /// 
@@ -83,14 +82,14 @@ impl NameServer {
     /// 
     /// ```
     /// let mut name_server = NameServer::new("masterfile.txt").unwrap();
-    /// let domain = DomainName::new_from_str("example.com.".to_string());
+    /// let domain = DomainName::new_from_str("example.com.".);
     /// let zone = DnsZone::new("example.com.", 3600, SoaRdata::new());
     /// name_server.add_zone(zone);
     /// 
     /// let removed = name_server.remove_zone("example.com.");
     /// assert!(removed);
     /// 
-    /// assert!(!name_server.get_list_zones().contains_key(&domain));
+    /// assert!(!name_server.get_list_domains().contains_key(&domain));
     /// ```
     pub fn remove_zone(&mut self, domain: &str) -> bool {
         self.zones.remove(domain).is_some()
@@ -100,7 +99,7 @@ impl NameServer {
 /// Getters
 impl NameServer {
     /// Lists the domains managed by this server
-    pub fn get_list_zones(&self) -> Vec<String> {
+    pub fn get_list_domains(&self) -> Vec<String> {
         self.zones.keys().cloned().collect()
     }
     /// Returns the number of managed zones
@@ -111,9 +110,12 @@ impl NameServer {
 
 #[cfg(test)]
 mod test_name_server {
+    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::zones::DnsZone;
-    use crate::message::domain_name::DomainName;
+    use crate::domain_name::DomainName;
+    use crate::nameserver::NameServer;
     use std::path::Path;
+    use std::collections::HashMap;
 
     #[test]
     fn test_new_one_zone() {
@@ -121,14 +123,14 @@ mod test_name_server {
         let masterfile_path1 = "1034-scenario-6.1-edu.txt";
 
         // Verify that the file exists before continuing
-        assert!(Path::new(masterfile_path).exists(), "Masterfile not found.");
+        assert!(Path::new(masterfile_path1).exists(), "Masterfile not found.");
 
         // Create a NameServer from the masterfile
-        let name_server = NameServer::new(vec![masterfile_path]).unwrap();
+        let name_server = NameServer::new(vec![masterfile_path1]).unwrap();
 
         // Validate that the zone was added correctly
-        let domain_name = DomainName::new_from_str("EDU.".to_string());
-        assert!(name_server.get_list_zones().contains_key(&domain_name));
+        let domain_name = DomainName::new_from_str("EDU.");
+        assert!(name_server.get_list_domains().contains(&domain_name.get_name()));
     }
 
     #[test]
@@ -145,8 +147,8 @@ mod test_name_server {
         // Create a NameServer from the masterfile
         let name_server = NameServer::new(vec![masterfile_path1,masterfile_path2]).unwrap();
 
-        assert!(name_server.get_list_zones().contains_key(&DomainName::new_from_str("ROOT.".to_string())));
-        assert!(name_server.get_list_zones().contains_key(&DomainName::new_from_str("EDU.".to_string()))); 
+        assert!(name_server.get_list_domains().contains(&DomainName::new_from_str("ROOT.").get_name()));
+        assert!(name_server.get_list_domains().contains(&DomainName::new_from_str("EDU.").get_name())); 
     }
 
     #[test]
@@ -157,8 +159,8 @@ mod test_name_server {
 
         // Create the SOA RData for the zone
         let mut soa_data = SoaRdata::new();
-        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa_data.set_rname(DomainName::new_from_str("admin.example.com."));
         soa_data.set_serial(20240101);
         soa_data.set_refresh(3600);
         soa_data.set_retry(1800);
@@ -175,7 +177,7 @@ mod test_name_server {
         name_server.add_zone(zone);
 
         // Search for the zone by its domain name
-        let domain = DomainName::new_from_str("example.com.".to_string());
+        let domain = DomainName::new_from_str("example.com.");
         let found_zone = name_server.search_zone(&domain);
 
         // Validate that the zone was found
@@ -190,8 +192,8 @@ mod test_name_server {
 
         // Create the SOA RData for the zone
         let mut soa_data = SoaRdata::new();
-        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa_data.set_rname(DomainName::new_from_str("admin.example.com."));
         soa_data.set_serial(20240101);
         soa_data.set_refresh(3600);
         soa_data.set_retry(1800);
@@ -206,10 +208,10 @@ mod test_name_server {
         );
 
         // Add the zone to the server
-        name_server.add_zone(zone.clone());
+        name_server.add_zone(zone);
 
         // Validate that the zone was added correctly
-        assert!(name_server.get_list_zones().contains_key(&DomainName::new_from_str("example.com.".to_string())));
+        assert!(name_server.get_list_domains().contains(&DomainName::new_from_str("example.com.").get_name()));
     }
 
     #[test]
@@ -220,8 +222,8 @@ mod test_name_server {
 
         // Create the SOA RData for the zone
         let mut soa_data = SoaRdata::new();
-        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa_data.set_rname(DomainName::new_from_str("admin.example.com."));
         soa_data.set_serial(20240101);
         soa_data.set_refresh(3600);
         soa_data.set_retry(1800);
@@ -242,11 +244,11 @@ mod test_name_server {
         assert!(removed);
 
         // Verify that the zone was removed
-        assert!(!name_server.get_list_zones().contains_key(&DomainName::new_from_str("example.com.".to_string())));
+        assert!(name_server.get_list_domains().contains(&DomainName::new_from_str("example.com.").get_name()));
     }
 
     #[test]
-    fn test_get_list_zones() {
+    fn test_get_list_domains() {
         let mut name_server = NameServer {
             zones: HashMap::new(),
         };
@@ -254,13 +256,13 @@ mod test_name_server {
 
         // Create the SOA RData for the zone
         let mut soa_data1 = SoaRdata::new();
-        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
-        soa_data.set_serial(20240101);
-        soa_data.set_refresh(3600);
-        soa_data.set_retry(1800);
-        soa_data.set_expire(1209600);
-        soa_data.set_minimum(3600);
+        soa_data1.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa_data1.set_rname(DomainName::new_from_str("admin.example.com."));
+        soa_data1.set_serial(20240101);
+        soa_data1.set_refresh(3600);
+        soa_data1.set_retry(1800);
+        soa_data1.set_expire(1209600);
+        soa_data1.set_minimum(3600);
 
         // Create and add two zones
         let zone1 = DnsZone::new(
@@ -270,13 +272,13 @@ mod test_name_server {
         );
 
         let mut soa_data2 = SoaRdata::new();
-        soa_data.set_name_server(DomainName::new_from_str("ns1.example.org.".to_string()));
-        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.org.".to_string()));
-        soa_data.set_serial(20240102);
-        soa_data.set_refresh(3600);
-        soa_data.set_retry(1800);
-        soa_data.set_expire(1209600);
-        soa_data.set_minimum(3600);
+        soa_data2.set_mname(DomainName::new_from_str("ns1.example.org."));
+        soa_data2.set_rname(DomainName::new_from_str("admin.example.org."));
+        soa_data2.set_serial(20240102);
+        soa_data2.set_refresh(3600);
+        soa_data2.set_retry(1800);
+        soa_data2.set_expire(1209600);
+        soa_data2.set_minimum(3600);
 
 
         let zone2 = DnsZone::new(
@@ -289,11 +291,11 @@ mod test_name_server {
         name_server.add_zone(zone2);
 
         // Get the list of zones
-        let zone_list = name_server.get_list_zones();
+        let zone_list = name_server.get_list_domains();
 
         // Validate that it contains both zones
-        assert!(zone_list.contains(&"example.com.".to_string()));
-        assert!(zone_list.contains(&"example.org.".to_string()));
+        assert!(zone_list.contains(&DomainName::new_from_str("example.com.").get_name()));
+        assert!(zone_list.contains(&DomainName::new_from_str("example.org.").get_name()));
         assert_eq!(zone_list.len(), 2);
     }
 
@@ -309,8 +311,8 @@ mod test_name_server {
 
         // Create the SOA RData for the zone
         let mut soa_data = SoaRdata::new();
-        soa_data.set_name_server(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa_data.set_responsible_person(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa_data.set_rname(DomainName::new_from_str("admin.example.com."));
         soa_data.set_serial(20240101);
         soa_data.set_refresh(3600);
         soa_data.set_retry(1800);

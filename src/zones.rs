@@ -2,9 +2,13 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 use crate::message::rdata::soa_rdata::SoaRdata;
-use crate::message::rdata::rdata::{Rdata, TxtRdata, MxRdata};
-use crate::message::domain_name::DomainName;
-use crate::message::resource_record::{ResourceRecord, Rrtype, Rclass};
+use crate::message::rdata::Rdata;
+use crate::message::rdata::txt_rdata::TxtRdata;
+use crate::message::rdata::mx_rdata::MxRdata;
+use crate::domain_name::DomainName;
+use crate::message::resource_record::ResourceRecord;
+use crate::message::rrtype::Rrtype;
+use crate::message::rclass::{self, Rclass};
 
 /*
 The following entries are defined:
@@ -27,7 +31,7 @@ The following entries are defined:
 
 /// Structure to represent a DNS zone
 #[derive(Debug)]
-struct DnsZone {
+pub struct DnsZone {
     name: String,           // Name of the zone (e.g., "example.com")
     ttl: u32,               // Default time to live (in seconds)
     soa: SoaRdata,         // SOA (Start of Authority) record
@@ -42,8 +46,8 @@ impl DnsZone {
     ///
     /// ```
     /// let soa = SoaRdata {
-    ///     mname: DomainName::new_from_str("ns1.example.com.".to_string()),
-    ///     rname: DomainName::new_from_str("admin.example.com.".to_string()),
+    ///     mname: DomainName::new_from_str("ns1.example.com."),
+    ///     rname: DomainName::new_from_str("admin.example.com."),
     ///     serial: 20240101,
     ///     refresh: 3600,
     ///     retry: 1800,
@@ -53,13 +57,13 @@ impl DnsZone {
     ///
     /// let dns_zone = DnsZone::new("example.com.", 3600, soa);
     ///
-    /// assert_eq!(dns_zone.name, "example.com.".to_string());
+    /// assert_eq!(dns_zone.name, "example.com.");
     /// assert_eq!(dns_zone.ttl, 3600);
     /// assert_eq!(dns_zone.soa.serial, 20240101);
     /// assert!(dns_zone.ns_records.is_empty());
     /// assert!(dns_zone.resource_records.is_empty());
     /// ```
-    fn new(name: &str, ttl: u32, soa: SoaRdata) -> Self {
+    pub fn new(name: &str, ttl: u32, soa: SoaRdata) -> Self {
         DnsZone {
             name: name.to_string(),
             ttl,
@@ -78,8 +82,8 @@ impl DnsZone {
     ///     "example.com.",
     ///     3600,
     ///     SoaRdata {
-    ///         mname: DomainName::new_from_str("ns1.example.com.".to_string()),
-    ///         rname: DomainName::new_from_str("admin.example.com.".to_string()),
+    ///         mname: DomainName::new_from_str("ns1.example.com."),
+    ///         rname: DomainName::new_from_str("admin.example.com."),
     ///         serial: 20240101,
     ///         refresh: 3600,
     ///         retry: 1800,
@@ -91,9 +95,9 @@ impl DnsZone {
     /// dns_zone.add_ns_record("ns2.example.com.");
     ///
     /// assert_eq!(dns_zone.ns_records.len(), 1);
-    /// assert_eq!(dns_zone.ns_records[0], "ns2.example.com.".to_string());
+    /// assert_eq!(dns_zone.ns_records[0], "ns2.example.com.");
     /// ```
-    fn add_ns_record(&mut self, ns: &str) {
+    pub fn add_ns_record(&mut self, ns: &str) {
         self.ns_records.push(ns.to_string());
     }
 
@@ -106,8 +110,8 @@ impl DnsZone {
     ///     "example.com.",
     ///     3600,
     ///     SoaRdata {
-    ///         mname: DomainName::new_from_str("ns1.example.com.".to_string()),
-    ///         rname: DomainName::new_from_str("admin.example.com.".to_string()),
+    ///         mname: DomainName::new_from_str("ns1.example.com."),
+    ///         rname: DomainName::new_from_str("admin.example.com."),
     ///         serial: 20240101,
     ///         refresh: 3600,
     ///         retry: 1800,
@@ -127,7 +131,7 @@ impl DnsZone {
     ///     String::from("dcc")
     /// );
     /// ```
-    fn add_resource_record(&mut self, record: ResourceRecord) {
+    pub fn add_resource_record(&mut self, record: ResourceRecord) {
         self.resource_records.push(record);
     }
 
@@ -209,8 +213,8 @@ impl DnsZone {
                     if parts.len() >= 7 {
                         // Crear un SoaRdata vacío y completarlo con setters
                         let mut soa_data = SoaRdata::new();
-                        soa_data.set_mname(DomainName::new_from_str(parts[3].to_string()));
-                        soa_data.set_rname(DomainName::new_from_str(parts[4].to_string()));
+                        soa_data.set_mname(DomainName::new_from_str(parts[3]));
+                        soa_data.set_rname(DomainName::new_from_str(parts[4]));
                         soa_data.set_serial(parts[5].parse().unwrap_or(0));
                         soa_data.set_refresh(parts[6].parse().unwrap_or(3600));
                         soa_data.set_retry(parts.get(7).unwrap_or(&"1800").parse().unwrap_or(1800));
@@ -224,80 +228,24 @@ impl DnsZone {
                 }
                 "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "PTR" => {
                     let rdata = match record_type {
-                        "A" => Rdata::A(parts[3].to_string().parse().unwrap()),
+                        "A" => Rdata::A(parts[3].to_string()),
                         "AAAA" => Rdata::AAAA(parts[3].to_string().parse().unwrap()),
-                        "CNAME" => Rdata::CNAME(DomainName::new_from_str(parts[3].to_string())),
+                        "CNAME" => Rdata::CNAME(DomainName::new_from_str(parts[3])),
                         "MX" => Rdata::MX(MxRdata::new(
                             parts[3].parse().unwrap_or(10),
-                            DomainName::new_from_str(parts[4].to_string()),
+                            DomainName::new_from_str(parts[4].get_name()),
                         )),
-                        "TXT" => Rdata::TXT(TxtRdata::new(parts[3].to_string())),
-                        "PTR" => Rdata::PTR(DomainName::new_from_str(parts[3].to_string())),
+                        "TXT" => Rdata::TXT(TxtRdata::new(parts[3])),
+                        "PTR" => Rdata::PTR(DomainName::new_from_str(parts[3])),
                         _ => continue,
                     };
 
                     let mut resource_record = ResourceRecord::new(rdata);
 
-                    resource_record.set_name(DomainName::new_from_str(record_name.to_string()));
+                    resource_record.set_name(DomainName::new_from_str(record_name));
                     resource_record.set_ttl(ttl);
 
                     resource_records.push(resource_record);
-                }
-                "NSEC3PARAM" => {
-                    if parts.len() >= 7 {
-                        let rdata = Rdata::NSEC3PARAM {
-                            algorithm: parts[3].parse().unwrap_or(0),
-                            flags: parts[4].parse().unwrap_or(0),
-                            iterations: parts[5].parse().unwrap_or(0),
-                            salt: parts[6].to_string(),
-                        };
-
-                        let resource_record = ResourceRecord::new(rdata);
-
-                        resource_record.set_name(DomainName::new_from_str(record_name.to_string()));
-                        resource_record.set_ttl(ttl);
-
-                        resource_records.push(resource_record);
-                    }
-                }
-                "DNSKEY" => {
-                    if parts.len() >= 7 {
-                        let rdata = Rdata::DNSKEY {
-                            flags: parts[3].parse().unwrap_or(0),
-                            protocol: parts[4].parse().unwrap_or(0),
-                            algorithm: parts[5].parse().unwrap_or(0),
-                            public_key: parts[6..].join(" "), // Combina la clave pública.
-                        };
-
-                        let mut resource_record = ResourceRecord::new(rdata);
-
-                        resource_record.set_name(DomainName::new_from_str(record_name.to_string()));
-                        resource_record.set_ttl(ttl);
-                        
-                        resource_records.push(resource_record);
-                    }
-                }
-                "RRSIG" => {
-                    if parts.len() >= 10 {
-                        let rdata = Rdata::RRSIG {
-                            type_covered: parts[3].to_string(),
-                            algorithm: parts[4].parse().unwrap_or(0),
-                            labels: parts[5].parse().unwrap_or(0),
-                            original_ttl: parts[6].parse().unwrap_or(0),
-                            expiration: parts[7].to_string(),
-                            inception: parts[8].to_string(),
-                            key_tag: parts[9].parse().unwrap_or(0),
-                            signer_name: parts[10].to_string(),
-                            signature: parts[11..].join(" "), // Combina la firma.
-                        };
-
-                        let resource_record = ResourceRecord::new(rdata);
-
-                        resource_record.set_name(DomainName::new_from_str(record_name.to_string()));
-                        resource_record.set_ttl(ttl);
-
-                        resource_records.push(resource_record);
-                    }
                 }
                 _ => {
                     return Err(io::Error::new(
@@ -305,8 +253,8 @@ impl DnsZone {
                         format!("Registro de recurso desconocido: {}", record_type),
                         ));
                 } // Here is where ZONEMD and other unknow types should be entered.
+            }
         }
-
         // Validate and construct the zone
         Ok(DnsZone {
             name,
@@ -315,7 +263,6 @@ impl DnsZone {
             ns_records,
             resource_records,
             })
-        }
     }   
 }
 
@@ -357,8 +304,8 @@ mod dns_zone_tests {
     fn test_new() {
 
         let mut soa = SoaRdata::new();
-        soa.set_mname(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa.set_rname(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa.set_rname(DomainName::new_from_str("admin.example.com."));
         soa.set_serial(20240101);
         soa.set_refresh(3600);
         soa.set_retry(1800);
@@ -367,9 +314,9 @@ mod dns_zone_tests {
 
         let dns_zone = DnsZone::new("example.com.", 3600, soa);
 
-        assert_eq!(dns_zone.name, "example.com.".to_string());
+        assert_eq!(dns_zone.name, "example.com.");
         assert_eq!(dns_zone.ttl, 3600);
-        assert_eq!(dns_zone.soa.get_mname().get_name(), "ns1.example.com.".to_string());
+        assert_eq!(dns_zone.soa.get_mname().get_name(), "ns1.example.com.");
         assert_eq!(dns_zone.soa.get_serial(), 20240101);
         assert!(dns_zone.get_ns_records().is_empty());
         assert!(dns_zone.get_resource_records().is_empty());
@@ -379,8 +326,8 @@ mod dns_zone_tests {
     fn test_add_ns_record() {
 
         let mut soa_data = SoaRdata::new();
-        soa_data.set_mname(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa_data.set_rname(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa_data.set_rname(DomainName::new_from_str("admin.example.com."));
         soa_data.set_serial(20240101);
         soa_data.set_refresh(3600);
         soa_data.set_retry(1800);
@@ -396,14 +343,14 @@ mod dns_zone_tests {
         dns_zone.add_ns_record("ns2.example.com.");
 
         assert_eq!(dns_zone.get_ns_records().len(), 1);
-        assert_eq!(dns_zone.get_ns_records()[0], "ns2.example.com.".to_string());
+        assert_eq!(dns_zone.get_ns_records()[0], "ns2.example.com.");
     }
 
     #[test]
     fn test_add_resource_record() {
         let mut soa_data = SoaRdata::new();
-        soa_data.set_mname(DomainName::new_from_str("ns1.example.com.".to_string()));
-        soa_data.set_rname(DomainName::new_from_str("admin.example.com.".to_string()));
+        soa_data.set_mname(DomainName::new_from_str("ns1.example.com."));
+        soa_data.set_rname(DomainName::new_from_str("admin.example.com."));
         soa_data.set_serial(20240101);
         soa_data.set_refresh(3600);
         soa_data.set_retry(1800);
@@ -416,7 +363,7 @@ mod dns_zone_tests {
             soa_data,
         );
 
-        let txt_rdata = Rdata::TXT(TxtRdata::new(String::from("dcc")));
+        let txt_rdata = Rdata::TXT(TxtRdata::new(vec![String::from("dcc")]));
         let resource_record = ResourceRecord::new(txt_rdata);
 
         dns_zone.add_resource_record(resource_record);
@@ -437,10 +384,10 @@ mod dns_zone_tests {
         let dns_zone = DnsZone::from_master_file(masterfile_path).unwrap();
 
         // Validate main properties of the zone
-        assert_eq!(dns_zone.name, "EDU.".to_string());
+        assert_eq!(dns_zone.name, "EDU.");
         assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file
-        assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.".to_string());
-        assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.");
+        assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.");
         assert_eq!(dns_zone.soa.get_serial(), 870729);
         assert_eq!(dns_zone.soa.get_refresh(), 1800);
         assert_eq!(dns_zone.soa.get_retry(), 300);
@@ -470,10 +417,10 @@ mod dns_zone_tests {
         let dns_zone = DnsZone::from_master_file(masterfile_path).unwrap();
 
         // Validate main properties of the zone
-        assert_eq!(dns_zone.name, ".".to_string());
+        assert_eq!(dns_zone.name, ".");
         assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file
-        assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.".to_string());
-        assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.".to_string());
+        assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.");
+        assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.");
         assert_eq!(dns_zone.soa.get_serial(), 870611);
         assert_eq!(dns_zone.soa.get_refresh(), 1800);
         assert_eq!(dns_zone.soa.get_retry(), 300);

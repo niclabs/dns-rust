@@ -8,3 +8,5 @@ pub mod truncated_dns_message;
 pub mod tsig;
 pub mod dnssec;
 pub mod example;
+pub mod zones;
+mod nameserver;

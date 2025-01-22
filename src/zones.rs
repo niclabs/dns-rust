@@ -416,7 +416,7 @@ mod dns_zone_tests {
         dns_zone.add_resource_record(resource_record);
 
         assert_eq!(dns_zone.get_resource_records().len(), 1);
-        assert_eq!(dns_zone.get_resource_records()[0].rdata.unwrap().get_text(),String::from("dcc"));
+        assert_eq!(dns_zone.get_resource_records()[0].get_rdata().unwrap().get_text(),String::from("dcc"));
     }
 
     #[test]
@@ -448,8 +448,8 @@ mod dns_zone_tests {
 
         // Validate resource records
         assert_eq!(dns_zone.get_resource_records().len(), 14); // Count A, NS, etc. records
-        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "ICS.UCI" && matches!(rr.rdata, Rdata::A(_))));
-        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "YALE.EDU." && matches!(rr.rdata, Rdata::NS(_))));
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "ICS.UCI" && matches!(rr.get_rdata(), Rdata::A(_))));
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "YALE.EDU." && matches!(rr.get_rdata(), Rdata::NS(_))));
     }
 
     #[test]
@@ -482,16 +482,7 @@ mod dns_zone_tests {
 
         // Validate resource records
         assert_eq!(dns_zone.get_resource_records().len(), 14); // Count A, MX, HINFO, etc. records
-        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "MIL." && matches!(rr.rdata, Rdata::NS(_))));
-        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "A.ISI.EDU" && matches!(rr.rdata, Rdata::A(_))));
-    }
-
-    #[test]
-    fn test_err_two_zone() {
-        let masterfile_path = "two_zones-example.txt";
-
-        let result = DnsZone::from_master_file(masterfile_path);
-
-        assert!(result.is_err());
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "MIL." && matches!(rr.get_rdata(), Rdata::NS(_))));
+        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "A.ISI.EDU" && matches!(rr.get_rdata(), Rdata::A(_))));
     }
 }

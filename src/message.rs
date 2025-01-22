@@ -766,6 +766,27 @@ impl DnsMessage {
         }
         false
     }
+
+    ///Gets the RR OPT of a message
+    ///
+    /// # Example
+    /// ```
+    /// let mut dns_query_message = new_query_message(DomainName::new_from_str("example.com".to_string()), Rrtype::A, Rclass:IN, 0, false);
+    /// dns_query_message.add_edns0(Some(4096), 0, 0, Some(vec![12]));
+    ///
+    /// result = dns_query_message.get_rr_opt();
+    /// ```
+    fn get_rr_opt(&self) -> Option<ResourceRecord> {
+        let addi = self.get_additional();
+        for opt in addi.iter() {
+            if let Rdata::OPT(_) = opt.get_rdata() {
+                let rr = (*opt).clone();
+                return Some(rr);
+            }
+        }
+        None
+    }
+
 }
 
 impl fmt::Display for DnsMessage {

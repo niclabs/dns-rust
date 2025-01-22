@@ -11,7 +11,7 @@ pub struct NameServer {
 }
 
 impl NameServer {
-    /// Constructor to initialize a NameServer with a single zone from a master file.
+    /// Constructor to initialize a NameServer with one or more zones from a vector of master files.
     ///
     /// This function reads a master file, creates a `DnsZone`, and associates it with
     /// its domain name in the `zones` HashMap.
@@ -19,17 +19,30 @@ impl NameServer {
     /// # Examples
     ///
     /// ```
-    /// let name_server = NameServer::new("masterfile.txt").unwrap();
+    /// let masterfile_paths = vec!["masterfile1.txt", "masterfile2.txt"];
+    /// let name_server = NameServer::new(masterfile_paths).unwrap();
     ///
-    /// assert!(name_server.zones.contains_key(&DomainName::new_from_str("example.com.".to_string())));
+    /// assert!(name_server.zones.contains_key("example.com."));
     /// ```
-    pub fn new(masterfile_path: &str) -> io::Result<Self> {
-        // Leer la zona del archivo masterfile
-        let dns_zone = DnsZone::from_master_file(masterfile_path)?;
-
-        // Asociar la zona con su nombre en el HashMap
+    pub fn new(masterfile_paths: Vec<&str>) -> io::Result<Self> {
+        // Create a new hashmap to store the zones
         let mut zones = HashMap::new();
-        zones.insert(DomainName::new_from_str(dns_zone.name.clone()), dns_zone);
+        // For each masterfile path
+        for path in masterfile_paths {
+            // Create a new zone from the masterfile
+            let dns_zone = DnsZone::from_master_file(path)?;
+            // Check if the zone already exists
+            if zones.contains_key(&dns_zone.name) {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("Zona duplicada encontrada: {}", dns_zone.name),
+                ));
+            }
+            else { // If the zone does not exist 
+                // Insert the zone into the hashmap            
+                zones.insert(dns_zone.name.clone(), dns_zone);
+            }
+        }
 
         Ok(NameServer { zones })
     }

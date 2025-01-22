@@ -162,6 +162,12 @@ impl DnsZone {
         // Variable to check multiples zones
         let mut origin_count = 0;
 
+        // Variable to check multiples SOA records
+        let mut soa_count = 0;
+
+        // Variable to check thesame class
+        let mut class = Rclass::IN;
+
         // Read the file line by line
         for line in reader.lines() {
             let line = line?;

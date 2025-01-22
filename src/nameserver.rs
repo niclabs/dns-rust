@@ -114,7 +114,6 @@ mod test_name_server {
     use crate::zones::DnsZone;
     use crate::message::domain_name::DomainName;
     use std::path::Path;
-    use crate::message::resource_record::ResourceRecord;
 
     #[test]
     fn test_new_one_zone() {

@@ -6,7 +6,7 @@ use dns_rust::{
         }, client::{
         client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, message::resource_record::ResourceRecord};
 
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use rand::{thread_rng, Rng};
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::message::DnsMessage;
@@ -32,18 +32,24 @@ enum Commands {
 #[derive(Args, Debug)]
 struct ClientArgs {
     /// Host name to query for IP
+    #[arg(help = "The domain name to resolve.")]
     domain_name: String,
+
     /// DNS server ip
     #[arg(long)]
     server: String,
+
     /// Query type
-    #[arg(long, default_value_t = String::from("A"))]
+    #[arg(long, default_value = "A")]
     qtype: String,
+
     /// Query class
-    #[arg(long, default_value_t = String::from("IN"))]
+    #[arg(long, default_value = "IN")]
     qclass: String,
-    /// ends0 Options
-    options: Vec<OptionCode>,
+
+    /// EDNS0 options in the format +option (e.g., +nsid, +ede, etc.)
+    #[arg(trailing_var_arg = true, help_heading = "EDNS0 OPTIONS", help = "EDNS0 options available: +nsid +ede +padding +zoneversion")]
+    options: Vec<String>,
 }
 
 
@@ -65,6 +71,28 @@ struct ResolverArgs {
     nameserver: Vec<IpAddr>,
 }
 
+/// Maps EDNS0 option strings to their corresponding `OptionCode`.
+fn parse_edns_options(options: Vec<String>) -> Vec<OptionCode> {
+    options
+        .into_iter()
+        .filter_map(|opt| {
+            if opt.starts_with('+') {
+                match opt.trim_start_matches('+').to_lowercase().as_str() {
+                    "nsid" => Some(OptionCode::NSID),
+                    "ede" => Some(OptionCode::EDE),
+                    "padding" => Some(OptionCode::PADDING),
+                    "zoneversion" => Some(OptionCode::ZONEVERSION),
+                    _ => {
+                        eprintln!("Unknown option: {}", opt);
+                        None
+                    }
+                }
+            } else {
+                None
+            }
+        })
+        .collect()
+}
 fn print_response(response: Result<Vec<ResourceRecord>, ClientError>) {
     match response {
         Ok(rrs) => println!("{:?}", rrs),
@@ -80,9 +108,8 @@ pub async fn main() {
 
     match &cli.command {
         Commands::Client(client_args) => {
-
-            let addr = client_args.server.parse::<IpAddr>();
-            let conn = ClientUDPConnection::new_default(addr.unwrap(), Duration::from_secs(10));
+            let addr = client_args.server.parse::<IpAddr>().expect("Invalid IP address");
+            let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
             let mut client = Client::new(conn);
 
             let mut dns_query_message =
@@ -94,11 +121,16 @@ pub async fn main() {
                     false,
                     thread_rng().gen());
 
-            if !client_args.options.is_empty() {
-                dns_query_message.add_edns0(Some(512), Rcode::NOERROR, 0, false, Some(client_args.options.clone()));
+            // Map EDNS0 options to OptionCodes
+            let option_codes = parse_edns_options(client_args.options.clone());
+
+            if !option_codes.is_empty() {
+                dns_query_message.add_edns0(Some(512), Rcode::NOERROR, 0, false, Some(option_codes));
             }
+
             client.set_dns_query(dns_query_message);
 
+            // Send the query and print the response
             let response = client.send_query().await;
 
             if let Ok(resp) = response {
@@ -131,5 +163,5 @@ pub async fn main() {
             let rrs = response.map(|lookup_response| lookup_response.to_vec_of_rr());
             print_response(rrs);
         }
-    }  
+    }
 }

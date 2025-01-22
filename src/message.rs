@@ -1652,4 +1652,30 @@ mod message_test {
 
         assert!(dns_query_message.has_rr_opt());
     }
+
+    #[test]
+    fn get_rr_opt_test(){
+        let mut dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Rrtype::A,
+                Rclass::IN,
+                0,
+                false,
+                1);
+
+        assert!(dns_query_message.get_rr_opt().is_none());
+
+        dns_query_message.add_edns0(None, Rcode::NOERROR, 0, true,Some(vec![OptionCode::NSID]));
+
+        let mut expected_data = OptRdata::new();
+        expected_data.set_option(vec![OptOption::new(OptionCode::NSID)]);
+        let mut expected_rr = ResourceRecord::new(Rdata::OPT(expected_data));
+        expected_rr.set_name(DomainName::new_from_string(".".to_string()));
+        expected_rr.set_rclass(Rclass::UNKNOWN(512));
+        expected_rr.set_ttl(32768);
+
+        assert_eq!(dns_query_message.get_rr_opt().unwrap(), expected_rr);
+
+    }
 }

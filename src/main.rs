@@ -7,6 +7,12 @@ use dns_rust::{
         client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, message::resource_record::ResourceRecord};
 
 use clap::{Args, Parser, Subcommand};
+use rand::{thread_rng, Rng};
+use dns_rust::edns::opt_option::option_code::OptionCode;
+use dns_rust::message::DnsMessage;
+use dns_rust::message::rclass::Rclass;
+use dns_rust::message::rcode::Rcode;
+use dns_rust::message::rrtype::Rrtype;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -36,6 +42,8 @@ struct ClientArgs {
     /// Query class
     #[arg(long, default_value_t = String::from("IN"))]
     qclass: String,
+    /// ends0 Options
+    options: Vec<OptionCode>,
 }
 
 
@@ -74,16 +82,26 @@ pub async fn main() {
         Commands::Client(client_args) => {
 
             let addr = client_args.server.parse::<IpAddr>();
-            let conn = ClientTCPConnection::new_default(addr.unwrap(), Duration::from_secs(10));
+            let conn = ClientUDPConnection::new_default(addr.unwrap(), Duration::from_secs(10));
             let mut client = Client::new(conn);
 
-            let response = client.query(
-                DomainName::new_from_string(client_args.domain_name.clone()), 
-                client_args.qtype.as_str(), 
-                client_args.qclass.as_str()
-            );
+            let mut dns_query_message =
+                DnsMessage::new_query_message(
+                    DomainName::new_from_string(client_args.domain_name.clone()),
+                    Rrtype::from(client_args.qtype.as_str()),
+                    Rclass::from(client_args.qclass.as_str()),
+                    0,
+                    false,
+                    thread_rng().gen());
 
-            if let Ok(resp) = response.await {
+            if !client_args.options.is_empty() {
+                dns_query_message.add_edns0(Some(512), Rcode::NOERROR, 0, false, Some(client_args.options.clone()));
+            }
+            client.set_dns_query(dns_query_message);
+
+            let response = client.send_query().await;
+
+            if let Ok(resp) = response {
                 println!("{}", resp);
             }
         }
@@ -115,7 +133,3 @@ pub async fn main() {
         }
     }  
 }
-
-
-
-

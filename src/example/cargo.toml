@@ -1,8 +1,0 @@
-[package]
-name = "ej_rust"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-dns_rust = { path="../dns-rust"}
-base64 = "0.22.1"

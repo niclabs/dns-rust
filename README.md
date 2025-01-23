@@ -76,39 +76,55 @@ Then to use the library there are three options:
 ### Supported options configurations
 Here it can be specified whether to run a *client* or a *resolver* :
 
-| Argument | Description |
-|----------|-------------|
+| Argument | Description                                                      |
+|----------|------------------------------------------------------------------|
 |   `client`   | Execute a client that connects to the server and sends requests. |
-|   `resolver`   | Runs a DNS resolver |
+|   `resolver`   | Runs a DNS resolver                                              |
 
 #### Client
 
-- For the client there is one argument:
-   | Argument | Description |
-   |----------|-------------|
-   |   `<HOST_NAME>`   | Host name to query for IP |
+ - For the client there is three arguments:
 
-- And three options:
-   | Option | Description|
-   |--------|------------| 
-   |   `--server <SERVER>`   | DNS server ip |
-   |   `--qtype <QTYPE>`    | Query type [default: A] |
-   |   `--qclass <QCLASS>`   | Query class [default: IN] |
+   | Argument        | Description               |
+   |-----------------|---------------------------|
+   | `<SERVER>`      | DNS server ip             |
+   | `<DOMAIN_NAME>` | Host name to query for IP |
+   | `[OPTIONS]`     | EDNS0 options             |
+
+- Three options:
+
+   | Option              | Description                             |
+   |---------------------|-----------------------------------------| 
+   | `--qtype <QTYPE>`   | Query type [default: A]                 |
+   | `--qclass <QCLASS>` | Query class [default: IN]               |
+   | `--noedns`          | Disables the use of EDNS when specified |
+
+- And four EDNS0 options
+
+   | EDNS0 option | Description             |
+   |--------------|-------------------------|
+   | +nsid        | NSID option code        |
+   | +padding     | PADDING option code     |
+   | +ede         | EDE option code         |
+   | +zoneversion | ZONEVERSION option code |
+   
 
 #### Resolver
 
 - For the resolver there are two arguments:
-   | Argument | Description|
-   |--------|------------| 
-   |   `<HOST NAME>`   | Host name to query |
-   |   `[NAMESERVER]...`    | Recursive servers |
+
+   | Argument          | Description|
+   |-------------------|------------| 
+   | `<DOMAIN_NAME>`   | Host name to query |
+   | `[NAMESERVER]...` | Recursive servers |
 
 - And three options:
-   | Option | Description|
-   |--------|------------| 
-   |   `--bind-addr <BIND_ADDR>`   | Resolver bind address |
-   |   `--qtype <QTYPE>`    | Query type [default: A] |
-   |   `--protocol <PROTOCOL>`   | Protocol [default: UDP] |
+
+   | Option                  | Description|
+   |-------------------------|------------| 
+   | `--qtype <QTYPE>`       | Query type [default: A] |
+   | `--qclass <QCLASS>`     |Query class [default: IN]|
+   | `--protocol <PROTOCOL>` | Protocol [default: UDP] |
 
 Additionally the *client* and *resolver* have the command `-h` or `--help` to print the description of the structure and its usage.
 

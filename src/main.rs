@@ -6,7 +6,7 @@ use dns_rust::{
         }, client::{
         client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, message::resource_record::ResourceRecord};
 
-use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
+use clap::*;
 use rand::{thread_rng, Rng};
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::message::DnsMessage;
@@ -30,14 +30,19 @@ enum Commands {
 
 /// Client Arguments
 #[derive(Args, Debug)]
+#[command(after_help = "\x1b[1m\x1b[4mEdns0 options:\x1b[0m\n  \
+                        +nsid            NSID option code\n  \
+                        +padding         PADDING option code \n  \
+                        +ede             EDE option code  \n  \
+                        +zoneversion     ZONEVERSION option code\n\
+                        \x1b[1m\x1b[4mExamples:\x1b[0m\n  \
+                        dns_rust client --qtype A --qclass IN 1.1.1.1 example.com +nsid +zoneversion")]
 struct ClientArgs {
-    /// Host name to query for IP
-    #[arg(help = "The domain name to resolve.")]
-    domain_name: String,
-
     /// DNS server ip
-    #[arg(long)]
     server: String,
+
+    /// Host name to query for IP
+    domain_name: String,
 
     /// Query type
     #[arg(long, default_value = "A")]
@@ -48,7 +53,7 @@ struct ClientArgs {
     qclass: String,
 
     /// EDNS0 options in the format +option (e.g., +nsid, +ede, etc.)
-    #[arg(trailing_var_arg = true, help_heading = "EDNS0 OPTIONS", help = "EDNS0 options available: +nsid +ede +padding +zoneversion")]
+    #[arg(trailing_var_arg = true, help = "EDNS0 options")]
     options: Vec<String>,
 }
 

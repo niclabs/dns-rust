@@ -5,17 +5,6 @@ A DNS Client and a DNS resolver can be built using this library.
 
 Implementation in progress.
 
-## Supported RFCs 
-
-* 1034 - Domain names, concepts and facilities. 
-* 1035 - Domain names, implementation and specification. 
-
-### In progress:
-
-* 1123 - Requirements for Internet Hosts -- Application and Support
-
-* DNSSEC is not supported at the moment, but it will be eventually.
-
 ## Getting started
 
 ### Prerequisites
@@ -140,6 +129,30 @@ cargo run  resolver "example.com" "1.1.1.1" "8.8.8.8"
 ```
 
 These commands runs a query for `example.com` running a resolver.
+
+## Supported RFCs
+
+* 1034 - Domain names, concepts and facilities.
+* 1035 - Domain names, implementation and specification.
+* 1123 - Requirements for Internet Hosts -- Application and Support.
+* 2181 - Clarifications to the DNS Specification.
+* Negative Caching
+   * 2308 - Negative Caching of DNS Queries (DNS NCACHE)
+   * 9520 - Negative Caching of DNS Resolution Failures
+* 3596 - DNS Extensions to Support IP Version 6
+* 3597 - Handling of Unknown DNS Resource Record (RR) Types
+* Edns0
+   * 6891 - Extension Mechanisms for DNS (EDNS(0))
+   * 5001 - DNS Name Server Identifier (NSID) Option
+   * 7830 - The EDNS(0) Padding Option
+   * 8914 - Extended DNS Errors
+   * 9660 - The DNS Zone Version (ZONEVERSION) Option
+* Tsig
+   * 8945 - Secret Key Transaction Authentication for DNS (TSIG)
+
+### In progress:
+
+* DNSSEC is not supported at the moment, but it will be eventually.
 
 ## Contact
 

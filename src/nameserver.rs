@@ -111,6 +111,8 @@ impl NameServer {
 #[cfg(test)]
 mod test_name_server {
     use crate::message::rdata::soa_rdata::SoaRdata;
+    use crate::message::rdata::Rdata;
+    use crate::message::resource_record::ResourceRecord;
     use crate::zones::DnsZone;
     use crate::domain_name::DomainName;
     use crate::nameserver::NameServer;

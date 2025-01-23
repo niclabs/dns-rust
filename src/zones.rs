@@ -1,14 +1,17 @@
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use crate::message::rdata::a_rdata::ARdata;
+use crate::message::rdata::cname_rdata::CnameRdata;
 use crate::message::rdata::soa_rdata::SoaRdata;
+use crate::message::rdata::aaaa_rdata::AAAARdata;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::rdata::mx_rdata::MxRdata;
 use crate::domain_name::DomainName;
+use crate::message::rdata::ptr_rdata::PtrRdata;
 use crate::message::resource_record::ResourceRecord;
-use crate::message::rrtype::Rrtype;
-use crate::message::rclass::{self, Rclass};
+use crate::message::rclass::Rclass;
 
 /*
 The following entries are defined:
@@ -203,7 +206,10 @@ impl DnsZone {
             // Process records
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() < 4 {
-                continue; // Malformed line
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Registro de recurso incompleto",
+                ));
             }
 
             let record_name = parts[0];
@@ -228,15 +234,18 @@ impl DnsZone {
                 }
                 "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "PTR" => {
                     let rdata = match record_type {
-                        "A" => Rdata::A(parts[3].to_string()),
-                        "AAAA" => Rdata::AAAA(parts[3].to_string().parse().unwrap()),
-                        "CNAME" => Rdata::CNAME(DomainName::new_from_str(parts[3])),
-                        "MX" => Rdata::MX(MxRdata::new(
-                            parts[3].parse().unwrap_or(10),
-                            DomainName::new_from_str(parts[4].get_name()),
-                        )),
-                        "TXT" => Rdata::TXT(TxtRdata::new(parts[3])),
-                        "PTR" => Rdata::PTR(DomainName::new_from_str(parts[3])),
+                        "A" => {
+                            let ip_addr: std::net::IpAddr = parts[3].parse().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid IP address"))?;
+                            Rdata::A(ARdata::new_from_addr(ip_addr))
+                        },
+                        "AAAA" => {
+                            let ip_addr: std::net::IpAddr = parts[3].parse().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid IP address"))?;
+                            Rdata::AAAA(AAAARdata::new_from_addr(ip_addr))
+                        },
+                        "CNAME" => Rdata::CNAME(CnameRdata::new()), // CNAME
+                        "MX" => Rdata::MX(MxRdata::new()),
+                        "TXT" => Rdata::TXT(TxtRdata::new(vec![parts[3].to_string()])),
+                        "PTR" => Rdata::PTR(PtrRdata::new()),
                         _ => continue,
                     };
 
@@ -369,7 +378,7 @@ mod dns_zone_tests {
         dns_zone.add_resource_record(resource_record);
 
         assert_eq!(dns_zone.get_resource_records().len(), 1);
-        assert_eq!(dns_zone.get_resource_records()[0].get_rdata().unwrap().get_text(),String::from("dcc"));
+        assert_eq!(dns_zone.get_resource_records()[0].get_rdata(), Rdata::TXT(TxtRdata::new(vec![String::from("dcc")])));
     }
 
     #[test]

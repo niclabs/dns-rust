@@ -36,10 +36,10 @@ fn main() {
     rt.block_on(async {
         match client.send_query().await {
             Ok(response) => {
-                println!("Respuesta recibida: {:?}", response);
+                println!("Respuesta recibida: {}", response);
             }
             Err(err) => {
-                println!("Error al enviar: {:?}", err);
+                println!("Error al enviar: {}", err);
             }
         }
     });

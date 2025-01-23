@@ -36,7 +36,11 @@ fn main() -> Result<(), ClientError> {
     rt.block_on(async {
         match tcp_connection.send(dns_query).await {
             Ok(response) => {
-                println!("Respuesta recibida: {:?}", response);
+                let message = DnsMessage::from_bytes(response.as_slice());
+                match message {
+                    Ok(mess) => {println!("Respuesta recibida: \n{}", mess);}
+                    Err(e) => println!("Error resolving DNS message: {}", e),
+                }
             }
             Err(e) => {
                 eprintln!("Error al enviar la consulta DNS: {:?}", e);

@@ -6,6 +6,7 @@ use dns_rust::message::rrtype::Rrtype;
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::async_resolver::config::ResolverConfig;
 use dns_rust::async_resolver::AsyncResolver;
+use dns_rust::message::DnsMessage;
 
 fn main() {
     let rt = Runtime::new().unwrap();
@@ -22,10 +23,14 @@ fn main() {
     rt.block_on(async {
         match resolver.inner_lookup(domain_name, rrtype, record_class).await {
             Ok(lookup) => {
-                println!("Respuesta recibida: {:?}", lookup)
+                let message = DnsMessage::from_bytes(lookup.get_bytes().as_slice());
+                match message {
+                    Ok(mess) => {println!("Respuesta recibida: \n{}", mess);}
+                    Err(e) => println!("Error resolving DNS message: {}", e),
+                }
             }
             Err(e) => {
-                println!("Error al enviar: {:?}", e)
+                println!("Error al enviar: {}", e)
             },
         }
     });

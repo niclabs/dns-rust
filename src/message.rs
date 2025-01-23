@@ -795,15 +795,30 @@ impl fmt::Display for DnsMessage {
         let question = self.get_question();
         let answers = self.get_answer().into_iter();
         let authority = self.get_authority().into_iter();
-        let additional = self.get_additional().into_iter();
-        result.push_str(&format!("Question section\n"));
+        let mut addi = Vec::new();
+        let mut opt = Vec::new();
+
+        for rr in self.get_additional() {
+            if let Rdata::OPT(_) = rr.get_rdata() {
+                opt.push(rr);
+            } else {
+                addi.push(rr);
+            }
+        }
+        let additional = addi.into_iter();
+        let optional = opt.into_iter();
+
+
+        result.push_str(&format!("\x1b[1m\x1b[4mQuestion section:\x1b[0m\n"));
         result.push_str(&format!("{}\n", question));
-        result.push_str(&format!("Answer section\n"));
+        result.push_str(&format!("\x1b[1m\x1b[4mAnswer section:\x1b[0m\n"));
         answers.for_each(|answer| result.push_str(&format!("{}\n", answer)));
-        result.push_str(&format!("Authority section\n"));
+        result.push_str(&format!("\x1b[1m\x1b[4mAuthority section:\x1b[0m\n"));
         authority.for_each(|authority| result.push_str(&format!("{}\n", authority)));
-        result.push_str(&format!("Additional section\n"));
+        result.push_str(&format!("\x1b[1m\x1b[4mAdditional section:\x1b[0m\n"));
         additional.for_each(|additional| result.push_str(&format!("{}\n", additional)));
+        result.push_str(&format!("\x1b[1m\x1b[4mOPT pseudo section:\x1b[0m\n"));
+        optional.for_each(|optional| result.push_str(&format!("{}\n", optional)));
         write!(f, "{}", result)
     }
 }

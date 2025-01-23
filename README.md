@@ -125,16 +125,6 @@ cargo run  resolver "example.com" "1.1.1.1" "8.8.8.8"
 
 These commands runs a query for `example.com` running a resolver.
 
-## Development features
-
-### GitHub Actions
-
-To improve code quality GitHub Actions has been implemented in the repository, in the "main", "testing" and "bugfixes" branches. GitHub Actions has been configured to trigger when a commit is pushed to the project repository, running "cargo build" and "cargo run", and then all tests, finally showing an "x" if any test fails or a "✓" if all tests pass.
-
-### Docker
-
-Coming soon.
-
 ## Contact
 
 Javiera Alegria.

@@ -55,6 +55,10 @@ struct ClientArgs {
     /// EDNS0 options in the format +option (e.g., +nsid, +ede, etc.)
     #[arg(trailing_var_arg = true, help = "EDNS0 options")]
     options: Vec<String>,
+
+    /// Disables the use of EDNS when specified
+    #[arg(long, default_value = "false")]
+    noedns: bool,
 }
 
 
@@ -126,11 +130,12 @@ pub async fn main() {
                     false,
                     thread_rng().gen());
 
-            // Map EDNS0 options to OptionCodes
-            let option_codes = parse_edns_options(client_args.options.clone());
-
-            if !option_codes.is_empty() {
-                dns_query_message.add_edns0(Some(512), Rcode::NOERROR, 0, false, Some(option_codes));
+            // edns related
+            if !client_args.noedns {
+                let option_codes = parse_edns_options(client_args.options.clone());
+                let mut some_options = None;
+                if !option_codes.is_empty() { some_options = Some(option_codes); }
+                dns_query_message.add_edns0(Some(512), Rcode::NOERROR, 0, false, some_options);
             }
 
             client.set_dns_query(dns_query_message);

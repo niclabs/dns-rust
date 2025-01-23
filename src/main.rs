@@ -8,6 +8,7 @@ use dns_rust::{
 
 use clap::*;
 use rand::{thread_rng, Rng};
+use dns_rust::async_resolver::lookup_response::LookupResponse;
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::message::DnsMessage;
 use dns_rust::message::rclass::Rclass;
@@ -109,6 +110,20 @@ fn print_response(response: Result<Vec<ResourceRecord>, ClientError>) {
     }
 }
 
+fn print_response_from_lookup(response: Result<LookupResponse, ClientError>) {
+    match response {
+        Ok(rrs) => {
+            let bytes = rrs.get_bytes();
+            let message = DnsMessage::from_bytes(bytes.as_slice());
+            match message {
+                Ok(mess) => println!("{}", mess),
+                Err(e) => println!("{}", e),
+            }
+        },
+        Err(e) => println!("{}", e),
+    }
+}
+
 #[tokio::main]
 pub async fn main() {
     println!("Rustlang library for DNS");
@@ -170,8 +185,8 @@ pub async fn main() {
                 resolver_args.qtype.as_str(),
                 resolver_args.qclass.as_str(),
             ).await;
-            let rrs = response.map(|lookup_response| lookup_response.to_vec_of_rr());
-            print_response(rrs);
+
+            print_response_from_lookup(response);
         }
     }
 }

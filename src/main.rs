@@ -57,6 +57,10 @@ struct ClientArgs {
     #[arg(trailing_var_arg = true, help = "EDNS0 options")]
     options: Vec<String>,
 
+    /// Maximum payload for EDNS
+    #[arg(long, default_value = "512")]
+    payload: u16,
+
     /// Disables the use of EDNS when specified
     #[arg(long, default_value = "false")]
     noedns: bool,
@@ -150,7 +154,8 @@ pub async fn main() {
                 let option_codes = parse_edns_options(client_args.options.clone());
                 let mut some_options = None;
                 if !option_codes.is_empty() { some_options = Some(option_codes); }
-                dns_query_message.add_edns0(Some(512), Rcode::NOERROR, 0, false, some_options);
+                let max_payload = Some(client_args.payload);
+                dns_query_message.add_edns0(max_payload, Rcode::NOERROR, 0, false, some_options);
             }
 
             client.set_dns_query(dns_query_message);

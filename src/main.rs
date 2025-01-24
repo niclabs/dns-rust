@@ -53,6 +53,10 @@ struct ClientArgs {
     #[arg(long, default_value = "IN")]
     qclass: String,
 
+    /// Disables the use of recursion when specified
+    #[arg(long, default_value = "false")]
+    norecursive: bool,
+
     /// EDNS0 options in the format +option (e.g., +nsid, +ede, etc.)
     #[arg(trailing_var_arg = true, help = "EDNS0 options")]
     options: Vec<String>,
@@ -146,7 +150,7 @@ pub async fn main() {
                     Rrtype::from(client_args.qtype.as_str()),
                     Rclass::from(client_args.qclass.as_str()),
                     0,
-                    false,
+                    !client_args.norecursive,
                     thread_rng().gen());
 
             // edns related

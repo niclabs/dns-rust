@@ -82,11 +82,13 @@ Here it can be specified whether to run a *client* or a *resolver* :
 
 - Three options:
 
-   | Option              | Description                             |
-   |---------------------|-----------------------------------------| 
-   | `--qtype <QTYPE>`   | Query type [default: A]                 |
-   | `--qclass <QCLASS>` | Query class [default: IN]               |
-   | `--noedns`          | Disables the use of EDNS when specified |
+   | Option                | Description                                  |
+   |-----------------------|----------------------------------------------| 
+   | `--qtype <QTYPE>`     | Query type [default: A]                      |
+   | `--qclass <QCLASS>`   | Query class [default: IN]                    |
+   | `--norecursive`       | Disables the use of recursion when specified |
+   | `--payload <PAYLOAD>` | Maximum payload for EDNS [default: 512]      |
+   | `--noedns`            | Disables the use of EDNS when specified      |
 
 - And four EDNS0 options
 

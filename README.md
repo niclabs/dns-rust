@@ -90,12 +90,12 @@ Here it can be specified whether to run a *client* or a *resolver* :
 
 - And four EDNS0 options
 
-   | EDNS0 option | Description             |
-   |--------------|-------------------------|
-   | +nsid        | NSID option code        |
-   | +padding     | PADDING option code     |
-   | +ede         | EDE option code         |
-   | +zoneversion | ZONEVERSION option code |
+   | EDNS0 option   | Description             |
+   |----------------|-------------------------|
+   | `+nsid`        | NSID option code        |
+   | `+padding`     | PADDING option code     |
+   | `+ede`         | EDE option code         |
+   | `+zoneversion` | ZONEVERSION option code |
    
 
 #### Resolver

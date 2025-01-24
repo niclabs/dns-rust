@@ -115,9 +115,57 @@ Here it can be specified whether to run a *client* or a *resolver* :
    | `--qclass <QCLASS>`     |Query class [default: IN]|
    | `--protocol <PROTOCOL>` | Protocol [default: UDP] |
 
-Additionally the *client* and *resolver* have the command `-h` or `--help` to print the description of the structure and its usage.
+Additionally, the *client* and *resolver* have the command `-h` or `--help` to print the description of the structure and its usage.
 
-### Examples
+## Examples
+
+### 1. Client examples
+
+#### 1.1 These commands runs a query for `example.com` using a client.
+
+```sh
+dns_rust client "1.1.1.1" "example.com"
+```
+
+or
+
+```sh
+cargo run client "1.1.1.1" "example.com"
+```
+
+#### 1.2 This command runs a query for `example.com` using a client with NSID EDNS option.
+
+```sh
+dns_rust client "1.1.1.1" "example.com" "+nsid"
+```
+
+#### 1.2 This command runs a query for `example.com` using a client multiple EDNS options.
+
+```sh
+dns_rust client "74.82.42.42" "example.com" "+nsid" "+padding"
+```
+
+#### 1.3 This command runs a query for `example.com` using a client with EDNS disabled.
+
+```sh
+dns_rust client --noedns "1.1.1.1" "example.com" 
+```
+
+#### 1.4 This command runs a query for `example.com` using a client with qtype = MX.
+
+```sh
+dns_rust client --qtype "MX" "1.1.1.1" "example.com" 
+```
+
+#### 1.5 This command runs a query for `example.com` using a client with qtype = MX and qclass = CH.
+
+```sh
+dns_rust client --qtype "MX" --qclass "CH" "1.1.1.1" "example.com" 
+```
+
+### 2. Resolver examples
+
+#### 2.1 These commands runs a query for `example.com` running a resolver using the specified servers.
 
 ```sh
 dns_rust resolver "example.com" "1.1.1.1" "8.8.8.8" 
@@ -128,7 +176,23 @@ or
 cargo run  resolver "example.com" "1.1.1.1" "8.8.8.8"
 ```
 
-These commands runs a query for `example.com` running a resolver.
+#### 2.2 This command runs a query for `example.com` running the system's default resolver.
+
+```sh
+dns_rust  resolver "example.com"
+```
+
+#### 2.3 This command runs a query for `example.com` using TCP..
+
+```sh
+dns_rust resolver --protocol "TCP" "example.com" "1.1.1.1" "8.8.8.8"
+```
+
+#### 2.4 This command runs a query for `example.com` with qtype = MX using TCP.
+
+```sh
+dns_rust resolver --protocol "TCP" --qtype "MX" "example.com" 
+```
 
 ## Supported RFCs
 

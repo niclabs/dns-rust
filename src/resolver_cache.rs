@@ -9,6 +9,13 @@ use crate::message::DnsMessage;
 
 use std::num::NonZeroUsize;
 
+#[derive(Debug, Clone, Copy)]
+pub enum CacheType {
+    Answer,
+    Authority,
+    Additional,
+}
+
 #[derive(Clone, Debug)]
 pub struct ResolverCache {
     cache_answer: DnsCache,
@@ -117,6 +124,23 @@ impl ResolverCache {
         }
     }
 
+    /// Adds an element to the specified cache
+    fn add_to_specific_cache(
+        &mut self,
+        cache_type: CacheType,
+        domain_name: DomainName,
+        resource_record: ResourceRecord,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+        rcode: Option<Rcode>,
+    ) {
+        match cache_type {
+            CacheType::Answer => self.add_answer(domain_name, resource_record, qtype, qclass, rcode),
+            CacheType::Authority => self.add_authority(domain_name, resource_record, qtype, qclass, rcode),
+            CacheType::Additional => self.add_additional(domain_name, resource_record, qtype, qclass, rcode),
+        }
+    }
+
     /// Adds an answer to the cache
     pub fn add(&mut self, message: DnsMessage) {
         let qname = message.get_question().get_qname();
@@ -137,6 +161,25 @@ impl ResolverCache {
         }
 
         // Get the minimum TTL from the SOA record if the answer is negative
+        let minimum = message
+            .get_authority()
+            .iter()
+            .find_map(|rr| match rr.get_rdata() {
+                Rdata::SOA(soa) => Some(soa.get_minimum()),
+                _ => None,
+            }).unwrap_or(0);
+
+        for (rr_set, cache_type) in [
+            (message.get_answer(), CacheType::Answer),
+            (message.get_authority(), CacheType::Authority),
+            (message.get_additional(), CacheType::Additional),
+        ] {
+            for mut rr in rr_set {
+                if minimum != 0 { rr.set_ttl(minimum); }
+                self.add_to_specific_cache(cache_type, qname.clone(), rr, qtype, qclass, rcode);
+            }
+        }
+        /*
         let mut minimum = 0;
         if rcode != Some(Rcode::NOERROR) {
             for rr in message.get_authority() {
@@ -179,6 +222,7 @@ impl ResolverCache {
             }
             self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
         });
+         */
     }
 
     /// Gets elements from the answer cache

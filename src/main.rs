@@ -4,7 +4,7 @@ use dns_rust::{
     async_resolver::{
             config::ResolverConfig, AsyncResolver, server_info::ServerInfo
         }, client::{
-        client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName, message::resource_record::ResourceRecord};
+        client_connection::ClientConnection, client_error::ClientError, tcp_connection::ClientTCPConnection, udp_connection::ClientUDPConnection, Client}, domain_name::DomainName};
 
 use clap::*;
 use rand::{thread_rng, Rng};
@@ -110,12 +110,6 @@ fn parse_edns_options(options: Vec<String>) -> Vec<OptionCode> {
             }
         })
         .collect()
-}
-fn print_response(response: Result<Vec<ResourceRecord>, ClientError>) {
-    match response {
-        Ok(rrs) => println!("{:?}", rrs),
-        Err(e) => println!("{:?}", e),
-    }
 }
 
 fn print_response_from_lookup(response: Result<LookupResponse, ClientError>) {

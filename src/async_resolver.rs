@@ -249,6 +249,16 @@ impl AsyncResolver {
         // Search in cache only if its available
         if self.config.is_cache_enabled() {
             let lock_result = self.cache.lock();
+            match lock_result {
+                Ok(cache) => {
+                    if let Some(cache_lookup) = cache.clone().get(query.clone()){
+                        let new_lookup_response = LookupResponse::new(cache_lookup.clone(), cache_lookup.to_bytes());
+                        return Ok(new_lookup_response);
+                    }
+                }
+                Err(err) => {eprintln!("Error acquiring cache lock: {}", err);}
+            }
+            /*
             let cache = match lock_result {
                 Ok(val) => val,
                 Err(_) => Err(ClientError::Message("Error getting cache"))?, // FIXME: it shouldn't
@@ -259,6 +269,7 @@ impl AsyncResolver {
 
                 return Ok(new_lookup_response);
             }
+             */
         }
 
         let mut lookup_strategy = LookupStrategy::new(query, self.config.clone());

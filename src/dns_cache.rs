@@ -56,17 +56,39 @@ impl DnsCache {
         let rcode = rcode.unwrap_or_else(|| Rcode::NOERROR);
 
         let key;
+        match rcode {
+            Rcode::NXDOMAIN => key = CacheKey::Secondary(qclass, domain_name.clone()),
+            _ => key = CacheKey::Primary(qtype.unwrap(), qclass, domain_name.clone()),
+        }
 
+        /*
         if rcode == Rcode::NXDOMAIN {
             key = CacheKey::Secondary(qclass, domain_name.clone());
         } else {
             key = CacheKey::Primary(qtype.unwrap(), qclass, domain_name.clone());
         }
+        */
 
         if rcode != Rcode::NOERROR {
             rr_cache.set_rcode(rcode);
         }
 
+        if let Some(vec) = self.cache.get_mut(&key) {
+            // If the key is already cached
+            if let Some(stored) = vec.iter_mut()
+                .find(|stored| stored.get_resource_record() == rr_cache.get_resource_record()) {
+                // If a stored record with the same resource record exists, replace it
+                *stored = rr_cache;
+            } else {
+                // If no such record is found, push the new record
+                vec.push(rr_cache);
+            }
+        } else {
+            // If the key is not cached, insert a new entry
+            self.cache.put(key, vec![rr_cache]);
+        }
+
+        /*
         let mut cache_data = self.get_cache();
         let mut rr_cache_vec_opt = cache_data.get_mut(&key).
             map(|rr_cache_vec| rr_cache_vec.clone());
@@ -92,6 +114,8 @@ impl DnsCache {
 
         self.set_cache(cache_data); 
         // see cache space
+
+         */
     }
 
     /// TODO: Crear test y mejorar función de acuerdo a RFC de Negative caching

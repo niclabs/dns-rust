@@ -534,25 +534,20 @@ mod async_resolver_test {
     use crate::client::client_error::ClientError;
     use crate::client::tcp_connection::ClientTCPConnection;
     use crate::client::udp_connection::ClientUDPConnection;
-    use crate::dns_cache::CacheKey;
     use crate::domain_name::DomainName;
     use crate::message::rclass::Rclass;
     use crate::message::rcode::Rcode;
     use crate::message::rdata::a_rdata::ARdata;
-    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
     use crate::message::rrtype::Rrtype;
     use crate::message::DnsMessage;
     use std::net::{IpAddr, Ipv4Addr};
-    use std::str::FromStr;
     use std::time::Duration;
     use std::vec;
     use tokio::io;
     static TIMEOUT: u64 = 45;
-    use std::num::NonZeroUsize;
     use std::sync::Arc;
-    use crate::message::rdata::ns_rdata::NsRdata;
 
     #[test]
     fn create_async_resolver() {

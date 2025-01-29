@@ -21,7 +21,6 @@ use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use crate::edns::opt_option::option_code::OptionCode;
 use rand::thread_rng;
 use rand::Rng;
-use crate::edns::opt_option::option_data::OptionData;
 use crate::edns::opt_option::OptOption;
 use resource_record::ToBytes;
 use core::fmt;

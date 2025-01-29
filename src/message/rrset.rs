@@ -143,7 +143,7 @@ impl RRset {
 #[cfg(test)]
 mod rrset_test {
     use std::net::IpAddr;
-    use crate::message::{self, rdata::{a_rdata::ARdata, ns_rdata, rrsig_rdata}, resource_record::ResourceRecord};
+    use crate::message::{self, rdata::{a_rdata::ARdata, rrsig_rdata}, resource_record::ResourceRecord};
     use super::*;
     #[test]
     fn constructor_test() {

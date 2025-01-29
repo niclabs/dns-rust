@@ -1,7 +1,6 @@
 use crate::edns::opt_option::option_code::OptionCode;
 use crate::edns::opt_option::option_data::OptionData;
 use crate::edns::options::ede::ede_optdata::EdeOptData;
-use crate::edns::options::ede::ede_code::EdeCode;
 use crate::edns::options::zoneversion::ZoneversionOptData;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

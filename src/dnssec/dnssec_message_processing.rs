@@ -1,10 +1,7 @@
 use crate::message::rdata::Rdata;
-use crate::message::rdata::rrsig_rdata::RRSIGRdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::rrset::RRset;
 use crate::message::rrtype::Rrtype;
-use crate::domain_name::DomainName;
-use crate::message::rclass::Rclass;
 
 use crate::message::resource_record::ToBytes;
 
@@ -48,7 +45,6 @@ mod dnssec_message_processing_tests {
     pub fn test_extract_signed_rrsets() {
         use std::net::IpAddr;
         use crate::message::{self, rdata::{a_rdata::ARdata, rrsig_rdata}, resource_record::ResourceRecord};
-        use crate::message::question::Question;
         use super::*;
 
         let mut message = message::DnsMessage::new();

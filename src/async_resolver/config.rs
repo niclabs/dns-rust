@@ -2,7 +2,6 @@ use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientT
 use crate::client::client_connection::ConnectionProtocol;
 use crate::message::rcode::Rcode;
 use crate::edns::opt_option::option_code::OptionCode;
-use crate::edns::opt_option::OptOption;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;

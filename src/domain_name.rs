@@ -179,14 +179,14 @@ impl DomainName {
         // Absolute host name
         if end_dot == true {
             // name.remove(name.len() - 1);
-            return DomainName::new_from_string(name);
+            DomainName::new_from_string(name)
         } else {
             // Add the origin host_name
             let mut full_host_name = name.clone();
             full_host_name.push_str(".");
             full_host_name.push_str(&host_name);
 
-            return DomainName::new_from_string(full_host_name);
+            DomainName::new_from_string(full_host_name)
         }
     }
 }
@@ -229,7 +229,7 @@ pub fn check_label_name(name: String) -> bool {
         }
     }
 
-    return true;
+    true
 }
 
 // validity checks should be performed insuring that the file is syntactically correct
@@ -252,7 +252,7 @@ pub fn domain_validity_syntax(domain_name: DomainName) -> Result<DomainName, &'s
             return Err("Error: present domain name is not syntactically correct.");
         }
     }
-    return Ok(domain_name);
+    Ok(domain_name)
 }
 
 

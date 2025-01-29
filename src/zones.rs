@@ -12,7 +12,6 @@ use crate::domain_name::DomainName;
 use crate::message::rdata::ptr_rdata::PtrRdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::rclass::Rclass;
-
 /*
 The following entries are defined:
     <blank>[<comment>]
@@ -169,12 +168,6 @@ impl DnsZone {
         // Variable to check multiples zones
         let mut origin_count = 0;
 
-        // Variable to check multiples SOA records
-        let mut soa_count = 0;
-
-        // Variable to check thesame class
-        let mut class = Rclass::IN;
-
         // Read the file line by line
         for line in reader.lines() {
             let line = line?;
@@ -206,45 +199,57 @@ impl DnsZone {
             // Process records
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() < 4 {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "Registro de recurso incompleto",
-                ));
+                continue;
+                //return Err(io::Error::new(
+                //    io::ErrorKind::InvalidData,
+                //    "Registro de recurso incompleto",
+                //));
             }
 
             let record_name = parts[0];
-            let record_type = parts[2];
+
+            let record_ttl_or_type = parts[1];
+
+            let rr_type_index = if record_ttl_or_type.parse::<u32>().is_ok() {
+                ttl = record_ttl_or_type.parse().unwrap_or(3600);
+                2
+            } else {
+                1
+            };
+
+            let record_type = parts[rr_type_index];
+            let record_class = parts[rr_type_index+1];
             match record_type {
                 "SOA" => {
                     if parts.len() >= 7 {
                         // Crear un SoaRdata vacío y completarlo con setters
                         let mut soa_data = SoaRdata::new();
-                        soa_data.set_mname(DomainName::new_from_str(parts[3]));
-                        soa_data.set_rname(DomainName::new_from_str(parts[4]));
-                        soa_data.set_serial(parts[5].parse().unwrap_or(0));
-                        soa_data.set_refresh(parts[6].parse().unwrap_or(3600));
-                        soa_data.set_retry(parts.get(7).unwrap_or(&"1800").parse().unwrap_or(1800));
-                        soa_data.set_expire(parts.get(8).unwrap_or(&"1209600").parse().unwrap_or(1209600));
-                        soa_data.set_minimum(parts.get(9).unwrap_or(&"3600").parse().unwrap_or(3600));
+                        soa_data.set_mname(DomainName::new_from_str(parts[rr_type_index+2]));
+                        soa_data.set_rname(DomainName::new_from_str(parts[rr_type_index+3]));
+                        soa_data.set_serial(parts[rr_type_index+4].parse().unwrap_or(0));
+                        soa_data.set_refresh(parts[rr_type_index+5].parse().unwrap_or(3600));
+                        soa_data.set_retry(parts.get(rr_type_index+6).unwrap_or(&"1800").parse().unwrap_or(1800));
+                        soa_data.set_expire(parts.get(rr_type_index+7).unwrap_or(&"1209600").parse().unwrap_or(1209600));
+                        soa_data.set_minimum(parts.get(rr_type_index+8).unwrap_or(&"3600").parse().unwrap_or(3600));
                         soa = Some(soa_data);
                     }
                 }
                 "NS" => {
-                    ns_records.push(parts[3].to_string());
+                    ns_records.push(parts[rr_type_index+1].to_string());
                 }
-                "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "PTR" => {
+                "A" => {
+                    let resource_record = ARdata::rr_from_master_file(parts[rr_type_index+1].split_whitespace(), ttl, record_class, record_name.to_string());
+                    resource_records.push(resource_record);
+                }
+                "AAAA" | "CNAME" | "MX" | "TXT" | "PTR" => {
                     let rdata = match record_type {
-                        "A" => {
-                            let ip_addr: std::net::IpAddr = parts[3].parse().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid IP address"))?;
-                            Rdata::A(ARdata::new_from_addr(ip_addr))
-                        },
                         "AAAA" => {
-                            let ip_addr: std::net::IpAddr = parts[3].parse().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid IP address"))?;
+                            let ip_addr: std::net::IpAddr = parts[rr_type_index+1].parse().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid IP address"))?;
                             Rdata::AAAA(AAAARdata::new_from_addr(ip_addr))
                         },
                         "CNAME" => Rdata::CNAME(CnameRdata::new()), // CNAME
                         "MX" => Rdata::MX(MxRdata::new()),
-                        "TXT" => Rdata::TXT(TxtRdata::new(vec![parts[3].to_string()])),
+                        "TXT" => Rdata::TXT(TxtRdata::new(vec![parts[rr_type_index+1].to_string()])),
                         "PTR" => Rdata::PTR(PtrRdata::new()),
                         _ => continue,
                     };
@@ -257,10 +262,11 @@ impl DnsZone {
                     resource_records.push(resource_record);
                 }
                 _ => {
-                    return Err(io::Error::new(
+                    continue;
+                    /*return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
                         format!("Registro de recurso desconocido: {}", record_type),
-                        ));
+                        ));*/
                 } // Here is where ZONEMD and other unknow types should be entered.
             }
         }

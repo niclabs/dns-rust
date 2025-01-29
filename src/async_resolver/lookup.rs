@@ -26,7 +26,7 @@ pub struct LookupStrategy {
     /// Resolver configuration.
     config: ResolverConfig,
     /// Reference to the response of the query.
-    response_msg: Arc<std::sync::Mutex<Result<(DnsMessage, Vec<u8>), ResolverError>>>,
+    response_msg: Arc<Mutex<Result<(DnsMessage, Vec<u8>), ResolverError>>>,
 }
     
 impl LookupStrategy {
@@ -38,8 +38,8 @@ impl LookupStrategy {
         
     ) -> Self {
         Self { 
-            query: query,
-            config: config,
+            query,
+            config,
             response_msg: Arc::new(Mutex::new(Err(ResolverError::EmptyQuery))), 
         }
     }
@@ -103,7 +103,7 @@ impl LookupStrategy {
             timeout_duration = tokio::time::Duration::from_secs_f64(rto);
             tokio::time::sleep(timeout_duration).await;
         }
-        return lookup_response_result;
+        lookup_response_result
     }
 
     /// Checks if an appropiate answer was received.
@@ -115,7 +115,7 @@ impl LookupStrategy {
     //  appropriate response to its caller.
     pub fn received_appropriate_response(&self) -> bool {
         let response_arc = self.response_msg.lock().unwrap();
-        if let Ok((dns_msg, bytes)) = response_arc.as_ref() {
+        if let Ok((dns_msg, _)) = response_arc.as_ref() {
             match dns_msg.get_header().get_rcode().into() {
                 Rcode::SERVFAIL => return false,
                 Rcode::NOTIMP => return false,

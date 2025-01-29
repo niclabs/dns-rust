@@ -120,8 +120,8 @@ impl ResolverConfig {
             retransmission_loop_attempts: 3,
             cache_enabled: true,
             recursive_available: false,
-            protocol: protocol,
-            timeout: timeout,
+            protocol,
+            timeout,
             max_retry_interval_seconds: 10,
             min_retry_interval_seconds: 1,
             global_retransmission_limit: 30,
@@ -163,14 +163,14 @@ impl ResolverConfig {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: servers_info,
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
-            retransmission_loop_attempts: retransmission_loop_attempts,
+            retransmission_loop_attempts,
             cache_enabled: true,
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,
-            timeout: timeout,
-            max_retry_interval_seconds: max_retry_interval_seconds,
-            min_retry_interval_seconds: min_retry_interval_seconds,
-            global_retransmission_limit: global_retransmission_limit,
+            timeout,
+            max_retry_interval_seconds,
+            min_retry_interval_seconds,
+            global_retransmission_limit,
             edns0: false,
             max_payload: RECOMMENDED_MAX_PAYLOAD as u16,
             bufsize: RECOMMENDED_MAX_PAYLOAD as u16,
@@ -318,7 +318,7 @@ impl ResolverConfig {
     /// ```
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     pub fn os_config() -> Self {
-        let mut path = "";
+        let path;
         if env::consts::OS == "macos" {
             path = "var/run/resolv.conf";
         } else {

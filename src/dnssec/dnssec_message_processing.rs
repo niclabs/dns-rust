@@ -3,7 +3,6 @@ use crate::message::resource_record::ResourceRecord;
 use crate::message::rrset::RRset;
 use crate::message::rrtype::Rrtype;
 
-use crate::message::resource_record::ToBytes;
 
 pub fn extract_signed_rrsets(rrs: &Vec<ResourceRecord>) -> Option<Vec<(ResourceRecord, RRset)>> {
     // check if there exists RRSIG records
@@ -28,7 +27,7 @@ pub fn extract_signed_rrsets(rrs: &Vec<ResourceRecord>) -> Option<Vec<(ResourceR
         let rrs_filtered = rrs_filtered?;
         result.push((rrsig_rr.clone(), rrs_filtered));
     }
-    return Some(result);
+    Some(result)
 }
 #[cfg(test)]
 mod dnssec_message_processing_tests {
@@ -41,6 +40,7 @@ mod dnssec_message_processing_tests {
     use crate::message::resource_record::{ResourceRecord, ToBytes};
     use crate::message::rrtype::Rrtype;
 
+
     #[test]
     pub fn test_extract_signed_rrsets() {
         use std::net::IpAddr;
@@ -52,7 +52,7 @@ mod dnssec_message_processing_tests {
         header.set_qr(true);
         header.set_rd(true);
         message.set_header(header);
-        let mut question = crate::message::question::Question::new();
+        let mut question = message::question::Question::new();
         question.set_qname(DomainName::new_from_str("example.com"));
         question.set_rrtype(Rrtype::A);
         question.set_rclass(Rclass::IN);

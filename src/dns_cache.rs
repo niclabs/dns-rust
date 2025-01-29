@@ -76,7 +76,7 @@ impl DnsCache {
 
         if let Some(existing_record) = self.cache.get_mut(&key) {
             // If the key is already cached
-            if let Some(stored) = existing_record.take(&rr_cache) {
+            if let Some(_) = existing_record.take(&rr_cache) {
                 // If a stored record with the same resource record exists, replace it
                 existing_record.replace(rr_cache);
             } else {

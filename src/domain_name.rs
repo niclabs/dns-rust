@@ -91,7 +91,7 @@ impl DomainName {
                     }
                 }
 
-                let (domain_label, _bytes) = domain_name_result.unwrap();
+                let (domain_label, _bytes) = domain_name_result?;
 
                 let label = domain_label.get_name();
 
@@ -168,7 +168,7 @@ impl DomainName {
             }
         }
 
-        bytes.push(0 as u8);
+        bytes.push(0u8);
 
         bytes
     }

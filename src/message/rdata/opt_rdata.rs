@@ -75,7 +75,7 @@ impl FromBytes<Result<Self, &'static str>> for OptRdata {
                 return Err("Format Error");
             }
 
-            let option_data = option_data.unwrap();
+            let option_data = option_data?;
 
             let mut option = OptOption::new(option_code);
 
@@ -97,7 +97,7 @@ impl OptRdata {
         }
     }
 
-    pub fn get_option(&self) -> Vec<(OptOption)> {
+    pub fn get_option(&self) -> Vec<OptOption> {
         self.option.clone()
     }
 }

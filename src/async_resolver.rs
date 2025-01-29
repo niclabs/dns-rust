@@ -188,7 +188,7 @@ impl AsyncResolver {
         
         
         if self.config.get_tsig(){
-            self.verify_tsig(response.clone());
+            let _ = self.verify_tsig(response.clone());
         }
 
         return self.check_error_from_msg(response);

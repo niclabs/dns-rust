@@ -443,7 +443,6 @@ impl ResolverCache {
 
 #[cfg(test)]
 mod resolver_cache_test {
-    use std::collections::HashSet;
     use super::*;
     use crate::message::question::Question;
     use crate::message::rdata::a_rdata::ARdata;

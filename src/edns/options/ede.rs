@@ -116,7 +116,7 @@ pub mod ede_code {
 
 pub mod ede_optdata {
     use crate::edns::options::ede::ede_code::EdeCode;
-    use crate::message::resource_record::{FromBytes, ToBytes};
+    use crate::message::resource_record:: ToBytes;
 
     /*
     Extended DNS Error (EDE) information in DNS messages. The option is structured as follows:

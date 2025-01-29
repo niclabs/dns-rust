@@ -45,7 +45,7 @@ impl RRStoredData {
     pub fn new(resource_record: ResourceRecord) -> Self {
         let rr_cache = RRStoredData {
             rcode: Rcode::NOERROR,
-            resource_record: resource_record,
+            resource_record,
             response_time: 5000,
             creation_time: Utc::now(),
         };

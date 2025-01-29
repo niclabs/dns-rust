@@ -302,7 +302,7 @@ mod a_ch_rdata_test {
         let ach_rdata = AChRdata::from_bytes(&data_bytes, &data_bytes).unwrap();
 
         assert_eq!(ach_rdata.get_domain_name().get_name(), String::from("test.com"));
-        assert_eq!(ach_rdata.get_ch_address(), 10 as u16);
+        assert_eq!(ach_rdata.get_ch_address(), 10u16);
     }
 
     //ToDo: Revisar 

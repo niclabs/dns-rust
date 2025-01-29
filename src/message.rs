@@ -757,7 +757,7 @@ impl DnsMessage {
         let addi = self.get_additional();
         for opt in addi.iter() {
             match opt.get_rdata() {
-                Rdata::OPT(opt) => {
+                Rdata::OPT(_) => {
                     return true
                 },
                 _ => {}

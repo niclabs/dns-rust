@@ -855,8 +855,8 @@ mod resolver_cache_test {
             .unwrap();
 
         assert!(rr.contains(&resource_record_1));
-        assert!(rr.contains(&resource_record_1));
-        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_2));
+        assert!(rr.contains(&resource_record_3));
     }
 
     #[test]
@@ -926,8 +926,8 @@ mod resolver_cache_test {
             .unwrap();
 
         assert!(rr.contains(&resource_record_1));
-        assert!(rr.contains(&resource_record_1));
-        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_2));
+        assert!(rr.contains(&resource_record_3));
     }
 
     #[test]

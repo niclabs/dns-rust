@@ -1,7 +1,7 @@
 use sha2::{Sha256, Digest};
 use crypto::digest::Digest as RustDigest;
 use crypto::sha1::Sha1;
-use base64::encode;
+use data_encoding::BASE64;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::dnskey_rdata::DnskeyRdata;
 use crate::message::rdata::rrsig_rdata::RRSIGRdata;
@@ -38,11 +38,11 @@ pub fn verify_rrsig(rrsig: &RRSIGRdata, dnskey: &DnskeyRdata, rrset: &[ResourceR
             let mut sha1 = Sha1::new();
             sha1.input(&rrsig_data);
             let digest = sha1.result_str();
-            Ok(digest == encode(&signature))
+            Ok(digest == BASE64.encode(&signature))
         },
         8 => {
             // RSA/SHA256
-            Ok(encode(&hashed) == encode(&signature))
+            Ok(BASE64.encode(&hashed) == BASE64.encode(&signature))
         },
         _ => Err(ClientError::NotImplemented("Unknown DNSKEY algorithm")),
     }
@@ -59,7 +59,7 @@ pub fn verify_ds(ds_record: &ResourceRecord, dnskey: &DnskeyRdata) -> Result<boo
             },
             2 => {
                 let hashed = Sha256::digest(&dnskey_bytes);
-                encode(&hashed)
+                BASE64.encode(&hashed)
             },
             _ => return Err(ClientError::NotImplemented("Unknown DS algorithm")),
         };

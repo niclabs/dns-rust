@@ -6,7 +6,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct for the TSIG RData
 /// [RFC 2845](https://tools.ietf.org/html/rfc2845#section-3.5)
 /// [RFC 8945](https://tools.ietf.org/html/rfc8945#section-3.5)

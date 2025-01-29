@@ -4,7 +4,7 @@ use crate::message::resource_record::ToBytes;
 ///
 /// This struct is designed to hold a sequence of bytes (`Vec<u8>`),
 /// which can represent any kind of binary or textual data.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct OpaqueString {
     /// The underlying byte data for the opaque string.
     data: Vec<u8>,
@@ -55,7 +55,7 @@ impl ToBytes for OpaqueString {
 ///
 /// The ZONEVERSION option is used by DNS clients to request zone version
 /// information from authoritative name servers.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct ZoneversionOptData {
     label_count: Option<u8>,
     type_: Option<u8>,

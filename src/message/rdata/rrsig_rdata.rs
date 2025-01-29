@@ -5,7 +5,7 @@ use base64::engine::general_purpose;
 use base64::Engine as _;
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 /// Struct for RRSIG Rdata
 /// [RFC 4034](https://tools.ietf.org/html/rfc4034#section-3.1)
 ///                      1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3

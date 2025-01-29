@@ -1,6 +1,6 @@
 
 pub mod ede_code {
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
     pub enum EdeCode {
         OtherErr,           // 0
         UnsupDnskeyAlg,     // 1
@@ -132,7 +132,7 @@ pub mod ede_optdata {
     6: / EXTRA-TEXT ...                                                /
        +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
     */
-    #[derive(Debug, PartialEq, Eq, Clone)]
+    #[derive(Debug, PartialEq, Eq, Clone, Hash)]
     pub struct EdeOptData {
         info_code: Option<EdeCode>,
         extra_text: String,

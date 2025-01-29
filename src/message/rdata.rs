@@ -40,7 +40,7 @@ use nsec3param_rdata::Nsec3ParamRdata;
 use tsig_rdata::TSigRdata;
 use srv_rdata::SrvRdata;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Enumerates the differents types of `Rdata` struct.
 pub enum Rdata {
     A(ARdata),

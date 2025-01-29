@@ -9,7 +9,7 @@ use std::string::String;
 
 use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.2
 /// An struct that represents the `Rdata` for HINFO TYPE.
 /// 

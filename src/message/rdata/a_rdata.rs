@@ -26,7 +26,7 @@ impl SetAddress for IpAddr {
 }
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// An struct that represents the `Rdata` for a type.
 /// 
 /// ```text

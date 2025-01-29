@@ -7,7 +7,7 @@ use std::vec::Vec;
 
 use super::rrtype::Rrtype;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Hash)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.2.1
 /// An struct that represents the Resource Record secction from a dns message.
 /// 

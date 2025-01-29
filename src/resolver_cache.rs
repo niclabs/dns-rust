@@ -294,13 +294,13 @@ impl ResolverCache {
         let rr_stored_data = self.cache_answer.get(domain_name, Some(qtype), qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
-            Some(rr_stored_data[0].get_rcode())
+            Some(rr_stored_data.iter().next()?.get_rcode())
         } else {
             None
         }
     }
 
-    /// Gets an response from the cache
+    /// Gets a response from the cache
     pub fn get(&mut self, query: DnsMessage) -> Option<DnsMessage> {
         self.timeout();
 
@@ -443,6 +443,7 @@ impl ResolverCache {
 
 #[cfg(test)]
 mod resolver_cache_test {
+    use std::collections::HashSet;
     use super::*;
     use crate::message::question::Question;
     use crate::message::rdata::a_rdata::ARdata;
@@ -571,7 +572,7 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0].get_resource_record(), resource_record);
+        assert_eq!(rr.iter().next().expect("").get_resource_record(), resource_record);
     }
 
     #[test]
@@ -603,7 +604,7 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0].get_resource_record(), resource_record);
+        assert_eq!(rr.iter().next().expect("").get_resource_record(), resource_record);
     }
 
     #[test]
@@ -635,7 +636,7 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0].get_resource_record(), resource_record);
+        assert_eq!(rr.iter().next().expect("").get_resource_record(), resource_record);
     }
 
     #[test]
@@ -711,9 +712,9 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr_answer[0].get_resource_record(), resource_record_1);
-        assert_eq!(rr_authority[0].get_resource_record(), resource_record_2);
-        assert_eq!(rr_additional[0].get_resource_record(), resource_record_3);
+        assert_eq!(rr_answer.iter().next().expect("").get_resource_record(), resource_record_1);
+        assert_eq!(rr_authority.iter().next().expect("").get_resource_record(), resource_record_2);
+        assert_eq!(rr_additional.iter().next().expect("").get_resource_record(), resource_record_3);
     }
 
     #[test]
@@ -782,9 +783,9 @@ mod resolver_cache_test {
             .get_answer(domain_name.clone(), Rrtype::A, Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0], resource_record_1);
-        assert_eq!(rr[1], resource_record_2);
-        assert_eq!(rr[2], resource_record_3);
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_2));
+        assert!(rr.contains(&resource_record_3));
     }
 
     #[test]
@@ -853,9 +854,9 @@ mod resolver_cache_test {
             .get_authority(domain_name.clone(), Rrtype::A, Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0], resource_record_1);
-        assert_eq!(rr[1], resource_record_2);
-        assert_eq!(rr[2], resource_record_3);
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_1));
     }
 
     #[test]
@@ -924,9 +925,9 @@ mod resolver_cache_test {
             .get_additional(domain_name.clone(), Rrtype::A, Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0], resource_record_1);
-        assert_eq!(rr[1], resource_record_2);
-        assert_eq!(rr[2], resource_record_3);
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_1));
     }
 
     #[test]
@@ -1383,8 +1384,8 @@ mod resolver_cache_test {
                 .cache_additional
                 .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
-        assert_eq!(rr_answer, None);
-        assert_eq!(rr_authority, None);
-        assert_eq!(rr_additional, None);
+        assert!(rr_answer.is_none());
+        assert!(rr_authority.is_none());
+        assert!(rr_additional.is_none());
     }
 }

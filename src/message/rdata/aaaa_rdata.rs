@@ -25,7 +25,7 @@ impl SetAddress for IpAddr {
 /// A 128 bit IPv6 address is encoded in the data portion of an AAAA
 /// resource record in network byte order (high-order byte first).
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 pub struct AAAARdata {
     /// A 128 bit Internet address.
     address: IpAddr,

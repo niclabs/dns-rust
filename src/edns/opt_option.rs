@@ -4,7 +4,7 @@ use crate::edns::options::ede::ede_optdata::EdeOptData;
 use crate::edns::options::ede::ede_code::EdeCode;
 use crate::edns::options::zoneversion::ZoneversionOptData;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct OptOption {
     option_code: OptionCode,
     option_len: u16,
@@ -85,7 +85,7 @@ pub mod option_data {
     use crate::edns::options::zoneversion::ZoneversionOptData;
     use crate::message::resource_record::ToBytes;
 
-    #[derive(Debug, Clone, PartialEq, Eq)]
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub enum OptionData {
         NSID(String),
         EDE(EdeOptData),

@@ -7,7 +7,7 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 /// RFC 2782: https://datatracker.ietf.org/doc/html/rfc2782
 /// An struct that represents the `Rdata` for srv type.
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct SrvRdata {
     /// The priority of this target host. A client MUST attempt to contact the target host with the lowest-numbered priority it can reach; target hosts with the same priority SHOULD be tried in an order defined by the weight field.
     priority: u16,

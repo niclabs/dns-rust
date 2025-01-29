@@ -4,7 +4,7 @@ use crate::message::rrtype::Rrtype;
 
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 /// Struct for NSEC Rdata
 /// [RFC 4034](https://tools.ietf.org/html/rfc4034#section-4.1)
 ///                        1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3

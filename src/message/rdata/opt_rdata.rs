@@ -4,7 +4,7 @@ use crate::edns::opt_option::option_code::OptionCode;
 use std::fmt;
 use crate::edns::opt_option::option_data::OptionData;
 use crate::edns::opt_option::OptOption;
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 /// Struct for OPT Rdata
 /// [RFC 6891](https://tools.ietf.org/html/rfc6891#section-6.1.2)
 /// +0 (MSB)                            +1 (LSB)

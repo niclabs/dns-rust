@@ -2,7 +2,7 @@ use core::fmt;
 
 use crate::message::resource_record::{FromBytes, ToBytes};
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct for the DS Rdata
 /// [RFC 4034](https://tools.ietf.org/html/rfc4034#section-5.1)
 ///   0                   1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3

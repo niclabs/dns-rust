@@ -1,8 +1,10 @@
+use std::hash::{Hash, Hasher};
 use crate::message::resource_record::ResourceRecord;
 use crate::message::rcode::Rcode;
 use chrono::prelude::*;
 
-#[derive(Clone,PartialEq,Debug)]
+
+#[derive(Clone)]
 /// An structs that represents one element in the dns cache.
 pub struct RRStoredData {
     // RCODE associated with the answer
@@ -13,6 +15,20 @@ pub struct RRStoredData {
     response_time: u32,
     /// Time of creation of the `RRStoredData` in the Resolver's cache.
     creation_time: DateTime<Utc>,
+}
+
+impl PartialEq for RRStoredData {
+    fn eq(&self, other: &Self) -> bool {
+        self.resource_record == other.resource_record
+    }
+}
+
+impl Eq for RRStoredData {}
+
+impl Hash for RRStoredData {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.resource_record.hash(state);
+    }
 }
 
 impl RRStoredData {

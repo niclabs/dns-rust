@@ -4,7 +4,7 @@ use crate::message::rdata::NsecRdata;
 
 use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct for the NSEC3 Rdata
 /// [RFC 5155](https://tools.ietf.org/html/rfc5155#section-3.2)
 /// ```text

@@ -7,7 +7,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// An struct that represents the RDATA for A TYPE in CH class.
 /// 
 /// For the CH class, a domain name followed by a 16 bit octal Chaos address.

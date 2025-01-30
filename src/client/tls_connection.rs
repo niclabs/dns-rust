@@ -19,7 +19,7 @@ use tokio::time::timeout;
 use tokio_rustls::rustls::ClientConfig;
 use tokio_rustls::TlsConnector;
 use std::sync::Arc;
-
+use tokio::task;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClientTLSConnection {
@@ -67,12 +67,8 @@ impl ClientSecurity for ClientTLSConnection {
             .with_root_certificates(roots)
             .with_no_client_auth();
 
-        // Resolve the server's IP address to a domain name
-        let server_name_res = Self::resolve_hostname(self.get_server_addr()).await;
-        let server_name = match server_name_res {
-            Ok(server_name_str) => ServerName::try_from(server_name_str).expect("invalid DNS name"),
-            Err(_) => return Err(ClientError::FormatError("Unable to resolve the IP address to a valid domain.")),
-        };
+        let server_name_str = self.get_server_addr().to_string();
+        let server_name = ServerName::try_from(server_name_str).expect("invalid DNS name");
 
         // Create a TLS connector with the configured certificates
         let connector = TlsConnector::from(Arc::new(config));
@@ -129,29 +125,6 @@ impl ClientTLSConnection {
     pub fn get_timeout(&self)-> Duration {
         return self.timeout.clone();
     }
-
-    /// Resolves the IP to a domain name or returns an error if it cannot be resolved.
-    async fn resolve_hostname(ip: IpAddr) -> Result<String, String> {
-        let socket_addr = format!("{}:843", ip); // Use port 443 (HTTPS) or the appropriate one
-        match lookup_host(socket_addr).await {
-            Ok(mut addrs) => {
-                // If the IP is resolved, return the domain name
-                if let Some(SocketAddr::V4(addr)) = addrs.next() {
-                    return Ok(addr.ip().to_string());
-                }
-            }
-            Err(_) => {
-                // If resolution fails, return an error
-                return Err("Could not resolve the IP to a domain name.".to_string());
-            }
-        }
-
-        // If no domain is found, return an error
-        Err("Unable to resolve the IP address to a valid domain.".to_string())
-    }
-
-
-
 }
 
 //Setters

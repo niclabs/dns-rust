@@ -153,6 +153,11 @@ impl DnsZone {
     /// assert!(!dns_zone.ns_records.is_empty());
     /// assert!(!dns_zone.resource_records.is_empty());
     /// ```
+    /// Disclaimer!!
+    /// The SOA must be all in only one line
+    /// Example:
+    /// EDU.   IN       SOA     SRI-NIC.ARPA.      HOSTMASTER.SRI-NIC.ARPA. ( 870729 1800 300 604800 86400 )
+    /// .   IN        SOA     SRI-NIC.ARPA.      HOSTMASTER.SRI-NIC.ARPA. ( 870611 1800 300 604800 86400 )
     pub fn from_master_file(file_path: &str) -> io::Result<Self> { // Result<Self, io::Error> is the same as io::Result<Self>
         // Open the file
         let path = Path::new(file_path);
@@ -460,6 +465,13 @@ mod dns_zone_tests {
         assert_eq!(dns_zone.get_resource_records()[0].get_rdata(), Rdata::TXT(TxtRdata::new(vec![String::from("dcc")])));
     }
 
+
+    /// Disclaimer!!
+    /// The SOA must be all in only one line
+    /// The file used in the next text does not have the SOA in one line
+    /// Change the file to test the function
+    /// New SOA:
+    /// EDU.   IN       SOA     SRI-NIC.ARPA.      HOSTMASTER.SRI-NIC.ARPA. ( 870729 1800 300 604800 86400 )
     #[test]
     fn test_from_master_file_edu() {
         // Master file for the EDU domain.
@@ -493,6 +505,13 @@ mod dns_zone_tests {
         //assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "YALE.EDU." && matches!(rr.get_rdata(), Rdata::NS(_))));
     }
 
+
+    /// Disclaimer!!
+    /// The SOA must be all in only one line
+    /// The file used in the next text does not have the SOA in one line
+    /// Change the file to test the function
+    /// New SOA:
+    /// .   IN        SOA     SRI-NIC.ARPA.      HOSTMASTER.SRI-NIC.ARPA. ( 870611 1800 300 604800 86400 )
     #[test]
     fn test_from_master_file_root() {
         // Master file for the root zone.

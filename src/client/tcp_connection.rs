@@ -5,15 +5,8 @@ use crate::message::rdata::a_rdata::ARdata;
 use crate::message::resource_record::ResourceRecord;
 use super::client_error::ClientError;
 use async_trait::async_trait;
-use futures_util::TryFutureExt;
-use rustls::pki_types::ServerName;
-use rustls::server;
-use rustls::Stream;
-use webpki::DnsNameRef;
-use std::convert::TryFrom;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
-use std::iter::FromIterator;
 use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -21,9 +14,6 @@ use std::net::IpAddr;
 use std::net::SocketAddr;
 use tokio::time::Duration;
 use tokio::time::timeout;
-use tokio_rustls::rustls::ClientConfig;
-use tokio_rustls::TlsConnector;
-use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClientTCPConnection {
@@ -32,7 +22,7 @@ pub struct ClientTCPConnection {
     /// Read time timeout
     timeout: tokio::time::Duration,
     /// payload size
-    payload_size: usize
+    payload_size: usize,
 }
 
 #[async_trait]

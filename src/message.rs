@@ -942,9 +942,9 @@ pub fn create_recursive_query(
 
 /// Constructs a `DnsMessage` that represents a server failure response.
 ///
-/// This function is primarily used by the `Resolution` to generate a server failure response message
+/// This function is primarily used by the `LookupStrategy` to generate a server failure response message
 /// based on a given query message. This can be useful in scenarios where a default response is needed before
-/// an actual response is received from the DNS server.
+/// an actual response is received from the DNS server.q
 ///
 /// The `query` parameter is a reference to a `DnsMessage` that represents the original query.
 /// The resulting `DnsMessage` will have the same fields as the original query, except for the header. The header

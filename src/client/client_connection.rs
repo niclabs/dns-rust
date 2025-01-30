@@ -2,7 +2,6 @@ use crate::message::DnsMessage;
 use std::net::IpAddr;
 use tokio::time::Duration;
 use super::client_error::ClientError;
-use async_trait::async_trait;
 
 
 use async_trait::async_trait;

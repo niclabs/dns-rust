@@ -786,6 +786,25 @@ impl DnsMessage {
         None
     }
 
+    /// Signs a DNS message using TSIG (Transaction Signature).
+    ///
+    /// # Example
+    /// ```
+    /// let mut dns_message = DnsMessage::new();
+    /// let key = b"my-secret-key";
+    /// let algorithm = TsigAlgorithm::HmacSha256;
+    /// let fudge = 300;
+    /// let time_signed = 1700000000;
+    /// let key_name = "my-key".to_string();
+    /// let mac_request = vec![];
+    ///
+    /// dns_message.sign_message(key, algorithm, fudge, time_signed, key_name, mac_request);
+    /// ```
+    fn sign_message(&mut self, key: &[u8], alg_name: TsigAlgorithm,
+                    fudge: u16, time_signed: u64, key_name: String, mac_request: Vec<u8>) {
+        tsig::sign_tsig(self, key, alg_name, fudge, time_signed, key_name, mac_request);
+    }
+
 }
 
 impl fmt::Display for DnsMessage {
@@ -1690,6 +1709,41 @@ mod message_test {
         expected_rr.set_ttl(32768);
 
         assert_eq!(dns_query_message.get_rr_opt().unwrap(), expected_rr);
+    }
 
+    #[test]
+    fn sign_message_test() {
+        let mut dns_query_message =
+            DnsMessage::new_query_message(
+                DomainName::new_from_string("example.com".to_string()),
+                Rrtype::A,
+                Rclass::IN,
+                0,
+                false,
+                1);
+
+        let key = b"1234567890";
+        let alg_name = TsigAlgorithm::HmacSha1;
+        let fudge = 0;
+        let time_signed = 0;
+        let name: String = "".to_string();
+
+        dns_query_message.sign_message(key, alg_name, fudge, time_signed, name, vec![]);
+
+        let rr = dns_query_message.get_additional().pop().expect("Should be a tsig");
+        match rr.get_rdata() {
+            Rdata::TSIG(data) => {
+                assert_eq!(data.get_algorithm_name(), DomainName::new_from_str("hmac-sha1"));
+                assert_eq!(data.get_time_signed(), time_signed);
+                assert_eq!(data.get_fudge() , fudge);
+                assert_eq!(data.get_mac_size(), 20);
+                assert_eq!(data.get_error(), 0);
+                assert_eq!(data.get_other_len(), 0);
+                assert!(data.get_other_data().is_empty());
+            },
+            _ =>{
+                assert!(false);
+            }
+        }
     }
 }

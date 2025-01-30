@@ -1,11 +1,9 @@
-use crate::domain_name::DomainName;
 use crate::message::rclass::Rclass;
 use crate::message::DnsMessage;
 use crate::message::rdata::opt_rdata::OptRdata;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{ResourceRecord};
 use crate::message::rcode::Rcode;
-use crate::message::rrtype::Rrtype;
 
 const EDNS_VERSION: u8 = 0;
 const REQUESTED_UDP_LEN: u16 = 4096;
@@ -45,7 +43,7 @@ fn read_opt_rr(opt_rr: ResourceRecord) -> (u16, Rcode, u8, bool) {
     let (e_rcode, version) = (data[0], data[1]);
     let z = u16::from_be_bytes([data[2], data[3]]);
 
-    let do_bit = ((z & 0x8000) > 0) as bool ;
+    let do_bit = (z & 0x8000) > 0;
     (requested_udp_len, Rcode::from(e_rcode), version, do_bit)
     //format!("OPT PSEUDO-RR\n\trequested_udp_len: {requested_udp_len}\n\terror code: {e_rcode}\n\tversion: EDNS{version}\n\tuse dnssec: {do_bit}")
 }
@@ -64,21 +62,29 @@ fn add_opt_record_dns_message(msg: &mut DnsMessage, capacity: u16, e_rcode :Rcod
     msg.update_header_counters();
 }
 
+#[cfg(test)]
+mod dnssec_message_processing_tests {
+    use crate::dnssec::dnssec_message::{add_opt_record_dns_message, read_opt_rr};
+    use crate::domain_name::DomainName;
+    use crate::message::rrtype::Rrtype;
+    use crate::message::rclass::Rclass;
+    use crate::message::DnsMessage;
+    use crate::message::rcode::Rcode;
 
-
-#[test]
-fn see_dnssec_message() {
-    let mut query = DnsMessage::new_query_message(
-        DomainName::new_from_str("example.com"),
-        Rrtype::A,
-        Rclass::IN,
-        1,
-        true,
-        2000
-    );
-    add_opt_record_dns_message(&mut query, 4096, Rcode::NOERROR, true);
-    let expected = (4096,Rcode::NOERROR,0,true); 
-    assert_eq!(expected,
-               read_opt_rr(query.get_additional().pop().expect("No OPT Record!"))
-    )
+    #[test]
+    fn see_dnssec_message() {
+        let mut query = DnsMessage::new_query_message(
+            DomainName::new_from_str("example.com"),
+            Rrtype::A,
+            Rclass::IN,
+            1,
+            true,
+            2000
+        );
+        add_opt_record_dns_message(&mut query, 4096, Rcode::NOERROR, true);
+        let expected = (4096, Rcode::NOERROR, 0, true);
+        assert_eq!(expected,
+                   read_opt_rr(query.get_additional().pop().expect("No OPT Record!"))
+        )
+    }
 }

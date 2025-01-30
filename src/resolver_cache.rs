@@ -9,6 +9,13 @@ use crate::message::DnsMessage;
 
 use std::num::NonZeroUsize;
 
+#[derive(Debug, Clone, Copy)]
+pub enum CacheType {
+    Answer,
+    Authority,
+    Additional,
+}
+
 #[derive(Clone, Debug)]
 pub struct ResolverCache {
     cache_answer: DnsCache,
@@ -85,6 +92,12 @@ impl ResolverCache {
         qclass: Rclass,
         rcode: Option<Rcode>,
     ) {
+        /*
+        The meaning of the TTL field is a time limit on how long an RR can be
+        kept in a cache.  This limit does not apply to authoritative data in
+        zones; it is also timed out, but by the refreshing policies for the
+        zone.
+        */
         if resource_record.get_ttl() > 0 {
             self.cache_authority
                 .add(domain_name, resource_record, qtype, qclass, rcode);
@@ -100,11 +113,31 @@ impl ResolverCache {
         qclass: Rclass,
         rcode: Option<Rcode>,
     ) {
-        if resource_record.get_ttl() > 0 {
+        // Seems like SOA is a special record
+        // Nope! it should be in authority
+        // TODO: add this to auth (ttl rules does not apply in that section)
+        if resource_record.get_ttl() > 0 || resource_record.get_rtype() == Rrtype::SOA {
             if resource_record.get_rtype() != Rrtype::OPT {
                 self.cache_additional
                     .add(domain_name, resource_record, qtype, qclass, rcode);
             }
+        }
+    }
+
+    /// Adds an element to the specified cache
+    fn add_to_specific_cache(
+        &mut self,
+        cache_type: CacheType,
+        domain_name: DomainName,
+        resource_record: ResourceRecord,
+        qtype: Option<Rrtype>,
+        qclass: Rclass,
+        rcode: Option<Rcode>,
+    ) {
+        match cache_type {
+            CacheType::Answer => self.add_answer(domain_name, resource_record, qtype, qclass, rcode),
+            CacheType::Authority => self.add_authority(domain_name, resource_record, qtype, qclass, rcode),
+            CacheType::Additional => self.add_additional(domain_name, resource_record, qtype, qclass, rcode),
         }
     }
 
@@ -128,6 +161,25 @@ impl ResolverCache {
         }
 
         // Get the minimum TTL from the SOA record if the answer is negative
+        let minimum = message
+            .get_authority()
+            .iter()
+            .find_map(|rr| match rr.get_rdata() {
+                Rdata::SOA(soa) => Some(soa.get_minimum()),
+                _ => None,
+            }).unwrap_or(0);
+
+        for (rr_set, cache_type) in [
+            (message.get_answer(), CacheType::Answer),
+            (message.get_authority(), CacheType::Authority),
+            (message.get_additional(), CacheType::Additional),
+        ] {
+            for mut rr in rr_set {
+                if minimum != 0 { rr.set_ttl(minimum); }
+                self.add_to_specific_cache(cache_type, qname.clone(), rr, qtype, qclass, rcode);
+            }
+        }
+        /*
         let mut minimum = 0;
         if rcode != Some(Rcode::NOERROR) {
             for rr in message.get_authority() {
@@ -170,6 +222,7 @@ impl ResolverCache {
             }
             self.add_additional(qname.clone(), rr.clone(), qtype, qclass, rcode);
         });
+         */
     }
 
     /// Gets elements from the answer cache
@@ -241,13 +294,13 @@ impl ResolverCache {
         let rr_stored_data = self.cache_answer.get(domain_name, Some(qtype), qclass);
 
         if let Some(rr_stored_data) = rr_stored_data {
-            Some(rr_stored_data[0].get_rcode())
+            Some(rr_stored_data.iter().next()?.get_rcode())
         } else {
             None
         }
     }
 
-    /// Gets an response from the cache
+    /// Gets a response from the cache
     pub fn get(&mut self, query: DnsMessage) -> Option<DnsMessage> {
         self.timeout();
 
@@ -518,7 +571,7 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0].get_resource_record(), resource_record);
+        assert_eq!(rr.iter().next().expect("").get_resource_record(), resource_record);
     }
 
     #[test]
@@ -550,7 +603,7 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0].get_resource_record(), resource_record);
+        assert_eq!(rr.iter().next().expect("").get_resource_record(), resource_record);
     }
 
     #[test]
@@ -582,7 +635,7 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0].get_resource_record(), resource_record);
+        assert_eq!(rr.iter().next().expect("").get_resource_record(), resource_record);
     }
 
     #[test]
@@ -658,9 +711,9 @@ mod resolver_cache_test {
             .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr_answer[0].get_resource_record(), resource_record_1);
-        assert_eq!(rr_authority[0].get_resource_record(), resource_record_2);
-        assert_eq!(rr_additional[0].get_resource_record(), resource_record_3);
+        assert_eq!(rr_answer.iter().next().expect("").get_resource_record(), resource_record_1);
+        assert_eq!(rr_authority.iter().next().expect("").get_resource_record(), resource_record_2);
+        assert_eq!(rr_additional.iter().next().expect("").get_resource_record(), resource_record_3);
     }
 
     #[test]
@@ -729,9 +782,9 @@ mod resolver_cache_test {
             .get_answer(domain_name.clone(), Rrtype::A, Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0], resource_record_1);
-        assert_eq!(rr[1], resource_record_2);
-        assert_eq!(rr[2], resource_record_3);
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_2));
+        assert!(rr.contains(&resource_record_3));
     }
 
     #[test]
@@ -800,9 +853,9 @@ mod resolver_cache_test {
             .get_authority(domain_name.clone(), Rrtype::A, Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0], resource_record_1);
-        assert_eq!(rr[1], resource_record_2);
-        assert_eq!(rr[2], resource_record_3);
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_2));
+        assert!(rr.contains(&resource_record_3));
     }
 
     #[test]
@@ -871,9 +924,9 @@ mod resolver_cache_test {
             .get_additional(domain_name.clone(), Rrtype::A, Rclass::IN)
             .unwrap();
 
-        assert_eq!(rr[0], resource_record_1);
-        assert_eq!(rr[1], resource_record_2);
-        assert_eq!(rr[2], resource_record_3);
+        assert!(rr.contains(&resource_record_1));
+        assert!(rr.contains(&resource_record_2));
+        assert!(rr.contains(&resource_record_3));
     }
 
     #[test]
@@ -1330,8 +1383,8 @@ mod resolver_cache_test {
                 .cache_additional
                 .get(domain_name.clone(), Some(Rrtype::A), Rclass::IN);
 
-        assert_eq!(rr_answer, None);
-        assert_eq!(rr_authority, None);
-        assert_eq!(rr_additional, None);
+        assert!(rr_answer.is_none());
+        assert!(rr_authority.is_none());
+        assert!(rr_additional.is_none());
     }
 }

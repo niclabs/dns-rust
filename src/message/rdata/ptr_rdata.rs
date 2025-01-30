@@ -6,7 +6,7 @@ use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
 use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct that represents the `Rdata` for PTR TYPE.
 /// 
 /// [RFC 1035](https://tools.ietf.org/html/rfc1035#section-3.3.12)

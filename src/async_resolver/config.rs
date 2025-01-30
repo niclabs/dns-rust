@@ -1,12 +1,17 @@
 use crate::client::{udp_connection::ClientUDPConnection, tcp_connection::ClientTCPConnection,client_connection::ClientConnection };
 use crate::client::client_connection::ConnectionProtocol;
 use crate::message::rcode::Rcode;
+use crate::edns::opt_option::option_code::OptionCode;
 use crate::message::DnsMessage;
 use crate::tsig::tsig_algorithm::TsigAlgorithm;
 use std::cmp::max;
-use std::{net::{IpAddr,SocketAddr,Ipv4Addr}, time::Duration};
-
+use std::{env, io, net::{IpAddr, SocketAddr, Ipv4Addr}, time::Duration};
+use std::fs::File;
+use std::io::BufRead;
 use super::server_info::ServerInfo;
+
+#[cfg(target_os = "windows")]
+use ipconfig;
 
 const GOOGLE_PRIMARY_DNS_SERVER: [u8; 4] = [8, 8, 8, 8];
 const GOOGLE_SECONDARY_DNS_SERVER: [u8; 4] = [8, 8, 4, 4];
@@ -21,37 +26,37 @@ const RECOMMENDED_MAX_PAYLOAD: usize = 4000;
 #[derive(Clone, Debug, PartialEq, Eq)]
 
 /// Configuration for the resolver.
-/// 
+///
 /// This struct contains all the necessary configurations to create a new
 /// resolver. This includes a list of connections to Name Servers, the socket
 /// address of the resolver, the quantity of retries before the resolver
-/// panic in a Temporary Error, availability of cache and recursive queries, 
+/// panic in a Temporary Error, availability of cache and recursive queries,
 /// the chosen transport protocol and the timeout for the connections.
-pub struct ResolverConfig {
+pub struct  ResolverConfig {
     /// Vector of tuples with the UDP and TCP connections to a Name Server.
     name_servers: Vec<ServerInfo>,
     /// Socket address of the resolver.
     bind_addr: SocketAddr,
-    /// Maximum quantity of queries for each sent query. 
-    /// 
-    /// If this number is surpassed, the resolver is expected to panic in 
+    /// Maximum quantity of queries for each sent query.
+    ///
+    /// If this number is surpassed, the resolver is expected to panic in
     /// a Temporary Error.
     retransmission_loop_attempts: u16,
     /// Activation of cache in this resolver.
-    /// 
+    ///
     /// This is whether the resolver uses cache or not.
     cache_enabled: bool,
     /// Availability of recursive queries in this resolver.
-    /// 
+    ///
     /// This is whether the resolver uses recursive queries or not.
     recursive_available: bool,
     /// Transport protocol for queries.
-    /// 
+    ///
     /// This is the transport protocol used by the resolver to send queries
     /// and corresponds to `ConnectionProtocol` enum type.
     protocol: ConnectionProtocol,
     /// Timeout for connections.
-    /// 
+    ///
     /// This corresponds a `Duration` type.
     timeout: Duration,
     max_retry_interval_seconds: u64,
@@ -67,14 +72,16 @@ pub struct ResolverConfig {
     global_retransmission_limit: u16,
     /// This is whether ends0 is enabled or not.
     edns0: bool,
-    /// Max payload for the resolver.
+    /// Max payload supported for the resolver
     max_payload: u16,
+    // buffer size for the connections
+    bufsize: u16,
     /// Version of endns0.
     edns0_version: u8,
     /// edns0 flags for the resolver.
     edns0_do: bool,
     /// edns0 options for the resolver.
-    edns0_options: Vec<u16>,
+    edns0_options: Vec<OptionCode>,
     /// This is whether tsig is enabled or not.
     tsig: bool,
     /// This is the tsig keyname for the resolver.
@@ -87,15 +94,15 @@ pub struct ResolverConfig {
 
 impl ResolverConfig {
     /// Creates a ResolverConfig with the given address, protocol and timeout.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
     /// let protocol = ConnectionProtocol::UDP;
     /// let timeout = Duration::from_secs(TIMEOUT);
@@ -103,23 +110,24 @@ impl ResolverConfig {
     /// assert_eq!(resolver_config.get_addr(), SocketAddr::new(addr, 53));
     /// ```
     pub fn new(
-        resolver_addr: IpAddr, 
-        protocol: ConnectionProtocol, 
+        resolver_addr: IpAddr,
+        protocol: ConnectionProtocol,
         timeout: Duration,
-        ) -> Self {
+    ) -> Self {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: Vec::new(),
             bind_addr: SocketAddr::new(resolver_addr, 53),
             retransmission_loop_attempts: 3,
             cache_enabled: true,
             recursive_available: false,
-            protocol: protocol,
-            timeout: timeout,
+            protocol,
+            timeout,
             max_retry_interval_seconds: 10,
             min_retry_interval_seconds: 1,
             global_retransmission_limit: 30,
             edns0: false,
             max_payload: RECOMMENDED_MAX_PAYLOAD as u16,
+            bufsize: RECOMMENDED_MAX_PAYLOAD as u16,
             edns0_version: 0,
             edns0_do: false,
             edns0_options: Vec::new(),
@@ -130,7 +138,7 @@ impl ResolverConfig {
         };
         resolver_config
     }
-    
+
     pub fn default()-> Self {
         // FIXME: these are examples values
         let retransmission_loop_attempts = 3;
@@ -139,14 +147,14 @@ impl ResolverConfig {
         let max_retry_interval_seconds = 60;
 
         let mut servers_info = Vec::new();
-        servers_info.push(ServerInfo::new_from_addr(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
-        servers_info.push(ServerInfo::new_from_addr(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_PRIMARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(GOOGLE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(CLOUDFLARE_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(OPEN_DNS_SECONDARY_DNS_SERVER.into(), timeout));
+        servers_info.push(ServerInfo::new_from_addr_with_default_size(QUAD9_SECONDARY_DNS_SERVER.into(), timeout));
 
         // Recommended by RFC 1536: max(4, 5/number_of_server_to_query)
         let number_of_server_to_query = servers_info.len() as u64;
@@ -155,16 +163,17 @@ impl ResolverConfig {
         let resolver_config: ResolverConfig = ResolverConfig {
             name_servers: servers_info,
             bind_addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5333),
-            retransmission_loop_attempts: retransmission_loop_attempts,
+            retransmission_loop_attempts,
             cache_enabled: true,
             recursive_available: false,
             protocol: ConnectionProtocol::UDP,
-            timeout: timeout,
-            max_retry_interval_seconds: max_retry_interval_seconds,
-            min_retry_interval_seconds: min_retry_interval_seconds,
-            global_retransmission_limit: global_retransmission_limit,
+            timeout,
+            max_retry_interval_seconds,
+            min_retry_interval_seconds,
+            global_retransmission_limit,
             edns0: false,
-            max_payload: 512,
+            max_payload: RECOMMENDED_MAX_PAYLOAD as u16,
+            bufsize: RECOMMENDED_MAX_PAYLOAD as u16,
             edns0_version: 0,
             edns0_do: false,
             edns0_options: Vec::new(),
@@ -177,41 +186,41 @@ impl ResolverConfig {
     }
 
     /// Adds a new Name Server to the list of Name Servers.
-    /// 
+    ///
     /// This corresponds to a tuple of UDP and TCP connections to a Name Server
     /// of the type `(ClientUDPConnection, ClientTCPConnection)`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let mut resolver_config = ResolverConfig::default();
     /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
     /// resolver_config.add_servers(addr);
     /// assert_eq!(resolver_config.get_name_servers().len(), 2);
     /// ```
     pub fn add_servers(&mut self, addr: IpAddr) {
-        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout, self.max_payload as usize);
-        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout, self.max_payload as usize);
+        let conn_udp:ClientUDPConnection = ClientUDPConnection::new(addr, self.timeout, self.bufsize as usize);
+        let conn_tcp:ClientTCPConnection = ClientTCPConnection::new(addr, self.timeout, self.bufsize as usize);
 
         let server_info = ServerInfo::new_with_ip(addr, conn_udp, conn_tcp);
         self.name_servers.push(server_info);
     }
 
     /// Remove all servers from the list of Name Servers.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let mut resolver_config = ResolverConfig::default();
     /// let addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
     /// resolver_config.add_servers(addr);
@@ -224,19 +233,19 @@ impl ResolverConfig {
     }
 
     /// add edns0 to the resolver
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::net::IpAddr;
     /// use std::time::Duration;
     /// use dns_resolver::client::client_connection::ConnectionProtocol;
     /// use dns_resolver::resolver::config::ResolverConfig;
-    /// 
+    ///
     /// let mut resolver_config = ResolverConfig::default();
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
     /// ```
-    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<u16>>) {
+    pub fn add_edns0(&mut self, max_payload: Option<u16>, version: u8, do_bit: bool, options: Option<Vec<OptionCode>>) {
         self.set_ends0(true);
         if let Some(max_payload) = max_payload {
             self.set_max_payload(max_payload);
@@ -249,9 +258,9 @@ impl ResolverConfig {
     }
 
     /// add edns0 from the resolver to a dns message
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut resolver_config = ResolverConfig::default();
     /// resolver_config.add_edns0(Some(1024), 0, 0, Some(vec![12]));
@@ -270,7 +279,7 @@ impl ResolverConfig {
     }
 
     /// add tsig to the resolver
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let mut resolver_config = ResolverConfig::default();
@@ -286,7 +295,7 @@ impl ResolverConfig {
     }
 
     /// add tsig from the resolver to a dns message
-    /// 
+    ///
     /// # Examples
     /// ```
     /// let mut resolver_config = ResolverConfig::default();
@@ -296,9 +305,96 @@ impl ResolverConfig {
     /// ```
     pub fn add_tsig_to_message(&self, message: &mut DnsMessage, fudge: Option<u16>, mac_request: Option<Vec<u8>>) {
         if self.tsig {
-            message.add_tsig(self.key.clone(), self.algorithm.clone(), 
-            fudge.unwrap_or(300), self.key_name.clone(), mac_request.unwrap_or(Vec::new()));
+            message.add_tsig(self.key.clone(), self.algorithm.clone(),
+                             fudge.unwrap_or(300), self.key_name.clone(), mac_request.unwrap_or(Vec::new()));
         }
+    }
+
+    /// Create a resolver configuration based on the `/etc/resolv.conf` file.
+    ///
+    /// # examples
+    /// ```
+    /// let resolver_config = ResolverConfig::os_config();
+    /// ```
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    pub fn os_config() -> Self {
+        let path;
+        if env::consts::OS == "macos" {
+            path = "var/run/resolv.conf";
+        } else {
+            path = "/etc/resolv.conf";
+        }
+        let mut name_servers = Vec::new();
+        let mut edns0 = false;
+
+        if let Ok(file) = File::open(path) {
+            for line in io::BufReader::new(file).lines() {
+                if let Ok(line) = line {
+                    let trimmed = line.trim();
+                    // nameserver
+                    if trimmed.starts_with("nameserver") {
+                        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                        if parts.len() > 1 {
+                            if let Ok(ip) = parts[1].parse::<IpAddr>() {
+                                let server_info = ServerInfo::new_from_addr_with_default_size(
+                                    ip,
+                                    Duration::from_secs(5),
+                                );
+                                name_servers.push(server_info);
+                            }
+                        }
+                    // options
+                    } else if trimmed.starts_with("options") {
+                        let options = trimmed["options".len()..].trim();
+                        for opt in options.split_whitespace() {
+                            if opt == "edns0" {
+                                edns0 = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Build the final configuration
+        let mut config = ResolverConfig::default();
+        config.set_name_servers(name_servers);
+        config.set_ends0(edns0);
+        config
+    }
+
+    /// Create a resolver configuration based on the network adapters and DNS servers
+    ///  configured on a Windows system.
+    ///
+    /// # examples
+    /// ```
+    /// let resolver_config = ResolverConfig::os_config();
+    /// ```
+    #[cfg(target_os = "windows")]
+    pub fn os_config() -> Self {
+        let mut name_servers = Vec::new();
+
+        if let Ok(adapters) = ipconfig::get_adapters() {
+            for adapter in adapters {
+                if adapter.oper_status() == ipconfig::OperStatus::IfOperStatusUp {
+                    for server in adapter.dns_servers(){
+                        if let IpAddr::V4(_) = *server {
+                            let server_info = ServerInfo::new_from_addr_with_default_size(
+                                *server,
+                                Duration::from_secs(5),
+                            );
+                            name_servers.push(server_info);
+                        }
+                    }
+                }
+            }
+        } else {
+            panic!("No adapters found");
+        }
+
+        let mut config = ResolverConfig::default();
+        config.set_name_servers(name_servers);
+        config
     }
 }
 
@@ -333,7 +429,7 @@ impl ResolverConfig {
 
     /// Returns the transport protocol for queries.
     pub fn get_protocol(&self) -> ConnectionProtocol {
-        self.protocol  
+        self.protocol
     }
 
     /// Returns the timeout for connections.
@@ -369,7 +465,7 @@ impl ResolverConfig {
         self.edns0_do
     }
 
-    pub fn get_edns0_options(&self) -> Vec<u16> {
+    pub fn get_edns0_options(&self) -> Vec<OptionCode> {
         self.edns0_options.clone()
     }
 
@@ -396,6 +492,11 @@ impl ResolverConfig{
     /// Sets the list of Name Servers.
     pub fn set_name_servers(&mut self, list_name_servers: Vec<ServerInfo>) {
         self.name_servers = list_name_servers;
+    }
+
+    // Adds a Name Server to the list of Name Servers.
+    pub fn add_name_server(&mut self, server_info: ServerInfo) {
+        self.name_servers.push(server_info);
     }
 
     /// Sets the socket address of the resolver.
@@ -457,7 +558,7 @@ impl ResolverConfig{
         self.edns0_do = ends0_do;
     }
 
-    pub fn set_ends0_options(&mut self, ends0_options: Vec<u16>) {
+    pub fn set_ends0_options(&mut self, ends0_options: Vec<OptionCode>) {
         self.edns0_options = ends0_options;
     }
 
@@ -640,5 +741,36 @@ mod tests_resolver_config {
         resolver_config.set_global_retransmission_limit(40);
 
         assert_eq!(resolver_config.get_global_retransmission_limit(), 40);
+    }
+
+    // run on linux
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_config_test() {
+        let resolver_config = ResolverConfig::os_config();
+        let nameserver = server_info::ServerInfo::new_from_addr_with_default_size(
+            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 53)),
+            Duration::from_secs(5)
+        );
+        assert_eq!(resolver_config.get_name_servers(), vec![nameserver]);
+        assert_eq!(resolver_config.get_name_servers().len(), 1);
+        assert_eq!(resolver_config.get_edns0(), true);
+    }
+
+    // run on windows
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_config_test() {
+        let resolver_config = ResolverConfig::os_config();
+        let nameserver1 = server_info::ServerInfo::new_from_addr_with_default_size(
+            IpAddr::V4(Ipv4Addr::new(200,28,4,130)),
+            Duration::from_secs(5)
+        );
+        let nameserver2 = server_info::ServerInfo::new_from_addr_with_default_size(
+            IpAddr::V4(Ipv4Addr::new(200,28,4,129)),
+            Duration::from_secs(5)
+        );
+        assert_eq!(resolver_config.get_name_servers(), vec![nameserver1, nameserver2]);
+        assert_eq!(resolver_config.get_name_servers().len(), 2);
     }
 }

@@ -40,7 +40,7 @@ use nsec3param_rdata::Nsec3ParamRdata;
 use tsig_rdata::TSigRdata;
 use srv_rdata::SrvRdata;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Enumerates the differents types of `Rdata` struct.
 pub enum Rdata {
     A(ARdata),
@@ -381,7 +381,9 @@ impl fmt::Display for Rdata {
 #[cfg(test)]
 mod resolver_query_tests {
     use crate::domain_name::DomainName;
-    use crate::message::rdata::opt_rdata::option_code::OptionCode;
+    use crate::edns::opt_option::option_code::OptionCode;
+    use crate::edns::opt_option::option_data::OptionData;
+    use crate::edns::opt_option::OptOption;
     use crate::message::resource_record::{ToBytes, FromBytes};
     use crate::message::rdata::Rdata;
     use crate::message::rrtype::Rrtype;
@@ -475,7 +477,7 @@ mod resolver_query_tests {
         }
         assert_eq!(bytes, expected_bytes);
     }
-    
+
     #[test]
     fn to_bytes_mxrdata(){
         let mut mx_rdata = MxRdata::new();
@@ -538,7 +540,7 @@ mod resolver_query_tests {
         }
         assert_eq!(bytes, expected_bytes);
     }
-    
+
     #[test]
     fn to_bytes_soardata(){
         let mut soa_rdata = SoaRdata::new();
@@ -642,7 +644,10 @@ mod resolver_query_tests {
     fn to_bytes_opt_rdata(){
         let mut opt_rdata = OptRdata::new();
 
-        opt_rdata.option.push((OptionCode::UNKNOWN(1), 2 as u16, vec![0x06, 0x04]));
+        let mut option = OptOption::new(OptionCode::UNKNOWN(1));
+        option.set_option_len(2);
+        option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
+        opt_rdata.option.push(option);
 
         let expected_bytes: Vec<u8> = vec![0x00, 0x01, 0x00, 0x02, 0x06, 0x04];
 
@@ -685,8 +690,8 @@ mod resolver_query_tests {
         rrsig_rdata.set_signature(b"abcdefg".to_vec());
 
         let expected_bytes:Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
-        46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
-        98, 99, 100, 101, 102, 103];
+                                          46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97,
+                                          98, 99, 100, 101, 102, 103];
 
         let rdata = Rdata::RRSIG(rrsig_rdata);
         let bytes = rdata.to_bytes();
@@ -703,13 +708,13 @@ mod resolver_query_tests {
         nsec_rdata.set_next_domain_name(domain_name);
 
         nsec_rdata.set_type_bit_maps(vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
-        
+
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3,
+                                         4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
 
         let bytes_to_test = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
 
@@ -750,21 +755,21 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_nsec3_rdata(){
-        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3, 
-            4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
+        let nsec3_rdata = Nsec3Rdata::new(1, 2, 3,
+                                          4, "salt".to_string(), 22, "next_hashed_owner_name".to_string(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
 
         let rdata = Rdata::NSEC3(nsec3_rdata);
         let bytes = rdata.to_bytes();
 
         let first_expected_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116, 22, 110, 101, 120, 116, 95, 104,
-                                                97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
+                                        97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
 
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
-            
-        
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3,
+                                         4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+
+
         let expected_bytes = [&first_expected_bytes[..], &bit_map_bytes_to_test[..]].concat();
 
         assert_eq!(bytes, expected_bytes);
@@ -772,8 +777,8 @@ mod resolver_query_tests {
 
     #[test]
     fn to_bytes_nsec3param_rdata(){
-        let nsec3param_rdata = Nsec3ParamRdata::new(1, 2, 3, 
-            4, "salt".to_string());
+        let nsec3param_rdata = Nsec3ParamRdata::new(1, 2, 3,
+                                                    4, "salt".to_string());
 
         let rdata = Rdata::NSEC3PARAM(nsec3param_rdata);
         let bytes = rdata.to_bytes();
@@ -833,7 +838,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_cname().get_name(), name);
             }
             _ => {}
-        }     
+        }
     }
 
     #[test]
@@ -847,7 +852,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_cname().get_name(), name);
             }
             _ => {}
-        }     
+        }
     }
 
     #[test]
@@ -863,7 +868,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_os(), os);
             }
             _ => {}
-        }     
+        }
     }
 
     #[test]
@@ -879,7 +884,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_preference(), 128);
             }
             _ => {}
-        }     
+        }
     }
 
     #[test]
@@ -894,7 +899,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_nsdname().get_name(), domain_name.get_name());
             }
             _ => {}
-        }     
+        }
     }
 
     #[test]
@@ -909,16 +914,16 @@ mod resolver_query_tests {
                 assert_eq!(val.get_ptrdname().get_name(), domain_name.get_name());
             }
             _ => {}
-        }     
+        }
     }
 
     #[test]
     fn from_bytes_soa_rdata(){
         let data_bytes = [4, 116, 101, 115, 116,
-        3, 99, 111, 109,
-        0, 4, 116, 101, 115, 116,
-        3, 99, 111, 109,
-        0, 0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1, 0, 6, 0, 1];
+            3, 99, 111, 109,
+            0, 4, 116, 101, 115, 116,
+            3, 99, 111, 109,
+            0, 0, 0, 2, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1, 0, 6, 0, 1];
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
         let mut domain_name = DomainName::new();
         domain_name.set_name(String::from("test.com"));
@@ -934,7 +939,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_minimum(), 1);
             }
             _ => {}
-        }     
+        }
     }
 
     #[test]
@@ -1009,9 +1014,12 @@ mod resolver_query_tests {
             0, 1, 0, 2, 6, 4, 0, 41, 0, 1
         ];
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
+        let mut expected_option = OptOption::new(OptionCode::UNKNOWN(1));
+        expected_option.set_option_len(2);
+        expected_option.set_opt_data(OptionData::Unknown(vec![0x06, 0x04]));
         match rdata {
             Rdata::OPT(val) => {
-                assert_eq!(val.option[0], (OptionCode::UNKNOWN(1), 2, vec![0x06, 0x04]));
+                assert_eq!(val.option[0], expected_option);
             }
             _ => {}
         }
@@ -1032,14 +1040,14 @@ mod resolver_query_tests {
             }
             _ => {}
         }
-    
+
     }
 
     #[test]
     fn from_bytes_rrsig_rdata(){
         let data_bytes:Vec<u8> = vec![0, 1, 5, 2, 0, 0, 14, 16, 97, 46, 119, 128, 97,
-        46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97, 
-        98, 99, 100, 101, 102, 103, 0, 46, 0, 1];
+                                      46, 119, 128, 4, 210, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0, 97,
+                                      98, 99, 100, 101, 102, 103, 0, 46, 0, 1];
 
         let rdata = Rdata::from_bytes(&data_bytes, &data_bytes).unwrap();
 
@@ -1063,10 +1071,10 @@ mod resolver_query_tests {
     fn from_bytes_nsec_rdata(){
         let next_domain_name_bytes = vec![4, 104, 111, 115, 116, 7, 101, 120, 97, 109, 112, 108, 101, 3, 99, 111, 109, 0];
 
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3,
+                                         4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
 
         let rdata_bytes = [next_domain_name_bytes, bit_map_bytes_to_test].concat();
 
@@ -1115,13 +1123,13 @@ mod resolver_query_tests {
     #[test]
     fn from_bytes_nsec3_rdata(){
         let first_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116, 22, 110, 101, 120, 116, 95, 104,
-                                                97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
+                               97, 115, 104, 101, 100, 95, 111, 119, 110, 101, 114, 95, 110, 97, 109, 101];
 
-        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3, 
-                                    4, 27, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
-        
+        let bit_map_bytes_to_test = vec![0, 6, 64, 1, 0, 0, 0, 3,
+                                         4, 27, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32];
+
         let extra_bytes = vec![0, 50, 0, 1];
 
         let data_bytes = [&first_bytes[..], &bit_map_bytes_to_test[..], &extra_bytes[..]].concat();
@@ -1140,13 +1148,13 @@ mod resolver_query_tests {
                 assert_eq!(val.get_type_bit_maps(), vec![Rrtype::A, Rrtype::MX, Rrtype::RRSIG, Rrtype::NSEC, Rrtype::UNKNOWN(1234)]);
             }
             _ => {}
-        } 
+        }
     }
 
     #[test]
     fn from_bytes_nsec3param_rdata(){
         let first_bytes = vec![1, 2, 0, 3, 4, 115, 97, 108, 116];
-        
+
         let extra_bytes = vec![0, 51, 0, 1];
 
         let data_bytes = [&first_bytes[..], &extra_bytes[..]].concat();
@@ -1162,7 +1170,7 @@ mod resolver_query_tests {
                 assert_eq!(val.get_salt(), "salt");
             }
             _ => {}
-        } 
+        }
     }
 
     #[test]

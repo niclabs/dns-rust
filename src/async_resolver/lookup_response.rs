@@ -12,12 +12,17 @@ use std::fmt;
 pub struct LookupResponse {
     // The DNS message response.
     dns_msg_response: DnsMessage,
+    bytes: Vec<u8>
 }
 
 impl LookupResponse {
     /// Create a new `LookupResponse` instance.
-    pub fn new(dns_msg_response: DnsMessage) -> LookupResponse {
-        LookupResponse { dns_msg_response }
+    pub fn new(dns_msg_response: DnsMessage, bytes: Vec<u8>) -> LookupResponse {
+        LookupResponse { dns_msg_response, bytes: bytes }
+    }
+
+    pub fn get_bytes(&self) -> Vec<u8> {
+        self.bytes.clone()
     }
 
     /// Convert the response to a byte vector.
@@ -82,7 +87,7 @@ mod lookup_response_tests {
     #[test]
     fn new_lookup_response() {
         let dns_response = DnsMessage::new();
-        let lookup_response = LookupResponse::new(dns_response);
+        let lookup_response = LookupResponse::new(dns_response, vec![]);
         assert_eq!(lookup_response.to_string(), "");
     }
     
@@ -106,7 +111,7 @@ mod lookup_response_tests {
 
         dns_query_message.set_answer(answer);
 
-        let lookup_response = LookupResponse::new(dns_query_message);
+        let lookup_response = LookupResponse::new(dns_query_message, vec![]);
 
         println!("{}", lookup_response.to_string());
         assert_eq!(
@@ -207,7 +212,7 @@ mod lookup_response_tests {
         dns_msg.set_answer(answer);
       
 
-        let lookup_response = LookupResponse::new(dns_msg);
+        let lookup_response = LookupResponse::new(dns_msg, vec![]);
         let dns_from_lookup = lookup_response.to_dns_msg();
         assert_eq!(dns_from_lookup.get_header().get_id(), 0b0010010010010101);
         assert_eq!(dns_from_lookup.get_header().get_qr(), true);
@@ -262,7 +267,7 @@ mod lookup_response_tests {
         dns_msg.set_question(question);
         dns_msg.set_answer(answer);
       
-        let lookup_response = LookupResponse::new(dns_msg);
+        let lookup_response = LookupResponse::new(dns_msg, vec![]);
         let vec_of_rr = lookup_response.to_vec_of_rr();
         assert_eq!(vec_of_rr[0].get_name().get_name(), "dcc.cl");
     }

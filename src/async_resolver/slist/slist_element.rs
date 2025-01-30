@@ -21,9 +21,9 @@ impl SlistElement{
     /// * `response_time` - A u16 that represents the response time of the slist element
     pub fn new(domain_name: DomainName, ip_address: IpAddr, response_time: u32) -> SlistElement{
         SlistElement{
-            domain_name: domain_name,
-            ip_address: ip_address,
-            response_time: response_time,
+            domain_name,
+            ip_address,
+            response_time,
         }
     }
 }

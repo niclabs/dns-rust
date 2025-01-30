@@ -2,7 +2,7 @@ use crate::message::resource_record::{FromBytes, ToBytes};
 
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 /// Struct for DNSKEY Rdata
 ///                       1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3
 /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -137,6 +137,10 @@ impl DnskeyRdata {
     pub fn get_public_key(&self) -> Vec<u8> {
         self.public_key.clone()
     }
+
+    pub fn is_revoked(&self) -> bool {
+        self.flags & 0x0100 != 0
+    }
 }
 
 /// Setters for DnskeyRdata
@@ -152,6 +156,10 @@ impl DnskeyRdata {
     /// ```
     pub fn set_flags(&mut self, flags: u16) {
         self.flags = flags;
+    }
+
+    pub fn set_revoke_flag(&mut self, revoke: bool) {
+        if revoke { self.flags = 0x0100 } else { self.flags = 0 }
     }
 
     /// Set the protocol of the DNSKEY RDATA.
@@ -299,7 +307,6 @@ mod dnskey_rdata_test{
             assert!(false, "Error");
         }
     }
-
     #[test]
     fn min_values_to_bytes(){
         let mut dnskey_rdata = DnskeyRdata::new(0, 0, 0, Vec::new());
@@ -325,7 +332,11 @@ mod dnskey_rdata_test{
         else {
             assert!(false, "There is missing the public key, the test must have panic");
         }
+    }
 
+    // TODO test for practicantes
+    #[test]
+    fn check_revoked_flag(){
 
     }
 }

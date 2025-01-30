@@ -38,7 +38,7 @@ impl ClientConnection for ClientUDPConnection {
     /// implement get_ip
     /// returns IpAddr
     fn get_ip(&self) -> IpAddr {
-        return self.server_addr.clone();
+        self.server_addr.clone()
     }
 
     async fn send(self, dns_query:DnsMessage) -> Result<Vec<u8>, ClientError> { 
@@ -98,13 +98,14 @@ impl ClientConnection for ClientUDPConnection {
         let rr = ResourceRecord::new(a_rdata);
         additionals.push(rr);
        
-
+        let (fin, _) = result?;
         drop(socket_udp);
-        return Ok(msg.to_vec());
+        return Ok(msg[0..fin].to_vec());
     }
-
+    // TODO create a global variable or remove new_default dependency
     fn new_default(server_addr: IpAddr, timeout: Duration) -> Self {
-        Self::new(server_addr, timeout, 512)
+        const RECOMENDED_MAX_SIZE: usize = 4000;
+        Self::new(server_addr, timeout, RECOMENDED_MAX_SIZE)
     }
 }
 
@@ -142,6 +143,9 @@ mod udp_connection_test{
     use crate::message::rclass::Rclass;
     use super::*;
     use std::net::{IpAddr,Ipv4Addr,Ipv6Addr};
+    use tokio::time::sleep;
+    use crate::message::rcode::Rcode;
+
     const DEFAULT_SIZE: usize = 512;
     #[test]
     fn create_udp() {
@@ -270,4 +274,39 @@ mod udp_connection_test{
         // assert!(result.unwrap().get_answer().len() > 0); FIXME:
     }
 
+    /*
+    This tests the len of the buffer for udp and also the edns0 len sent and tests if the message
+    sent is less than the edns0 len broadcasted
+    */
+    #[tokio::test]
+    async fn test_buff_size() {
+        const ROOTSV1: [u8; 4] = [199,7,83,42];
+        const LENGTHS: [usize; 7] = [600,650,700,750,800,850,900];
+        let ip2req = ROOTSV1.into();
+        for size in LENGTHS {
+            let timeout = Duration::from_secs(2u64);
+            let conn = ClientUDPConnection::new(ip2req, timeout, size);
+            let domain_name: DomainName = DomainName::new_from_string("example.com".to_string());
+            let mut dns_query =
+                DnsMessage::new_query_message(
+                    domain_name,
+                    Rrtype::A,
+                    Rclass::IN,
+                    0,
+                    false,
+                    1);
+
+            dns_query.add_edns0(Some(size as u16), Rcode::NOERROR, 0, false, Some(vec![]));
+
+            let response = conn.send(dns_query).await;
+            match response {
+                Ok(rrs) => {
+                    let recv_size = rrs.len();
+                    assert!(recv_size <= size)
+                },
+                Err(e) => panic!("{:?}", e),
+            };
+            sleep(Duration::from_secs(1)).await;
+        }
+    }
 }

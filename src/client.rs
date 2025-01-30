@@ -5,15 +5,13 @@ pub mod tls_connection;
 pub mod udp_connection;
 pub mod client_error;
 
-use crate::message::rdata::Rdata;
 use crate::message::rrtype::Rrtype;
 use crate::client::client_connection::ClientConnection;
 use crate::message::DnsMessage;
 use crate::domain_name::DomainName;
 
 
-use rustls::Connection;
-use rustls::ClientConfig;
+
 use rand::{thread_rng, Rng};
 
 use self::client_error::ClientError;
@@ -107,11 +105,10 @@ impl <T: ClientConnection> Client<T> {
     /// assert_eq!(dns_response.get_question().get_rrtype(), Rtype::A);
     /// assert_eq!(dns_response.get_question().get_qname().get_name(), String::from("www.test.com"));
     /// ```
-    async fn send_query(&self) -> Result<DnsMessage, ClientError> {
+    pub async fn send_query(&self) -> Result<DnsMessage, ClientError> {
 
         let client_query = self.get_dns_query();
         let conn: &T = &self.get_conn();
-        let ip_addr = conn.get_ip();
 
         let dns_response: DnsMessage = match conn.send(client_query).await {
             Ok(response_message) => {
@@ -176,7 +173,7 @@ impl <T: ClientConnection> Client<T> {
         &self.conn
     }
 
-    fn get_dns_query(&self)-> DnsMessage {
+    pub fn get_dns_query(&self)-> DnsMessage {
         return self.dns_query.clone();
     }
 }
@@ -189,7 +186,7 @@ impl <T: ClientConnection> Client<T>{
         self.conn = conn;
     }
 
-    fn set_dns_query(&mut self,dns_query: DnsMessage) {
+    pub fn set_dns_query(&mut self,dns_query: DnsMessage) {
         self.dns_query = dns_query;
     }
 
@@ -202,6 +199,7 @@ mod client_test {
     use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::domain_name::DomainName;
+    use crate::message::rdata::a_rdata::ARdata;
     use super::{Client, tcp_connection::ClientTCPConnection, client_connection::ClientConnection, udp_connection::ClientUDPConnection};
 
     #[tokio::test]
@@ -225,17 +223,25 @@ mod client_test {
         //     Err(error) => panic!("Error in the response: {:?}", error),
         // };
 
-        let expected_ip: [u8; 4] = [93, 184, 215, 14];
-        let answers = response.get_answer();
-        for answer in answers {
-            let a_rdata = answer.get_rdata();
-            match a_rdata {
-                Rdata::A(val) => {
-                    assert_eq!(val.get_address(), IpAddr::from(expected_ip))
-                },
-                _ => {}
-            }
+        // answer
+        let answer = &response.get_answer();
+        for ans in answer {
+            assert_eq!(ans.get_name(), DomainName::new_from_string("example.com".to_string()));
+            assert_eq!(ans.get_rtype(), "A".into());
+            assert_eq!(ans.get_rclass(), "IN".into());
+            assert_eq!(ans.get_rdlength(), 4);
         }
+        let data = vec![(&answer[0]).get_rdata(), (&answer[1]).get_rdata(),
+                        (&answer[2]).get_rdata(), (&answer[3]).get_rdata(),
+                        (&answer[4]).get_rdata(), (&answer[5]).get_rdata()];
+
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 80))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 84))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 136))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 138))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 175))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 198))))));
+
     }
 
     #[tokio::test]

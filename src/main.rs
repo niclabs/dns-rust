@@ -9,6 +9,7 @@ use dns_rust::{
 use clap::*;
 use rand::{thread_rng, Rng};
 use dns_rust::async_resolver::lookup_response::LookupResponse;
+use dns_rust::client::client_connection::ConnectionProtocol;
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::message::DnsMessage;
 use dns_rust::message::rclass::Rclass;
@@ -68,6 +69,10 @@ struct ClientArgs {
     /// Disables the use of EDNS when specified
     #[arg(long, default_value = "false")]
     noedns: bool,
+
+    /// Changes the connection protocol from UDP to TCP
+    #[arg(long, default_value = "false")]
+    tcp: bool,
 }
 
 
@@ -135,8 +140,6 @@ pub async fn main() {
     match &cli.command {
         Commands::Client(client_args) => {
             let addr = client_args.server.parse::<IpAddr>().expect("Invalid IP address");
-            let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
-            let mut client = Client::new(conn);
 
             let mut dns_query_message =
                 DnsMessage::new_query_message(
@@ -156,10 +159,21 @@ pub async fn main() {
                 dns_query_message.add_edns0(max_payload, Rcode::NOERROR, 0, false, some_options);
             }
 
-            client.set_dns_query(dns_query_message);
-
-            // Send the query and print the response
-            let response = client.send_query().await;
+            // match tcp to set a client
+            let response = match client_args.tcp {
+                true => {
+                    let conn = ClientTCPConnection::new_default(addr, Duration::from_secs(10));
+                    let mut client = Client::new(conn);
+                    client.set_dns_query(dns_query_message);
+                    client.send_query().await
+                },
+                false => {
+                    let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+                    let mut client = Client::new(conn);
+                    client.set_dns_query(dns_query_message);
+                    client.send_query().await
+                },
+            };
 
             if let Ok(resp) = response {
                 println!("{}", resp);

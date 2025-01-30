@@ -80,15 +80,17 @@ Here it can be specified whether to run a *client* or a *resolver* :
    | `<DOMAIN_NAME>` | Host name to query for IP |
    | `[OPTIONS]`     | EDNS0 options             |
 
-- Three options:
+- Six options:
 
-   | Option                | Description                                  |
-   |-----------------------|----------------------------------------------| 
-   | `--qtype <QTYPE>`     | Query type [default: A]                      |
-   | `--qclass <QCLASS>`   | Query class [default: IN]                    |
-   | `--norecursive`       | Disables the use of recursion when specified |
-   | `--payload <PAYLOAD>` | Maximum payload for EDNS [default: 512]      |
-   | `--noedns`            | Disables the use of EDNS when specified      |
+   | Option                | Description                                     |
+   |-----------------------|-------------------------------------------------| 
+   | `--qtype <QTYPE>`     | Query type [default: A]                         |
+   | `--qclass <QCLASS>`   | Query class [default: IN]                       |
+   | `--norecursive`       | Disables the use of recursion when specified    |
+   | `--payload <PAYLOAD>` | Maximum payload for EDNS [default: 512]         |
+   | `--noedns`            | Disables the use of EDNS when specified         |
+   | `--tcp`               | Changes the connection protocol from UDP to TCP |
+
 
 - And four EDNS0 options
 

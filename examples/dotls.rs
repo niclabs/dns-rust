@@ -21,7 +21,7 @@ fn main() -> Result<(), ClientError> {
     Rrtype::A,
     Rclass::IN,
     0,
-    false,
+    true,
     1);
 
     rt.block_on(async {

@@ -1,10 +1,12 @@
 use std::{net::IpAddr, str::FromStr};
+use std::net::Ipv4Addr;
 use std::time::Duration;
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::edns::opt_option::OptOption;
 use dns_rust::{async_resolver::{config::ResolverConfig, AsyncResolver}, client::client_error::ClientError, domain_name::DomainName, message::{rclass::Rclass, rdata::Rdata, resource_record::{ResourceRecord, ToBytes}, rrtype::Rrtype, DnsMessage}};
 use dns_rust::async_resolver::server_info::ServerInfo;
 use dns_rust::edns::opt_option::option_data::OptionData;
+use dns_rust::message::rdata::a_rdata::ARdata;
 
 async fn query_from_ip_with_edns(domain_name: &str,
                                  protocol: &str,
@@ -58,13 +60,20 @@ async fn query_a_type_edns() {
 
     if let Ok(rrs) = response {
         println!("{}", rrs);
-        assert_eq!(rrs.get_answer().len(), 1);
-        let rdata = rrs.get_answer()[0].get_rdata();
-        if let Rdata::A(ip) = rdata {
-            assert_eq!(ip.get_address(), IpAddr::from_str("93.184.215.14").unwrap());
-        } else {
-            panic!("No ip address");
-        }
+        assert_eq!(rrs.get_answer().len(), 6);
+        let rdata = rrs.get_answer();
+        let data = vec![(&rdata[0]).get_rdata(), (&rdata[1]).get_rdata(),
+                        (&rdata[2]).get_rdata(), (&rdata[3]).get_rdata(),
+                        (&rdata[4]).get_rdata(), (&rdata[5]).get_rdata()];
+
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 80))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 84))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 136))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 138))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 175))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 198))))));
+
+
         let opt = &rrs.get_additional()[0];
         assert_eq!(opt.get_name(), DomainName::new_from_str(""));
         assert_eq!(opt.get_rtype(), Rrtype::OPT);
@@ -80,22 +89,28 @@ async fn query_a_type_with_rrsig_edns() {
 
     if let Ok(rrs) = response {
         println!("{}", rrs);
-        assert_eq!(rrs.get_answer().len(), 2);
+        assert_eq!(rrs.get_answer().len(), 7);
         let answers = rrs.get_answer();
-        let answer = &answers[0];
-        let rrsig = &answers[1];
-        if let Rdata::A(ip) = answer.get_rdata() {
-            assert_eq!(ip.get_address(), IpAddr::from_str("93.184.215.14").unwrap());
-        } else {
-            panic!("No ip address");
-        }
+        let data = vec![(&answers[0]).get_rdata(), (&answers[1]).get_rdata(),
+                        (&answers[2]).get_rdata(), (&answers[3]).get_rdata(),
+                        (&answers[4]).get_rdata(), (&answers[5]).get_rdata()];
+        let rrsig = &answers[6];
+
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 80))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 192, 228, 84))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 136))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(23, 215, 0, 138))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 175))))));
+        assert!(data.contains(&Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(96, 7, 128, 198))))));
+
+
         if let Rdata::RRSIG(sig) = rrsig.get_rdata() {
             assert_eq!(sig.get_type_covered(), Rrtype::A);
         } else {
             panic!("No RRSIG");
 
         }
-        assert_eq!(answer.get_ttl(), rrsig.get_ttl());
+        assert_eq!(answers[0].get_ttl(), rrsig.get_ttl());
         let opt = &rrs.get_additional()[0];
         assert_eq!(opt.get_name(), DomainName::new_from_str(""));
         assert_eq!(opt.get_rtype(), Rrtype::OPT);

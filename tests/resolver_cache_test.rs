@@ -209,7 +209,7 @@ mod resolver_cache_test {
                 .get_cache_answer()
                 .get_cache()
                 .len(),
-            2
+            1
         );
     }
 
@@ -264,7 +264,7 @@ mod resolver_cache_test {
                 .cache
                 .lock()
                 .unwrap()
-                .get_cache_answer()
+                .get_cache_additional()
                 .get_cache()
                 .len(),
             1

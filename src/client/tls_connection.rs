@@ -20,6 +20,7 @@ use tokio_rustls::rustls::ClientConfig;
 use tokio_rustls::TlsConnector;
 use std::sync::Arc;
 use tokio::task;
+use crate::client::client_connection::ClientConnection;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ClientTLSConnection {
@@ -31,10 +32,9 @@ pub struct ClientTLSConnection {
 }
 
 #[async_trait]
-impl ClientSecurity for ClientTLSConnection {
-
+impl ClientConnection for ClientTLSConnection {
     /// Creates TLSConnection
-    fn new(server_addr:IpAddr, timeout: Duration) -> Self {
+    fn new(server_addr:IpAddr, timeout: Duration, payload_size: usize) -> Self {
         ClientTLSConnection {
             server_addr: server_addr,
             timeout: timeout,
@@ -115,6 +115,12 @@ impl ClientSecurity for ClientTLSConnection {
     }
 }
 
+#[async_trait]
+impl ClientSecurity for ClientTLSConnection {
+
+
+}
+
 //Getters
 impl ClientTLSConnection {
 
@@ -155,7 +161,7 @@ mod tls_connection_test{
         let _port: u16 = 8088;
         let timeout = Duration::from_secs(100);
 
-        let _conn_new = ClientTLSConnection::new(ip_addr,timeout);
+        let _conn_new = ClientTLSConnection::new(ip_addr,timeout,0);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
@@ -164,7 +170,7 @@ mod tls_connection_test{
     fn get_ip_v4(){
         let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let connection = ClientTLSConnection::new(ip_address, timeout);
+        let connection = ClientTLSConnection::new(ip_address, timeout,0);
         //check if the ip is the same
         assert_eq!(connection.get_ip(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
@@ -174,7 +180,7 @@ mod tls_connection_test{
         // ip in V6 version is the equivalent to (192, 168, 0, 1) in V4
         let ip_address = IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0));
         let timeout = Duration::from_secs(100);
-        let connection = ClientTLSConnection::new(ip_address, timeout);
+        let connection = ClientTLSConnection::new(ip_address, timeout,0);
         //check if the ip is the same
         assert_eq!(connection.get_ip(), IpAddr::V6(Ipv6Addr::new(0xc0, 0xa8, 0, 1, 0, 0, 0, 0)));
     }
@@ -182,7 +188,7 @@ mod tls_connection_test{
     fn get_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout,0);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
     }
@@ -191,7 +197,7 @@ mod tls_connection_test{
     fn set_server_addr(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout,0);
 
         assert_eq!(_conn_new.get_server_addr(), IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)));
 
@@ -203,7 +209,7 @@ mod tls_connection_test{
     fn get_timeout(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout,0);
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
     }
@@ -212,7 +218,7 @@ mod tls_connection_test{
     fn set_timeout(){
         let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout,0);
 
         assert_eq!(_conn_new.get_timeout(),  Duration::from_secs(100));
 
@@ -225,13 +231,12 @@ mod tls_connection_test{
     async fn send() {
         let ip_addr = IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1));
         let timeout = Duration::from_secs(100);
-        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout);
+        let mut _conn_new = ClientTLSConnection::new(ip_addr,timeout,0);
         let mut domain_name = DomainName::new();
         domain_name.set_name("example.com".to_string());
         let question = DnsMessage::new_query_message(domain_name, Rrtype::A, Rclass::IN, 0, true, 0);
-        let mut dns_query = DnsMessage::new();
-        
-        let response = _conn_new.send(dns_query).await;
+
+        let response = _conn_new.send(question).await;
         assert_eq!(response.is_ok(), true);
     }
 

@@ -1,7 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr};
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use dns_rust::client::client_security::ClientSecurity;
+use dns_rust::client::client_connection::ClientConnection;
 use dns_rust::client::tls_connection::ClientTLSConnection;
 use dns_rust::domain_name::DomainName;
 use dns_rust::message::rclass::Rclass;

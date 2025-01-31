@@ -4,21 +4,11 @@ use tokio::time::Duration;
 use super::client_error::ClientError;
 
 use async_trait::async_trait;
-
+use crate::client::client_connection::ClientConnection;
+use crate::client::tls_connection::ClientTLSConnection;
 
 #[async_trait]
-pub trait ClientSecurity: Copy {//: 'static + Sized + Send + Sync + Unpin 
-
-    //Creates a ClientConecction 
-    fn new(server_addr:IpAddr,
-        timeout:Duration) -> Self;
-
-    fn new_default(server_addr:IpAddr, timeout:Duration) -> Self;
-
-    //Sends query 
-    async fn send(self, dns_query: DnsMessage) -> Result<Vec<u8>, ClientError>;
-    // async fn send(self, dns_query: DnsMessage) -> Result<(Vec<u8>, IpAddr), ClientError>;
-    fn get_ip(&self) -> IpAddr;
+pub trait ClientSecurity: ClientConnection + Copy {//: 'static + Sized + Send + Sync + Unpin
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

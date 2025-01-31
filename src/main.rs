@@ -18,6 +18,7 @@ use dns_rust::message::DnsMessage;
 use dns_rust::message::rclass::Rclass;
 use dns_rust::message::rcode::Rcode;
 use dns_rust::message::rrtype::Rrtype;
+use dns_rust::tsig::tsig_algorithm::TsigAlgorithm;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -76,6 +77,47 @@ struct ClientArgs {
     /// Transport protocol, options: "UDP", "TCP", "TLS".
     #[arg(long, default_value_t = String::from("UDP"))]
     protocol: String,
+
+    /// TSIG arguments key, algorithm, fudge, time_signed, key_name, mac_request
+    #[arg(long, value_parser = TsigArgs::from_str)]
+    tsig: Option<TsigArgs>,
+}
+
+/// Represents the arguments required for TSIG.
+#[derive(Debug, Clone)]
+pub struct TsigArgs {
+    pub key: Vec<u8>,
+    pub alg_name: TsigAlgorithm,
+    pub fudge: u16,
+    pub time_signed: u64,
+    pub key_name: String,
+    pub mac_request: Vec<u8>,
+}
+
+impl TsigArgs {
+    /// Parses a string into a `TsigArgs` instance.
+    pub fn from_str(value: &str) -> Result<Self, String> {
+        let parts: Vec<&str> = value.split(',').collect();
+        if parts.len() != 6 {
+            return Err("Expected 6 values for TSIG args".to_string());
+        }
+
+        let key = hex::decode(parts[0].trim()).map_err(|e| e.to_string())?;
+        let alg_name = TsigAlgorithm::from(parts[1].trim().to_string());
+        let fudge = parts[2].trim().parse::<u16>().map_err(|e| e.to_string())?;
+        let time_signed = parts[3].trim().parse::<u64>().map_err(|e| e.to_string())?;
+        let key_name = parts[4].trim().to_string();
+        let mac_request = hex::decode(parts[5].trim()).map_err(|e| e.to_string())?;
+
+        Ok(Self {
+            key,
+            alg_name,
+            fudge,
+            time_signed,
+            key_name,
+            mac_request,
+        })
+    }
 }
 
 
@@ -160,6 +202,17 @@ pub async fn main() {
                 if !option_codes.is_empty() { some_options = Some(option_codes); }
                 let max_payload = Some(client_args.payload);
                 dns_query_message.add_edns0(max_payload, Rcode::NOERROR, 0, false, some_options);
+            }
+
+            if !client_args.tsig.is_none() {
+                if let Some(tsig_args) = &client_args.tsig {
+                    dns_query_message.sign_message(&*tsig_args.key,
+                                                   tsig_args.alg_name.clone(),
+                                                   tsig_args.fudge,
+                                                   tsig_args.time_signed,
+                                                   tsig_args.key_name.clone(),
+                                                   tsig_args.mac_request.clone());
+                }
             }
 
             // match tcp to set a client

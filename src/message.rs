@@ -800,7 +800,7 @@ impl DnsMessage {
     ///
     /// dns_message.sign_message(key, algorithm, fudge, time_signed, key_name, mac_request);
     /// ```
-    fn sign_message(&mut self, key: &[u8], alg_name: TsigAlgorithm,
+    pub fn sign_message(&mut self, key: &[u8], alg_name: TsigAlgorithm,
                     fudge: u16, time_signed: u64, key_name: String, mac_request: Vec<u8>) {
         tsig::sign_tsig(self, key, alg_name, fudge, time_signed, key_name, mac_request);
     }

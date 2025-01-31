@@ -110,6 +110,7 @@ impl NameServer {
 
 #[cfg(test)]
 mod test_name_server {
+    use crate::message::rclass::Rclass;
     use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::rdata::Rdata;
     use crate::message::resource_record::ResourceRecord;
@@ -172,6 +173,7 @@ mod test_name_server {
         // Create and add a zone
         let zone = DnsZone::new(
             "example.com.",
+            Rclass::IN,
             3600,
             soa_data,
         );
@@ -205,6 +207,7 @@ mod test_name_server {
         // Create a new zone to add
         let zone = DnsZone::new(
             "example.com.",
+            Rclass::IN,
             3600,
             soa_data,
         );
@@ -235,6 +238,7 @@ mod test_name_server {
         // Create and add a zone
         let zone = DnsZone::new(
             "example.com.",
+            Rclass::IN,
             3600,
             soa_data,
         );
@@ -269,6 +273,7 @@ mod test_name_server {
         // Create and add two zones
         let zone1 = DnsZone::new(
             "example.com.",
+            Rclass::IN,
             3600,
             soa_data1,
         );
@@ -285,6 +290,7 @@ mod test_name_server {
 
         let zone2 = DnsZone::new(
             "example.org.",
+            Rclass::IN,
             3600,
             soa_data2,
         );
@@ -324,6 +330,7 @@ mod test_name_server {
         // Add a zone and validate the count
         let zone = DnsZone::new(
             "example.com.",
+            Rclass::IN,
             3600,
             soa_data,
         );

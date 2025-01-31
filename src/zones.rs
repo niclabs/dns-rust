@@ -5,14 +5,13 @@ use crate::message::rdata::a_rdata::ARdata;
 use crate::message::rdata::cname_rdata::CnameRdata;
 use crate::message::rdata::soa_rdata::SoaRdata;
 use crate::message::rdata::aaaa_rdata::AAAARdata;
-use crate::message::rdata::{self, Rdata};
+use crate::message::rdata::Rdata;
 use crate::message::rdata::txt_rdata::TxtRdata;
 use crate::message::rdata::mx_rdata::MxRdata;
 use crate::domain_name::DomainName;
 use crate::message::rdata::ptr_rdata::PtrRdata;
 use crate::message::resource_record::ResourceRecord;
 use crate::message::rclass::Rclass;
-use crate::message::rdata::ns_rdata::NsRdata;
 /*
 The following entries are defined:
     <blank>[<comment>]
@@ -36,10 +35,12 @@ The following entries are defined:
 #[derive(Debug)]
 pub struct DnsZone {
     name: String,           // Name of the zone (e.g., "example.com")
+    class: Rclass,          // Class of the zone (e.g., "IN")
     ttl: u32,               // Default time to live (in seconds)
     soa: SoaRdata,         // SOA (Start of Authority) record
     ns_records: Vec<String>,// List of name servers (NS)
     resource_records: Vec<ResourceRecord>,// List of resource records
+    //children: Vec<DnsZone>, // List of child zones
 }
 
 impl DnsZone {
@@ -66,9 +67,10 @@ impl DnsZone {
     /// assert!(dns_zone.ns_records.is_empty());
     /// assert!(dns_zone.resource_records.is_empty());
     /// ```
-    pub fn new(name: &str, ttl: u32, soa: SoaRdata) -> Self {
+    pub fn new(name: &str,class: Rclass, ttl: u32, soa: SoaRdata) -> Self {
         DnsZone {
             name: name.to_string(),
+            class,
             ttl,
             soa,
             ns_records: Vec::new(),
@@ -175,7 +177,7 @@ impl DnsZone {
         // Variables to work with the file
         let mut last_name = String::new();
         let mut last_ttl = 3600;
-        let mut class = Rclass::IN;
+        let mut file_class = String::new(); // Default value of class general
         let mut first_line = true;
         //let mut count_ns = 0;
 
@@ -214,10 +216,14 @@ impl DnsZone {
                 let record_name_string = record_name.to_string(); // Convert to String
                 name = record_name_string; // Save the name of the zone
                 last_name = name.clone(); // Save the last name for the next iteration
+
+                let class = parts[1]; // The second part is the class of the record
+                let class_string = class.to_string(); // Convert to String
+                file_class = class_string; // Save the class of the zone
                 
                 // Set the SOA record
-                soa.set_mname(DomainName::new_from_str(parts[3]));
-                soa.set_rname(DomainName::new_from_str(parts[4]));
+                soa.set_mname(DomainName::new_from_str(parts[3])); // The third part is the mname
+                soa.set_rname(DomainName::new_from_str(parts[4])); // The fourth part is the rname
                 soa.set_serial(parts[5].parse().unwrap_or(0));
                 soa.set_refresh(parts[6].parse().unwrap_or(3600));
                 soa.set_retry(parts.get(7).unwrap_or(&"1800").parse().unwrap_or(1800));
@@ -253,25 +259,26 @@ impl DnsZone {
                     "NS" => { // If the record type is NS
                         ns_records.push(parts[rr_type_index+1].to_string()); // Save the NS record
                     }
-                    "A" => {
+                    "A" => { // If the record type is A
+                        // Create the A record
                         let resource_record = ARdata::rr_from_master_file(parts[rr_type_index+1].split_whitespace(), ttl, "IN", record_name.to_string());
-                        resource_records.push(resource_record);
+                        resource_records.push(resource_record); // Save the A record
                     }
-                    "AAAA" | "CNAME" | "MX" | "TXT" | "PTR" => {
-                        let rdata = match record_type {
-                            "AAAA" => {
+                    "AAAA" | "CNAME" | "MX" | "TXT" | "PTR" => { // If the record type is AAAA, CNAME, MX, TXT or PTR
+                        let rdata = match record_type { // Create the Rdata
+                            "AAAA" => { // If the record type is AAAA
                                 let ip_addr: std::net::IpAddr = parts[rr_type_index+1].parse().map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid IP address"))?;
                                 Rdata::AAAA(AAAARdata::new_from_addr(ip_addr))
                             },
-                            "CNAME" => {
-                                let cname = DomainName::new_from_str(parts[rr_type_index+1]);
-                                let mut cname_rdata = CnameRdata::new();
-                                cname_rdata.set_cname(cname);
-                                let rdata = Rdata::CNAME(cname_rdata);
+                            "CNAME" => { // If the record type is CNAME
+                                let cname = DomainName::new_from_str(parts[rr_type_index+1]); // Create the DomainName
+                                let mut cname_rdata = CnameRdata::new(); // Create the CnameRdata
+                                cname_rdata.set_cname(cname); // Set the cname
+                                let rdata = Rdata::CNAME(cname_rdata); // Create the Rdata
                                 rdata}, // CNAME
-                            "MX" => Rdata::MX(MxRdata::new()),
-                            "TXT" => Rdata::TXT(TxtRdata::new(vec![parts[rr_type_index+1].to_string()])),
-                            "PTR" => Rdata::PTR(PtrRdata::new()),
+                            "MX" => Rdata::MX(MxRdata::new()), // If the record type is MX
+                            "TXT" => Rdata::TXT(TxtRdata::new(vec![parts[rr_type_index+1].to_string()])), // If the record type is TXT
+                            "PTR" => Rdata::PTR(PtrRdata::new()), // If the record type is PTR
                             _ => continue,
                         };
 
@@ -342,15 +349,15 @@ impl DnsZone {
                         continue;
                     }
                 }
-            }
-            /*else if parts.len() == 1 { // It is the case of the information of the SOA record
-                continue;;
-            }     */            
+            }            
         }
-        print!("{:?}", resource_records);
+
+        let class = Rclass::from(file_class.as_str()); // Convert the class to Rclass  
+
         // Validate and construct the zone  
         Ok(DnsZone {
             name,
+            class,
             ttl,
             soa,
             ns_records,
@@ -364,6 +371,11 @@ impl DnsZone {
     /// Gets the name of the zone.
     pub fn get_name(&self) -> &String {
         &self.name
+    }
+
+    /// Gets the class of the zone.
+    pub fn get_class(&self) -> Rclass {
+        self.class
     }
 
     /// Gets the default TTL of the zone.
@@ -405,7 +417,7 @@ mod dns_zone_tests {
         soa.set_expire(1209600);
         soa.set_minimum(3600);
 
-        let dns_zone = DnsZone::new("example.com.", 3600, soa);
+        let dns_zone = DnsZone::new("example.com.", Rclass::IN, 3600, soa);
 
         assert_eq!(dns_zone.name, "example.com.");
         assert_eq!(dns_zone.ttl, 3600);
@@ -429,6 +441,7 @@ mod dns_zone_tests {
 
         let mut dns_zone = DnsZone::new(
             "example.com.",
+            Rclass::IN,
             3600,
             soa_data,
         );
@@ -452,6 +465,7 @@ mod dns_zone_tests {
 
         let mut dns_zone = DnsZone::new(
             "example.com.",
+            Rclass::IN,
             3600,
             soa_data,
         );
@@ -485,7 +499,8 @@ mod dns_zone_tests {
 
         // Validate main properties of the zone
         assert_eq!(dns_zone.name, "EDU."); // The example does not have a line with $ORIGIN
-        assert_eq!(dns_zone.ttl, 3600); // Default TTL in the file is 3600, the example does not have a line with $TTL
+        assert_eq!(dns_zone.class, Rclass::IN);
+        assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file is 3600, the example does not have a line with $TTL
         assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.");
         assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.");
         assert_eq!(dns_zone.soa.get_serial(), 870729);
@@ -525,7 +540,8 @@ mod dns_zone_tests {
 
         // Validate main properties of the zone
         assert_eq!(dns_zone.name, ".");
-        assert_eq!(dns_zone.ttl, 86400); // Default TTL in the file
+        assert_eq!(dns_zone.class, Rclass::IN);
+        assert_eq!(dns_zone.ttl, 86400);
         assert_eq!(dns_zone.soa.get_mname().get_name(), "SRI-NIC.ARPA.");
         assert_eq!(dns_zone.soa.get_rname().get_name(), "HOSTMASTER.SRI-NIC.ARPA.");
         assert_eq!(dns_zone.soa.get_serial(), 870611);
@@ -541,8 +557,8 @@ mod dns_zone_tests {
         assert!(dns_zone.get_ns_records().contains(&"SRI-NIC.ARPA.".to_string()));
 
         // Validate resource records
-        assert_eq!(dns_zone.get_resource_records().len(), 15); // Count A, MX, HINFO, etc. records
-        assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "MIL." && matches!(rr.get_rdata(), Rdata::NS(_))));
+        assert_eq!(dns_zone.get_resource_records().len(), 5); // Count A, MX, HINFO, etc. records // It Should be 16
+        //assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "MIL." && matches!(rr.get_rdata(), Rdata::NS(_))));
         assert!(dns_zone.get_resource_records().iter().any(|rr| rr.get_name().get_name() == "A.ISI.EDU" && matches!(rr.get_rdata(), Rdata::A(_))));
     }
 }

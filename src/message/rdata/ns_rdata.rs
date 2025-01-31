@@ -1,10 +1,12 @@
 use crate::domain_name::DomainName;
-use crate::message::{Rtype, Rclass};
+use crate::message::Rclass;
+use crate::message::rrtype::Rrtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.11
 /// An struct that represents the `rdata` for NS TYPE.
 /// 
@@ -94,7 +96,7 @@ impl NsRdata {
     /// assert_eq!(nsrdata_rr.get_ttl(), 35);
     /// assert_eq!(nsrdata_rr.get_name().get_name(), String::from("uchile.cl"));
     /// assert_eq!(nsrdata_rr.get_rdlength(), 5);
-    /// assert_eq!(nsrdata_rr.get_rtype(), Rtype::NS);
+    /// assert_eq!(nsrdata_rr.get_rtype(), Rrtype::NS);
     /// ```
     pub fn rr_from_master_file(
         mut values: SplitWhitespace,
@@ -116,8 +118,8 @@ impl NsRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::NS);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::NS);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
@@ -142,10 +144,17 @@ impl NsRdata {
     }
 }
 
+impl fmt::Display for NsRdata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.get_nsdname().get_name())
+    }
+}
+
 #[cfg(test)]
 mod ns_rdata_test {
     use crate::domain_name::DomainName;
-    use crate::message::{Rclass, Rtype};
+    use crate::message::Rclass;
+    use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::ns_rdata::NsRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -216,7 +225,7 @@ mod ns_rdata_test {
          assert_eq!(nsrdata_rr.get_ttl(), 35);
          assert_eq!(nsrdata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(nsrdata_rr.get_rdlength(), 5);
-         assert_eq!(nsrdata_rr.get_rtype(), Rtype::NS);
+         assert_eq!(nsrdata_rr.get_rtype(), Rrtype::NS);
          
          let ns_rr_rdata = nsrdata_rr.get_rdata();
          match ns_rr_rdata {

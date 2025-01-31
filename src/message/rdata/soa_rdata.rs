@@ -1,10 +1,12 @@
 use crate::domain_name::DomainName;
-use crate::message::{Rtype, Rclass};
+use crate::message::Rclass;
+use crate::message::rrtype::Rrtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// An struct that represents the `Rdata` for SOA TYPE.
 /// 
 /// [RFC 1035](https://tools.ietf.org/html/rfc1035#section-3.3.13)
@@ -279,8 +281,8 @@ impl SoaRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::SOA);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::SOA);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(20 + m_name_str.len() as u16 + r_name_str.len() as u16 + 4);
@@ -493,27 +495,27 @@ impl SoaRdata {
 
     /// Gets the serial attribute from SoaRdata.
     pub fn get_serial(&self) -> u32 {
-        self.serial
+        self.serial.clone()
     }
 
     /// Gets the refresh attribute from SoaRdata.
     pub fn get_refresh(&self) -> u32 {
-        self.refresh
+        self.refresh.clone()
     }
 
     /// Gets the retry attribute from SoaRdata.
     pub fn get_retry(&self) -> u32 {
-        self.retry
+        self.retry.clone()
     }
 
     /// Gets the expire attribute from SoaRdata.
     pub fn get_expire(&self) -> u32 {
-        self.expire
+        self.expire.clone()
     }
 
     /// Gets the minimum attribute from SoaRdata.
     pub fn get_minimum(&self) -> u32 {
-        self.minimum
+        self.minimum.clone()
     }
 }
 
@@ -552,6 +554,23 @@ impl SoaRdata {
     /// Sets the minimum attibute with a value.
     pub fn set_minimum(&mut self, minimum: u32) {
         self.minimum = minimum;
+    }
+}
+
+impl fmt::Display for SoaRdata {
+    /// Formats the record data for display
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{} {} {} {} {} {} {}",
+            self.get_mname().get_name(),
+            self.get_rname().get_name(),
+            self.get_serial(),
+            self.get_refresh(),
+            self.get_retry(),
+            self.get_expire(),
+            self.get_minimum()
+        )
     }
 }
 

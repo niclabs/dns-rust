@@ -1,12 +1,14 @@
 use crate::domain_name::DomainName;
-use crate::message::{Rclass, Rtype};
+use crate::message::rrtype::Rrtype;
+use crate::message::Rclass;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
 use std::string::String;
+use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.14
 /// An struct that represents the `Rdata` for txt type.
 /// 
@@ -123,8 +125,8 @@ impl TxtRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TXT);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::TXT);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(rd_lenght as u16);
@@ -146,6 +148,17 @@ impl TxtRdata {
     /// Sets the text field with a value.
     pub fn set_text(&mut self, text: Vec<String>) {
         self.text = text;
+    }
+}
+
+impl fmt::Display for TxtRdata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut text = String::new();
+        for string in &self.text {
+            text.push_str(string);
+            text.push_str(" ");
+        }
+        write!(f, "{}", text)
     }
 }
 

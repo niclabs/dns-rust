@@ -5,17 +5,6 @@ A DNS Client and a DNS resolver can be built using this library.
 
 Implementation in progress.
 
-## Supported RFCs 
-
-* 1034 - Domain names, concepts and facilities. 
-* 1035 - Domain names, implementation and specification. 
-  
-### In progress:
-
-* 1123 - Requirements for Internet Hosts -- Application and Support
-
-* DNSSEC is not supported at the moment, but it will be eventually.
-
 ## Getting started
 
 ### Prerequisites
@@ -76,64 +65,163 @@ Then to use the library there are three options:
 ### Supported options configurations
 Here it can be specified whether to run a *client* or a *resolver* :
 
-| Argument | Description |
-|----------|-------------|
+| Argument | Description                                                      |
+|----------|------------------------------------------------------------------|
 |   `client`   | Execute a client that connects to the server and sends requests. |
-|   `resolver`   | Runs a DNS resolver |
+|   `resolver`   | Runs a DNS resolver                                              |
 
 #### Client
 
-- For the client there is one argument:
-   | Argument | Description |
-   |----------|-------------|
-   |   `<HOST_NAME>`   | Host name to query for IP |
+ - For the client there is three arguments:
 
-- And three options:
-   | Option | Description|
-   |--------|------------| 
-   |   `--server <SERVER>`   | DNS server ip |
-   |   `--qtype <QTYPE>`    | Query type [default: A] |
-   |   `--qclass <QCLASS>`   | Query class [default: IN] |
+   | Argument        | Description               |
+   |-----------------|---------------------------|
+   | `<SERVER>`      | DNS server ip             |
+   | `<DOMAIN_NAME>` | Host name to query for IP |
+   | `[OPTIONS]`     | EDNS0 options             |
+
+- Six options:
+
+   | Option                  | Description                                                              |
+   |-------------------------|--------------------------------------------------------------------------| 
+   | `--qtype <QTYPE>`       | Query type [default: A]                                                  |
+   | `--qclass <QCLASS>`     | Query class [default: IN]                                                |
+   | `--norecursive`         | Disables the use of recursion when specified                             |
+   | `--payload <PAYLOAD>`   | Maximum payload for EDNS [default: 512]                                  |
+   | `--noedns`              | Disables the use of EDNS when specified                                  |
+   | `--protocol <PROTOCOL>` | Transport protocol, options: "UDP", "TCP", "TLS" [default: UDP]          |
+   | `--tsig <TSIG>`         | TSIG arguments key, algorithm, fudge, time_signed, key_name, mac_request |
+
+
+- And four EDNS0 options
+
+   | EDNS0 option   | Description             |
+   |----------------|-------------------------|
+   | `+nsid`        | NSID option code        |
+   | `+padding`     | PADDING option code     |
+   | `+ede`         | EDE option code         |
+   | `+zoneversion` | ZONEVERSION option code |
+   
 
 #### Resolver
 
 - For the resolver there are two arguments:
-   | Argument | Description|
-   |--------|------------| 
-   |   `<HOST NAME>`   | Host name to query |
-   |   `[NAMESERVER]...`    | Recursive servers |
+
+   | Argument          | Description|
+   |-------------------|------------| 
+   | `<DOMAIN_NAME>`   | Host name to query |
+   | `[NAMESERVER]...` | Recursive servers |
 
 - And three options:
-   | Option | Description|
-   |--------|------------| 
-   |   `--bind-addr <BIND_ADDR>`   | Resolver bind address |
-   |   `--qtype <QTYPE>`    | Query type [default: A] |
-   |   `--protocol <PROTOCOL>`   | Protocol [default: UDP] |
 
-Additionally the *client* and *resolver* have the command `-h` or `--help` to print the description of the structure and its usage.
+   | Option                  | Description|
+   |-------------------------|------------| 
+   | `--qtype <QTYPE>`       | Query type [default: A] |
+   | `--qclass <QCLASS>`     |Query class [default: IN]|
+   | `--protocol <PROTOCOL>` | Protocol [default: UDP] |
 
-### Examples
+Additionally, the *client* and *resolver* have the command `-h` or `--help` to print the description of the structure and its usage.
+
+## Examples
+
+### 1. Client examples
+
+#### 1.1 These commands runs a query for `example.com` using a client.
 
 ```sh
-dns_rust resolver "example.com" "1.1.1.1" "8.8.8.8" 
+dns_rust client "1.1.1.1" "example.com"
+```
+
+or
+
+```sh
+cargo run client "1.1.1.1" "example.com"
+```
+
+#### 1.2 This command runs a query for `example.com` using a client with NSID EDNS option.
+
+```sh
+dns_rust client "1.1.1.1" "example.com" "+nsid"
+```
+
+#### 1.2 This command runs a query for `example.com` using a client multiple EDNS options.
+
+```sh
+dns_rust client "74.82.42.42" "example.com" "+nsid" "+padding"
+```
+
+#### 1.3 This command runs a query for `example.com` using a client with EDNS disabled.
+
+```sh
+dns_rust client --noedns "1.1.1.1" "example.com" 
+```
+
+#### 1.4 This command runs a query for `example.com` using a client with qtype = MX.
+
+```sh
+dns_rust client --qtype "MX" "1.1.1.1" "example.com" 
+```
+
+#### 1.5 This command runs a query for `example.com` using a client with qtype = MX and qclass = CH.
+
+```sh
+dns_rust client --qtype "MX" --qclass "CH" "1.1.1.1" "example.com" 
+```
+
+### 2. Resolver examples
+
+#### 2.1 These commands runs a query for `example.com` running the system's default resolver.
+
+```sh
+dns_rust  resolver "example.com"
 ```
 or
 
 ```sh
-cargo run  resolver "example.com" "1.1.1.1" "8.8.8.8"
+cargo run  resolver "example.com"
 ```
 
-These commands runs a query for `example.com` running a resolver.
+#### 2.2 This command runs a query for `example.com` running a resolver using the specified servers.
 
-## Development features
+```sh
+dns_rust resolver "example.com" "1.1.1.1" "8.8.8.8" 
+```
 
-### GitHub Actions
+#### 2.3 This command runs a query for `example.com` using TCP..
 
-To improve code quality GitHub Actions has been implemented in the repository. GitHub Actions has been configured to trigger when a commit is pushed to the project repository, running "cargo build" and "cargo run", and then all tests, finally showing an "x" if any test fails or a "✓" if all tests pass.
+```sh
+dns_rust resolver --protocol "TCP" "example.com" "1.1.1.1" "8.8.8.8"
+```
 
-### Docker
+#### 2.4 This command runs a query for `example.com` with qtype = MX using TCP.
 
-Coming soon.
+```sh
+dns_rust resolver --protocol "TCP" --qtype "MX" "example.com" 
+```
+
+## Supported RFCs
+
+* 1034 - Domain names, concepts and facilities.
+* 1035 - Domain names, implementation and specification.
+* 1123 - Requirements for Internet Hosts -- Application and Support.
+* 2181 - Clarifications to the DNS Specification.
+* Negative Caching
+   * 2308 - Negative Caching of DNS Queries (DNS NCACHE)
+   * 9520 - Negative Caching of DNS Resolution Failures
+* 3596 - DNS Extensions to Support IP Version 6
+* 3597 - Handling of Unknown DNS Resource Record (RR) Types
+* Edns0
+   * 6891 - Extension Mechanisms for DNS (EDNS(0))
+   * 5001 - DNS Name Server Identifier (NSID) Option
+   * 7830 - The EDNS(0) Padding Option
+   * 8914 - Extended DNS Errors
+   * 9660 - The DNS Zone Version (ZONEVERSION) Option
+* Tsig
+   * 8945 - Secret Key Transaction Authentication for DNS (TSIG)
+
+### In progress:
+
+* DNSSEC is not supported at the moment, but it will be eventually.
 
 ## Contact
 

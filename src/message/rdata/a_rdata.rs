@@ -1,13 +1,32 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
 use crate::message::Rclass;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use std::net::IpAddr;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
+use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+
+pub trait SetAddress {
+    fn set_address(&self) -> Option<IpAddr>;
+}
+
+impl SetAddress for &str {
+    fn set_address(&self) -> Option<IpAddr> {
+        self.parse::<IpAddr>().ok()
+    }
+}
+
+impl SetAddress for IpAddr {
+    fn set_address(&self) -> Option<IpAddr> {
+        Some(*self)
+    }
+}
+
+
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// An struct that represents the `Rdata` for a type.
 /// 
 /// ```text
@@ -102,7 +121,7 @@ impl ARdata {
     ///     a_rr.get_name().get_name(),
     ///     String::from("admin1.googleplex.edu")
     /// );
-    /// assert_eq!(a_rr.get_rtype(), Rtype::A);
+    /// assert_eq!(a_rr.get_rtype(), Rrtype::A);
     /// assert_eq!(a_rr.get_ttl(), 0);
     /// assert_eq!(a_rr.get_rdlength(), 4);
     /// let a_rdata = a_rr.get_rdata();
@@ -139,8 +158,8 @@ impl ARdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::A);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::A);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(4);
@@ -179,18 +198,30 @@ impl ARdata {
 
 // Setters
 impl ARdata {
-    /// Sets the `address` attibute with the given value.
-    pub fn set_address(&mut self, address: IpAddr) {
-        self.address = address;
+    /// Sets the `address` attribute with the given value.
+    pub fn set_address<T: SetAddress>(&mut self, address: T) {
+        if let Some(ip_addr) = address.set_address() {
+            self.address = ip_addr;
+        } else {
+            // Handle the IP address parsing error here
+            println!("Error: invalid IP address");
+        }
     }
 }
 
+impl fmt::Display for ARdata {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let ip = self.get_address();
+
+        formatter.write_fmt(format_args!("{}", ip))
+    }
+}
 #[cfg(test)]
 mod a_rdata_test {
     use crate::message::rdata::a_rdata::ARdata;
     use crate::message::rdata::Rdata;
     use crate::message::Rclass;
-    use crate::message::Rtype;
+    use crate::message::rrtype::Rrtype;
     use std::net::IpAddr;
     use std::str::FromStr;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -257,7 +288,7 @@ mod a_rdata_test {
             a_rr.get_name().get_name(),
             String::from("admin1.googleplex.edu")
         );
-        assert_eq!(a_rr.get_rtype(), Rtype::A);
+        assert_eq!(a_rr.get_rtype(), Rrtype::A);
         assert_eq!(a_rr.get_ttl(), 0);
         assert_eq!(a_rr.get_rdlength(), 4);
 

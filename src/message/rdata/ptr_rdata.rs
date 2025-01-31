@@ -1,10 +1,12 @@
 use crate::domain_name::DomainName;
-use crate::message::{Rtype, Rclass};
+use crate::message::Rclass;
+use crate::message::rrtype::Rrtype;
 use crate::message::rdata::Rdata;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct that represents the `Rdata` for PTR TYPE.
 /// 
 /// [RFC 1035](https://tools.ietf.org/html/rfc1035#section-3.3.12)
@@ -118,8 +120,8 @@ impl PtrRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::PTR);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::PTR);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 2);
@@ -144,10 +146,18 @@ impl PtrRdata {
     }
 }
 
+impl fmt::Display for PtrRdata {
+    /// Formats the record data for display
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.get_ptrdname().get_name())
+    }
+}
+
 #[cfg(test)]
 mod ptr_rdata_test {
     use crate::domain_name::DomainName;
-    use crate::message::{Rclass, Rtype};
+    use crate::message::Rclass;
+    use crate::message::rrtype::Rrtype;
     use crate::message::rdata::Rdata;
     use crate::message::rdata::ptr_rdata::PtrRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -221,7 +231,7 @@ mod ptr_rdata_test {
          assert_eq!(ptr_rdata_rr.get_ttl(), 35);
          assert_eq!(ptr_rdata_rr.get_name().get_name(), String::from("uchile.cl"));
          assert_eq!(ptr_rdata_rr.get_rdlength(), 5);
-         assert_eq!(ptr_rdata_rr.get_rtype(), Rtype::PTR);
+         assert_eq!(ptr_rdata_rr.get_rtype(), Rrtype::PTR);
          
          let ptr_rr_rdata = ptr_rdata_rr.get_rdata();
          match ptr_rr_rdata {

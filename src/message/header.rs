@@ -1,22 +1,25 @@
+use crate::message::rcode::Rcode;
+
 #[derive(Default, Clone)]
 
 ///  An struct that represents a Header secction from a DNS message.
-/// 
-///                                 1  1  1  1  1  1
-///   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
-///  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///  |                      ID                       |
-///  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///  |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
-///  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///  |                    QDCOUNT                    |
-///  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///  |                    ANCOUNT                    |
-///  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///  |                    NSCOUNT                    |
-///  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-///  |                    ARCOUNT                    |
-///  +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+///  EDIT: now added bits AD CD for DNS security extensions.
+///
+///                                1  1  1  1  1  1
+///  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                      ID                       |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |QR|   Opcode  |AA|TC|RD|RA| Z|AD|CD|   RCODE   |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    QDCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    ANCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    NSCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+/// |                    ARCOUNT                    |
+/// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 #[derive (PartialEq, Debug)]
 pub struct Header {
     /// Id
@@ -38,10 +41,12 @@ pub struct Header {
     tc: bool, // TrunCation
     rd: bool, // Recursion Desired
     ra: bool, // Recursion Available
+    ad: bool, // Authentic Data
+    cd: bool, // Checking Disabled 
 
-    /// Reserved
+    /// Reserved Edit: Now z is just a flag
     #[allow(dead_code)]
-    z: u8,
+    z: bool,
 
     /// Response Code
     /// 
@@ -72,7 +77,7 @@ pub struct Header {
     ///                 information to the particular requester,
     ///                 or a name server may not wish to perform
     ///                 a particular operation.
-    rcode: u8,
+    rcode: Rcode,
 
     /// Counters
     qdcount: u16,
@@ -135,7 +140,11 @@ impl Header {
         let tc = (bytes[2] & 0b00000010) >> 1;
         let rd = bytes[2] & 0b00000001;
         let ra = bytes[3] >> 7;
-        let rcode = bytes[3] & 0b00001111;
+
+        let ad = (bytes[3] & 0b00100000) >> 5;
+        let cd = (bytes[3] & 0b00010000) >> 4;
+        let rcode = Rcode::from(bytes[3] & 0b00001111);
+
         let qdcount = ((bytes[4] as u16) << 8) | bytes[5] as u16;
         let ancount = ((bytes[6] as u16) << 8) | bytes[7] as u16;
         let nscount = ((bytes[8] as u16) << 8) | bytes[9] as u16;
@@ -149,6 +158,8 @@ impl Header {
         header.set_tc(tc != 0);
         header.set_rd(rd != 0);
         header.set_ra(ra != 0);
+        header.set_ad(ad != 0);
+        header.set_cd(cd != 0);
         header.set_rcode(rcode);
         header.set_qdcount(qdcount);
         header.set_ancount(ancount);
@@ -207,7 +218,7 @@ impl Header {
             return 0b00000100;
         }
 
-        return 0 as u8;
+        return 0u8;
     }
 
     /// Returns a byte that represents the field in the DNS message.
@@ -220,7 +231,7 @@ impl Header {
             return 0b00000010;
         }
 
-        return 0 as u8;
+        return 0u8;
     }
 
     /// Returns a byte that represents the field in the DNS message.
@@ -233,7 +244,7 @@ impl Header {
             return 0b00000001;
         }
 
-        return 0 as u8;
+        return 0u8;
     }
 
     /// Returns a byte that represents the field in the DNS message.
@@ -246,7 +257,33 @@ impl Header {
             return 0b10000000;
         }
 
-        return 0 as u8;
+        return 0u8;
+    }
+
+    /// Returns a byte that represents the field in the DNS message.
+    ///
+    /// See the DNS message structure in struct documentation for more info.
+    fn ad_to_byte(&self) -> u8 {
+        let ad = self.get_ad();
+
+        if ad {
+            return 0b00100000;
+        }
+
+        return 0u8;
+    }
+
+    /// Returns a byte that represents the field in the DNS message.
+    ///
+    /// See the DNS message structure in struct documentation for more info.
+    fn cd_to_byte(&self) -> u8 {
+        let cd = self.get_cd();
+
+        if cd {
+            return 0b00010000;
+        }
+
+        return 0u8;
     }
 
     /// Gets the first byte from the qdcount attribute.
@@ -329,9 +366,13 @@ impl Header {
     /// Gets a byte that represents the second byte of flags section.
     fn get_second_flags_byte(&self) -> u8 {
         let ra_byte = self.ra_to_byte();
-        let rcode_byte = self.get_rcode();
 
-        let second_byte = ra_byte | rcode_byte;
+        let ad_byte = self.ad_to_byte();
+        let cd_byte = self.cd_to_byte();
+        let rcode_byte = u8::from(self.get_rcode());
+
+
+        let second_byte = ra_byte | ad_byte | cd_byte |  rcode_byte;
 
         second_byte
     }
@@ -380,7 +421,7 @@ impl Header {
         header_bytes
     }
 
-    /// Checks if the header is well formed.
+    /// Checks if the header is well-formed.
     pub fn format_check(&self)-> Result<bool, &'static str>{
 
         // OP CODE: A four bit field between 0-15 
@@ -388,13 +429,13 @@ impl Header {
             return Err("Format Error: OP CODE");
         }
 
-        // Z: A 3 bit field that MUST be zero 
-        if self.z != 0 {
+        // Z: A z flag field MUST be zero/false
+        if self.z != false {
             return Err("Format Error: Z");
         }
 
         // RCODE: A 4 bit field between 0-15
-        if self.rcode > 15 {
+        if u8::from(self.rcode) > 15 {
             return Err("Format Error: RCODE");
         }
         
@@ -439,8 +480,18 @@ impl Header {
         self.ra = ra;
     }
 
+    /// Sets the ad attribute with a value.
+    pub fn set_ad(&mut self, ad: bool) {
+        self.ad = ad;
+    }
+
+    /// Sets the cd attribute with a value.
+    pub fn set_cd(&mut self, cd: bool) {
+        self.cd = cd;
+    }
+
     /// Sets the rcode attribute with a value.
-    pub fn set_rcode(&mut self, rcode: u8) {
+    pub fn set_rcode(&mut self, rcode: Rcode) {
         self.rcode = rcode;
     }
 
@@ -502,8 +553,18 @@ impl Header {
         self.ra
     }
 
+    /// Gets the ad attribute value.
+    pub fn get_ad(&self) -> bool {
+        self.ad
+    }
+
+    /// Gets the cd attribute value.
+    pub fn get_cd(&self) -> bool {
+        self.cd
+    }
+
     /// Gets the `rcode` attribute value.
-    pub fn get_rcode(&self) -> u8 {
+    pub fn get_rcode(&self) -> Rcode {
         self.rcode
     }
 
@@ -530,6 +591,8 @@ impl Header {
 
 #[cfg(test)]
 mod header_test {
+    use crate::message::rcode::Rcode;
+
     use super::Header;
 
     #[test]
@@ -542,7 +605,11 @@ mod header_test {
         assert_eq!(header.tc, false);
         assert_eq!(header.rd, false);
         assert_eq!(header.ra, false);
-        assert_eq!(header.rcode, 0);
+
+        assert_eq!(header.ad, false);
+        assert_eq!(header.cd, false);
+        assert_eq!(header.rcode, Rcode::NOERROR);
+
         assert_eq!(header.qdcount, 0);
         assert_eq!(header.ancount, 0);
         assert_eq!(header.nscount, 0);
@@ -634,15 +701,39 @@ mod header_test {
     }
 
     #[test]
+    fn set_and_get_ad() {
+        let mut header = Header::new();
+
+        let mut ad = header.get_ad();
+        assert_eq!(ad, false);
+
+        header.set_ad(true);
+        ad = header.get_ad();
+        assert_eq!(ad, true);
+    }
+
+    #[test]
+    fn set_and_get_cd() {
+        let mut header = Header::new();
+
+        let mut cd = header.get_cd();
+        assert_eq!(cd, false);
+
+        header.set_cd(true);
+        cd = header.get_cd();
+        assert_eq!(cd, true);
+    }
+
+    #[test]
     fn set_and_get_rcode() {
         let mut header = Header::new();
 
         let mut rcode = header.get_rcode();
-        assert_eq!(rcode, 0);
+        assert_eq!(rcode, Rcode::NOERROR);
 
-        header.set_rcode(2);
+        header.set_rcode(Rcode::SERVFAIL);
         rcode = header.get_rcode();
-        assert_eq!(rcode, 2);
+        assert_eq!(rcode, Rcode::SERVFAIL);
     }
 
     #[test]
@@ -704,13 +795,17 @@ mod header_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(5);
+
+        header.set_ad(true);
+        header.set_cd(true);
+        header.set_rcode(Rcode::REFUSED);
+
         header.set_ancount(0b0000101010100101);
 
         bytes[0] = 0b00100100;
         bytes[1] = 0b10010101;
         bytes[2] = 0b10010010;
-        bytes[3] = 0b00000101;
+        bytes[3] = 0b00110101;
         bytes[6] = 0b00001010;
         bytes[7] = 0b10100101;
 
@@ -724,7 +819,7 @@ mod header_test {
         bytes[0] = 0b00100100;
         bytes[1] = 0b10010101;
         bytes[2] = 0b10010010;
-        bytes[3] = 0b00000101;
+        bytes[3] = 0b00110101;
         bytes[6] = 0b00001010;
         bytes[7] = 0b10100101;
 
@@ -734,7 +829,11 @@ mod header_test {
         header.set_qr(true);
         header.set_op_code(2);
         header.set_tc(true);
-        header.set_rcode(5);
+
+        header.set_ad(true);
+        header.set_cd(true);
+        header.set_rcode(Rcode::REFUSED);
+
         header.set_ancount(0b0000101010100101);
 
         let header_from_bytes = Header::from_bytes(&bytes);
@@ -786,8 +885,10 @@ mod header_test {
         ];
 
         let mut header = Header::from_bytes(&bytes_header);
-        header.z = 3;
-        header.set_rcode(16);
+
+        header.z = true;
+        header.set_rcode(Rcode::UNKNOWN(16));
+
         header.set_op_code(22);
 
         let result_check = header.format_check();

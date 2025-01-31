@@ -1,13 +1,15 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
 use std::string::String;
 
-#[derive(Clone, PartialEq, Debug)]
+use std::fmt;
+
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// [RFC 1035]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.2
 /// An struct that represents the `Rdata` for HINFO TYPE.
 /// 
@@ -124,7 +126,7 @@ impl HinfoRdata {
     /// assert_eq!(hinfo_rr.get_class(), Rclass::IN);
     /// assert_eq!(hinfo_rr.get_name().get_name(), "dcc.cl");
     /// assert_eq!(hinfo_rr.get_ttl(), 15);
-    /// assert_eq!(hinfo_rr.get_rtype(), Rtype::HINFO);
+    /// assert_eq!(hinfo_rr.get_rtype(), Rrtype::HINFO);
     /// assert_eq!(hinfo_rr.get_rdlength(), 11);
     /// 
     /// let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));
@@ -153,8 +155,8 @@ impl HinfoRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::HINFO);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::HINFO);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(cpu.len() as u16 + os.len() as u16);
@@ -187,10 +189,26 @@ impl HinfoRdata {
     }
 }
 
+impl fmt::Display for HinfoRdata {
+    /// Formats the Rdata as a string.
+    /// 
+    /// # Examples
+    /// ```
+    /// use dns_message_parser::message::rdata::hinfo_rdata::HinfoRdata;
+    /// 
+    /// let hinfo_rdata = HinfoRdata::new();
+    /// 
+    /// assert_eq!(hinfo_rdata.to_string(), "CPU: , OS: ");
+    /// ```
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.cpu, self.os)
+    }
+}
+
 #[cfg(test)]
 mod hinfo_rdata_test {
     use crate::message::rdata::Rdata;
-    use crate::message::Rtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::Rclass;
     use crate::message::rdata::hinfo_rdata::HinfoRdata;
     use crate::message::resource_record::{FromBytes, ToBytes};
@@ -262,7 +280,7 @@ mod hinfo_rdata_test {
         assert_eq!(hinfo_rr.get_rclass(), Rclass::IN);
         assert_eq!(hinfo_rr.get_name().get_name(), "dcc.cl");
         assert_eq!(hinfo_rr.get_ttl(), 15);
-        assert_eq!(hinfo_rr.get_rtype(), Rtype::HINFO);
+        assert_eq!(hinfo_rr.get_rtype(), Rrtype::HINFO);
         assert_eq!(hinfo_rr.get_rdlength(), 11);
         
         let expected_cpu_os = (String::from("ryzen"), String::from("ubuntu"));

@@ -1,12 +1,13 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 use std::str::SplitWhitespace;
+use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// An struct that represents the RDATA for A TYPE in CH class.
 /// 
 /// For the CH class, a domain name followed by a 16 bit octal Chaos address.
@@ -151,8 +152,8 @@ impl AChRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::A);
-        let rclass = Rclass::from_str_to_rclass(class);
+        resource_record.set_type_code(Rrtype::A);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         resource_record.set_rdlength(name.len() as u16 + 4);
@@ -187,10 +188,20 @@ impl AChRdata {
     }
 }
 
+impl fmt::Display for AChRdata {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let domain_name_str = self.get_domain_name().get_name();
+        let ch_address = self.get_ch_address();
+
+        formatter.write_fmt(format_args!(
+            "{} {}", domain_name_str, ch_address))
+    }
+}
+
 #[cfg(test)]
 mod a_ch_rdata_test {
     use crate::domain_name::DomainName;
-    use crate::message::Rtype;
+    use crate::message::rrtype::Rrtype;
     use crate::message::Rclass;
     use std::net::IpAddr;
     use crate::message::rdata::a_ch_rdata::AChRdata;
@@ -291,7 +302,7 @@ mod a_ch_rdata_test {
         let ach_rdata = AChRdata::from_bytes(&data_bytes, &data_bytes).unwrap();
 
         assert_eq!(ach_rdata.get_domain_name().get_name(), String::from("test.com"));
-        assert_eq!(ach_rdata.get_ch_address(), 10 as u16);
+        assert_eq!(ach_rdata.get_ch_address(), 10u16);
     }
 
     //ToDo: Revisar 
@@ -314,7 +325,7 @@ mod a_ch_rdata_test {
 
         assert_eq!(ach_rr.get_rclass(), Rclass::CH);
         assert_eq!(ach_rr.get_name().get_name(), String::from("admin.googleplex"));
-        assert_eq!(ach_rr.get_rtype(), Rtype::A);
+        assert_eq!(ach_rr.get_rtype(), Rrtype::A);
         assert_eq!(ach_rr.get_ttl(), 0);
         assert_eq!(ach_rr.get_rdlength(), 16);
 

@@ -1,11 +1,12 @@
 use crate::domain_name::DomainName;
 use crate::message::rdata::Rdata;
-use crate::message::Rtype;
+use crate::message::rrtype::Rrtype;
 use crate::message::Rclass;
 use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 use std::str::SplitWhitespace;
+use std::fmt;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct for the TSIG RData
 /// [RFC 2845](https://tools.ietf.org/html/rfc2845#section-3.5)
 /// [RFC 8945](https://tools.ietf.org/html/rfc8945#section-3.5)
@@ -66,10 +67,6 @@ impl ToBytes for TSigRdata{
         
         let time_signed = self.get_time_signed();
 
-        bytes.push((time_signed >> 56) as u8);
-
-        bytes.push((time_signed >> 48) as u8);
-
         bytes.push((time_signed >> 40) as u8);
 
         bytes.push((time_signed >> 32) as u8);
@@ -80,7 +77,7 @@ impl ToBytes for TSigRdata{
 
         bytes.push((time_signed >> 8) as u8);
 
-        bytes.push(time_signed as u8);
+        bytes.push((time_signed >> 0) as u8);
         
         let fudge = self.get_fudge();
 
@@ -147,19 +144,19 @@ impl FromBytes<Result<Self, &'static str>> for TSigRdata{
 
         tsig_rdata.set_algorithm_name(algorithm_name);
 
-        tsig_rdata.set_time_signed_from_bytes(&bytes_without_algorithm_name[0..8]);
+        tsig_rdata.set_time_signed_from_bytes(&bytes_without_algorithm_name[0..6]);
 
-        tsig_rdata.set_fudge_from_bytes(&bytes_without_algorithm_name[8..10]);
+        tsig_rdata.set_fudge_from_bytes(&bytes_without_algorithm_name[6..8]);
 
-        tsig_rdata.set_mac_size_from_bytes(&bytes_without_algorithm_name[10..12]);
+        tsig_rdata.set_mac_size_from_bytes(&bytes_without_algorithm_name[8..10]);
 
         let mac_size = tsig_rdata.get_mac_size();
 
-        let mac = bytes_without_algorithm_name[12..(12 + mac_size as usize)].to_vec();
+        let mac = bytes_without_algorithm_name[10..(10 + mac_size as usize)].to_vec();
 
         tsig_rdata.set_mac(mac);
 
-        let bytes_without_mac = &bytes_without_algorithm_name[(12 + mac_size as usize)..];
+        let bytes_without_mac = &bytes_without_algorithm_name[(10 + mac_size as usize)..];
 
         tsig_rdata.set_original_id_from_bytes(&bytes_without_mac[0..2]);
 
@@ -245,9 +242,9 @@ impl TSigRdata {
         domain_name.set_name(host_name);
 
         resource_record.set_name(domain_name);
-        resource_record.set_type_code(Rtype::TSIG);
+        resource_record.set_type_code(Rrtype::TSIG);
 
-        let rclass = Rclass::from_str_to_rclass(class);
+        let rclass = Rclass::from(class);
         resource_record.set_rclass(rclass);
         resource_record.set_ttl(ttl);
         let rdlength = algorithm_name_str.len() as u16 + 18 + mac_size + other_len;
@@ -258,14 +255,14 @@ impl TSigRdata {
 
     /// Set the time signed attribute from an array of bytes.
     fn set_time_signed_from_bytes(&mut self, bytes: &[u8]){
-        let time_signed = (bytes[0] as u64) << 56 
-                                | (bytes[1] as u64) << 48 
-                                | (bytes[2] as u64) << 40 
-                                | (bytes[3] as u64) << 32 
-                                | (bytes[4] as u64) << 24 
-                                | (bytes[5] as u64) << 16 
-                                | (bytes[6] as u64) << 8 
-                                | bytes[7] as u64;
+
+        let time_signed = (bytes[0] as u64) << 40
+                                | (bytes[1] as u64) << 32 
+                                | (bytes[2] as u64) << 24 
+                                | (bytes[3] as u64) << 16 
+                                | (bytes[4] as u64) << 8 
+                                | (bytes[5] as u64) << 0;
+
         self.set_time_signed(time_signed);
     }
 
@@ -400,6 +397,32 @@ impl TSigRdata{
     /// Sets the other_data attibute with a value
     pub fn set_other_data(&mut self, other_data: Vec<u8>) {
         self.other_data = other_data;
+    }
+}
+
+impl fmt::Display for TSigRdata {
+    /// Formats the record data for display
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut mac_str = String::new();
+        for byte in self.get_mac().iter() {
+            mac_str.push_str(&format!("{:X} ", byte));
+        }
+
+        let mut other_data_str = String::new();
+        for byte in self.get_other_data().iter() {
+            other_data_str.push_str(&format!("{:X} ", byte));
+        }
+
+        write!(f, "{} {} {} {} {} {} {} {} {}", 
+        self.get_algorithm_name().get_name(),
+        self.get_time_signed(),
+        self.get_fudge(),
+        self.get_mac_size(),
+        mac_str,
+        self.get_original_id(),
+        self.get_error(),
+        self.get_other_len(),
+        other_data_str)
     }
 }
 
@@ -556,11 +579,33 @@ mod tsig_rdata_test {
         let bytes_to_test = tsig_rdata.to_bytes();
 
         let bytes = vec![
-        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
-        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
-        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
-        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
-        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+            //This is the string "hmac-md5.sig-alg.reg.int" in octal, terminated in 00
+            0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+            0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+            0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0,
+
+            //this is the time signed 123456789 == 0x75bcd15
+            0x0, 0x0, 0x7, 0x5B, 0xCD, 0x15,
+
+            // this the fudge 1234
+            0x4, 0xD2,
+
+            // this is the macsize = 4
+            0x0, 0x4,
+
+            // this is the mac = [0xA1, 0xB2, 0xC3, 0xD4]
+            0xA1, 0xB2, 0xC3, 0xD4,
+
+            // this is the original id = 1234
+            0x4, 0xD2,
+
+            // this is the error = 0
+            0x0, 0x0,
+
+            // this is the other len = 0
+            0x0, 0x0
+
+            // No other data, so its empty!
         ];
 
         for i in 0..bytes.len() {
@@ -571,11 +616,33 @@ mod tsig_rdata_test {
     #[test]
     fn from_bytes_test(){
         let bytes = vec![
-        0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
-        0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
-        0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0, 0x0, 0x0, 0x0,
-        0x0, 0x7, 0x5B, 0xCD, 0x15, 0x4, 0xD2, 0x0, 0x4, 0xA1, 0xB2, 0xC3, 0xD4,
-        0x4, 0xD2, 0x0, 0x0, 0x0, 0x0
+            //This is the string "hmac-md5.sig-alg.reg.int" in octal, terminated in 00
+            0x8, 0x68, 0x6D, 0x61, 0x63, 0x2D, 0x6D, 0x64,
+            0x35, 0x7, 0x73, 0x69, 0x67, 0x2D, 0x61, 0x6C, 0x67,
+            0x3, 0x72, 0x65, 0x67, 0x3, 0x69, 0x6E, 0x74, 0x0,
+
+            //this is the time signed 123456789 == 0x75bcd15
+            0x0, 0x0, 0x7, 0x5B, 0xCD, 0x15,
+
+            // this the fudge 1234
+            0x4, 0xD2,
+
+            // this is the macsize = 4
+            0x0, 0x4,
+
+            // this is the mac = [0xA1, 0xB2, 0xC3, 0xD4]
+            0xA1, 0xB2, 0xC3, 0xD4,
+
+            // this is the original id = 1234
+            0x4, 0xD2,
+
+            // this is the error = 0
+            0x0, 0x0,
+
+            // this is the other len = 0
+            0x0, 0x0
+
+            // No other data, so its empty!
         ];
 
         let tsig_rdata_result = TSigRdata::from_bytes(&bytes, &bytes);

@@ -1,5 +1,6 @@
 use std::{time::Duration, net::IpAddr};
-
+use std::io::Error as IoError;
+use std::io::ErrorKind;
 use dns_rust::{
     async_resolver::{
             config::ResolverConfig, AsyncResolver, server_info::ServerInfo
@@ -10,6 +11,8 @@ use clap::*;
 use rand::{thread_rng, Rng};
 use dns_rust::async_resolver::lookup_response::LookupResponse;
 use dns_rust::client::client_connection::ConnectionProtocol;
+use dns_rust::client::client_security::ClientSecurity;
+use dns_rust::client::tls_connection::ClientTLSConnection;
 use dns_rust::edns::opt_option::option_code::OptionCode;
 use dns_rust::message::DnsMessage;
 use dns_rust::message::rclass::Rclass;
@@ -70,9 +73,9 @@ struct ClientArgs {
     #[arg(long, default_value = "false")]
     noedns: bool,
 
-    /// Changes the connection protocol from UDP to TCP
-    #[arg(long, default_value = "false")]
-    tcp: bool,
+    /// Transport protocol, options: "UDP", "TCP", "TLS".
+    #[arg(long, default_value_t = String::from("UDP"))]
+    protocol: String,
 }
 
 
@@ -160,19 +163,31 @@ pub async fn main() {
             }
 
             // match tcp to set a client
-            let response = match client_args.tcp {
-                true => {
+            let response = match client_args.protocol.as_str() {
+                "UDP" => {
+                    let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+                    let mut client = Client::new(conn);
+                    client.set_dns_query(dns_query_message);
+                    client.send_query().await
+                }
+                "TCP" => {
                     let conn = ClientTCPConnection::new_default(addr, Duration::from_secs(10));
                     let mut client = Client::new(conn);
                     client.set_dns_query(dns_query_message);
                     client.send_query().await
                 },
-                false => {
-                    let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+                "TLS" => {
+                    let conn = ClientTLSConnection::new_default(addr, Duration::from_secs(10));
                     let mut client = Client::new(conn);
                     client.set_dns_query(dns_query_message);
                     client.send_query().await
                 },
+                _ => {
+                    eprintln!{"{} is not a supported protocol", client_args.protocol.as_str()};
+                    Err(ClientError::Io(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!("{} is not a supported protocol", client_args.protocol.as_str()),
+                )).into())}
             };
 
             if let Ok(resp) = response {

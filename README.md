@@ -82,14 +82,14 @@ Here it can be specified whether to run a *client* or a *resolver* :
 
 - Six options:
 
-   | Option                | Description                                     |
-   |-----------------------|-------------------------------------------------| 
-   | `--qtype <QTYPE>`     | Query type [default: A]                         |
-   | `--qclass <QCLASS>`   | Query class [default: IN]                       |
-   | `--norecursive`       | Disables the use of recursion when specified    |
-   | `--payload <PAYLOAD>` | Maximum payload for EDNS [default: 512]         |
-   | `--noedns`            | Disables the use of EDNS when specified         |
-   | `--tcp`               | Changes the connection protocol from UDP to TCP |
+   | Option                  | Description                                                     |
+   |-------------------------|-----------------------------------------------------------------| 
+   | `--qtype <QTYPE>`       | Query type [default: A]                                         |
+   | `--qclass <QCLASS>`     | Query class [default: IN]                                       |
+   | `--norecursive`         | Disables the use of recursion when specified                    |
+   | `--payload <PAYLOAD>`   | Maximum payload for EDNS [default: 512]                         |
+   | `--noedns`              | Disables the use of EDNS when specified                         |
+   | `--protocol <PROTOCOL>` | Transport protocol, options: "UDP", "TCP", "TLS" [default: UDP] |
 
 
 - And four EDNS0 options

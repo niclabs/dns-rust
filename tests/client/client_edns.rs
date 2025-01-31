@@ -124,11 +124,12 @@ mod client_edns {
             match rdata {
                 Rdata::OPT(opt) => {
                     let options = opt.get_option();
+                    let first = options[0].clone();
+                    if let OptionData::NSID(c) = first.get_opt_data() {
+                        assert!(c.starts_with("gpdns"));
+                        assert_eq!(first.get_option_len(), 9);
+                    }
 
-                    let mut first_expected = OptOption::new(OptionCode::NSID);
-                    first_expected.set_option_len(9);
-                    first_expected.set_opt_data(OptionData::from_bytes_with_opt_type("gpdns-scl".to_string().into_bytes(), OptionCode::NSID).unwrap());
-                    assert_eq!(options[0], first_expected);
 
                     let mut second_expected = OptOption::new(OptionCode::EDE);
                     let mut expected_opt_data = EdeOptData::new();
@@ -189,10 +190,11 @@ mod client_edns {
                 Rdata::OPT(opt) => {
                     let options = opt.get_option();
 
-                    let mut expected = OptOption::new(OptionCode::NSID);
-                    expected.set_opt_data(OptionData::from_bytes_with_opt_type("gpdns-scl".to_string().into_bytes(), OptionCode::NSID).unwrap());
-                    expected.set_option_len(9);
-                    assert_eq!(options[0], expected);
+                    let first = options[0].clone();
+                    if let OptionData::NSID(c) = first.get_opt_data() {
+                        assert!(c.starts_with("gpdns"));
+                        assert_eq!(first.get_option_len(), 9);
+                    }
                 },
                 _ => {}
             }

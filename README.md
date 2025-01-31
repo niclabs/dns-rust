@@ -169,21 +169,21 @@ dns_rust client --qtype "MX" --qclass "CH" "1.1.1.1" "example.com"
 
 ### 2. Resolver examples
 
-#### 2.1 These commands runs a query for `example.com` running a resolver using the specified servers.
+#### 2.1 These commands runs a query for `example.com` running the system's default resolver.
 
 ```sh
-dns_rust resolver "example.com" "1.1.1.1" "8.8.8.8" 
+dns_rust  resolver "example.com"
 ```
 or
 
 ```sh
-cargo run  resolver "example.com" "1.1.1.1" "8.8.8.8"
+cargo run  resolver "example.com"
 ```
 
-#### 2.2 This command runs a query for `example.com` running the system's default resolver.
+#### 2.2 This command runs a query for `example.com` running a resolver using the specified servers.
 
 ```sh
-dns_rust  resolver "example.com"
+dns_rust resolver "example.com" "1.1.1.1" "8.8.8.8" 
 ```
 
 #### 2.3 This command runs a query for `example.com` using TCP..

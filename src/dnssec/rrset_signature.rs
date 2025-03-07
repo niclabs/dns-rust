@@ -1,6 +1,5 @@
 use sha2::{Sha256, Digest};
-use crypto::digest::Digest as RustDigest;
-use crypto::sha1::Sha1;
+use sha1::Sha1;
 use data_encoding::BASE64;
 use crate::message::rdata::Rdata;
 use crate::message::rdata::dnskey_rdata::DnskeyRdata;
@@ -36,9 +35,10 @@ pub fn verify_rrsig(rrsig: &RRSIGRdata, dnskey: &DnskeyRdata, rrset: &[ResourceR
         3 | 5 => {
             // (DSA/RSA)/SHA1
             let mut sha1 = Sha1::new();
-            sha1.input(&rrsig_data);
-            let digest = sha1.result_str();
-            Ok(digest == BASE64.encode(&signature))
+            sha1.update(&rrsig_data);
+            let digest = sha1.finalize();
+            let hex_digest = hex::encode(digest);
+            Ok(hex_digest == BASE64.encode(&signature))
         },
         8 => {
             // RSA/SHA256
@@ -54,8 +54,9 @@ pub fn verify_ds(ds_record: &ResourceRecord, dnskey: &DnskeyRdata) -> Result<boo
         let hashed_key = match ds_rdata.algorithm {
             1 => {
                 let mut hasher = Sha1::new();
-                hasher.input(&dnskey_bytes);
-                hasher.result_str()
+                hasher.update(&dnskey_bytes);
+                let result = hasher.finalize();
+                hex::encode(result)
             },
             2 => {
                 let hashed = Sha256::digest(&dnskey_bytes);

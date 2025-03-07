@@ -1,6 +1,6 @@
 pub mod tsig_algorithm;
 
-use crypto::mac::MacResult;
+use std::io::Read;
 use crate::domain_name::DomainName;
 use std::time::SystemTime;
 use crate::message::rclass::Rclass;
@@ -8,24 +8,29 @@ use crate::message::resource_record::{ResourceRecord, ToBytes};
 
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage,};
 use crate::message::rdata::Rdata;
-use crypto::hmac::Hmac as crypto_hmac;
-use crypto::mac::Mac as crypto_mac;
-use crypto::{sha1::Sha1,sha2::Sha256};
+
+use hmac::{Hmac, Mac};
+use hmac::digest::{Output, Digest};
+use hmac::Hmac as crypto_hmac;
+use hmac::Mac as crypto_mac;
+use sha2::{Sha256};
+use sha1::Sha1;
+
 use tsig_algorithm::TsigAlgorithm;
 use crate::message::rcode::Rcode;
 
 
 //TODO: Encontrar alguna manera de pasar una referencia Digest u Hmac de un algoritmo no especificado
 // función auxiliar para evitar la redundancia de código en sign_tsig
-fn set_tsig_rd(name: String, original_id: u16, result: MacResult,
-               fudge: u16, time_signed: u64, mac_size: u16) -> TSigRdata{
+fn set_tsig_rd(name: String, original_id: u16, result: &[u8],
+                  fudge: u16, time_signed: u64, mac_size: u16) -> TSigRdata
+{
     let mut tsig_rd: TSigRdata = TSigRdata::new();
-    let mac = result.code();
+    let mac = result;
 
-    //Convertir los bytes brutos a una cadena hexadecimal
     let a_name = name.to_lowercase();
     let a_name = DomainName::new_from_string(a_name);
-    //añadir los valores correspondientes al tsig_rd
+
     tsig_rd.set_algorithm_name(a_name);
     tsig_rd.set_mac_size(mac_size);
     tsig_rd.set_mac(mac.to_vec());
@@ -33,7 +38,7 @@ fn set_tsig_rd(name: String, original_id: u16, result: MacResult,
     tsig_rd.set_original_id(original_id);
     tsig_rd.set_time_signed(time_signed);
 
-    return tsig_rd;
+    tsig_rd
 }
 //TODO: crear una función para simplificar la extracción de bits paa simplificar código
 // This function extracts the digest 
@@ -122,14 +127,16 @@ fn digest(bytes: Vec<u8>, tsig_algorithm: TsigAlgorithm, key: Vec<u8>) -> Vec<u8
         TsigAlgorithm::HmacSha1 => {
 
             //new_query_message.push();
-            let mut hasher = crypto_hmac::new(Sha1::new(), &key);
-            hasher.input(&bytes[..]);
-            hasher.result().code().to_vec()
+            let mut hasher = crypto_hmac::<Sha1>::new_from_slice(key.as_slice())
+                                                        .expect("Invalid key");
+            hasher.update(&bytes[..]);
+            hasher.finalize().into_bytes().to_vec()
         },
         TsigAlgorithm::HmacSha256 => {
-            let mut hasher = crypto_hmac::new(Sha256::new(), &key);
-            hasher.input(&bytes[..]);
-            hasher.result().code().to_vec()
+            let mut hasher = crypto_hmac::<Sha256>::new_from_slice(key.as_slice())
+                .expect("Invalid key");
+            hasher.update(&bytes[..]);
+            hasher.finalize().into_bytes().to_vec()
         }
         TsigAlgorithm::UNKNOWN(a) => {
             panic!("Unknown algorithm {}", a);
@@ -154,27 +161,27 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
         TsigAlgorithm::HmacSha1 => {
 
             //new_query_message.push();
-            let mut hasher = crypto_hmac::new(Sha1::new(), key);
-            hasher.input(&digest_comp[..]);
-            let result = hasher.result();
-            tsig_rd = set_tsig_rd( 
-                "hmac-sha1".to_lowercase(), 
+            let mut hasher = crypto_hmac::<Sha1>::new_from_slice(key).expect("Invalid key");
+            hasher.update(&digest_comp[..]);
+            let result = hasher.finalize().into_bytes();
+            tsig_rd = set_tsig_rd(
+                "hmac-sha1".to_lowercase(),
                 original_id,
-                result,
-                fudge, 
+                &*result,
+                fudge,
                 time_signed,
-                 20);
-            
+                20);
+
         },
         TsigAlgorithm::HmacSha256 => {
-            let mut hasher = crypto_hmac::new(Sha256::new(), key);
-            hasher.input(&digest_comp[..]);
-            let result = hasher.result();
-            tsig_rd = set_tsig_rd( 
-                "hmac-sha256".to_lowercase(),
+            let mut hasher = crypto_hmac::<Sha256>::new_from_slice(key).expect("Invalid key");
+            hasher.update(&digest_comp[..]);
+            let result = hasher.finalize().into_bytes();
+            tsig_rd = set_tsig_rd(
+                "hmac-sha1".to_lowercase(),
                 original_id,
-                result,
-                fudge, 
+                &*result,
+                fudge,
                 time_signed,
                 32);
             
@@ -598,11 +605,12 @@ mod tsig_test {
         let firma_a_comparar = q.get_mac();
         // creation of the signature digest
         let dig_for_mac = get_digest_request(vec![],q_for_mac.to_bytes(), tsig_rr);
-        let mut hasher = crypto_hmac::new(Sha1::new(), key);
-        hasher.input(&dig_for_mac[..]);
+        let mut hasher = crypto_hmac::<Sha1>::new_from_slice(key.as_slice())
+                                                    .expect("Invalid key");
+        hasher.update(&dig_for_mac[..]);
         
-        let result = hasher.result();
-        let mac_to_cmp = result.code();
+        let result = hasher.finalize();
+        let mac_to_cmp = result.into_bytes().to_vec();
 
         let rr = q.get_additional().pop().expect("Should be a tsig");
         match rr.get_rdata() {

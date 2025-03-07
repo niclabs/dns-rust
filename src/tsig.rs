@@ -1,6 +1,5 @@
 pub mod tsig_algorithm;
 
-use std::io::Read;
 use crate::domain_name::DomainName;
 use std::time::SystemTime;
 use crate::message::rclass::Rclass;
@@ -9,10 +8,8 @@ use crate::message::resource_record::{ResourceRecord, ToBytes};
 use crate::message::{rdata::tsig_rdata::TSigRdata, DnsMessage,};
 use crate::message::rdata::Rdata;
 
-use hmac::{Hmac, Mac};
-use hmac::digest::{Output, Digest};
+use hmac::Mac;
 use hmac::Hmac as crypto_hmac;
-use hmac::Mac as crypto_mac;
 use sha2::{Sha256};
 use sha1::Sha1;
 
@@ -178,7 +175,7 @@ pub fn sign_tsig(query_msg: &mut DnsMessage, key: &[u8], alg_name: TsigAlgorithm
             hasher.update(&digest_comp[..]);
             let result = hasher.finalize().into_bytes();
             tsig_rd = set_tsig_rd(
-                "hmac-sha1".to_lowercase(),
+                "hmac-sha256".to_lowercase(),
                 original_id,
                 &*result,
                 fudge,

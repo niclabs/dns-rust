@@ -7,6 +7,7 @@ pub enum Rclass {
     CS,
     CH,
     HS,
+    NONE,
     ANY,
     UNKNOWN(u16),
 }
@@ -18,6 +19,7 @@ impl From<&str> for Rclass {
             "CS" => Rclass::CS,
             "CH" => Rclass::CH,
             "HS" => Rclass::HS,
+            "NONE" => Rclass::NONE,
             "ANY" => Rclass::ANY,
             _ => Rclass::UNKNOWN(99)
         }
@@ -31,6 +33,7 @@ impl From<u16> for Rclass {
             2 => Rclass::CS,
             3 => Rclass::CH,
             4 => Rclass::HS,
+            254 => Rclass::NONE,
             255 => Rclass::ANY,
             _ => Rclass::UNKNOWN(val)
         }
@@ -44,6 +47,7 @@ impl From<Rclass> for u16 {
             Rclass::CS => 2,
             Rclass::CH => 3,
             Rclass::HS => 4,
+            Rclass::NONE => 254,
             Rclass::ANY => 255,
             Rclass::UNKNOWN(val) => val,
         }
@@ -61,6 +65,7 @@ impl fmt::Display for Rclass {
             Rclass::CS => "CS".to_string(),
             Rclass::CH => "CH".to_string(),
             Rclass::HS => "HS".to_string(),
+            Rclass::NONE => "NONE".to_string(),
             Rclass::ANY => "ANY".to_string(),
             Rclass::UNKNOWN(x) => x.to_string(),
         };

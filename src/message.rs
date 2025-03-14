@@ -805,6 +805,80 @@ impl DnsMessage {
         tsig::sign_tsig(self, key, alg_name, fudge, time_signed, key_name, mac_request);
     }
 
+
+    /// Creates a dynamic DNS update message following RFC 2136.
+    ///
+    /// # Parameters
+    /// - `zname`: The domain name of the zone to be updated.
+    /// - `zclass`: The class of the zone.
+    /// - `prerequisite`: A list of resource records that must exist (or not exist) before the update is applied.
+    /// - `update`: A list of resource records that define the updates to be applied.
+    /// - `additional`: Additional resource records.
+    pub fn update_message(zname: &str, zclass: &str, prerequisite: Vec<ResourceRecord>,
+                      update: Vec<ResourceRecord>, additional: Vec<ResourceRecord>)  -> Self {
+
+        /*                             1  1  1  1  1  1
+         0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                      ID                       |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |QR|   Opcode  |          Z         |   RCODE   |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                    ZOCOUNT                    |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                    PRCOUNT                    |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                    UPCOUNT                    |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                    ADCOUNT                    |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+*/
+        let mut header = Header::new();
+        header.set_op_code(5); // update opcode
+        header.set_aa(false);
+        header.set_tc(false);
+        header.set_rd(false);
+        header.set_ra(false);
+        header.set_rcode(Rcode::NOERROR);
+        header.set_qdcount(1);
+        header.set_ancount(prerequisite.len() as u16);
+        header.set_nscount(update.len() as u16);
+        header.set_arcount(additional.len() as u16);
+
+        /*                            1  1  1  1  1  1
+        0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                                               |
+       /                     ZNAME                     /
+       /                                               /
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                     ZTYPE                     |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+       |                     ZCLASS                    |
+       +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+*/
+
+        let mut zone = Question::new();
+        zone.set_qname(DomainName::new_from_str(zname));
+        zone.set_rrtype(Rrtype::SOA);
+        // ZCLASS
+        zone.set_rclass(Rclass::from(zclass));
+
+        /*
+        match update_options {
+            UpdateOptions::Add => {},
+            UpdateOptions::DeleteAllRrsets => {},
+            UpdateOptions::DeleteAnRrFromRrset =>{},
+            UpdateOptions::DeleteRrset => {}
+        }
+         */
+        let mut update_mess = DnsMessage::new();
+        update_mess.set_header(header);
+        update_mess.set_question(zone);
+        update_mess.set_answer(prerequisite);
+        update_mess.set_authority(update);
+        update_mess.set_additional(additional);
+        update_mess
+    }
+
 }
 
 impl fmt::Display for DnsMessage {
@@ -1746,4 +1820,5 @@ mod message_test {
             }
         }
     }
+
 }

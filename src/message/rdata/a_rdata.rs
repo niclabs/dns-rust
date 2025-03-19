@@ -36,16 +36,20 @@ impl SetAddress for IpAddr {
 /// ```
 pub struct ARdata {
     /// A 32 bit Internet address.
-    address: IpAddr,
+    address: Option<IpAddr>,
 }
 
 impl ToBytes for ARdata {
     /// Returns a `Vec<u8>` of bytes that represents the A RDATA.
     fn to_bytes(&self) -> Vec<u8> {
-        let address = self.get_address();
-        match address {
-            IpAddr::V4(val) => val.octets().to_vec(),
-            IpAddr::V6(val) => val.octets().to_vec(),
+        match self.address {
+            Some(address) => {
+                match address {
+                    IpAddr::V4(val) => val.octets().to_vec(),
+                    IpAddr::V6(val) => val.octets().to_vec(),
+                }
+            }
+            None => vec![],
         }
     }
 }
@@ -85,7 +89,7 @@ impl ARdata {
         let array = [0 as u8, 0 as u8, 0 as u8, 0 as u8];
         let ip_address = IpAddr::from(array);
         let a_rdata = ARdata {
-            address: ip_address,
+            address: Some(ip_address),
         };
 
         a_rdata
@@ -99,9 +103,16 @@ impl ARdata {
     /// ```
     pub fn new_from_addr(addr: IpAddr) -> Self {
         let a_rdata = ARdata {
-            address: addr
+            address: Some(addr)
         };
 
+        a_rdata
+    }
+
+    pub fn new_empty() -> Self {
+        let a_rdata = ARdata {
+            address: None,
+        };
         a_rdata
     }
 
@@ -192,7 +203,8 @@ impl ARdata {
 impl ARdata {
     /// Gets the `address` attribute from ARdata.
     pub fn get_address(&self) -> IpAddr {
-        self.address
+        if let Some(ip_address) = self.address {return ip_address};
+        panic!("no address available");
     }
 }
 
@@ -201,7 +213,7 @@ impl ARdata {
     /// Sets the `address` attribute with the given value.
     pub fn set_address<T: SetAddress>(&mut self, address: T) {
         if let Some(ip_addr) = address.set_address() {
-            self.address = ip_addr;
+            self.address = Some(ip_addr);
         } else {
             // Handle the IP address parsing error here
             println!("Error: invalid IP address");
@@ -229,7 +241,7 @@ mod a_rdata_test {
     #[test]
     fn constructor_test() {
         let a_rdata = ARdata::new();
-        assert_eq!(a_rdata.address, IpAddr::from([0, 0, 0, 0]));
+        assert_eq!(a_rdata.get_address(), IpAddr::from([0, 0, 0, 0]));
     }
 
     #[test]

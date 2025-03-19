@@ -1049,6 +1049,11 @@ pub fn create_server_failure_response_from_query(
 
 #[cfg(test)]
 mod message_test {
+    use std::net::{IpAddr, Ipv4Addr};
+    use std::time::Duration;
+    use crate::client::Client;
+    use crate::client::client_connection::ClientConnection;
+    use crate::client::udp_connection::ClientUDPConnection;
     use super::*;
     use crate::domain_name::DomainName;
     use crate::message::header::Header;
@@ -1059,6 +1064,7 @@ mod message_test {
     use crate::message::resource_record::ResourceRecord;
     use crate::message::DnsMessage;
     use crate::message::Rclass;
+    use crate::message::rdata::soa_rdata::SoaRdata;
     use crate::message::Rrtype;
 
     #[test]
@@ -1819,6 +1825,191 @@ mod message_test {
                 assert!(false);
             }
         }
+    }
+
+
+    // DNS update examples --------------------------------------------
+    /*
+    2.5.1 - Add To An RRset
+
+    RRs are added to the Update Section whose NAME, TYPE, TTL, RDLENGTH
+    and RDATA are those being added, and CLASS is the same as the zone
+    class.  Any duplicate RRs will be silently ignored by the primary
+    master.
+    */
+    #[ignore]
+    #[tokio::test]
+    async fn add_to_an_rrset() {
+        let zname = DomainName::new_from_str("example.com");
+        let zclass = Rclass::IN;
+
+        let mut prerequisite = vec![];
+        let mut update = vec![];
+        let additional :Vec<ResourceRecord> = vec![];
+
+        // prerequisite--------------------------------
+        let prerequisite_rdata = Rdata::SOA(SoaRdata::new_empty());
+
+        let mut prerequisite_rr = ResourceRecord::new(prerequisite_rdata);
+        prerequisite_rr.set_name(zname);
+        prerequisite_rr.set_rclass(Rclass::ANY);
+        prerequisite.push(prerequisite_rr);
+
+        // update---------------------------------------
+        let update_rdata = Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 200))));
+        let mut update_rr = ResourceRecord::new(update_rdata);
+        update_rr.set_name(DomainName::new_from_str("test.example.com"));
+        update_rr.set_ttl(3600);
+        update_rr.set_rclass(zclass);
+        update.push(update_rr);
+
+        // sending-------------------------------------
+        let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+
+        let mess = DnsMessage::update_message("example.com", "IN", prerequisite, update, additional);
+        let mut client = Client::new(conn);
+        client.set_dns_query(mess);
+        let response = client.send_query().await;
+    }
+
+    /*
+    2.5.2 - Delete An RRset
+
+   One RR is added to the Update Section whose NAME and TYPE are those
+   of the RRset to be deleted.  TTL must be specified as zero (0) and is
+   otherwise not used by the primary master.  CLASS must be specified as
+   ANY.  RDLENGTH must be zero (0) and RDATA must therefore be empty.
+   If no such RRset exists, then this Update RR will be silently ignored
+   by the primary master.
+     */
+    #[ignore]
+    #[tokio::test]
+    async fn delete_an_rrset() {
+        let zname = DomainName::new_from_str("example.com");
+        let zclass = Rclass::IN;
+
+        let mut prerequisite = vec![];
+        let mut update = vec![];
+        let additional :Vec<ResourceRecord> = vec![];
+
+        // prerequisite--------------------------------
+        let prerequisite_rdata = Rdata::SOA(SoaRdata::new_empty());
+
+        let mut prerequisite_rr = ResourceRecord::new(prerequisite_rdata);
+        prerequisite_rr.set_name(zname);
+        prerequisite_rr.set_rclass(Rclass::ANY);
+        prerequisite.push(prerequisite_rr);
+
+        // update---------------------------------------
+        let update_rdata = Rdata::A(ARdata::new_empty());
+        let mut update_rr = ResourceRecord::new(update_rdata);
+        update_rr.set_name(DomainName::new_from_str("test.example.com"));
+        update_rr.set_ttl(0);
+        update_rr.set_rclass(Rclass::ANY);
+        update.push(update_rr);
+
+        // sending-------------------------------------
+        let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+
+        let mess = DnsMessage::update_message("example.com", "IN", prerequisite, update, additional);
+        let mut client = Client::new(conn);
+        client.set_dns_query(mess);
+        let response = client.send_query().await;
+    }
+
+    /*
+    2.5.3 - Delete All RRsets From A Name
+
+   One RR is added to the Update Section whose NAME is that of the name
+   to be cleansed of RRsets.  TYPE must be specified as ANY.  TTL must
+   be specified as zero (0) and is otherwise not used by the primary
+   master.  CLASS must be specified as ANY.  RDLENGTH must be zero (0)
+   and RDATA must therefore be empty.  If no such RRsets exist, then
+   this Update RR will be silently ignored by the primary master.
+     */
+    #[ignore]
+    #[tokio::test]
+    async fn delete_all_rrset_from_name() {
+        let zname = DomainName::new_from_str("example.com");
+        let zclass = Rclass::IN;
+
+        let mut prerequisite = vec![];
+        let mut update = vec![];
+        let additional :Vec<ResourceRecord> = vec![];
+
+        // prerequisite--------------------------------
+        let prerequisite_rdata = Rdata::SOA(SoaRdata::new_empty());
+
+        let mut prerequisite_rr = ResourceRecord::new(prerequisite_rdata);
+        prerequisite_rr.set_name(zname);
+        prerequisite_rr.set_rclass(Rclass::ANY);
+        prerequisite.push(prerequisite_rr);
+
+        // update---------------------------------------
+        let update_rdata = Rdata::A(ARdata::new_empty());
+        let mut update_rr = ResourceRecord::new(update_rdata);
+        update_rr.set_name(DomainName::new_from_str("test.example.com"));
+        update_rr.set_ttl(0);
+        update_rr.set_rclass(Rclass::ANY);
+        update_rr.set_type_code(Rrtype::ANY);
+        update.push(update_rr);
+
+        // sending-------------------------------------
+        let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+
+        let mess = DnsMessage::update_message("example.com", "IN", prerequisite, update, additional);
+        let mut client = Client::new(conn);
+        client.set_dns_query(mess);
+        let response = client.send_query().await;
+    }
+
+    /*
+    2.5.4 - Delete An RR From An RRset
+
+   RRs to be deleted are added to the Update Section.  The NAME, TYPE,
+   RDLENGTH and RDATA must match the RR being deleted.  TTL must be
+   specified as zero (0) and will otherwise be ignored by the primary
+   master.  CLASS must be specified as NONE to distinguish this from an
+   RR addition.  If no such RRs exist, then this Update RR will be
+   silently ignored by the primary master.
+     */
+    #[ignore]
+    #[tokio::test]
+    async fn delete_an_rr_from_rrset() {
+        let zname = DomainName::new_from_str("example.com");
+        let zclass = Rclass::IN;
+
+        let mut prerequisite = vec![];
+        let mut update = vec![];
+        let additional :Vec<ResourceRecord> = vec![];
+
+        // prerequisite--------------------------------
+        let prerequisite_rdata = Rdata::SOA(SoaRdata::new_empty());
+
+        let mut prerequisite_rr = ResourceRecord::new(prerequisite_rdata);
+        prerequisite_rr.set_name(zname);
+        prerequisite_rr.set_rclass(Rclass::ANY);
+        prerequisite.push(prerequisite_rr);
+
+        // update---------------------------------------
+        let update_rdata = Rdata::A(ARdata::new_from_addr(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 200))));
+        let mut update_rr = ResourceRecord::new(update_rdata);
+        update_rr.set_name(DomainName::new_from_str("test.example.com"));
+        update_rr.set_ttl(0);
+        update_rr.set_rclass(Rclass::NONE);
+        update.push(update_rr);
+
+        // sending-------------------------------------
+        let addr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let conn = ClientUDPConnection::new_default(addr, Duration::from_secs(10));
+
+        let mess = DnsMessage::update_message("example.com", "IN", prerequisite, update, additional);
+        let mut client = Client::new(conn);
+        client.set_dns_query(mess);
+        let response = client.send_query().await;
     }
 
 }

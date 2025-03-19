@@ -695,7 +695,7 @@ mod resource_record_test {
             Rdata::SOA(ref mut val) => {
                 val.set_mname(mname_domain_name);
                 val.set_rname(rname_domain_name);
-                val.set_serial(1111111111 as u32)
+                val.set_serial(1111111111u32)
             }
             _ => unreachable!(),
         }

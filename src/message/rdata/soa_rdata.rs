@@ -37,34 +37,34 @@ use std::fmt;
 pub struct SoaRdata {
     /// DomainName of the name server that was the
     /// original or primary source of data for this zone.
-    mname: DomainName,
+    mname: Option<DomainName>,
 
     /// A DomainName which specifies the mailbox of the
     /// person responsible for this zone.
-    rname: DomainName,
+    rname: Option<DomainName>,
 
     /// The unsigned 32 bit version number of the original copy
     /// of the zone.  Zone transfers preserve this value.  This
     /// value wraps and should be compared using sequence space
     /// arithmetic.
-    serial: u32,
+    serial: Option<u32>,
 
     /// A 32 bit time interval before the zone should be
     /// refreshed.
-    refresh: u32,
+    refresh: Option<u32>,
 
     /// A 32 bit time interval that should elapse before a
     /// failed refresh should be retried.
-    retry: u32,
+    retry: Option<u32>,
 
     /// A 32 bit time value that specifies the upper limit on
     /// the time interval that can elapse before the zone is no
     /// longer authoritative.
-    expire: u32,
+    expire: Option<u32>,
 
     /// The unsigned 32 bit minimum TTL field that should be
     /// exported with any RR from this zone.
-    minimum: u32,
+    minimum: Option<u32>,
 }
 
 impl ToBytes for SoaRdata {
@@ -95,83 +95,117 @@ impl ToBytes for SoaRdata {
     /// ```
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
-        let mname_bytes = self.get_mname().to_bytes();
+        let mname_bytes = {
+            match &self.mname {
+                Some(mname) => mname.to_bytes(),
+                None => vec![],
+            }
+        };
 
         for byte in mname_bytes.as_slice() {
             bytes.push(*byte);
         }
 
-        let rname_bytes = self.get_rname().to_bytes();
+        let rname_bytes = {
+            match &self.rname {
+                Some(rname) => rname.to_bytes(),
+                None => vec![],
+            }
+        };
 
         for byte in rname_bytes.as_slice() {
             bytes.push(*byte);
         }
 
         // Serial
-        let serial_first_byte = self.get_first_serial_byte();
-        bytes.push(serial_first_byte);
+        match self.serial {
+            Some(_) => {
+                let serial_first_byte = self.get_first_serial_byte();
+                bytes.push(serial_first_byte);
 
-        let serial_second_byte = self.get_second_serial_byte();
-        bytes.push(serial_second_byte);
+                let serial_second_byte = self.get_second_serial_byte();
+                bytes.push(serial_second_byte);
 
-        let serial_third_byte = self.get_third_serial_byte();
-        bytes.push(serial_third_byte);
+                let serial_third_byte = self.get_third_serial_byte();
+                bytes.push(serial_third_byte);
 
-        let serial_fourth_byte = self.get_fourth_serial_byte();
-        bytes.push(serial_fourth_byte);
+                let serial_fourth_byte = self.get_fourth_serial_byte();
+                bytes.push(serial_fourth_byte);
+            },
+            None => {},
+        }
 
         // Refresh
-        let refresh_first_byte = self.get_first_refresh_byte();
-        bytes.push(refresh_first_byte);
+        match self.refresh {
+            Some(_) => {
+                let refresh_first_byte = self.get_first_refresh_byte();
+                bytes.push(refresh_first_byte);
 
-        let refresh_second_byte = self.get_second_refresh_byte();
-        bytes.push(refresh_second_byte);
+                let refresh_second_byte = self.get_second_refresh_byte();
+                bytes.push(refresh_second_byte);
 
-        let refresh_third_byte = self.get_third_refresh_byte();
-        bytes.push(refresh_third_byte);
+                let refresh_third_byte = self.get_third_refresh_byte();
+                bytes.push(refresh_third_byte);
 
-        let refresh_fourth_byte = self.get_fourth_refresh_byte();
-        bytes.push(refresh_fourth_byte);
+                let refresh_fourth_byte = self.get_fourth_refresh_byte();
+                bytes.push(refresh_fourth_byte);
+            },
+            None => {},
+        }
 
         // Retry
-        let retry_first_byte = self.get_first_retry_byte();
-        bytes.push(retry_first_byte);
+        match self.retry {
+            Some(_) => {
+                let retry_first_byte = self.get_first_retry_byte();
+                bytes.push(retry_first_byte);
 
-        let retry_second_byte = self.get_second_retry_byte();
-        bytes.push(retry_second_byte);
+                let retry_second_byte = self.get_second_retry_byte();
+                bytes.push(retry_second_byte);
 
-        let retry_third_byte = self.get_third_retry_byte();
-        bytes.push(retry_third_byte);
+                let retry_third_byte = self.get_third_retry_byte();
+                bytes.push(retry_third_byte);
 
-        let retry_fourth_byte = self.get_fourth_retry_byte();
-        bytes.push(retry_fourth_byte);
+                let retry_fourth_byte = self.get_fourth_retry_byte();
+                bytes.push(retry_fourth_byte);
+            },
+            None => {},
+        }
 
         // Expire
-        let expire_first_byte = self.get_first_expire_byte();
-        bytes.push(expire_first_byte);
+        match self.expire {
+            Some(_) => {
+                let expire_first_byte = self.get_first_expire_byte();
+                bytes.push(expire_first_byte);
 
-        let expire_second_byte = self.get_second_expire_byte();
-        bytes.push(expire_second_byte);
+                let expire_second_byte = self.get_second_expire_byte();
+                bytes.push(expire_second_byte);
 
-        let expire_third_byte = self.get_third_expire_byte();
-        bytes.push(expire_third_byte);
+                let expire_third_byte = self.get_third_expire_byte();
+                bytes.push(expire_third_byte);
 
-        let expire_fourth_byte = self.get_fourth_expire_byte();
-        bytes.push(expire_fourth_byte);
+                let expire_fourth_byte = self.get_fourth_expire_byte();
+                bytes.push(expire_fourth_byte);
+            },
+            None => {},
+        }
 
         // Minimum
-        let minimum_first_byte = self.get_first_minimum_byte();
-        bytes.push(minimum_first_byte);
+        match self.minimum {
+            Some(_) => {
+                let minimum_first_byte = self.get_first_minimum_byte();
+                bytes.push(minimum_first_byte);
 
-        let minimum_second_byte = self.get_second_minimum_byte();
-        bytes.push(minimum_second_byte);
+                let minimum_second_byte = self.get_second_minimum_byte();
+                bytes.push(minimum_second_byte);
 
-        let minimum_third_byte = self.get_third_minimum_byte();
-        bytes.push(minimum_third_byte);
+                let minimum_third_byte = self.get_third_minimum_byte();
+                bytes.push(minimum_third_byte);
 
-        let minimum_fourth_byte = self.get_fourth_minimum_byte();
-        bytes.push(minimum_fourth_byte);
-
+                let minimum_fourth_byte = self.get_fourth_minimum_byte();
+                bytes.push(minimum_fourth_byte);
+            },
+            None => {},
+        }
         bytes
     }
 }
@@ -234,15 +268,28 @@ impl SoaRdata {
     /// ```
     pub fn new() -> Self {
         let soa_rdata = SoaRdata {
-            mname: DomainName::new(),
-            rname: DomainName::new(),
-            serial: 0 as u32,
-            refresh: 0 as u32,
-            retry: 0 as u32,
-            expire: 0 as u32,
-            minimum: 0 as u32,
+            mname: Some(DomainName::new()),
+            rname: Some(DomainName::new()),
+            serial: Some(0u32),
+            refresh: Some(0u32),
+            retry: Some(0u32),
+            expire: Some(0u32),
+            minimum: Some(0u32),
         };
 
+        soa_rdata
+    }
+
+    pub fn new_empty() -> Self {
+        let soa_rdata = SoaRdata {
+            mname: None,
+            rname: None,
+            serial: None,
+            refresh: None,
+            retry: None,
+            expire: None,
+            minimum: None,
+        };
         soa_rdata
     }
 
@@ -485,37 +532,44 @@ impl SoaRdata {
 impl SoaRdata {
     /// Gets the mname attribute from SoaRdata.
     pub fn get_mname(&self) -> DomainName {
-        self.mname.clone()
+        if let Some(mname) = self.mname.clone() {return mname;}
+        panic!("mname is empty");
     }
 
     /// Gets the rname attribute from SoaRdata.
     pub fn get_rname(&self) -> DomainName {
-        self.rname.clone()
+        if let Some(rname) = self.rname.clone() {return rname;}
+        panic!("rname is empty");
     }
 
     /// Gets the serial attribute from SoaRdata.
     pub fn get_serial(&self) -> u32 {
-        self.serial.clone()
+        if let Some(serial) = self.serial {return serial;}
+        panic!("serial is empty");
     }
 
     /// Gets the refresh attribute from SoaRdata.
     pub fn get_refresh(&self) -> u32 {
-        self.refresh.clone()
+        if let Some(refresh) = self.refresh {return refresh;}
+        panic!("refresh is empty");
     }
 
     /// Gets the retry attribute from SoaRdata.
     pub fn get_retry(&self) -> u32 {
-        self.retry.clone()
+        if let Some(retry) = self.retry {return retry;}
+        panic!("retry is empty");
     }
 
     /// Gets the expire attribute from SoaRdata.
     pub fn get_expire(&self) -> u32 {
-        self.expire.clone()
+        if let Some(expire) = self.expire {return expire;}
+        panic!("expire is empty");
     }
 
     /// Gets the minimum attribute from SoaRdata.
     pub fn get_minimum(&self) -> u32 {
-        self.minimum.clone()
+        if let Some(minimum) = self.minimum {return minimum;}
+        panic!("minimum is empty");
     }
 }
 
@@ -523,37 +577,37 @@ impl SoaRdata {
 impl SoaRdata {
     /// Sets the mname attibute with a DomainName.
     pub fn set_mname(&mut self, mname: DomainName) {
-        self.mname = mname;
+        self.mname = Some(mname);
     }
 
     /// Sets the rname attibute with a DomainName.
     pub fn set_rname(&mut self, rname: DomainName) {
-        self.rname = rname;
+        self.rname = Some(rname);
     }
 
     /// Sets the serial attibute with a value.
     pub fn set_serial(&mut self, serial: u32) {
-        self.serial = serial;
+        self.serial = Some(serial);
     }
 
     /// Sets the refresh attibute with a value.
     pub fn set_refresh(&mut self, refresh: u32) {
-        self.refresh = refresh;
+        self.refresh = Some(refresh);
     }
 
     /// Sets the retry attibute with a value.
     pub fn set_retry(&mut self, retry: u32) {
-        self.retry = retry;
+        self.retry = Some(retry);
     }
 
     /// Sets the expire attibute with a value.
     pub fn set_expire(&mut self, expire: u32) {
-        self.expire = expire;
+        self.expire = Some(expire);
     }
 
     /// Sets the minimum attibute with a value.
     pub fn set_minimum(&mut self, minimum: u32) {
-        self.minimum = minimum;
+        self.minimum = Some(minimum);
     }
 }
 
@@ -586,12 +640,12 @@ mod soa_rdata_test {
     fn constructor_test() {
         let soa_rdata = SoaRdata::new();
 
-        assert_eq!(soa_rdata.mname.get_name(), String::from(""));
+        assert_eq!(soa_rdata.get_mname().get_name(), String::from(""));
         let soa_rdata = SoaRdata::new();
-        assert_eq!(soa_rdata.refresh, 0);
-        assert_eq!(soa_rdata.retry, 0);
-        assert_eq!(soa_rdata.expire, 0);
-        assert_eq!(soa_rdata.minimum, 0);
+        assert_eq!(soa_rdata.get_refresh(), 0);
+        assert_eq!(soa_rdata.get_retry(), 0);
+        assert_eq!(soa_rdata.get_expire(), 0);
+        assert_eq!(soa_rdata.get_minimum(), 0);
     }
 
     #[test]

@@ -848,6 +848,10 @@ impl DnsMessage {
         self.header.clone()
     }
 
+    pub fn get_header_mut(&mut self) -> &mut Header {
+        &mut self.header
+    }
+
     /// Gets the question field.
     pub fn get_question(&self) -> Question {
         self.question.clone()

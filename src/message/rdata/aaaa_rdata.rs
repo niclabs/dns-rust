@@ -1,6 +1,12 @@
-use crate::message::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ToBytes, ResourceRecord};
+use crate::message::rrtype::Rrtype;
+use crate::domain_name::DomainName;
+use crate::message::rdata::Rdata;
+use crate::message::Rclass;
 use std::fmt;
 use std::net::IpAddr;
+use std::net::Ipv6Addr;
+use std::str::SplitWhitespace;
 
 // Define a trait that abstracts setting the address
 pub trait SetAddress {
@@ -88,6 +94,92 @@ impl AAAARdata{
         AAAARdata {
             address: address,
         }
+    }
+
+     /// Returns a `ResourceRecord` from the given values.
+    /// 
+    /// # Examples
+    /// ```
+    /// let aaaa_rr = AAAARdata::rr_from_master_file(
+    ///     "2001:1398:16:4:100::2".split_whitespace(),
+    ///     0,
+    ///     String::from("IN"),
+    ///     "admin1.googleplex.edu".to_string(),
+    /// );
+    /// 
+    /// assert_eq!(aaaa_rr.get_class(), Rclass::IN);
+    /// assert_eq!(
+    ///     aaaa_rr.get_name().get_name(),
+    ///     String::from("admin1.googleplex.edu")
+    /// );
+    /// assert_eq!(aaaa_rr.get_rtype(), Rrtype::AAAA);
+    /// assert_eq!(aaaa_rr.get_rdlength(), 16);
+    /// assert_eq!(aaaa_rr.get_ttl(), 0);
+    /// let aaaa_rdata = aaaa_rr.get_rdata();
+    /// match aaaa_rdata {
+    ///     Rdata::AAAA(val) => assert_eq!(val.get_address(), [0x2001, 0x1398, 0x16, 0x4, 0x100, 0x0, 0x0, 0x2]),
+    ///     _ => {}
+    /// }
+    /// ```
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: &str,
+        host_name: String,
+    ) -> ResourceRecord {
+        let mut aaaa_rdata = AAAARdata::new();
+        let mut address: [u16; 8] = [0; 8];
+        let str_ip = values.next().unwrap();
+        // println!("the str ip is {}", str_ip);
+            match str_ip.parse::<Ipv6Addr>() {
+        Ok(addr) => {
+            address = addr.segments();
+            // println!("the ip bytes are {:#x?}", address);
+        }
+        Err(e) => {
+            eprintln!("Failed to parse IP: {}", str_ip);
+            std::process::exit(1); // Clean exit with error code
+        }
+    }
+        // println!("the ip bytes are {:#?}", address);
+        let ip_address = IpAddr::from(address);
+        aaaa_rdata.set_address(ip_address);
+
+        let rdata = Rdata::AAAA(aaaa_rdata);
+
+        let mut resource_record = ResourceRecord::new(rdata);
+
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        resource_record.set_name(domain_name);
+        resource_record.set_type_code(Rrtype::AAAA);
+        let rclass = Rclass::from(class);
+        resource_record.set_rclass(rclass);
+        resource_record.set_ttl(ttl);
+        resource_record.set_rdlength(16);
+
+        resource_record
+    }
+
+    /// Returns a `String` that represents the `ARdata`.
+    pub fn get_string_address(&self) -> String {
+        let ip = self.get_address();
+
+        let mut ip_address = "".to_string();
+
+        let ip_vec = match ip {
+            IpAddr::V4(val) => val.octets().to_vec(),
+            IpAddr::V6(val) => val.octets().to_vec(),
+        };
+
+        for num in ip_vec.iter(){
+            ip_address.push_str(num.to_string().as_str());
+            ip_address.push_str(".");
+        }
+        ip_address.pop();
+
+        ip_address
     }
 
 }

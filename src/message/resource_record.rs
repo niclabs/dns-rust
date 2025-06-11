@@ -2,7 +2,8 @@ use crate::message::rdata::Rdata;
 use crate::message::Rclass;
 use crate::domain_name;
 use crate::domain_name::DomainName;
-use std::fmt;
+use std::{fmt, rc};
+use std::rc::Rc;
 use std::vec::Vec;
 
 use super::rrtype::Rrtype;
@@ -227,6 +228,156 @@ impl ResourceRecord {
             },
         }
     }
+
+    pub fn new_from_all_data(domain_name: DomainName, rtype : Rrtype, rclass : Rclass, ttl : u32, rdlength: u16, rdata: Rdata) -> ResourceRecord {
+        match rdata {
+            Rdata::A(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::A(val),
+            },
+            Rdata::NS(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::NS(val),
+            },
+            Rdata::CNAME(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::CNAME(val),
+            },
+            Rdata::SOA(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::SOA(val),
+            },
+            Rdata::PTR(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::PTR(val),
+            },
+            Rdata::HINFO(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::HINFO(val),
+            },
+            Rdata::MX(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::MX(val),
+            },
+            Rdata::TXT(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::TXT(val),
+            },
+            Rdata::AAAA(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::AAAA(val),
+            },
+            Rdata::OPT(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::OPT(val),
+            },
+            Rdata::DS(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::DS(val),
+            },
+            Rdata::RRSIG(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::RRSIG(val),
+            },
+            Rdata::NSEC(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::NSEC(val),
+            },
+            Rdata::DNSKEY(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::DNSKEY(val),
+            },
+            Rdata::NSEC3(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::NSEC3(val),
+            },
+            Rdata::NSEC3PARAM(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::NSEC3PARAM(val),
+            },
+            Rdata::TSIG(val) => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: Rdata::TSIG(val),
+            },
+            _ => ResourceRecord {
+                name: domain_name,
+                rtype: rtype,
+                rclass: rclass,
+                ttl: ttl,
+                rdlength: rdlength,
+                rdata: rdata,
+            },
+        }
+    }
+
 
     /// Given an array of bytes, creates a new `ResourceRecord`.
     /// 

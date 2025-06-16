@@ -1,5 +1,5 @@
 use crate::message::rdata::Rdata;
-use crate::message::Rclass;
+use crate::message::{question, Rclass};
 use crate::domain_name;
 use crate::domain_name::DomainName;
 use std::{fmt, rc};
@@ -406,6 +406,7 @@ impl ResourceRecord {
     ) -> Result<(ResourceRecord, &'a [u8]), &'static str> {
         let domain_name_result = DomainName::from_bytes(bytes, full_msg);
 
+
         match domain_name_result.clone() {
             Ok((domain_name,_)) => {
                 domain_name::domain_validity_syntax(domain_name)?;
@@ -414,11 +415,13 @@ impl ResourceRecord {
         }
 
         let (name, bytes_without_name) = domain_name_result.unwrap();
+        println!("the name inside the rr is : {:?}", name);
 
         if bytes_without_name.len() < 10 {
             return Err("Format Error");
         }
 
+        println!("bytes_without_name is : {}", bytes_without_name.len());
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let rtype = Rrtype::from(type_code);
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
@@ -428,9 +431,11 @@ impl ResourceRecord {
             | ((bytes_without_name[6] as u32) << 8)
             | bytes_without_name[7] as u32;
         let rdlength = ((bytes_without_name[8] as u16) << 8) | bytes_without_name[9] as u16;
-
+        
+        println!("the rdlength is {}", rdlength as usize);
         let end_rr_byte = 10 + rdlength as usize;
 
+        println!("bytes_without_name is : {} and end_rr_byte is : {}", bytes_without_name.len(), end_rr_byte);
         if bytes_without_name.len() < end_rr_byte {
             return Err("Format Error");
         }
@@ -440,6 +445,8 @@ impl ResourceRecord {
         rdata_bytes_vec.push(bytes_without_name[1]);
         rdata_bytes_vec.push(bytes_without_name[2]);
         rdata_bytes_vec.push(bytes_without_name[3]);
+
+        println!("before parsing the rdata");
         
         let rdata_result = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
 
@@ -459,7 +466,9 @@ impl ResourceRecord {
             ttl: ttl,
             rdlength: rdlength,
             rdata: rdata,
-        };
+        };  
+
+        println!("achieve having the resoruce record {} ", resource_record);
 
         Ok((resource_record, &bytes_without_name[end_rr_byte..]))
     }

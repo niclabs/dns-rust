@@ -435,7 +435,7 @@ impl ResourceRecord {
         println!("the rdlength is {}", rdlength as usize);
         let end_rr_byte = 10 + rdlength as usize;
 
-        println!("bytes_without_name is : {} and end_rr_byte is : {}", bytes_without_name.len(), end_rr_byte);
+        println!("bytes_without_name len is : {} and end_rr_byte is : {}", bytes_without_name.len(), end_rr_byte);
         if bytes_without_name.len() < end_rr_byte {
             return Err("Format Error");
         }

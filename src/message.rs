@@ -705,7 +705,7 @@ impl DnsMessage {
 
         msg_authorities.append(&mut authorities);
         self.header.set_nscount(msg_authorities.len() as u16);
-        self.set_answer(msg_authorities);
+        self.set_authority(msg_authorities);
     }
 
     /// Adds a additionals to the message.

@@ -126,6 +126,11 @@ impl NsRdata {
 
         resource_record
     }
+
+    //------------------------DNSSEC--------------------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        self.get_nsdname().to_canonical_bytes()
+    }
 }
 
 // Getters

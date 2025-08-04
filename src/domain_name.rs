@@ -189,6 +189,29 @@ impl DomainName {
             DomainName::new_from_string(full_host_name)
         }
     }
+
+    //-------------------DNSSEC--------------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Assume `get_name()` returns something like "www.example.com"
+        for label in self.get_name().to_ascii_lowercase().split('.') {
+            if label.is_empty() {
+                continue; // skip empty parts (e.g., trailing dot)
+            }
+
+            let len = label.len();
+            if len > 63 {
+                panic!("Label too long in domain name");
+            }
+
+            bytes.push(len as u8);                 // label length
+            bytes.extend_from_slice(label.as_bytes()); // label bytes
+        }
+
+        bytes.push(0); // root label
+        bytes
+    }
 }
 
 // Setters Domain Name

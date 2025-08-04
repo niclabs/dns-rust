@@ -160,6 +160,19 @@ impl AChRdata {
 
         resource_record
     }
+
+    //--------DNSSEC-------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Canonical domain name (lowercased, uncompressed)
+        bytes.extend(self.get_domain_name().to_canonical_bytes());
+
+        // ch_address as 2-byte big-endian
+        bytes.extend(&self.get_ch_address().to_be_bytes());
+
+        bytes
+    }
 }
 
 // Getters

@@ -1,4 +1,3 @@
-
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::edns::opt_option::option_code::OptionCode;
 use std::fmt;

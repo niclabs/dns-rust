@@ -105,6 +105,18 @@ impl DsRdata {
         }
     }
 
+    //----------------DNSSEC-----------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        bytes.extend(&self.get_key_tag().to_be_bytes());
+        bytes.push(self.get_algorithm());
+        bytes.push(self.get_digest_type());
+        bytes.extend(self.get_digest());
+
+        bytes
+    }
+
     /// Getter for the key_tag field
     pub fn get_key_tag(&self) -> u16 {
         self.key_tag.clone()

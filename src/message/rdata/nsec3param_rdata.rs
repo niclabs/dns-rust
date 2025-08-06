@@ -85,6 +85,22 @@ impl Nsec3ParamRdata {
         }
     }
 
+    //DNSSEC
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+
+        bytes.push(self.hash_algorithm);
+        bytes.push(self.flags);
+        bytes.extend_from_slice(&self.iterations.to_be_bytes());
+        bytes.push(self.salt_length);
+
+        if self.salt_length > 0 {
+            bytes.extend_from_slice(&hex::decode(&self.salt).expect("Invalid hex salt"));
+        }
+
+        bytes
+    }
+
     /// Getter for the hash_algorithm
     pub fn get_hash_algorithm(&self) -> u8 {
         self.hash_algorithm.clone()

@@ -133,6 +133,25 @@ impl TxtRdata {
 
         resource_record
     }
+
+    //-------------------------DNSSEC------------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        for txt in self.get_text() {
+            let txt_bytes = txt.as_bytes();
+            let len = txt_bytes.len();
+
+            if len > 255 {
+                panic!("Each TXT string must be ≤ 255 bytes");
+            }
+
+            bytes.push(len as u8);
+            bytes.extend(txt_bytes);
+        }
+
+        bytes
+    }
 }
 
 /// Getters

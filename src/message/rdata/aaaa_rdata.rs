@@ -182,6 +182,14 @@ impl AAAARdata{
         ip_address
     }
 
+    //------------------DNSSEC----------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        match self.get_address() {
+            std::net::IpAddr::V6(addr) => addr.octets().to_vec(),
+            _ => panic!("AAAA RDATA must contain an IPv6 address"),
+        }
+    }
+
 }
 /// Getter for the struct AAAARdata
 impl AAAARdata{

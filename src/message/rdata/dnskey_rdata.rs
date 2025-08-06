@@ -90,6 +90,18 @@ impl DnskeyRdata {
         }
     }
 
+    //DNSSEC
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        bytes.extend(&self.get_flags().to_be_bytes());
+        bytes.push(self.get_protocol());
+        bytes.push(self.get_algorithm());
+        bytes.extend(self.get_public_key());
+
+        bytes
+    }
+
     /// Get the flags of the DNSKEY RDATA.
     /// 
     /// # Examples

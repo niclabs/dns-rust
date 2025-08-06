@@ -172,6 +172,23 @@ impl RRSIGRdata{
             signature: vec![],
         }
     }
+
+    //---------------DNSSSEC---------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        bytes.extend(&(u16::from(self.get_type_covered())).to_be_bytes());
+        bytes.push(self.get_algorithm());
+        bytes.push(self.get_labels());
+        bytes.extend(&self.get_original_ttl().to_be_bytes());
+        bytes.extend(&self.get_signature_expiration().to_be_bytes());
+        bytes.extend(&self.get_signature_inception().to_be_bytes());
+        bytes.extend(&self.get_key_tag().to_be_bytes());
+        bytes.extend(self.get_signer_name().to_canonical_bytes());
+        bytes.extend(self.get_signature());
+
+        bytes
+    }
     /// Getter for type_covered
     /// 
     /// # Example

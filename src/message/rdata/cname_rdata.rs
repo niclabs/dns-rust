@@ -107,6 +107,11 @@ impl CnameRdata {
 
         resource_record
     }
+
+    //------------------DNSSEC------------------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        self.get_cname().to_canonical_bytes()
+    }
 }
 
 /// Getter

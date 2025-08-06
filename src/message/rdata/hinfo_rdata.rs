@@ -163,6 +163,25 @@ impl HinfoRdata {
 
         resource_record
     }
+
+    //--------DNSSEC---------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        let cpu_str = self.get_cpu();
+        let os_str = self.get_os();
+
+        let cpu = cpu_str.as_bytes();
+        let os = os_str.as_bytes();
+
+        bytes.push(cpu.len() as u8);
+        bytes.extend(cpu);
+
+        bytes.push(os.len() as u8);
+        bytes.extend(os);
+
+        bytes
+    }
 }
 
 // Getters

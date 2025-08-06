@@ -290,6 +290,21 @@ impl SoaRdata {
         (resource_record, minimum)
     }
 
+    //-------------DNSSEC--------------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        bytes.extend(self.get_mname().to_canonical_bytes());
+        bytes.extend(self.get_rname().to_canonical_bytes());
+        bytes.extend(&self.get_serial().to_be_bytes());
+        bytes.extend(&self.get_refresh().to_be_bytes());
+        bytes.extend(&self.get_retry().to_be_bytes());
+        bytes.extend(&self.get_expire().to_be_bytes());
+        bytes.extend(&self.get_minimum().to_be_bytes());
+
+        bytes
+    }
+
     /// Gets the first byte from the serial value.
     fn get_first_serial_byte(&self) -> u8 {
         let serial = self.get_serial();

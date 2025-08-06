@@ -108,6 +108,27 @@ impl OptRdata {
     }
 }
 
+//DNSSEC
+impl OptRdata {
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        for opt in self.get_option() {
+            let code = opt.get_option_code();   // u16
+            let code_u16 = u16::from(code);
+            let data = opt.get_opt_data().to_bytes();   // &[u8] or Vec<u8>
+            let length = data.len() as u16;
+
+            bytes.extend(code_u16.to_be_bytes());
+            bytes.extend(&length.to_be_bytes());
+            bytes.extend(data);
+        }
+
+        bytes
+    }
+}
+
+
 
 impl fmt::Display for OptRdata {
     /// Formats the record data for display

@@ -99,6 +99,18 @@ impl SrvRdata {
             target,
         }
     }
+
+    //------------------------DNSSEC-----------------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        bytes.extend(&self.get_priority().to_be_bytes());
+        bytes.extend(&self.get_weight().to_be_bytes());
+        bytes.extend(&self.get_port().to_be_bytes());
+        bytes.extend(self.get_target().to_canonical_bytes());
+
+        bytes
+    }
 }
 
 impl SrvRdata {

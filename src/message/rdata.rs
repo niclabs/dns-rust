@@ -71,26 +71,22 @@ impl Rdata {
             Rdata::A(r) => r.to_canonical_bytes(),
             Rdata::ACH(r) => r.to_canonical_bytes(),
             Rdata::NS(r) => r.to_canonical_bytes(),
-            _ => {
-                   println!("in a future");
-                   return Vec::new();
-                 }
-            // Rdata::CNAME(r) => r.to_canonical_bytes(),
-            // Rdata::SOA(r) => r.to_canonical_bytes(),
-            // Rdata::PTR(r) => r.to_canonical_bytes(),
-            // Rdata::HINFO(r) => r.to_canonical_bytes(),
-            // Rdata::MX(r) => r.to_canonical_bytes(),
-            // Rdata::TXT(r) => r.to_canonical_bytes(),
-            // Rdata::AAAA(r) => r.to_canonical_bytes(),
-            // Rdata::SRV(r) => r.to_canonical_bytes(),
-            // Rdata::OPT(r) => r.to_canonical_bytes(),
-            // Rdata::DS(r) => r.to_canonical_bytes(),
-            // Rdata::RRSIG(r) => r.to_canonical_bytes(),
-            // Rdata::NSEC(r) => r.to_canonical_bytes(),
-            // Rdata::DNSKEY(r) => r.to_canonical_bytes(),
-            // Rdata::NSEC3(r) => r.to_canonical_bytes(),
-            // Rdata::NSEC3PARAM(r) => r.to_canonical_bytes(),
-            // Rdata::TSIG(r) => r.to_canonical_bytes(),
+            Rdata::CNAME(r) => r.to_canonical_bytes(),
+            Rdata::SOA(r) => r.to_canonical_bytes(),
+            Rdata::PTR(r) => r.to_canonical_bytes(),
+            Rdata::HINFO(r) => r.to_canonical_bytes(),
+            Rdata::MX(r) => r.to_canonical_bytes(),
+            Rdata::TXT(r) => r.to_canonical_bytes(),
+            Rdata::AAAA(r) => r.to_canonical_bytes(),
+            Rdata::SRV(r) => r.to_canonical_bytes(),
+            Rdata::OPT(r) => r.to_canonical_bytes(),
+            Rdata::DS(r) => r.to_canonical_bytes(),
+            Rdata::RRSIG(r) => r.to_canonical_bytes(),
+            Rdata::NSEC(r) => r.to_canonical_bytes(),
+            Rdata::DNSKEY(r) => r.to_canonical_bytes(),
+            Rdata::NSEC3(r) => r.to_canonical_bytes(),
+            Rdata::NSEC3PARAM(r) => r.to_canonical_bytes(),
+            Rdata::TSIG(r) => r.to_canonical_bytes(),
         }
     }
 }

@@ -194,7 +194,6 @@ impl DomainName {
     pub fn to_canonical_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
 
-        // Assume `get_name()` returns something like "www.example.com"
         for label in self.get_name().to_ascii_lowercase().split('.') {
             if label.is_empty() {
                 continue; // skip empty parts (e.g., trailing dot)

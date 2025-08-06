@@ -176,6 +176,19 @@ impl MxRdata {
         resource_record
     }
 
+    //-------------------DNSSSEC--------------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Add 2-byte preference in network byte order
+        bytes.extend(&self.get_preference().to_be_bytes());
+
+        // Append exchange domain name in canonical format
+        bytes.extend(self.get_exchange().to_canonical_bytes());
+
+        bytes
+    }
+
     /// Gets the first byte from the preference attribute.
     pub fn get_first_preference_byte(&self) -> u8 {
         (self.get_preference() >> 8) as u8

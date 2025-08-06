@@ -1,8 +1,10 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::message::rrtype::Rrtype;
 use crate::message::rdata::NsecRdata;
-
+use std::collections::BTreeMap;
 use std::fmt;
+use base32::{Alphabet, decode};
+
 
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct for the NSEC3 Rdata
@@ -173,6 +175,57 @@ impl Nsec3Rdata {
             next_hashed_owner_name,
             type_bit_maps,
         }
+    }
+
+    //DNSSEC
+     pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        bytes.push(self.get_hash_algorithm());
+        bytes.push(self.get_flags());
+        bytes.extend(&self.get_iterations().to_be_bytes());
+
+        let salt_bytes = if self.get_salt_length() == 0 {
+            vec![]
+        } else {
+            hex::decode(self.get_salt()).expect("Invalid hex salt")
+        };
+        bytes.push(salt_bytes.len() as u8);
+        bytes.extend(salt_bytes);
+
+        let next_hashed = decode(
+                            Alphabet::Rfc4648 { padding: false },
+                            &self.get_next_hashed_owner_name(),
+                        ).expect("Invalid base32 in NSEC3 next hashed owner name");
+
+        bytes.push(next_hashed.len() as u8);
+        bytes.extend(next_hashed);
+
+
+        let mut windows: BTreeMap<u8, Vec<u8>> = BTreeMap::new();
+
+        for rrtype in self.get_type_bit_maps() {
+            let code = u16::from(rrtype);
+            let window = (code / 256) as u8;
+            let offset = (code % 256) as u8;
+
+            windows.entry(window).or_insert_with(|| vec![0; 32]);
+            let bitmap = windows.get_mut(&window).unwrap();
+            bitmap[(offset / 8) as usize] |= 1 << (7 - (offset % 8));
+        }
+
+        for (window, bitmap) in windows {
+            let mut trimmed = bitmap;
+            while trimmed.last() == Some(&0) {
+                trimmed.pop();
+            }
+
+            bytes.push(window);
+            bytes.push(trimmed.len() as u8);
+            bytes.extend(trimmed);
+        }
+
+        bytes
     }
 
     /// Getter for the hash_algorithm

@@ -128,6 +128,11 @@ impl PtrRdata {
 
         resource_record
     }
+
+    //---------DNSSEC--------
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        self.get_ptrdname().to_canonical_bytes()
+    }
 }
 
 // Getters

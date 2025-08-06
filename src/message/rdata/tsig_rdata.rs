@@ -253,6 +253,39 @@ impl TSigRdata {
         resource_record
     }
 
+    //DNSSEC
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+
+        // 1. Algorithm Name (as domain name)
+        bytes.extend(self.algorithm_name.to_canonical_bytes());
+
+        // 2. Time Signed: 48-bit timestamp (u64, but only lower 48 bits used)
+        let time_high = ((self.time_signed >> 32) & 0xFFFF) as u16;
+        let time_low = (self.time_signed & 0xFFFFFFFF) as u32;
+        bytes.extend_from_slice(&time_high.to_be_bytes());
+        bytes.extend_from_slice(&time_low.to_be_bytes());
+
+        // 3. Fudge
+        bytes.extend_from_slice(&self.fudge.to_be_bytes());
+
+        // 4. MAC Size and MAC
+        bytes.extend_from_slice(&self.mac_size.to_be_bytes());
+        bytes.extend_from_slice(&self.mac);
+
+        // 5. Original ID
+        bytes.extend_from_slice(&self.original_id.to_be_bytes());
+
+        // 6. Error
+        bytes.extend_from_slice(&self.error.to_be_bytes());
+
+        // 7. Other Len and Other Data
+        bytes.extend_from_slice(&self.other_len.to_be_bytes());
+        bytes.extend_from_slice(&self.other_data);
+
+        bytes
+    }
+
     /// Set the time signed attribute from an array of bytes.
     fn set_time_signed_from_bytes(&mut self, bytes: &[u8]){
 

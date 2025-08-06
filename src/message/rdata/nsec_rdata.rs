@@ -1,6 +1,7 @@
 use crate::message::resource_record::{FromBytes, ToBytes};
 use crate::domain_name::DomainName;
 use crate::message::rrtype::Rrtype;
+use std::collections::BTreeMap;
 
 use std::fmt;
 
@@ -142,6 +143,46 @@ impl NsecRdata{
             next_domain_name,
             type_bit_maps,
         }
+    }
+
+    //DNSSEC
+    pub fn to_canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Canonical domain name
+        bytes.extend(self.get_next_domain_name().to_canonical_bytes());
+
+        // Group RRTYPEs into windows
+        let mut windows: BTreeMap<u8, Vec<u8>> = BTreeMap::new();
+
+        for rrtype in self.get_type_bit_maps() {
+            let type_code = u16::from(rrtype);
+            let window = (type_code / 256) as u8;
+            let offset = (type_code % 256) as u8;
+
+            windows.entry(window).or_insert_with(|| vec![0; 32]); // 256 bits = 32 bytes
+            let bitmap = windows.get_mut(&window).unwrap();
+            bitmap[(offset / 8) as usize] |= 1 << (7 - (offset % 8));
+        }
+
+        // Write windows in canonical order
+        for (window, bitmap) in windows {
+            // Trim trailing zeroes
+            let mut trimmed_bitmap = bitmap;
+            while let Some(&last) = trimmed_bitmap.last() {
+                if last == 0 {
+                    trimmed_bitmap.pop();
+                } else {
+                    break;
+                }
+            }
+
+            bytes.push(window);
+            bytes.push(trimmed_bitmap.len() as u8);
+            bytes.extend(trimmed_bitmap);
+        }
+
+        bytes
     }
 
     /// Returns the next_domain_name of the `NsecRdata`.

@@ -415,13 +415,13 @@ impl ResourceRecord {
         }
 
         let (name, bytes_without_name) = domain_name_result.unwrap();
-        println!("DEBUG MODE: the name inside the rr is : {:?}", name);
+        // println!("DEBUG MODE: the name inside the rr is : {:?}", name);
 
         if bytes_without_name.len() < 10 {
             return Err("Format Error");
         }
 
-        println!("DEBUG MODE: bytes_without_name is : {}", bytes_without_name.len());
+        // println!("DEBUG MODE: bytes_without_name is : {}", bytes_without_name.len());
         let type_code = ((bytes_without_name[0] as u16) << 8) | bytes_without_name[1] as u16;
         let rtype = Rrtype::from(type_code);
         let class = ((bytes_without_name[2] as u16) << 8) | bytes_without_name[3] as u16;
@@ -432,10 +432,10 @@ impl ResourceRecord {
             | bytes_without_name[7] as u32;
         let rdlength = ((bytes_without_name[8] as u16) << 8) | bytes_without_name[9] as u16;
         
-        println!("DEBUG MODE: the rdlength is {}", rdlength as usize);
+        // println!("DEBUG MODE: the rdlength is {}", rdlength as usize);
         let end_rr_byte = 10 + rdlength as usize;
 
-        println!("DEBUG MODE: bytes_without_name len is : {} and end_rr_byte is : {}", bytes_without_name.len(), end_rr_byte);
+        // println!("DEBUG MODE: bytes_without_name len is : {} and end_rr_byte is : {}", bytes_without_name.len(), end_rr_byte);
         if bytes_without_name.len() < end_rr_byte {
             return Err("Format Error");
         }
@@ -446,7 +446,7 @@ impl ResourceRecord {
         rdata_bytes_vec.push(bytes_without_name[2]);
         rdata_bytes_vec.push(bytes_without_name[3]);
 
-        println!("DEBUG MODE: before parsing the rdata");
+        // println!("DEBUG MODE: before parsing the rdata");
         
         let rdata_result = Rdata::from_bytes(rdata_bytes_vec.as_slice(), full_msg);
 
@@ -468,7 +468,7 @@ impl ResourceRecord {
             rdata: rdata,
         };  
 
-        println!("DEBUG MODE: achieve having the resoruce record {} ", resource_record);
+        // println!("DEBUG MODE: achieve having the resoruce record {} ", resource_record);
 
         Ok((resource_record, &bytes_without_name[end_rr_byte..]))
     }

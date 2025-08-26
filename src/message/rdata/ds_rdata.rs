@@ -1,6 +1,11 @@
 use core::fmt;
+use std::str::SplitWhitespace;
+use super::Rdata;
+use crate::domain_name::DomainName;
+use crate::message::rclass::Rclass;
+use crate::message::Rrtype;
 
-use crate::message::resource_record::{FromBytes, ToBytes};
+use crate::message::resource_record::{FromBytes, ResourceRecord, ToBytes};
 
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
 /// Struct for the DS Rdata
@@ -115,6 +120,46 @@ impl DsRdata {
         bytes.extend(self.get_digest());
 
         bytes
+    }
+
+    pub fn rr_from_master_file(
+        mut values: SplitWhitespace,
+        ttl: u32,
+        class: &str,
+        host_name: String,
+        _origin: String, // not really needed for DS
+    ) -> ResourceRecord {
+        // Parse DS fields
+        let key_tag = values.next().unwrap().parse::<u16>().unwrap();
+        let algorithm = values.next().unwrap().parse::<u8>().unwrap();
+        let digest_type = values.next().unwrap().parse::<u8>().unwrap();
+        let digest_hex = values.next().unwrap();
+
+        // Convert hex digest string into Vec<u8>
+        let digest_bytes: Vec<u8> = (0..digest_hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&digest_hex[i..i+2], 16).unwrap())
+            .collect();
+
+        // Build DS rdata
+        let mut ds_rdata = DsRdata::new(key_tag, algorithm, digest_type, digest_bytes);
+
+        let rdata = Rdata::DS(ds_rdata);
+
+        // Build RR wrapper
+        let mut rr = ResourceRecord::new(rdata);
+        let mut domain_name = DomainName::new();
+        domain_name.set_name(host_name);
+
+        rr.set_name(domain_name);
+        rr.set_type_code(Rrtype::DS);
+        rr.set_rclass(Rclass::from(class));
+        rr.set_ttl(ttl);
+
+        // rdlength = 4 bytes (fixed fields) + digest length
+        rr.set_rdlength(4 + digest_hex.len() as u16 / 2);
+
+        rr
     }
 
     /// Getter for the key_tag field

@@ -863,8 +863,18 @@ impl DnsMessage {
     }
 
     /// Gets the authority field.
+    pub fn get_answer_mut(&mut self) -> &mut Vec<ResourceRecord> {
+        &mut self.answer
+    }
+
+    /// Gets the authority field.
     pub fn get_authority(&self) -> Vec<ResourceRecord> {
         self.authority.clone()
+    }
+
+    /// Gets the authority field.
+    pub fn get_authority_mut(&mut self) -> &mut Vec<ResourceRecord> {
+        &mut self.authority
     }
 
     /// Gets the additional field.
